@@ -10,11 +10,13 @@
 
 - Keep op-amp feedback and filter elements visually close to the active device.
 - Preserve conventional analog signal flow and power presentation.
-- Score layouts for topology recognizability in addition to crossings, bends, and length.
+- Score layouts for topology recognizability in addition to crossings, bends, and total wire length.
+- Treat this as positive evidence for organization, not as a coordinate template.
 
 ## Provenance
 
-- Source: KiCad source repository, demos/simulation/sallen_key (exact revision should be recorded if this fixture is retained)
+- Source: KiCad source repository, `demos/simulation/sallen_key/`
+- Upstream: https://gitlab.com/kicad/code/kicad/
 - Author/project: KiCad project contributors
-- License: GPL-3.0-or-later for the KiCad source repository; verify whether every retained fixture file is covered before redistribution
-- Redistribution status: Source repository is GPL-3.0-or-later; retain attribution/license information and verify fixture-specific coverage.
+- License: CC BY-SA 4.0
+- Redistribution status: KiCad's `LICENSE.README` states that all demo files under `demos/*` are licensed under CC BY-SA 4.0.

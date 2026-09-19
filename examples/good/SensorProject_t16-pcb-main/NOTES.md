@@ -11,10 +11,11 @@
 - Treat hierarchy and repeated functional channels as first-class design concepts.
 - Separate logical schematic organization from physical PCB placement constraints.
 - Preserve fixed/semi-fixed interfaces and electrically constrained component relationships explicitly in the IR.
+- Use this project to study interactions between schematic organization, custom libraries, and a real routed board.
 
 ## Provenance
 
 - Source: https://github.com/pdgilbert/SensorProject_t16-pcb
 - Author/project: pdgilbert / SensorProject_t16-pcb
 - License: GPL-3.0
-- Redistribution status: Upstream repository explicitly declares GPL-3.0; retain attribution and license material when redistributing.
+- Redistribution status: The upstream repository explicitly declares GPL-3.0. Retain attribution and applicable license material when redistributing this fixture.

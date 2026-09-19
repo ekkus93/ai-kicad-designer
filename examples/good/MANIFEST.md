@@ -1,38 +1,28 @@
 # Curated Positive KiCad Reference Set
 
-These projects are positive reference material for schematic and PCB organization.
-They are **not** coordinate templates. The design system should infer reusable
-engineering/layout principles rather than reproduce any example literally.
+This directory contains the publicly redistributable positive reference corpus
+for the initial AI KiCad Designer architecture/evaluation work.
 
-The initial Astra architecture pass should inspect these examples selectively,
-starting from this manifest and each project's `NOTES.md`.
+These are evidence of useful schematic/PCB organization, not coordinate templates.
 
-| Example | Primary reason included |
-|---|---|
-| `555bip` | Recognizable timing/feedback topology |
-| `Class-D` | Mixed analog/power organization |
-| `FullAdd` | Dense digital logic and repeated connectivity |
-| `LM2576` | Switching-regulator / power topology |
-| `LM3886` | Analog/audio amplifier signal flow |
-| `SensorProject_t16-pcb-main` | Hierarchy, MCU, sensors, interfaces, and a real PCB |
-| `sallen_key-bandpass-072` | Op-amp/filter topology and feedback network |
+| Example | Primary reason included | License |
+|---|---|---|
+| `Class-D` | Mixed analog/power organization and functional signal flow | CC BY-SA 4.0 |
+| `sallen_key-bandpass-072` | Op-amp/filter topology and feedback organization | CC BY-SA 4.0 |
+| `SensorProject_t16-pcb-main` | Hierarchy, MCU, sensors/interfaces, custom libraries, and a real PCB | GPL-3.0 |
 
-## Guidance for AI analysis
+## Local-only supplementary references
 
-When inspecting these examples:
+These were removed from the public corpus because redistribution provenance/license
+has not been established:
 
-- identify functional blocks and their visual organization;
-- identify recurring signal-flow and power-presentation conventions;
-- distinguish direct wiring from sensible use of labels/buses;
-- examine component orientation and grouping;
-- examine how recognizable circuit motifs are made visually obvious;
-- for PCB examples, examine mechanical/fixed interfaces, clustering, and
-  electrically constrained placement;
-- do not infer that exact coordinates, page sizes, or component spacing should
-  become fixed universal rules.
+- `555bip`
+- `FullAdd`
+- `LM2576`
+- `LM3886`
 
-## Provenance
+When present locally they live under:
 
-Before redistributing any third-party design, record its original source and
-license in the corresponding `NOTES.md`. A publicly visible repository does not
-by itself grant redistribution permission.
+`.local/examples-good-unverified/`
+
+Do not recommit them until their source and redistribution status are verified.
