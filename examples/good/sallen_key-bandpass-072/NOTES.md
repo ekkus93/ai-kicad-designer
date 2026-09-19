@@ -2,29 +2,19 @@
 
 ## Why this is a useful positive reference
 
-TODO: In your own words, describe what you like about this project's schematic
-and/or PCB organization.
-
-Useful points to consider:
-
-- signal-flow readability;
-- recognizable functional blocks;
-- component grouping;
-- power presentation;
-- feedback/decoupling/termination topology;
-- direct wires versus net labels or buses;
-- spacing and orientation;
-- connector/interface placement;
-- PCB clustering and critical-component proximity, where applicable.
+- Canonical op-amp filter/feedback topology whose readability depends on preserving recognizable analog structure.
+- Useful for evaluating left-to-right signal flow, feedback placement, and compact passive-component grouping.
+- Provides a strong contrast against generic node/edge graph placement.
 
 ## Lessons for the generator
 
-TODO: Describe the principles the generator should learn from this project.
-Avoid prescribing exact coordinates.
+- Keep op-amp feedback and filter elements visually close to the active device.
+- Preserve conventional analog signal flow and power presentation.
+- Score layouts for topology recognizability in addition to crossings, bends, and length.
 
 ## Provenance
 
-- Source: TODO
-- Author/project: TODO
-- License: TODO
-- Redistribution status: TODO
+- Source: KiCad source repository, demos/simulation/sallen_key (exact revision should be recorded if this fixture is retained)
+- Author/project: KiCad project contributors
+- License: GPL-3.0-or-later for the KiCad source repository; verify whether every retained fixture file is covered before redistribution
+- Redistribution status: Source repository is GPL-3.0-or-later; retain attribution/license information and verify fixture-specific coverage.

@@ -2,29 +2,19 @@
 
 ## Why this is a useful positive reference
 
-TODO: In your own words, describe what you like about this project's schematic
-and/or PCB organization.
-
-Useful points to consider:
-
-- signal-flow readability;
-- recognizable functional blocks;
-- component grouping;
-- power presentation;
-- feedback/decoupling/termination topology;
-- direct wires versus net labels or buses;
-- spacing and orientation;
-- connector/interface placement;
-- PCB clustering and critical-component proximity, where applicable.
+- Real multi-sheet KiCad project with MCU, sensors/interfaces, power, radio, custom symbols/footprints, and an actual PCB.
+- Useful for hierarchy, repeated channels, interface organization, mechanical constraints, and PCB placement.
+- The upstream project describes the hardware as a working prototype.
 
 ## Lessons for the generator
 
-TODO: Describe the principles the generator should learn from this project.
-Avoid prescribing exact coordinates.
+- Treat hierarchy and repeated functional channels as first-class design concepts.
+- Separate logical schematic organization from physical PCB placement constraints.
+- Preserve fixed/semi-fixed interfaces and electrically constrained component relationships explicitly in the IR.
 
 ## Provenance
 
-- Source: TODO
-- Author/project: TODO
-- License: TODO
-- Redistribution status: TODO
+- Source: https://github.com/pdgilbert/SensorProject_t16-pcb
+- Author/project: pdgilbert / SensorProject_t16-pcb
+- License: GPL-3.0
+- Redistribution status: Upstream repository explicitly declares GPL-3.0; retain attribution and license material when redistributing.

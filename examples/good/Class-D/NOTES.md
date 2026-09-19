@@ -2,29 +2,19 @@
 
 ## Why this is a useful positive reference
 
-TODO: In your own words, describe what you like about this project's schematic
-and/or PCB organization.
-
-Useful points to consider:
-
-- signal-flow readability;
-- recognizable functional blocks;
-- component grouping;
-- power presentation;
-- feedback/decoupling/termination topology;
-- direct wires versus net labels or buses;
-- spacing and orientation;
-- connector/interface placement;
-- PCB clustering and critical-component proximity, where applicable.
+- Mixed analog/power-oriented topology with a clear functional signal path.
+- Useful for studying separation of control/driver structure from the power/output portion.
+- Contains a custom KiCad symbol while retaining a readable overall circuit organization.
 
 ## Lessons for the generator
 
-TODO: Describe the principles the generator should learn from this project.
-Avoid prescribing exact coordinates.
+- Preserve functional-block boundaries.
+- Make power-stage relationships visually obvious.
+- Keep control/input circuitry distinct from high-power/output circuitry while preserving signal flow.
 
 ## Provenance
 
-- Source: TODO
-- Author/project: TODO
-- License: TODO
-- Redistribution status: TODO
+- Source: UNVERIFIED — appears related to KiCad simulation demo material; verify exact upstream path/revision
+- Author/project: UNVERIFIED
+- License: UNVERIFIED
+- Redistribution status: UNVERIFIED

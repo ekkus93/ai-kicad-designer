@@ -2,29 +2,19 @@
 
 ## Why this is a useful positive reference
 
-TODO: In your own words, describe what you like about this project's schematic
-and/or PCB organization.
-
-Useful points to consider:
-
-- signal-flow readability;
-- recognizable functional blocks;
-- component grouping;
-- power presentation;
-- feedback/decoupling/termination topology;
-- direct wires versus net labels or buses;
-- spacing and orientation;
-- connector/interface placement;
-- PCB clustering and critical-component proximity, where applicable.
+- Analog/audio power-amplifier topology with recognizable input, feedback, supply, and output relationships.
+- Useful for studying how feedback networks should remain visually associated with the active device.
+- Exercises an analog signal path plus power-oriented supporting circuitry.
 
 ## Lessons for the generator
 
-TODO: Describe the principles the generator should learn from this project.
-Avoid prescribing exact coordinates.
+- Place the amplifier and feedback network so the closed-loop topology is immediately recognizable.
+- Keep the main signal path visually distinct from supply/support circuitry.
+- Prefer semantic grouping over generic graph-distance optimization.
 
 ## Provenance
 
-- Source: TODO
-- Author/project: TODO
-- License: TODO
-- Redistribution status: TODO
+- Source: UNVERIFIED — identify original upstream source before publishing as a reusable corpus fixture
+- Author/project: UNVERIFIED
+- License: UNVERIFIED
+- Redistribution status: UNVERIFIED

@@ -2,29 +2,19 @@
 
 ## Why this is a useful positive reference
 
-TODO: In your own words, describe what you like about this project's schematic
-and/or PCB organization.
-
-Useful points to consider:
-
-- signal-flow readability;
-- recognizable functional blocks;
-- component grouping;
-- power presentation;
-- feedback/decoupling/termination topology;
-- direct wires versus net labels or buses;
-- spacing and orientation;
-- connector/interface placement;
-- PCB clustering and critical-component proximity, where applicable.
+- Recognizable timer topology with internal feedback/control relationships.
+- Useful for studying how a circuit with several interacting subfunctions can remain visually understandable.
+- Provides a nontrivial analog/mixed-function example without requiring a large hierarchy.
 
 ## Lessons for the generator
 
-TODO: Describe the principles the generator should learn from this project.
-Avoid prescribing exact coordinates.
+- Preserve recognizable circuit motifs rather than merely minimizing wire length.
+- Keep strongly related feedback/control components visually associated.
+- Prefer signal and control flow that exposes the topology to a human reader.
 
 ## Provenance
 
-- Source: TODO
-- Author/project: TODO
-- License: TODO
-- Redistribution status: TODO
+- Source: UNVERIFIED — identify original upstream source before publishing as a reusable corpus fixture
+- Author/project: UNVERIFIED
+- License: UNVERIFIED
+- Redistribution status: UNVERIFIED

@@ -2,29 +2,19 @@
 
 ## Why this is a useful positive reference
 
-TODO: In your own words, describe what you like about this project's schematic
-and/or PCB organization.
-
-Useful points to consider:
-
-- signal-flow readability;
-- recognizable functional blocks;
-- component grouping;
-- power presentation;
-- feedback/decoupling/termination topology;
-- direct wires versus net labels or buses;
-- spacing and orientation;
-- connector/interface placement;
-- PCB clustering and critical-component proximity, where applicable.
+- Dense digital-logic example with repeated gate connectivity.
+- Useful for evaluating whether placement exposes logical structure rather than devolving into arbitrary graph layout.
+- Exercises repeated and parallel signal relationships.
 
 ## Lessons for the generator
 
-TODO: Describe the principles the generator should learn from this project.
-Avoid prescribing exact coordinates.
+- Group logic according to function and repeated structure.
+- Maintain consistent orientation across repeated gates.
+- Optimize for recognizability of logical stages, not only geometric compactness.
 
 ## Provenance
 
-- Source: TODO
-- Author/project: TODO
-- License: TODO
-- Redistribution status: TODO
+- Source: UNVERIFIED — appears related to KiCad simulation demo material; verify exact upstream path/revision
+- Author/project: UNVERIFIED
+- License: UNVERIFIED
+- Redistribution status: UNVERIFIED

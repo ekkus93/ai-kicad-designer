@@ -2,29 +2,19 @@
 
 ## Why this is a useful positive reference
 
-TODO: In your own words, describe what you like about this project's schematic
-and/or PCB organization.
-
-Useful points to consider:
-
-- signal-flow readability;
-- recognizable functional blocks;
-- component grouping;
-- power presentation;
-- feedback/decoupling/termination topology;
-- direct wires versus net labels or buses;
-- spacing and orientation;
-- connector/interface placement;
-- PCB clustering and critical-component proximity, where applicable.
+- Switching-regulator topology with a compact set of strongly related power components.
+- Useful for teaching that regulator, diode, inductor, capacitors, feedback, input, and output form recognizable functional relationships.
+- Relevant to later PCB proximity/critical-loop constraints as well as schematic organization.
 
 ## Lessons for the generator
 
-TODO: Describe the principles the generator should learn from this project.
-Avoid prescribing exact coordinates.
+- Keep power-conversion components in a coherent visual block.
+- Expose input-to-output power flow and feedback separately.
+- Represent semantic proximity relationships in Circuit IR so PCB placement does not depend on schematic coordinates.
 
 ## Provenance
 
-- Source: TODO
-- Author/project: TODO
-- License: TODO
-- Redistribution status: TODO
+- Source: UNVERIFIED — identify original upstream source before publishing as a reusable corpus fixture
+- Author/project: UNVERIFIED
+- License: UNVERIFIED
+- Redistribution status: UNVERIFIED
