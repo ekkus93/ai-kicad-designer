@@ -12,7 +12,8 @@ flowchart LR
     M3 --> M5[5: Routed manufacturing demonstrator]
     M4 --> M5
     M5 --> M6[6: Breadth and independent qualification]
-    M6 --> P[Product infrastructure may be considered]
+    M6 --> M7[7: Conversational IR authoring and revisions]
+    M7 --> P[Product infrastructure may be considered]
 ```
 
 | Highest-risk hypothesis | Earliest experiment | Evidence that changes the plan |
@@ -29,60 +30,56 @@ M4's router probe can start after M2 on tiny hand-placed qualification boards; i
 
 ## 2. M1 — smallest complete electrical/compiler slice
 
-**Entry:** these documents are accepted as the implementation contract. Obtain the pinned KiCad 10.0.6 toolchain and standard library snapshots specified in [integration](KICAD_INTEGRATION_SPEC.md); capture hashes and command/report-schema probes. Local KiCad 9.0.9 can investigate historical fixtures but cannot satisfy this gate. No architecture choice remains contingent on adopting the old IR or document model.
+**Entry:** accept the reviewed contracts and obtain the pinned KiCad 10.0.6 executable and the two standard symbol assets used by the divider. Record hashes, dependency versions, controlled configuration and command/report probes. The previously observed 9.0.9 installation does not qualify the target. No container build system, solver, general library index or full future schema is an entry prerequisite.
 
-**Slice:** the complete voltage-divider JSON in [IR section 7](CIRCUIT_IR_SPEC.md#7-representative-complete-schematic-design), plus one LED/resistor/two-pin supply-connector design, become ordinary `.kicad_pro`/`.kicad_sch` projects with renders, exact observed connectivity, ERC and a reproducibility manifest. No PCB, optimizer framework, general importer or LLM integration is needed.
+**Scope:** the exact divider JSON in [IR section 7](CIRCUIT_IR_SPEC.md#7-representative-complete-schematic-design) → deterministic layout → `.kicad_pro`/`.kicad_sch` → real KiCad netlist/ERC → independent equivalence → SVG. The only additional positive case replaces the connector with `Conn_01x04`, adds terminal 4 and an intentional NC with a reason/evidence, retaining the three connected nets. This cheaply distinguishes an omitted pin from a deliberately unused one. LED/polarity belongs to M2.
 
-Proposed initial files (create during M1, not now):
+### M1a: prove the dangerous boundary first
 
-```text
-pyproject.toml, dependency lock, schemas/circuit-ir-0.1.0.schema.json
-src/ai_kicad/ir/{models,validate,canonical}.py
-src/ai_kicad/assets/{lock,resolve,symbols}.py
-src/ai_kicad/semantics/motifs.py
-src/ai_kicad/schematic/{model,basic_layout,route}.py
-src/ai_kicad/kicad/{sexpr,schematic,project,cli,netlist}.py
-src/ai_kicad/verify/{electrical,reports}.py
-src/ai_kicad/build/{context,manifest}.py
-src/ai_kicad/{__init__,__main__}.py
-tests/{unit,integration}/, tests/fixtures/{divider,led}/
-```
+Implement a small Python 3.12 package with strict input parsing, locked resolution of the requested resistor/connector assets, one envelope-derived divider layout, a minimal S-expression writer/reader, real CLI invocation and an independent observer/comparator. The input profile accepts only fields and discriminator values exercised by the divider/NC variants; later collections must be empty or null. Reject unknown fields, duplicate membership and unsupported features. Do not produce an all-capabilities schema with unimplemented validators.
 
-Use Python 3.12, Pydantic 2 strict boundary models, immutable domain records, pytest and Ruff. Lock actual dependency versions. There is no runtime import from `research/legacy_openclaw/`; preserve the license boundary described in [reuse decisions](LEGACY_REUSE_DECISIONS.md). The legacy snapshot's old application metadata and entry points are not the new package.
+One entry point suffices: `python -m ai_kicad build design.json --target schematic --assets-lock assets.lock.json --toolchain-lock toolchain.lock.json --policy-lock policy.lock.json --out build/demo`. Exit 0 means requested automated schematic gates passed; 2 invalid/unsupported, 3 infeasible/budget exhausted, 4 tool/internal failure. StageResult/diagnostic meanings remain those in architecture. Keep rejected output under a clearly failed staging/report directory; never publish it as accepted.
 
-Implement `validate` and `build --target schematic` with the proposed flags from architecture. `validate` performs schema/semantic/asset checks; `build` also lays out, generates, invokes KiCad and verifies. Exit 0 means the requested target's mandatory automated gates pass; exit 2 is invalid/unsupported input, 3 is infeasible/budget-exhausted generation, and 4 is tool/internal failure. Human quality and manufacturing readiness are separate manifest fields and cannot be implied by exit 0. Diagnostics go to `reports/`, including on failure; never publish failed output as an accepted project.
+The initial implementation can use `ir.py`, `assets.py`, `schematic.py`, `kicad.py`, `verify.py`, `__main__.py` plus focused tests. These names are suggestions, not a scaffold mandate. Split files when responsibilities demand it. Use Pydantic 2 and frozen records where useful, pytest and Ruff; lock dependency versions. No legacy imports/source copying. Recognition is the divider relationship predicate, not a motif registry. Use exact nanometer geometry and a fixed envelope-based construction; no CP-SAT, beam, generic router or optimizer is necessary.
 
-Boundary functions, using the names defined in architecture:
+Keep these boundaries as ordinary functions, without a workflow framework:
 
 ```text
 validate(raw_json, assets_lock, target) -> StageResult[ValidatedDesign]
 resolve(validated, assets_lock) -> StageResult[ResolvedDesign]
-recognize(resolved, policy) -> StageResult[SemanticPlan]
-layout_schematic(resolved, semantic, context) -> StageResult[SchematicLayout]
+layout_schematic(resolved, context) -> StageResult[SchematicLayout]
 emit_schematic(layout, resolved, context) -> StageResult[ProjectArtifacts]
 observe_electrical(project, toolchain) -> StageResult[ObservedElectricalGraph]
 verify_electrical(expected, observed, actual_nc_evidence) -> ValidationReport
 ```
 
-Only the two narrow motif grammars and supported `sch.keep_motif` constraints are executable in M1. Derive positions from resolved envelopes and the `drafting.v1` rules; emit connected trees with exact endpoints and junctions. Reject unsupported features, instead of dropping fields to force them through the slice. Representing future PCB fields is allowed; their verification status remains `not_evaluated` for this target.
+The observer receives actual files and tools, not a scene graph or intended net membership. It inventories actual symbol instances/embedded pins and consumes KiCad XML for observed net assignments. The comparator alone receives expected IR and an independently checked identity mapping. Pin maps must agree with asset/package numbers; metadata markers and labels alone cannot establish equivalence.
 
-**Exit evidence:**
+**M1a exit:** the exact 3-component, 7-terminal, 3-net divider exports/renders successfully. A generated artifact with one detached branch fails comparison despite unchanged IR and generator metadata. This checkpoint must precede building richer provenance/schema infrastructure. It proves observation, not yet complete M1 qualification.
 
-- Divider contains exactly 3 physical components, 7 terminals and 3 nets. LED slice contains exactly 3 physical components, 6 terminals and 3 nets. Standard virtual power/flag symbols are counted separately and validated against accepted source assertions.
-- Real KiCad exports match the complete intended partitions, required names/scope, component identities and NC test fixtures. No annotation warning or unexpected ERC finding is ignored. The NE5532 current baseline remains rejected by the independent observer.
-- Mutation tests catch omitted branches, off-pin wires, unwanted junctions/shorts, wrong pin mappings, duplicate membership and connected NC pins. Input permutation preserves canonical output; altered connectivity changes the electrical fingerprint.
-- Exact generated bytes and normalized reports reproduce across five clean runs in two different work directories. Missing assets/tools, extra JSON keys and unsupported constraints produce explicit failures.
-- Clean KiCad SVGs visibly show the series/divider structure, legible fields and no crossings/collisions. A brief engineering review approves only this tiny supported scope.
+### M1b: qualify the same narrow slice
 
-**Demonstrate before proceeding:** one command produces both accepted bundles in a clean qualified environment, and one intentionally broken candidate fails for the expected reason. This proves the vertical boundary; it is not a claim of general schematic generation.
+Add the NC variant (3 components, 8 terminals, 3 connected nets, 1 NC), strict profile schema generation, minimal lock/manifest serialization and the following evidence. No additional circuit family is needed.
 
-**Ordinary Codex/Sol work:** package/schema construction, integer geometry primitives, exact library resolution, deterministic serialization, CLI adapter and mutation tests, implemented in reviewable slices. The specification above is sufficient to start without another architecture session.
+- Positive projects have zero unexpected ERC findings/annotation warnings; their symbol/reference inventories, values, terminal partitions and required names match. All pins are independently accounted for even if XML omits NC or isolated pins. A KiCad-exported omission must not be filled from intended membership.
+- Artifact mutations preserve expected IR while removing a branch, moving a wire off-pin, inserting an unwanted junction, changing an actual pin number/map, deleting the NC marker, connecting the NC terminal, or removing a symbol. Each must fail the relevant observer/check. Include a stale/missing/empty CLI report and show it cannot pass.
+- Input mutations catch duplicate membership, unknown assets, wrong pin maps and unsupported capability fields. Permuting set-like arrays preserves output; changing a real connection changes the fingerprint.
+- Three clean builds across two directories reproduce compiler-owned files, observed partitions and normalized SVG geometry/text. Record precise executable/library/config/dependency hashes and CPU/platform facts. A fixed local environment is sufficient for M1; reproducible container packaging and five-run solver/router qualification begin when those dependencies enter the path.
+- A single engineering reviewer can trace the divider and locate the intentionally unused connector pin in the actual render. Required values/pin numbers are legible, no crossings/collisions exist, and no hidden label-only wiring substitutes for the local branch. M1 does not require a blinded two-reviewer corpus study.
+
+Use explicit wires/local labels for M1's supply/reference nets. Global scope permits this; no power symbols/PWR_FLAG are necessary for passive connectors/resistors. Do not qualify hidden power behavior merely by loading unused power assets. The historical NE5532 observer regression is deferred to the M2 multi-unit adapter gate; the M1 detached-branch mutation proves the same core failure class without importing the legacy IR.
+
+**Exit/demonstrate before M2:** one command builds either positive fixture in the recorded environment and the mutation suite fails for the expected reasons. Publish actual KiCad outputs, independent comparison, ERC, SVG, input/assets/tool/policy hashes and check states. Derived intermediate JSON is optional diagnostic output; a cache, reusable task graph, comprehensive public editing API and full future schema are not required.
+
+**Ordinary Codex/Sol:** implement M1a then M1b in reviewable changes. Another Astra review is warranted only if real exports cannot distinguish identities/NC states under this narrow profile; do not paper over that failure by trusting intent metadata.
 
 ## 3. M2 — semantic analog and support-network layout
 
 **Entry:** M1 gates pass without hand-editing generated files. A versioned tuning/holdout protocol is frozen.
 
-**Slice:** add op-amp buffers/amplifiers, Sallen-Key, linear regulators, split references, decoupling, timer and switching-control motifs; multi-unit package identity; CP-SAT motif/block placement and multi-terminal routing. Start with a buffer and its feedback/decoupling, then compose two unlike stages. Include unfamiliar symbol sizes, long labels and deliberate unsupported cases.
+**Slice:** add LED/polarity and RC slices, then op-amp buffers/amplifiers, Sallen-Key, linear regulators, split references, decoupling, timer and switching-control motifs; multi-unit package identity; compositional motif constraints and multi-terminal routing, introducing CP-SAT only after constructive placement exposes a concrete need. Start with a buffer and its feedback/decoupling, then compose two unlike stages. Include unfamiliar symbol sizes, long labels and deliberate unsupported cases.
+
+**Early identity checkpoint:** before general optimization, qualify a dual op-amp with separate power unit, a missing-power-unit mutation, split rails/local reference, and stacked/hidden-pin behavior (or explicit unsupported rejection). Add the historical NE5532 negative observation without porting its legacy generator.
 
 **Exit:** at least 12 reviewed tuning designs and 8 held-out designs spanning the qualified families; 100% electrical/legality gates; at least 90% valid held-out outputs meet the blinded review rubric in [evaluation](EVALUATION_PLAN.md). Every known severe regression remains rejected. No label-only replacement of local motifs, no pin swaps and no special-case reference names. Five reruns reproduce every accepted output; bounded failures explain their constraints.
 
@@ -137,3 +134,13 @@ Only the two narrow motif grammars and supported `sch.keep_motif` constraints ar
 **Demonstrate before proceeding:** a reviewer unfamiliar with the generator can explain its failures, reproduce accepted outputs and verify the stated limits. Only now may web/UI/product infrastructure be considered; adding it is a separate task.
 
 **Ordinary Codex/Sol:** corpus expansion, bounded algorithm improvements and qualification automation. **Astra review:** an independent architecture/quality review of generalization, advanced routing needs and whether evidence supports expansion of the product boundary. It should review actual artifacts and failures, not repeat the initial design exercise.
+
+## 8. M7 — conversational engineering and accepted IR revisions
+
+**Entry:** M6's deterministic core is qualified for an explicit capability envelope. This is the eventual LLM product capability, not generic hosted infrastructure.
+
+**Slice:** a local conversational client gathers requirements, retrieves attributed component evidence and proposes initial IR or revisions through the `RevisionProposal` boundary in architecture. It shows unresolved requirements and semantic diffs, accepts a revision explicitly, invokes the deterministic compiler and explains diagnostics without editing generated files. Model selection is an implementation-time decision. No authentication, queues or web service is necessary.
+
+**Exit:** representative creation and revision conversations cover changed supply voltage, component substitution, added repeated channel and a conflicting mechanical requirement. Accepted snapshots replay deterministically without the LLM; stale patches, unsupported constraints, invented parts/pins and attempts to change hard constraints without acceptance are rejected. Conversation/evidence provenance survives revisions, and the user can distinguish suggested from accepted and verified designs. Revisions preserve stable identity and rerun affected gates.
+
+**Ordinary Codex/Sol:** local client, validated patch transaction, semantic diff and replay fixtures. **Astra review:** only if realistic conversations expose an IR capability gap or revision/evidence ownership ambiguity. Product infrastructure is a separate later decision after this authoring loop demonstrates value; it is not a prerequisite for the EDA core or M7.
