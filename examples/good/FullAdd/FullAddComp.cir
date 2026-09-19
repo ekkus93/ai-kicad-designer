@@ -1,0 +1,46 @@
+.title KiCad schematic
+.include "D:/Spice_general/KiCad-800/FullAdd/74HC00m.lib"
+.include "D:/Spice_general/KiCad-800/FullAdd/74HC283m.lib"
+.include "D:/Spice_general/KiCad-800/FullAdd/DS9b.lib"
+.control
+set controlswait
+set mypath ="D:/Spice_general/KiCad-800/FullAdd/" ; <------------------------ Edit!
+if $?sharedmode
+version -s
+else
+tran 1n 3.6u
+end
+rusage time
+*listing
+edisplay
+*eprint a3 a2 a1 a0 b3 b2 b1 b0 cin
+*eprint s3 s2 s1 s0 cout
+* save data to input directory
+*cd $inputdir 
+eprvcd /a3 /a2 /a1 /a0 /b3 /b2 /b1 /b0 
++ /c0cin /s1_283 /s2_283 /s3_283 /s4_283 /c4_283
++ /S1_and /S2_and /S3_and /S4_and /C4_and
++ > {$mypath}adder-283.vcd
+* plotting the vcd file with GTKWave
+if $oscompiled = 1 | $oscompiled = 8  ; MS Windows
+  shell start gtkwave {$mypath}adder-283.vcd --script {$mypath}nggtk.tcl
+else
+  if $oscompiled = 7 ; macOS, manual tweaking required (mark, insert, Zoom Fit)
+    shell open -a gtkwave {$mypath}adder-283.vcd
+  else ; Linux and others
+    shell gtkwave {$mypath}adder-283.vcd --script {$mypath}nggtk.tcl &
+  end
+end
+.endc
+XU1 /A0 /A1 /A2 /A3 /B0 /B1 /B2 /B3 /C0cin DS9b
+XU2 /s2_283 /B1 /A1 /s1_283 /A0 /B0 /C0cin unconnected-_U2-GND-Pad8_ /c4_283 /s4_283 /B3 /A3 /s3_283 /A2 /B2 unconnected-_U2-VCC-Pad16_ 74HC283m
+XU6 /A2 /B2 Net-_U5-Pad5_ /A2 Net-_U5-Pad5_ Net-_U6-Pad12_ NC-U6-0 Net-_U6-Pad13_ Net-_U5-Pad5_ /B2 Net-_U6-Pad11_ Net-_U6-Pad12_ Net-_U6-Pad13_ NC-U6-1 74HC00m
+XU3 /A3 /B3 Net-_U3-Pad3_ /A3 Net-_U3-Pad3_ Net-_U3-Pad12_ NC-U3-0 Net-_U3-Pad13_ Net-_U3-Pad3_ /B3 Net-_U3-Pad11_ Net-_U3-Pad12_ Net-_U3-Pad13_ NC-U3-1 74HC00m
+XU12 /A0 /B0 Net-_U12-Pad3_ /A0 Net-_U12-Pad3_ Net-_U12-Pad12_ NC-U12-0 Net-_U12-Pad13_ Net-_U12-Pad3_ /B0 Net-_U12-Pad11_ Net-_U12-Pad12_ Net-_U12-Pad13_ NC-U12-1 74HC00m
+XU9 /A1 /B1 Net-_U5-Pad10_ /A1 Net-_U5-Pad10_ Net-_U9-Pad12_ NC-U9-0 Net-_U9-Pad13_ Net-_U5-Pad10_ /B1 Net-_U10-Pad1_ Net-_U9-Pad12_ Net-_U9-Pad13_ NC-U9-1 74HC00m
+XU4 Net-_U3-Pad11_ /C3cin Net-_U4-Pad3_ Net-_U3-Pad11_ Net-_U4-Pad3_ Net-_U4-Pad12_ NC-U4-0 Net-_U4-Pad13_ Net-_U4-Pad3_ /C3cin /S4_and Net-_U4-Pad12_ Net-_U4-Pad13_ NC-U4-1 74HC00m
+XU5 Net-_U4-Pad3_ Net-_U3-Pad3_ /C4_and Net-_U5-Pad4_ Net-_U5-Pad5_ /C3cin NC-U5-0 /C2cin Net-_U10-Pad3_ Net-_U5-Pad10_ /C1cin Net-_U13-Pad3_ Net-_U12-Pad3_ NC-U5-1 74HC00m
+XU13 Net-_U12-Pad11_ /C0cin Net-_U13-Pad3_ Net-_U12-Pad11_ Net-_U13-Pad3_ Net-_U13-Pad12_ NC-U13-0 Net-_U13-Pad13_ Net-_U13-Pad3_ /C0cin /S1_and Net-_U13-Pad12_ Net-_U13-Pad13_ NC-U13-1 74HC00m
+XU10 Net-_U10-Pad1_ /C1cin Net-_U10-Pad3_ Net-_U10-Pad1_ Net-_U10-Pad3_ Net-_U10-Pad12_ NC-U10-0 Net-_U10-Pad13_ Net-_U10-Pad3_ /C1cin /S2_and Net-_U10-Pad12_ Net-_U10-Pad13_ NC-U10-1 74HC00m
+XU7 Net-_U6-Pad11_ /C2cin Net-_U5-Pad4_ Net-_U6-Pad11_ Net-_U5-Pad4_ Net-_U7-Pad12_ NC-U7-0 Net-_U7-Pad13_ Net-_U5-Pad4_ /C2cin /S3_and Net-_U7-Pad12_ Net-_U7-Pad13_ NC-U7-1 74HC00m
+.end

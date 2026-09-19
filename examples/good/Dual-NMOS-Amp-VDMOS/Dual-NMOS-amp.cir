@@ -1,0 +1,52 @@
+.title KiCad schematic
+.include "TL072-dual.lib"
+.include "VDMOS_models.lib"
+Rload1 out GND 8
+C7 Net-_C7-Pad1_ GND 300m
+R10 Net-_C6-Pad1_ Tcase1 0.2
+R11 Net-_R11-Pad1_ Net-_C6-Pad1_ 3
+Vamb1 Net-_R11-Pad1_ GND {envtemp}
+R12 GND Tj2 1G
+R9 GND Tj1 1G
+R13 Net-_C7-Pad1_ Tcase2 0.2
+C6 Net-_C6-Pad1_ GND 300m
+R14 Net-_R11-Pad1_ Net-_C7-Pad1_ 3
+R4 Net-_R4-Pad1_ GND 1k
+XU1 Net-_R16-Pad2_ Net-_R4-Pad1_ Net-_C2-Pad1_ GND Net-_C3-Pad1_ Net-_R3-Pad2_ Net-_R17-Pad2_ VCC TL072c
+R5 Net-_C4-Pad1_ Net-_R4-Pad1_ 19.5k
+R7 Net-_M1-Pad3_ Net-_C4-Pad1_ 0.1
+R17 Net-_M2-Pad2_ Net-_R17-Pad2_ 100
+C3 Net-_C3-Pad1_ GND 1u
+R2 Net-_C3-Pad1_ GND 10k
+R6 Net-_M2-Pad3_ Net-_R3-Pad2_ 100k
+C1 VCC GND 1u
+R16 Net-_M1-Pad2_ Net-_R16-Pad2_ 100
+R3 Net-_C2-Pad1_ Net-_R3-Pad2_ 100k
+C2 Net-_C2-Pad1_ in 0.33u
+R1 VCC Net-_C3-Pad1_ 390k
+Vin1 in GND dc 0 ac 1 sin(0 0.5 100 20m)
+C4 Net-_C4-Pad1_ out 10m
+R15 out GND 1k
+M2 Net-_C4-Pad1_ Net-_M2-Pad2_ Net-_M2-Pad3_ Tj2 Tcase2 IRFP240 thermal
+C5 out Net-_C4-Pad1_ 1u
+M1 VCC Net-_M1-Pad2_ Net-_M1-Pad3_ Tj1 Tcase1 IRFP240 thermal
+V1 VCC GND 36
+R8 Net-_M2-Pad3_ GND 0.8
+.ic v(Tj1)={envtemp} v(Tj2)={envtemp}
+.temp {envtemp}
+.param envtemp=25
+.tran 200u 10
+.option RELTOL=.01 ABSTOL=1N VNTOL=10u
+.control
+set controlswait
+if $?sharedmode
+rusage
+else
+run
+rusage
+settype temperature  tj1 tj2 tcase1 tcase2
+plot tj1 tj2 tcase1 tcase2
+plot in out xlimit 5.2 5.3
+end
+.endc
+.end

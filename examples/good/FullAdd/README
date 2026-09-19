@@ -1,0 +1,28 @@
+ngspice in KaCad 8
+
+Comparison of four bit full adders,
+a ripple carry, made of NAND gates,
+with the 74HC283.
+
+Input with a home made symbol (HV_test.kicad_sym) and ngspice model (DS9b.lib),
+using the d_source code model and the stimulus input file fuadd4.stim.
+
+74xxx model files are 74HC00m.lib and 74HC283m.lib.
+
+Data are stored in a vcd file.
+
+Plotting uses gtkwave (plotting with Eeschema is not (yet) possible),
+a tcl script (nggtk.tcl) is called to read and parse the data in gtkwave.
+
+The whole procedure is controlled by a ngspice .control script.
+
+Simulation time on an i9 is a mere 9ms.
+
+To run the simulation, the .control scipt on the Eeschema canvas has to be edited:
+Fill in your project path, where the model and other input files are stored.
+
+When exported into a ngspice netlist (FullAddComp.cir), standard ngspice may be
+used as well to run the simulation.
+
+The disadvantages of the ripple carry adder are obvious: it is slower, it has
+glitches in the output data.

@@ -1,0 +1,29 @@
+.title KiCad schematic
+.include "TL072-dual.lib"
+XU1 /highpass /highpass Net-_C12-Pad1_ VSS Net-_C2-Pad1_ /bandpass /bandpass VDD TL072c
+C11 Net-_C11-Pad1_ Net-_C11-Pad2_ 220n
+V1 Net-_C11-Pad2_ GND DC 0 AC 1
+R11 /highpass Net-_C11-Pad1_ 27k
+R12 GND Net-_C12-Pad1_ 27k
+C12 Net-_C12-Pad1_ Net-_C11-Pad1_ 220n
+C1 /bandpass Net-_C1-Pad2_ 47n
+V3 GND VSS DC 10
+R2 Net-_C2-Pad1_ Net-_C1-Pad2_ 1k
+R1 Net-_C1-Pad2_ /highpass 1k
+C2 Net-_C2-Pad1_ GND 47n
+V2 VDD GND DC 10
+.ac dec 10 1 100k
+.control
+pre_set norefvalue
+pre_set noinit
+set controlswait
+if $?sharedmode
+version -s
+else
+run
+set xbrushwidth=3
+plot vdb("/bandpass")  vdb("/highpass")
+end
+rusage time
+.endc
+.end
