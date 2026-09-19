@@ -24,7 +24,7 @@ class Layout:
 def layout_schematic(symbols: dict[str, Symbol]) -> Layout:
     """Derive divider spacing from the actual library pin envelopes."""
     resistor = symbols["sym.r"]
-    connector = symbols["sym.j3"]
+    connector = symbols.get("sym.j3") or symbols["sym.j4"]
     rp = {number: (x, y) for number, x, y in resistor.pins}
     jp = {number: (x, y) for number, x, y in connector.pins}
     pitch = 1_270_000
@@ -122,6 +122,16 @@ def emit_schematic(design: dict, symbols: dict[str, Symbol], layout: Layout, out
             f"  (label {quote(label)} (at {_mm(x)} {_mm(y)} 0) "
             f"(effects (font (size 1.27 1.27)) (justify left bottom)) "
             f"(uuid {quote(_uuid(design_id, 'label', label))}))"
+        )
+    for item in design["logical"]["no_connects"]:
+        if item["terminal"] != {"component": "j.io", "terminal": "p4"}:
+            raise Infeasible("unsupported NC terminal")
+        px, py = next((x, y) for number, x, y in symbols["sym.j4"].pins if number == "4")
+        sx, sy = layout.positions["j.io"]
+        nx, ny = sx + px, sy - py
+        lines.append(
+            f"  (no_connect (at {_mm(nx)} {_mm(ny)}) "
+            f"(uuid {quote(_uuid(design_id, 'nc', 'j.io:4'))}))"
         )
     component_by_id = {component["id"]: component for component in design["logical"]["components"]}
     for use in sorted(design["schematic"]["symbols"], key=lambda item: item["id"]):

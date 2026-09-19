@@ -10,7 +10,7 @@ import pytest
 
 from ai_kicad.__main__ import build
 from ai_kicad.ir import InputError, load_json, validate
-from ai_kicad.kicad import run_headless, validate_toolchain
+from ai_kicad.kicad import ToolFailure, run_headless, validate_toolchain
 from ai_kicad.verify import observe_electrical, verify_electrical
 
 
@@ -71,8 +71,9 @@ def test_detached_branch_is_observed_independently(accepted: Path, tmp_path: Pat
     )
     expected = load_json(FIXTURE / "divider.json")
     launcher = validate_toolchain(FIXTURE / "toolchain.lock.json", ROOT / "requirements.lock")
-    xml_path, _, _ = run_headless(schematic, launcher, mutated)
-    observed = observe_electrical(schematic, xml_path)
+    with pytest.raises(ToolFailure, match="ERC returned"):
+        run_headless(schematic, launcher, mutated)
+    observed = observe_electrical(schematic, mutated / "reports/netlist.xml")
     result = verify_electrical(expected, observed)
     assert result["status"] == "fail"
     assert result["observed_nets"] != result["expected_nets"]

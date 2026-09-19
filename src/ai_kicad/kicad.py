@@ -3,9 +3,12 @@
 import json
 from importlib.metadata import PackageNotFoundError, version
 import os
+import platform
+import re
 from pathlib import Path
 import subprocess
 import time
+import xml.etree.ElementTree as ET
 
 from .assets import sha256
 from .ir import InputError, load_json
@@ -26,6 +29,7 @@ def validate_toolchain(path: Path, python_lock: Path) -> Path:
             "python_lock_sha256",
             "configuration_digest",
             "environment",
+            "libraries",
         }
         or lock["schema_version"] != "m1.1"
     ):
@@ -40,6 +44,32 @@ def validate_toolchain(path: Path, python_lock: Path) -> Path:
             raise InputError(f"missing Python dependency: {package}") from exc
         if installed != pinned:
             raise InputError(f"Python dependency {package}: expected {pinned}, found {installed}")
+    cpu_model = next(
+        (
+            line.split(":", 1)[1].strip()
+            for line in Path("/proc/cpuinfo").read_text().splitlines()
+            if line.startswith("model name")
+        ),
+        None,
+    )
+    if lock["platform"] != {
+        "os": platform.platform(),
+        "architecture": platform.machine(),
+        "cpu": platform.processor() or platform.machine(),
+        "cpu_model": cpu_model,
+    }:
+        raise InputError("KiCad platform/CPU identity mismatch")
+    libraries = {entry["id"]: entry for entry in lock["libraries"]}
+    if set(libraries) != {"sharun", "libkicommon", "libwx_gtk3u_core", "libwx_baseu"}:
+        raise InputError("KiCad library inventory mismatch")
+    for item in libraries.values():
+        file = Path(item["path"])
+        if (
+            not file.is_absolute()
+            or not file.is_file()
+            or sha256(file.read_bytes()) != item["file_sha256"]
+        ):
+            raise InputError(f"KiCad library identity mismatch: {item['id']}")
     if lock["environment"] != {"locale": "C", "timezone": "UTC"}:
         raise InputError("unsupported KiCad environment")
     entries = {item["id"]: item for item in lock["executables"]}
@@ -115,8 +145,10 @@ def run_headless(schematic: Path, launcher: Path, stage: Path) -> tuple[Path, Pa
     (configured / "sym-lib-table").write_bytes(table.read_bytes())
     environment = os.environ.copy()
     environment.update({"LC_ALL": "C", "TZ": "UTC", "XDG_CONFIG_HOME": str(config)})
-    start = time.time_ns()
+    for prior in (netlist, erc, *renders.glob("*.svg")):
+        prior.unlink(missing_ok=True)
     for label, args, output in commands:
+        start = time.time_ns()
         invocation = [str(launcher), "kicad-cli", *args]
         try:
             result = subprocess.run(
@@ -140,6 +172,10 @@ def run_headless(schematic: Path, launcher: Path, stage: Path) -> tuple[Path, Pa
             not output.is_file() or not output.stat().st_size or output.stat().st_mtime_ns < start
         ):
             raise ToolFailure(f"{label} report missing, empty or stale")
+        if result.stderr.strip() or "warning" in result.stdout.lower():
+            raise ToolFailure(
+                f"{label} emitted unexpected warning: {result.stderr or result.stdout}"
+            )
         if label != "erc" and result.returncode:
             raise ToolFailure(f"{label} failed with exit {result.returncode}: {result.stderr}")
         if label == "erc" and result.returncode not in (0, 5):
@@ -148,9 +184,40 @@ def run_headless(schematic: Path, launcher: Path, stage: Path) -> tuple[Path, Pa
         erc_data = json.loads(erc.read_text())
     except ValueError as exc:
         raise ToolFailure("malformed ERC report") from exc
-    if not isinstance(erc_data, dict):
-        raise ToolFailure("invalid ERC report schema")
+    if not isinstance(erc_data, dict) or erc_data.get("kicad_version") != "10.0.6":
+        raise ToolFailure("invalid ERC report schema or version")
+    sheets = erc_data.get("sheets")
+    if (
+        not isinstance(sheets, list)
+        or not sheets
+        or any(
+            not isinstance(sheet, dict)
+            or not isinstance(sheet.get("violations"), list)
+            or not isinstance(sheet.get("path"), str)
+            for sheet in sheets
+        )
+    ):
+        raise ToolFailure("invalid ERC violation inventory")
+    count = sum(len(sheet["violations"]) for sheet in sheets)
+    erc_result = json.loads((raw / "erc.json").read_text())
+    cli_count = re.search(r"Found (\d+) violations?\b", erc_result["stdout"])
+    if (
+        (erc_result["returncode"] == 0) != (count == 0)
+        or cli_count is None
+        or int(cli_count.group(1)) != count
+    ):
+        raise ToolFailure("ERC CLI result contradicts violation report")
+    if count:
+        raise ToolFailure(f"ERC returned {count} violations")
     svgs = sorted(renders.glob("*.svg"))
-    if not svgs or any(not svg.stat().st_size for svg in svgs):
-        raise ToolFailure("SVG export missing or empty")
+    if len(svgs) != 1 or any(
+        not svg.stat().st_size or svg.stat().st_mtime_ns < start for svg in svgs
+    ):
+        raise ToolFailure("SVG export missing, empty or stale")
+    try:
+        svg_root = ET.parse(svgs[0]).getroot()
+    except ET.ParseError as exc:
+        raise ToolFailure("malformed SVG report") from exc
+    if svg_root.tag != "{http://www.w3.org/2000/svg}svg":
+        raise ToolFailure("invalid SVG report")
     return netlist, erc, svgs

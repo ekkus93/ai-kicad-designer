@@ -1,6 +1,7 @@
-"""Independent observed schematic inventory and KiCad XML electrical partition."""
+"""Independent observed schematic inventory, NC positions and KiCad XML nets."""
 
 from dataclasses import dataclass
+from decimal import Decimal
 from pathlib import Path
 import xml.etree.ElementTree as ET
 
@@ -9,10 +10,17 @@ from .sexpr import ParseError, children, one, parse
 
 @dataclass(frozen=True)
 class ObservedElectricalGraph:
-    # All tuples derive from actual schematic definitions/instances or KiCad XML.
     inventory: dict[str, tuple[str, tuple[str, ...], str]]
     nets: dict[str, frozenset[tuple[str, str]]]
     xml_components: dict[str, tuple[str, str]]
+    no_connects: frozenset[tuple[str, str]]
+
+
+def _nm(value: str) -> int:
+    number = Decimal(str(value)) * 1_000_000
+    if number != number.to_integral_value():
+        raise ParseError(f"off-nanometer schematic coordinate: {value}")
+    return int(number)
 
 
 def observe_electrical(schematic: Path, xml_path: Path) -> ObservedElectricalGraph:
@@ -22,23 +30,47 @@ def observe_electrical(schematic: Path, xml_path: Path) -> ObservedElectricalGra
     definitions = {}
     for symbol in children(one(tree, "lib_symbols"), "symbol"):
         lib_id = symbol[1]
-        pins = []
+        pins = {}
         for unit in children(symbol, "symbol"):
             for pin in children(unit, "pin"):
-                pins.append(str(one(pin, "number")[1]))
-        if lib_id in definitions or len(pins) != len(set(pins)):
-            raise ParseError(f"ambiguous embedded pin inventory: {lib_id}")
-        definitions[lib_id] = tuple(sorted(pins))
+                number = str(one(pin, "number")[1])
+                at = one(pin, "at")
+                if number in pins:
+                    raise ParseError(f"ambiguous embedded pin inventory: {lib_id}")
+                pins[number] = (_nm(at[1]), _nm(at[2]))
+        if lib_id in definitions:
+            raise ParseError(f"duplicate embedded symbol: {lib_id}")
+        definitions[lib_id] = pins
     inventory = {}
+    physical_positions = {}
     for instance in children(tree, "symbol"):
         lib_id = one(instance, "lib_id")[1]
         properties = {p[1]: p[2] for p in children(instance, "property")}
         ref = properties.get("Reference")
         value = properties.get("Value")
         actual_pins = tuple(sorted(str(pin[1]) for pin in children(instance, "pin")))
-        if ref in inventory or lib_id not in definitions or actual_pins != definitions[lib_id]:
+        if (
+            ref in inventory
+            or lib_id not in definitions
+            or actual_pins != tuple(sorted(definitions[lib_id]))
+        ):
             raise ParseError(f"invalid symbol/pin instance: {ref}")
+        at = one(instance, "at")
+        if len(at) != 4 or str(at[3]) != "0":
+            raise ParseError("unsupported M1 symbol orientation")
+        x, y = _nm(at[1]), _nm(at[2])
+        for pin, (px, py) in definitions[lib_id].items():
+            physical_positions.setdefault((x + px, y - py), []).append((ref, pin))
         inventory[ref] = (lib_id, actual_pins, value)
+    markers = children(tree, "no_connect")
+    no_connects = set()
+    for marker in markers:
+        at = one(marker, "at")
+        position = (_nm(at[1]), _nm(at[2]))
+        terminals = physical_positions.get(position, [])
+        if len(terminals) != 1 or terminals[0] in no_connects:
+            raise ParseError(f"NC marker lacks one unique physical pin: {position}")
+        no_connects.add(terminals[0])
     xml_root = ET.parse(xml_path).getroot()
     if xml_root.tag != "export":
         raise ParseError("not a KiCad XML export")
@@ -57,16 +89,28 @@ def observe_electrical(schematic: Path, xml_path: Path) -> ObservedElectricalGra
         )
     nets = {}
     assigned = set()
+    xml_nc = set()
     for net in xml_root.findall("./nets/net"):
         name = net.attrib["name"]
-        members = frozenset(
-            (node.attrib["ref"], node.attrib["pin"]) for node in net.findall("node")
-        )
+        nodes = net.findall("node")
+        members = frozenset((node.attrib["ref"], node.attrib["pin"]) for node in nodes)
         if not members or name in nets or assigned.intersection(members):
             raise ParseError(f"invalid/duplicate XML net: {name}")
         assigned.update(members)
-        nets[name] = members
-    return ObservedElectricalGraph(inventory, nets, xml_components)
+        if name.startswith("unconnected-"):
+            if len(nodes) != 1:
+                raise ParseError("malformed KiCad unconnected terminal")
+            if nodes[0].attrib.get("pintype", "").endswith("+no_connect"):
+                xml_nc.update(members)
+            else:
+                nets[name] = members
+        else:
+            nets[name] = members
+    if xml_nc != no_connects:
+        raise ParseError(
+            f"schematic/XML NC evidence differs: {sorted(no_connects)} versus {sorted(xml_nc)}"
+        )
+    return ObservedElectricalGraph(inventory, nets, xml_components, frozenset(no_connects))
 
 
 def verify_electrical(expected: dict, observed: ObservedElectricalGraph) -> dict:
@@ -77,10 +121,10 @@ def verify_electrical(expected: dict, observed: ObservedElectricalGraph) -> dict
     ):
         errors.append("component inventory mismatch")
     uses = {
-        expected_component["refdes"]: use
+        component["refdes"]: use
         for use in expected["schematic"]["symbols"]
-        for expected_component in expected["logical"]["components"]
-        if expected_component["id"] == use["component"]
+        for component in expected["logical"]["components"]
+        if component["id"] == use["component"]
     }
     requests = {item["id"]: item["library_id"] for item in expected["assets"]}
     for ref, component in components.items():
@@ -131,15 +175,37 @@ def verify_electrical(expected: dict, observed: ObservedElectricalGraph) -> dict
             )
             if wanted != actual:
                 errors.append(f"{name}: expected {sorted(wanted)}, observed {sorted(actual)}")
+    expected_nc = {
+        (
+            next(
+                c["refdes"] for c in components.values() if c["id"] == item["terminal"]["component"]
+            ),
+            next(
+                t["number"]
+                for c in components.values()
+                if c["id"] == item["terminal"]["component"]
+                for t in c["terminals"]
+                if t["id"] == item["terminal"]["terminal"]
+            ),
+        )
+        for item in expected["logical"]["no_connects"]
+    }
+    if observed.no_connects != expected_nc:
+        errors.append(
+            f"intentional NC evidence differs: expected {sorted(expected_nc)}, observed {sorted(observed.no_connects)}"
+        )
     inventoried = {(ref, pin) for ref, (_, pins, _) in observed.inventory.items() for pin in pins}
     observed_members = set().union(*observed.nets.values()) if observed.nets else set()
-    if inventoried != observed_members:
+    accounted = observed_members | observed.no_connects
+    if inventoried != accounted:
         errors.append(
-            f"XML terminal coverage differs: missing {sorted(inventoried - observed_members)}, extra {sorted(observed_members - inventoried)}"
+            f"physical terminal coverage differs: missing {sorted(inventoried - accounted)}, extra {sorted(accounted - inventoried)}"
         )
     return {
         "status": "pass" if not errors else "fail",
         "diagnostics": errors,
         "expected_nets": {k: sorted(v) for k, v in expected_nets.items()},
         "observed_nets": {k: sorted(v) for k, v in observed.nets.items()},
+        "expected_nc": sorted(expected_nc),
+        "observed_nc": sorted(observed.no_connects),
     }

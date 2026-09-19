@@ -1,4 +1,4 @@
-"""M1a schematic build command."""
+"""M1 schematic build command."""
 
 import argparse
 import json
@@ -30,10 +30,13 @@ def _policy(path: Path) -> dict:
     ):
         raise InputError("unsupported drafting policy")
     file = (path.parent / profile["path"]).resolve()
-    if (
-        not file.is_relative_to(path.parent.resolve())
-        or sha256(file.read_bytes()) != profile["sha256"]
-    ):
+    if not file.is_relative_to(path.parent.resolve()):
+        raise InputError("policy path traverses lock directory")
+    try:
+        data = file.read_bytes()
+    except OSError as exc:
+        raise InputError("policy file unavailable") from exc
+    if sha256(data) != profile["sha256"]:
         raise InputError("policy file mismatch")
     return load_json(file)
 
@@ -49,9 +52,9 @@ def build(args: argparse.Namespace) -> int:
     stages = []
     try:
         if args.target != "schematic":
-            raise InputError("M1a supports only target schematic")
+            raise InputError("M1 supports only target schematic")
         repo = Path(__file__).resolve().parents[2]
-        expected = validate(load_json(args.design), load_json(repo / "fixtures/m1a/divider.json"))
+        expected = validate(load_json(args.design))
         stages.append({"stage": "validate", "status": "ok"})
         lock = AssetLock.model_validate(load_json(args.assets_lock))
         symbols = resolve(expected, lock, args.assets_lock.parent)
@@ -73,7 +76,7 @@ def build(args: argparse.Namespace) -> int:
             "power_assets": {},
         }
         if policy != supported_policy:
-            raise InputError("unsupported M1a drafting policy")
+            raise InputError("unsupported M1 drafting policy")
         launcher = validate_toolchain(args.toolchain_lock, repo / "requirements.lock")
         layout = layout_schematic(symbols)
         stages.append({"stage": "layout_schematic", "status": "ok"})
@@ -94,7 +97,7 @@ def build(args: argparse.Namespace) -> int:
         erc_data = json.loads(erc.read_text())
         if comparison["status"] != "pass":
             raise ToolFailure("observed electrical graph differs from expected IR")
-        # M1a captures ERC evidence; unexpected actual violations block acceptance.
+        # M1 captures ERC evidence; unexpected actual violations block acceptance.
         sheets = erc_data.get("sheets")
         violations = (
             [v for sheet in sheets for v in sheet["violations"]]
@@ -112,7 +115,7 @@ def build(args: argparse.Namespace) -> int:
             and "config" not in p.relative_to(stage).parts
             and p.suffix != ".kicad_prl"
         ]
-        design_digest = sha256(args.design.read_bytes())
+        design_digest = sha256(json.dumps(expected, sort_keys=True, separators=(",", ":")).encode())
         lock_digests = {
             "assets": sha256(args.assets_lock.read_bytes()),
             "toolchain": sha256(args.toolchain_lock.read_bytes()),
@@ -227,7 +230,7 @@ def build(args: argparse.Namespace) -> int:
             + "\n"
         )
         stage.rename(failed)
-        print(f"M1a build failed: {exc}; evidence: {failed}", file=sys.stderr)
+        print(f"M1 build failed: {exc}; evidence: {failed}", file=sys.stderr)
         return code
 
 

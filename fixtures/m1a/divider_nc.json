@@ -1,0 +1,387 @@
+{
+  "schema_version": "0.1.0",
+  "design": {
+    "id": "divider.demo",
+    "name": "DividerDemo",
+    "revision": 0,
+    "parent_digest": null
+  },
+  "intent": {
+    "summary": "Divide an externally supplied 5 V signal by two into a high impedance load.",
+    "requirements": [
+      {
+        "id": "req.ratio",
+        "text": "Nominal unloaded ratio is 0.5; load resistance is at least 1 megohm.",
+        "verification": "analysis",
+        "evidence": [
+          "ev.requirement"
+        ]
+      }
+    ]
+  },
+  "assets": [
+    {
+      "id": "sym.r",
+      "kind": "symbol",
+      "library_id": "Device:R"
+    },
+    {
+      "id": "sym.j4",
+      "kind": "symbol",
+      "library_id": "Connector_Generic:Conn_01x04"
+    }
+  ],
+  "logical": {
+    "components": [
+      {
+        "id": "r.upper",
+        "refdes": "R1",
+        "kind": "resistor",
+        "value": {
+          "value": "10000",
+          "unit": "ohm"
+        },
+        "part": null,
+        "role": "upper divider resistor",
+        "owner_block": "blk.divider",
+        "terminals": [
+          {
+            "id": "p1",
+            "number": "1",
+            "name": "1",
+            "electrical_type": "passive",
+            "role": "high",
+            "domain": "dom.input"
+          },
+          {
+            "id": "p2",
+            "number": "2",
+            "name": "2",
+            "electrical_type": "passive",
+            "role": "tap",
+            "domain": "dom.input"
+          }
+        ],
+        "functions": []
+      },
+      {
+        "id": "r.lower",
+        "refdes": "R2",
+        "kind": "resistor",
+        "value": {
+          "value": "10000",
+          "unit": "ohm"
+        },
+        "part": null,
+        "role": "lower divider resistor",
+        "owner_block": "blk.divider",
+        "terminals": [
+          {
+            "id": "p1",
+            "number": "1",
+            "name": "1",
+            "electrical_type": "passive",
+            "role": "tap",
+            "domain": "dom.input"
+          },
+          {
+            "id": "p2",
+            "number": "2",
+            "name": "2",
+            "electrical_type": "passive",
+            "role": "return",
+            "domain": "dom.input"
+          }
+        ],
+        "functions": []
+      },
+      {
+        "id": "j.io",
+        "refdes": "J1",
+        "kind": "connector",
+        "value": null,
+        "part": null,
+        "role": "VIN, sense and return interface",
+        "owner_block": "blk.root",
+        "terminals": [
+          {
+            "id": "p1",
+            "number": "1",
+            "name": "VIN",
+            "electrical_type": "passive",
+            "role": "external_supply",
+            "domain": "dom.input"
+          },
+          {
+            "id": "p2",
+            "number": "2",
+            "name": "SENSE",
+            "electrical_type": "passive",
+            "role": "sense_output",
+            "domain": "dom.input"
+          },
+          {
+            "id": "p3",
+            "number": "3",
+            "name": "RETURN",
+            "electrical_type": "passive",
+            "role": "return",
+            "domain": "dom.input"
+          },
+          {
+            "id": "p4",
+            "number": "4",
+            "name": "NC",
+            "electrical_type": "passive",
+            "role": "intentionally_unused",
+            "domain": "dom.input"
+          }
+        ],
+        "functions": []
+      }
+    ],
+    "nets": [
+      {
+        "id": "net.vin",
+        "name": "VIN",
+        "name_policy": "required",
+        "scope": "global",
+        "members": [
+          {
+            "component": "j.io",
+            "terminal": "p1"
+          },
+          {
+            "component": "r.upper",
+            "terminal": "p1"
+          }
+        ],
+        "domain": "dom.input",
+        "signal_class": null
+      },
+      {
+        "id": "net.sense",
+        "name": "SENSE",
+        "name_policy": "required",
+        "scope": "blk.root",
+        "members": [
+          {
+            "component": "r.upper",
+            "terminal": "p2"
+          },
+          {
+            "component": "r.lower",
+            "terminal": "p1"
+          },
+          {
+            "component": "j.io",
+            "terminal": "p2"
+          }
+        ],
+        "domain": "dom.input",
+        "signal_class": null
+      },
+      {
+        "id": "net.return",
+        "name": "0V",
+        "name_policy": "required",
+        "scope": "global",
+        "members": [
+          {
+            "component": "r.lower",
+            "terminal": "p2"
+          },
+          {
+            "component": "j.io",
+            "terminal": "p3"
+          }
+        ],
+        "domain": "dom.input",
+        "signal_class": null
+      }
+    ],
+    "blocks": [
+      {
+        "id": "blk.root",
+        "parent": null,
+        "name": "Interface",
+        "role": "design",
+        "ports": []
+      },
+      {
+        "id": "blk.divider",
+        "parent": "blk.root",
+        "name": "Divider",
+        "role": "voltage scaling",
+        "ports": [
+          {
+            "id": "in",
+            "net": "net.vin",
+            "direction": "in",
+            "role": "input"
+          },
+          {
+            "id": "out",
+            "net": "net.sense",
+            "direction": "out",
+            "role": "sense"
+          },
+          {
+            "id": "return",
+            "net": "net.return",
+            "direction": "power",
+            "role": "reference"
+          }
+        ]
+      }
+    ],
+    "domains": [
+      {
+        "id": "dom.input",
+        "kind": "power",
+        "reference_net": "net.return",
+        "rail_nets": [
+          "net.vin"
+        ],
+        "voltage": {
+          "min": {
+            "value": "4.75",
+            "unit": "V"
+          },
+          "max": {
+            "value": "5.25",
+            "unit": "V"
+          }
+        },
+        "sources": [
+          {
+            "terminal": {
+              "component": "j.io",
+              "terminal": "p1"
+            },
+            "kind": "external_supply",
+            "evidence": [
+              "ev.requirement"
+            ]
+          }
+        ],
+        "evidence": [
+          "ev.requirement"
+        ]
+      }
+    ],
+    "signal_classes": [],
+    "relationships": [
+      {
+        "id": "rel.divider",
+        "kind": "divider",
+        "upper": "r.upper",
+        "lower": "r.lower",
+        "high_net": "net.vin",
+        "tap_net": "net.sense",
+        "reference_net": "net.return",
+        "evidence": [
+          "ev.requirement"
+        ]
+      }
+    ],
+    "buses": [],
+    "no_connects": [
+      {
+        "terminal": {
+          "component": "j.io",
+          "terminal": "p4"
+        },
+        "reason": "Reserved connector contact; deliberately left unconnected.",
+        "evidence": [
+          "ev.requirement"
+        ]
+      }
+    ],
+    "constraints": []
+  },
+  "schematic": {
+    "profile": "drafting.v1",
+    "symbols": [
+      {
+        "id": "s.upper",
+        "component": "r.upper",
+        "function": null,
+        "asset": "sym.r",
+        "unit": 1,
+        "body_style": 1,
+        "pin_map": {
+          "1": "p1",
+          "2": "p2"
+        }
+      },
+      {
+        "id": "s.lower",
+        "component": "r.lower",
+        "function": null,
+        "asset": "sym.r",
+        "unit": 1,
+        "body_style": 1,
+        "pin_map": {
+          "1": "p1",
+          "2": "p2"
+        }
+      },
+      {
+        "id": "s.io",
+        "component": "j.io",
+        "function": null,
+        "asset": "sym.j4",
+        "unit": 1,
+        "body_style": 1,
+        "pin_map": {
+          "1": "p1",
+          "2": "p2",
+          "3": "p3",
+          "4": "p4"
+        }
+      }
+    ],
+    "constraints": [
+      {
+        "id": "sch.divider",
+        "kind": "sch.keep_motif",
+        "strength": "hard",
+        "relationship": "rel.divider",
+        "evidence": [
+          "ev.requirement"
+        ]
+      }
+    ],
+    "hierarchy": {
+      "root_sheet": "sheet.root",
+      "sheets": [
+        {
+          "id": "sheet.root",
+          "parent": null,
+          "blocks": [
+            "blk.root",
+            "blk.divider"
+          ],
+          "page": "A4",
+          "orientation": "landscape"
+        }
+      ]
+    }
+  },
+  "pcb": null,
+  "manufacturing": {
+    "profile": null,
+    "variants": [],
+    "constraints": []
+  },
+  "evidence": [
+    {
+      "id": "ev.requirement",
+      "kind": "user_requirement",
+      "locator": "docs/CIRCUIT_IR_SPEC.md#7-representative-complete-schematic-design",
+      "assertion": "Externally supplied divider test circuit and high impedance load.",
+      "review": "accepted"
+    }
+  ]
+}

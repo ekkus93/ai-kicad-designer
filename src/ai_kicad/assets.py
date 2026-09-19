@@ -105,7 +105,10 @@ def resolve(design: dict, lock: AssetLock, lock_dir: Path) -> dict[str, Symbol]:
         path = (lock_dir / entry.path).resolve()
         if not path.is_relative_to(lock_dir.resolve()):
             raise InputError("asset path traverses lock directory")
-        data = path.read_bytes()
+        try:
+            data = path.read_bytes()
+        except OSError as exc:
+            raise InputError(f"asset unavailable: {asset_id}") from exc
         if sha256(data) != entry.file_sha256:
             raise InputError(f"asset hash mismatch: {asset_id}")
         if entry.dependencies:
@@ -121,7 +124,15 @@ def resolve(design: dict, lock: AssetLock, lock_dir: Path) -> dict[str, Symbol]:
                 at = one(pin, "at")
                 pins.append((str(one(pin, "number")[1]), _nm(at[1]), _nm(at[2])))
         numbers = [pin[0] for pin in pins]
-        expected = ["1", "2"] if library_id == "Device:R" else ["1", "2", "3"]
+        expected = (
+            ["1", "2"]
+            if library_id == "Device:R"
+            else (
+                ["1", "2", "3", "4"]
+                if library_id == "Connector_Generic:Conn_01x04"
+                else ["1", "2", "3"]
+            )
+        )
         if sorted(numbers) != expected:
             raise InputError(f"unexpected actual pin inventory for {library_id}: {numbers}")
         result[asset_id] = Symbol(library_id, definition, tuple(pins), sha256(definition.encode()))
