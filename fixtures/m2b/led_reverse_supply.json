@@ -1,0 +1,96 @@
+{
+  "profile": "m2b.1",
+  "id": "led_reverse_supply",
+  "name": "LedReverseSupply",
+  "components": [
+    {
+      "id": "limit",
+      "refdes": "R1",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "lamp",
+      "refdes": "D1",
+      "asset": "Device:LED",
+      "value": "LED"
+    },
+    {
+      "id": "source",
+      "refdes": "J1",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Reference"
+    },
+    {
+      "id": "return",
+      "refdes": "J2",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Negative supply"
+    }
+  ],
+  "nets": [
+    {
+      "id": "LOCAL_REF",
+      "members": [
+        [
+          "source",
+          "1"
+        ],
+        [
+          "limit",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "MID",
+      "members": [
+        [
+          "limit",
+          "2"
+        ],
+        [
+          "lamp",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "VNEG",
+      "members": [
+        [
+          "lamp",
+          "1"
+        ],
+        [
+          "return",
+          "1"
+        ]
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "path",
+      "kind": "series",
+      "component": "limit",
+      "input": "LOCAL_REF",
+      "output": "MID"
+    },
+    {
+      "id": "lamp_direction",
+      "kind": "polarity",
+      "component": "lamp",
+      "anode": "MID",
+      "cathode": "VNEG"
+    },
+    {
+      "id": "flow",
+      "kind": "signal_flow",
+      "input": "LOCAL_REF",
+      "output": "VNEG"
+    }
+  ],
+  "no_connects": [],
+  "power_assertions": []
+}

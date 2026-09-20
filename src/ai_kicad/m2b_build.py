@@ -7,7 +7,16 @@ from .assets import sha256
 from .ir import InputError, load_json
 from .kicad import ToolFailure, run_headless, validate_toolchain
 from .m2a import ROOT, emit, observe
-from .m2b import active_layout, assets, check_observed_layout, compare, passive_layout, validate
+from .m2b import (
+    active_layout,
+    assets,
+    check_observed_layout,
+    compare,
+    passive_layout,
+    power_stage_layout,
+    timing_layout,
+    validate,
+)
 
 
 def build(args) -> int:
@@ -43,13 +52,42 @@ def build(args) -> int:
         stages.append({"stage": "validate_resolve", "status": "ok"})
         launcher = validate_toolchain(args.toolchain_lock, ROOT / "requirements.lock")
         relation_kinds = {r["kind"] for r in design["relationships"]}
-        scene = (
-            active_layout(design, resolved)
-            if "amplifier" in relation_kinds
-            else passive_layout(design, resolved)
-        )
+        if "timer" in relation_kinds:
+            scene = timing_layout(design, resolved)
+        elif "power_stage" in relation_kinds:
+            scene = power_stage_layout(design, resolved)
+        elif "amplifier" in relation_kinds:
+            scene = active_layout(design, resolved)
+        else:
+            scene = passive_layout(design, resolved)
         stages.append({"stage": "layout_schematic", "status": "ok"})
-        schematic = emit(design, resolved, scene, stage)
+        owned_assets = {c["asset"] for c in design["components"]}
+        emitted_assets = {
+            key: asset
+            for key, asset in resolved.items()
+            if key not in ("Regulator_Linear:L7805", "Timer:NE555D") or key in owned_assets
+        }
+        schematic = emit(design, emitted_assets, scene, stage)
+        local_libraries = {
+            "Regulator_Linear": "L7805",
+            "Timer": "NE555D",
+        }
+        used_libraries = {c["asset"].split(":", 1)[0] for c in design["components"]} & set(
+            local_libraries
+        )
+        if used_libraries:
+            lines = ["(sym_lib_table", "  (version 7)"]
+            for library in sorted(used_libraries):
+                stem = local_libraries[library]
+                (schematic.parent / f"{stem}.kicad_sym").write_bytes(
+                    (ROOT / "fixtures/m2b" / f"{stem}.kicad_sym").read_bytes()
+                )
+                lines.append(
+                    f'  (lib (name "{library}") (type "KiCad") '
+                    f'(uri "${{KIPRJMOD}}/{stem}.kicad_sym") (options "") (descr "Locked KiCad 10.0.6 symbol"))'
+                )
+            lines.append(")")
+            (schematic.parent / "sym-lib-table").write_text("\n".join(lines) + "\n")
         stages.append({"stage": "emit_schematic", "status": "ok"})
         netlist, erc, svgs = run_headless(
             schematic, launcher, stage, ROOT / "fixtures/m2a/sym-lib-table"

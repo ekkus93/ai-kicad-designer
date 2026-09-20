@@ -15,6 +15,28 @@ EXTRA = {
     "Device:R": "R",
     "Device:LED": "LED",
     "Connector_Generic:Conn_01x01": "Conn_01x01",
+    "Regulator_Linear:L7805": "L7805",
+    "Timer:NE555D": "NE555D",
+}
+
+LOCKED_PIN_ROLES = {
+    "Regulator_Linear:L7805": {"1": "IN", "2": "GND", "3": "OUT"},
+    "Timer:NE555D": {
+        "1": "GND",
+        "2": "TRIG",
+        "3": "OUT",
+        "4": "~{RST}",
+        "5": "CONT",
+        "6": "THRES",
+        "7": "DISCH",
+        "8": "VCC",
+    },
+}
+POWER_STAGE_ASSETS = {
+    "Regulator_Linear:L7805": {
+        "polarity": "positive",
+        "roles": {"input": "IN", "output": "OUT", "reference": "GND"},
+    },
 }
 
 
@@ -58,6 +80,17 @@ def assets() -> dict[str, Asset]:
             if points:
                 xs, ys = [_nm(p[1]) for p in points], [_nm(p[2]) for p in points]
                 bodies[number] = (min(xs), max(ys), max(xs), min(ys))
+        if 0 in units:
+            common = units.pop(0)
+            if 1 not in units or {p.number for p in common} & {p.number for p in units[1]}:
+                raise InputError("unsupported common physical pins")
+            units[1] = common + units[1]
+        if (
+            lib_id in LOCKED_PIN_ROLES
+            and {p.number: p.name for pins in units.values() for p in pins}
+            != LOCKED_PIN_ROLES[lib_id]
+        ):
+            raise InputError(f"locked physical pin roles changed: {lib_id}")
         result[lib_id] = Asset(lib_id, definition, units, bodies)
     return result
 
@@ -166,13 +199,39 @@ def validate(raw: dict, resolved: dict[str, Asset]) -> dict:
         "feedback": ({"component", "function", "source", "sense", "net", "polarity"}, {"resistor"}),
         "power_rails": ({"component", "unit", "positive", "negative", "reference"}, set()),
         "decoupling": ({"component", "consumer", "supply", "return"}, set()),
+        "power_stage": (
+            {"component", "input", "output", "reference", "pins", "polarity"},
+            set(),
+        ),
+        "timer": (
+            {
+                "component",
+                "supply",
+                "reference",
+                "output",
+                "timing",
+                "discharge",
+                "control",
+                "pins",
+            },
+            set(),
+        ),
+        "timing_ladder": (
+            {"upper", "lower", "capacitor", "supply", "discharge", "timing", "reference"},
+            set(),
+        ),
+        "bridge": ({"component", "first", "second", "purpose"}, set()),
+        "reference_divider": ({"upper", "lower", "positive", "local", "negative"}, set()),
     }
     relations = {}
     for r in data["relationships"]:
         if not isinstance(r, dict) or r.get("kind") not in kinds:
             raise InputError("unsupported relationship")
         required, optional = kinds[r["kind"]]
-        _fields(r, required | {"id", "kind"}, optional)
+        try:
+            _fields(r, required | {"id", "kind"}, optional)
+        except InputError as exc:
+            raise InputError("unsupported relationship fields") from exc
         if r["id"] in relations:
             raise InputError("duplicate relationship ID")
         relations[r["id"]] = r
@@ -188,6 +247,12 @@ def validate(raw: dict, resolved: dict[str, Asset]) -> dict:
             "negative",
             "supply",
             "return",
+            "timing",
+            "discharge",
+            "control",
+            "first",
+            "second",
+            "local",
         ):
             if key in r and r[key] not in nets:
                 raise InputError(f"relationship {r['id']}: unknown net {key}")
@@ -232,6 +297,90 @@ def validate(raw: dict, resolved: dict[str, Asset]) -> dict:
             or (r["component"], "4") not in nets[r["negative"]]
         ):
             raise InputError("power relation physical terminal/net mismatch")
+        if r["kind"] == "power_stage":
+            if set(r["pins"]) != {"input", "output", "reference"} or r["polarity"] not in (
+                "positive",
+                "negative",
+            ):
+                raise InputError("invalid power stage pin roles")
+            asset_id = components[r["component"]]["asset"]
+            adapter = POWER_STAGE_ASSETS.get(asset_id)
+            if adapter is None or adapter["polarity"] != r["polarity"]:
+                raise InputError("unsupported physical power-stage polarity")
+            asset = resolved[asset_id]
+            actual = {p.number: p.name for pins in asset.units.values() for p in pins}
+            for role in ("input", "output", "reference"):
+                number = r["pins"][role]
+                if number not in actual or (r["component"], number) not in nets[r[role]]:
+                    raise InputError("power stage physical pin/net mismatch")
+            if any(actual[r["pins"][role]] != adapter["roles"][role] for role in r["pins"]):
+                raise InputError("power stage actual pin role mismatch")
+        if r["kind"] == "timer":
+            expected_roles = {
+                "supply": "VCC",
+                "reference": "GND",
+                "output": "OUT",
+                "trigger": "TRIG",
+                "threshold": "THRES",
+                "discharge": "DISCH",
+                "control": "CONT",
+                "reset": "~{RST}",
+            }
+            asset = resolved[components[r["component"]]["asset"]]
+            actual = {p.number: p.name for pins in asset.units.values() for p in pins}
+            if set(r["pins"]) != set(expected_roles) or any(
+                actual.get(r["pins"][role]) != name for role, name in expected_roles.items()
+            ):
+                raise InputError("timer actual physical pin roles differ")
+            role_net = {
+                "supply": r["supply"],
+                "reset": r["supply"],
+                "reference": r["reference"],
+                "output": r["output"],
+                "trigger": r["timing"],
+                "threshold": r["timing"],
+                "discharge": r["discharge"],
+                "control": r["control"],
+            }
+            if any(
+                (r["component"], r["pins"][role]) not in nets[net] for role, net in role_net.items()
+            ):
+                raise InputError("timer physical terminal/net mismatch")
+        if r["kind"] == "timing_ladder":
+            for role in ("upper", "lower", "capacitor"):
+                if r[role] not in components:
+                    raise InputError("timing ladder component missing")
+            wanted = (
+                ("upper", "1", "supply"),
+                ("upper", "2", "discharge"),
+                ("lower", "1", "discharge"),
+                ("lower", "2", "timing"),
+                ("capacitor", "1", "timing"),
+                ("capacitor", "2", "reference"),
+            )
+            if any((r[role], pin) not in nets[r[net]] for role, pin, net in wanted):
+                raise InputError("timing ladder physical terminal/net mismatch")
+        if r["kind"] == "bridge":
+            if r["purpose"] != "feedback" or (
+                (r["component"], "1") not in nets[r["first"]]
+                or (r["component"], "2") not in nets[r["second"]]
+            ):
+                raise InputError("bridge physical terminal/net mismatch")
+        if r["kind"] == "reference_divider":
+            if (
+                r["upper"] not in components
+                or r["lower"] not in components
+                or any(
+                    (r[component], pin) not in nets[r[net]]
+                    for component, pin, net in (
+                        ("upper", "1", "positive"),
+                        ("upper", "2", "local"),
+                        ("lower", "1", "local"),
+                        ("lower", "2", "negative"),
+                    )
+                )
+            ):
+                raise InputError("reference divider physical terminal/net mismatch")
     for a in data["power_assertions"]:
         _fields(a, ("id", "refdes", "net"))
         if (
@@ -334,8 +483,8 @@ def passive_layout(design: dict, resolved: dict[str, Asset]) -> Scene:
     if len(flows) != 1 or flows[0]["input"] != s["input"] or flows[0]["output"] != final_net:
         raise InputError("signal flow relation does not match passive path")
     components = {c["id"]: c for c in design["components"]}
-    if components[s["component"]]["asset"] != "Device:R":
-        raise InputError("M2b passive series currently requires resistor")
+    if components[s["component"]]["asset"] not in ("Device:R", "Device:C"):
+        raise InputError("passive series requires a two-terminal passive")
     d = Draft(design, resolved, {}, {}, [], [], [], [], {})
     anchor_x, anchor_y = 96 * PITCH, 64 * PITCH
     d.add(
@@ -393,8 +542,8 @@ def passive_layout(design: dict, resolved: dict[str, Asset]) -> Scene:
             raise InputError("series and shunt relations do not compose")
         d.add(sh["component"], anchor_x + 30 * PITCH, anchor_y + 22 * PITCH)
         node = (d.positions[(sh["component"], 1)][0], right[1])
-        cap_top, cap_bottom = d.point(sh["component"], "1"), d.point(sh["component"], "2")
-        d.route(s["output"], right, node, cap_top)
+        shunt_top, shunt_bottom = d.point(sh["component"], "1"), d.point(sh["component"], "2")
+        d.route(s["output"], right, node, shunt_top)
         if ports.get(s["output"]) is None or ports.get(sh["reference"]) is None:
             raise InputError("missing output/reference interface")
         d.add(ports[s["output"]], anchor_x + 65 * PITCH, anchor_y)
@@ -404,7 +553,7 @@ def passive_layout(design: dict, resolved: dict[str, Asset]) -> Scene:
         d.label(s["output"], out)
         d.add(ports[sh["reference"]], anchor_x + 65 * PITCH, anchor_y + 40 * PITCH)
         ref = d.point(ports[sh["reference"]], "1")
-        d.route(sh["reference"], cap_bottom, (cap_bottom[0], ref[1]), ref)
+        d.route(sh["reference"], shunt_bottom, (shunt_bottom[0], ref[1]), ref)
         d.label(sh["reference"], ref)
     if len(d.positions) != len(design["components"]):
         raise InputError("unsupported passive component occurrence")
@@ -421,6 +570,240 @@ def passive_layout(design: dict, resolved: dict[str, Asset]) -> Scene:
         d.angles,
         d.text_positions,
         text_angles,
+    )
+
+
+def power_stage_layout(design: dict, resolved: dict[str, Asset]) -> Scene:
+    """Place a three-terminal power stage between its interfaces and local support."""
+    stages = [r for r in design["relationships"] if r["kind"] == "power_stage"]
+    supports = [r for r in design["relationships"] if r["kind"] == "decoupling"]
+    if len(stages) != 1 or len(supports) != 2:
+        raise InputError("unsupported power-stage relation inventory")
+    stage = stages[0]
+    stage_id = stage["component"]
+    support_by_pin = {tuple(r["consumer"]): r for r in supports}
+    if set(support_by_pin) != {
+        (stage_id, stage["pins"]["input"]),
+        (stage_id, stage["pins"]["output"]),
+    } or any(
+        {r["supply"], r["return"]} != {stage["reference"], stage[role]}
+        for role in ("input", "output")
+        for r in (support_by_pin[(stage_id, stage["pins"][role])],)
+    ):
+        raise InputError("support relationships do not attach to power-stage rails")
+    components = {c["id"]: c for c in design["components"]}
+    members = {n["id"]: {tuple(m) for m in n["members"]} for n in design["nets"]}
+    ports = {}
+    for net in (stage["input"], stage["output"], stage["reference"]):
+        matches = [
+            cid
+            for cid, pin in members[net]
+            if pin == "1" and components[cid]["asset"] == "Connector_Generic:Conn_01x01"
+        ]
+        if len(matches) != 1:
+            raise InputError("power stage requires one interface per rail")
+        ports[net] = matches[0]
+    d = Draft(design, resolved, {}, {}, [], [], [], [], {})
+    sx, sy = 116 * PITCH, 67 * PITCH
+    stage_asset = resolved[components[stage_id]["asset"]]
+    d.add(
+        stage_id,
+        sx,
+        sy,
+        angle=orientation_for_flow(
+            stage_asset, stage["pins"]["input"], stage["pins"]["output"], "right"
+        ),
+    )
+    input_pin = d.point(stage_id, stage["pins"]["input"])
+    output_pin = d.point(stage_id, stage["pins"]["output"])
+    reference_pin = d.point(stage_id, stage["pins"]["reference"])
+    in_relation = support_by_pin[(stage_id, stage["pins"]["input"])]
+    out_relation = support_by_pin[(stage_id, stage["pins"]["output"])]
+    cap_y = sy + 22 * PITCH if reference_pin[1] > sy else sy - 22 * PITCH
+
+    def support_endpoints(relation, rail, x):
+        rail_pin = "1" if relation["supply"] == rail else "2"
+        reference_pin_number = "2" if rail_pin == "1" else "1"
+        rail_above = cap_y > sy
+        angle = (
+            0 if (rail_above and rail_pin == "1") or (not rail_above and rail_pin == "2") else 180
+        )
+        d.add(relation["component"], x, cap_y, angle=angle)
+        return d.point(relation["component"], rail_pin), d.point(
+            relation["component"], reference_pin_number
+        )
+
+    left_rail, left_reference = support_endpoints(in_relation, stage["input"], sx - 24 * PITCH)
+    right_rail, right_reference = support_endpoints(out_relation, stage["output"], sx + 24 * PITCH)
+    d.add(ports[stage["input"]], sx - 55 * PITCH, sy, angle=180)
+    d.add(ports[stage["output"]], sx + 55 * PITCH, sy)
+    reference_y = cap_y + (19 * PITCH if cap_y > sy else -19 * PITCH)
+    d.add(ports[stage["reference"]], sx + 55 * PITCH, reference_y)
+    source = d.point(ports[stage["input"]], "1")
+    load = d.point(ports[stage["output"]], "1")
+    return_port = d.point(ports[stage["reference"]], "1")
+    left_node = (left_rail[0], sy)
+    right_node = (right_rail[0], sy)
+    d.route(stage["input"], source, left_node, input_pin)
+    d.route(stage["input"], left_node, left_rail)
+    d.route(stage["output"], output_pin, right_node, load)
+    d.route(stage["output"], right_node, right_rail)
+    d.junctions.extend((left_node, right_node))
+    return_y = return_port[1]
+    d.route(stage["reference"], left_reference, (left_reference[0], return_y), return_port)
+    d.route(stage["reference"], right_reference, (right_reference[0], return_y))
+    d.route(stage["reference"], reference_pin, (reference_pin[0], return_y))
+    d.junctions.extend(((right_reference[0], return_y), (reference_pin[0], return_y)))
+    for net, point in (
+        (stage["input"], source),
+        (stage["output"], load),
+        (stage["reference"], return_port),
+    ):
+        d.label(net, point)
+    flags = {a["net"]: a for a in design["power_assertions"]}
+    if not {stage["input"], stage["reference"]} <= set(flags):
+        raise InputError("power stage lacks external source assertions")
+    for net, point in (
+        (stage["input"], left_node),
+        (stage["reference"], (reference_pin[0], return_y)),
+    ):
+        d.positions[(flags[net]["id"], 1)] = point
+    if {cid for cid, _ in d.positions if cid in components} != set(components):
+        raise InputError("unplaced power-stage component")
+    choose_text_slots(design, d)
+    metrics = measure(design, resolved, d)
+    return Scene(
+        d.positions,
+        d.wires,
+        d.wire_nets,
+        d.labels,
+        d.junctions,
+        metrics,
+        d.angles,
+        d.text_positions,
+    )
+
+
+def timing_layout(design: dict, resolved: dict[str, Asset]) -> Scene:
+    """Compose a vertical timing ladder beside a physical timer symbol."""
+    timers = [r for r in design["relationships"] if r["kind"] == "timer"]
+    ladders = [r for r in design["relationships"] if r["kind"] == "timing_ladder"]
+    controls = [r for r in design["relationships"] if r["kind"] == "decoupling"]
+    if len(timers) != 1 or len(ladders) != 1 or len(controls) != 1:
+        raise InputError("unsupported timing relation inventory")
+    timer, ladder, control = timers[0], ladders[0], controls[0]
+    if any(timer[k] != ladder[k] for k in ("supply", "reference", "timing", "discharge")):
+        raise InputError("timer and timing ladder nets disagree")
+    if control["consumer"] != [timer["component"], timer["pins"]["control"]] or (
+        control["supply"],
+        control["return"],
+    ) != (timer["control"], timer["reference"]):
+        raise InputError("timer control bypass relation disagrees")
+    components = {c["id"]: c for c in design["components"]}
+    nets = {n["id"]: {tuple(m) for m in n["members"]} for n in design["nets"]}
+    ports = {}
+    for net in (timer["supply"], timer["output"], timer["reference"]):
+        matches = [
+            cid
+            for cid, pin in nets[net]
+            if pin == "1" and components[cid]["asset"] == "Connector_Generic:Conn_01x01"
+        ]
+        if len(matches) != 1:
+            raise InputError("timer requires supply, output and reference interfaces")
+        ports[net] = matches[0]
+    d = Draft(design, resolved, {}, {}, [], [], [], [], {})
+    tx, ty = 143 * PITCH, 75 * PITCH
+    lx = tx - 43 * PITCH
+    d.add(timer["component"], tx, ty)
+    d.text_positions[(timer["component"], 1)] = (tx + 18 * PITCH, ty - 12 * PITCH)
+    p = {role: d.point(timer["component"], number) for role, number in timer["pins"].items()}
+    d.add(ladder["upper"], lx, ty - 25 * PITCH)
+    d.add(ladder["lower"], lx, ty - 5 * PITCH)
+    d.add(ladder["capacitor"], lx, ty + 21 * PITCH)
+    d.add(control["component"], tx - 16 * PITCH, ty - 10 * PITCH)
+    upper_top, upper_bottom = d.point(ladder["upper"], "1"), d.point(ladder["upper"], "2")
+    lower_top, lower_bottom = d.point(ladder["lower"], "1"), d.point(ladder["lower"], "2")
+    timing_top, timing_bottom = d.point(ladder["capacitor"], "1"), d.point(ladder["capacitor"], "2")
+    control_top, control_bottom = (
+        d.point(control["component"], "1"),
+        d.point(control["component"], "2"),
+    )
+    d.add(ports[timer["supply"]], lx - 28 * PITCH, ty - 35 * PITCH, angle=180)
+    d.add(ports[timer["output"]], tx + 36 * PITCH, p["output"][1])
+    d.add(ports[timer["reference"]], tx + 36 * PITCH, ty + 32 * PITCH)
+    source = d.point(ports[timer["supply"]], "1")
+    load = d.point(ports[timer["output"]], "1")
+    return_port = d.point(ports[timer["reference"]], "1")
+    supply_y = source[1]
+    d.route(timer["supply"], source, (lx, supply_y), upper_top)
+    d.route(timer["supply"], (lx, supply_y), (p["supply"][0], supply_y), p["supply"])
+    d.junctions.append((lx, supply_y))
+    d.route(timer["supply"], p["reset"], (p["reset"][0] - 5 * PITCH, p["reset"][1]))
+    d.label(timer["supply"], (p["reset"][0] - 5 * PITCH, p["reset"][1]))
+    discharge_y = (upper_bottom[1] + lower_top[1]) // 2
+    discharge_x = p["discharge"][0] - 10 * PITCH
+    d.route(timer["discharge"], upper_bottom, (lx, discharge_y), lower_top)
+    d.route(
+        timer["discharge"],
+        (lx, discharge_y),
+        (discharge_x, discharge_y),
+        (discharge_x, p["discharge"][1]),
+        p["discharge"],
+    )
+    d.junctions.append((lx, discharge_y))
+    timing_y = p["trigger"][1] + 6 * PITCH
+    sense_x = p["trigger"][0] - 7 * PITCH
+    d.route(timer["timing"], lower_bottom, (lx, timing_y), timing_top)
+    d.route(
+        timer["timing"],
+        (lx, timing_y),
+        (sense_x, timing_y),
+        (sense_x, p["threshold"][1]),
+        p["threshold"],
+    )
+    d.route(timer["timing"], (sense_x, p["trigger"][1]), p["trigger"])
+    d.junctions.extend(((lx, timing_y), (sense_x, p["trigger"][1])))
+    d.route(timer["output"], p["output"], load)
+    d.route(timer["reference"], timing_bottom, (lx, return_port[1]), return_port)
+    d.route(timer["reference"], p["reference"], (p["reference"][0], return_port[1]))
+    d.junctions.append((p["reference"][0], return_port[1]))
+    control_y = min(p["control"][1], control_top[1]) - 5 * PITCH
+    d.route(
+        timer["control"],
+        p["control"],
+        (p["control"][0], control_y),
+        (control_top[0], control_y),
+        control_top,
+    )
+    d.route(timer["reference"], control_bottom, (control_bottom[0], control_bottom[1] + 3 * PITCH))
+    d.label(timer["reference"], (control_bottom[0], control_bottom[1] + 3 * PITCH))
+    for net, point in (
+        (timer["supply"], source),
+        (timer["output"], load),
+        (timer["reference"], return_port),
+    ):
+        d.label(net, point)
+    flags = {a["net"]: a for a in design["power_assertions"]}
+    if not {timer["supply"], timer["reference"]} <= set(flags):
+        raise InputError("timer lacks external supply assertions")
+    for net, point in (
+        (timer["supply"], (lx, supply_y)),
+        (timer["reference"], (p["reference"][0], return_port[1])),
+    ):
+        d.positions[(flags[net]["id"], 1)] = point
+    if {cid for cid, _ in d.positions if cid in components} != set(components):
+        raise InputError("unplaced timer component")
+    choose_text_slots(design, d)
+    metrics = measure(design, resolved, d)
+    return Scene(
+        d.positions,
+        d.wires,
+        d.wire_nets,
+        d.labels,
+        d.junctions,
+        metrics,
+        d.angles,
+        d.text_positions,
     )
 
 
@@ -493,14 +876,18 @@ def measure(design: dict, resolved: dict[str, Asset], draft: Draft) -> dict:
                 and on_segment((a[0], c[1]), a, b)
                 and on_segment((a[0], c[1]), c, e)
             ):
-                raise InputError("unrelated wire crossing")
+                raise InputError(
+                    f"unrelated wire crossing: {draft.wire_nets[i]} {a}->{b}, {draft.wire_nets[j]} {c}->{e}"
+                )
             if (
                 a[1] == b[1]
                 and c[0] == e[0]
                 and on_segment((c[0], a[1]), a, b)
                 and on_segment((c[0], a[1]), c, e)
             ):
-                raise InputError("unrelated wire crossing")
+                raise InputError(
+                    f"unrelated wire crossing: {draft.wire_nets[i]} {a}->{b}, {draft.wire_nets[j]} {c}->{e}"
+                )
             if a[0] == b[0] == c[0] == e[0] and max(min(a[1], b[1]), min(c[1], e[1])) <= min(
                 max(a[1], b[1]), max(c[1], e[1])
             ):
@@ -567,26 +954,40 @@ def measure(design: dict, resolved: dict[str, Asset], draft: Draft) -> dict:
 def choose_text_slots(design: dict, draft: Draft) -> None:
     """Choose a finite outside slot from actual text length and routed segments."""
     for c in design["components"]:
-        if c["asset"] != "Device:C":
+        if c["asset"] not in ("Device:C", "Device:R"):
             continue
         key = (c["id"], 1)
         sx, sy = draft.positions[key]
-        for side in (1, -1):
-            x, y = sx + side * 8 * PITCH, sy - 2 * PITCH
+        horizontal = draft.angles.get(key, 0) in (90, 270)
+        slots = [draft.text_positions[key]]
+        slots += (
+            [(sx, sy - 8 * PITCH), (sx, sy + 5 * PITCH), (sx, sy - 12 * PITCH)]
+            if horizontal
+            else [
+                (sx + 8 * PITCH, sy - 2 * PITCH),
+                (sx - 8 * PITCH, sy - 2 * PITCH),
+                (sx + 12 * PITCH, sy - 2 * PITCH),
+                (sx - 12 * PITCH, sy - 2 * PITCH),
+            ]
+        )
+        for x, y in slots:
             clear = True
             for value, py in ((c["refdes"], y), (c["value"], y + 2 * PITCH)):
                 half = max(635_000, len(value) * 445_000)
+                clearance = 1_000_000
                 for a, b in draft.wires:
                     if (
                         a[0] == b[0]
-                        and x - half < a[0] < x + half
-                        and max(min(a[1], b[1]), py - 850_000) < min(max(a[1], b[1]), py + 850_000)
+                        and x - half - clearance < a[0] < x + half + clearance
+                        and max(min(a[1], b[1]), py - 850_000 - clearance)
+                        < min(max(a[1], b[1]), py + 850_000 + clearance)
                     ):
                         clear = False
                     if (
                         a[1] == b[1]
-                        and py - 850_000 < a[1] < py + 850_000
-                        and max(min(a[0], b[0]), x - half) < min(max(a[0], b[0]), x + half)
+                        and py - 850_000 - clearance < a[1] < py + 850_000 + clearance
+                        and max(min(a[0], b[0]), x - half - clearance)
+                        < min(max(a[0], b[0]), x + half + clearance)
                     ):
                         clear = False
             if clear:
@@ -645,6 +1046,9 @@ def compare(design: dict, observed: dict, resolved: dict[str, Asset] | None = No
         elif c["asset"] == "Device:LED":
             if {n: p["name"] for n, p in actual.items()} != {"1": "K", "2": "A"}:
                 diagnostics.append(f"{ref}: actual diode polarity differs")
+        elif c["asset"] in LOCKED_PIN_ROLES:
+            if {n: p["name"] for n, p in actual.items()} != LOCKED_PIN_ROLES[c["asset"]]:
+                diagnostics.append(f"{ref}: actual locked physical pin roles differ")
         elif set(actual) != {p.number for p in resolved[c["asset"]].units[unit]}:
             diagnostics.append(f"{ref} actual pin inventory differs")
     if set(observed["xml_components"]) != set(by_ref):
@@ -773,7 +1177,7 @@ def active_layout(design: dict, resolved: dict[str, Asset]) -> Scene:
     d = Draft(design, resolved, {}, {}, [], [], [], [], {})
     ax, ay = 100 * PITCH, 59 * PITCH
     bx, by = ax, ay + 57 * PITCH
-    px, py = ax + 82 * PITCH, ay + 38 * PITCH
+    px, py = ax + 64 * PITCH, ay + 33 * PITCH
     d.add(amp, ax, ay, af["unit"])
     d.add(amp, bx, by, pf["unit"])
     d.add(amp, px, py, rails[0]["unit"])
@@ -827,6 +1231,19 @@ def active_layout(design: dict, resolved: dict[str, Asset]) -> Scene:
     )
     input_leg = next((r for r in series if r["output"] == minus_net), None)
     input_filter = next((r for r in series if r["output"] == plus_net), None)
+    upstream = (
+        next((r for r in series if r["output"] == input_filter["input"]), None)
+        if input_filter
+        else None
+    )
+    bridges = [r for r in relations if r["kind"] == "bridge"]
+    if bridges and (
+        len(bridges) != 1
+        or upstream is None
+        or bridges[0]["first"] != upstream["output"]
+        or bridges[0]["second"] != out_net
+    ):
+        raise InputError("bridge does not compose with the signal path and output")
     accepted_input = (
         input_leg["input"] if input_leg else input_filter["output"] if input_filter else plus_net
     )
@@ -881,8 +1298,44 @@ def active_layout(design: dict, resolved: dict[str, Asset]) -> Scene:
         d.junctions.append(node)
         d.route(cap_relation["reference"], cap_bottom, (cap_bottom[0], cap_bottom[1] + 5 * PITCH))
         d.label(cap_relation["reference"], (cap_bottom[0], cap_bottom[1] + 5 * PITCH))
-        d.route(input_filter["input"], rin, (rin[0] - 5 * PITCH, rin[1]))
-        d.label(input_filter["input"], (rin[0] - 5 * PITCH, rin[1]))
+        if upstream:
+            up_component = upstream["component"]
+            up_asset = resolved[
+                next(c for c in design["components"] if c["id"] == up_component)["asset"]
+            ]
+            d.add(
+                up_component,
+                ax - 56 * PITCH,
+                plus[1],
+                angle=orientation_for_flow(up_asset, "1", "2", "right"),
+            )
+            upstream_left, upstream_right = d.point(up_component, "1"), d.point(up_component, "2")
+            bridge_node = (ax - 45 * PITCH, plus[1])
+            d.route(input_filter["input"], upstream_right, bridge_node, rin)
+            d.junctions.append(bridge_node)
+            d.route(
+                upstream["input"], upstream_left, (upstream_left[0] - 5 * PITCH, upstream_left[1])
+            )
+            d.label(upstream["input"], (upstream_left[0] - 5 * PITCH, upstream_left[1]))
+            if bridges:
+                bridge = bridges[0]
+                bridge_id = bridge["component"]
+                bridge_asset = resolved[
+                    next(c for c in design["components"] if c["id"] == bridge_id)["asset"]
+                ]
+                bridge_y = plus[1] - 19 * PITCH
+                d.add(
+                    bridge_id,
+                    ax - 9 * PITCH,
+                    bridge_y,
+                    angle=orientation_for_flow(bridge_asset, "1", "2", "right"),
+                )
+                bridge_left, bridge_right = d.point(bridge_id, "1"), d.point(bridge_id, "2")
+                d.route(bridge["first"], bridge_node, (bridge_node[0], bridge_y), bridge_left)
+                d.route(bridge["second"], bridge_right, (branch_x, bridge_y), branch)
+        else:
+            d.route(input_filter["input"], rin, (rin[0] - 5 * PITCH, rin[1]))
+            d.label(input_filter["input"], (rin[0] - 5 * PITCH, rin[1]))
     elif not input_leg:
         d.route(plus_net, plus, (plus[0] - 7 * PITCH, plus[1]))
         d.label(plus_net, (plus[0] - 7 * PITCH, plus[1]))
@@ -941,6 +1394,28 @@ def active_layout(design: dict, resolved: dict[str, Asset]) -> Scene:
     d.label(reference, (cp2[0], cp2[1] + 5 * PITCH))
     d.route(reference, cn1, (cn1[0], cn1[1] - 5 * PITCH))
     d.label(reference, (cn1[0], cn1[1] - 5 * PITCH))
+    dividers = [r for r in relations if r["kind"] == "reference_divider"]
+    if dividers:
+        if len(dividers) != 1 or any(
+            dividers[0][role] != net
+            for role, net in (("positive", positive), ("local", reference), ("negative", negative))
+        ):
+            raise InputError("reference divider and split rails disagree")
+        divider = dividers[0]
+        divider_x = px - 37 * PITCH
+        d.add(divider["upper"], divider_x, py - 13 * PITCH)
+        d.add(divider["lower"], divider_x, py + 13 * PITCH)
+        upper_top, upper_bottom = d.point(divider["upper"], "1"), d.point(divider["upper"], "2")
+        lower_top, lower_bottom = d.point(divider["lower"], "1"), d.point(divider["lower"], "2")
+        local_node = (divider_x, cp2[1])
+        d.route(reference, upper_bottom, local_node, lower_top)
+        d.route(reference, local_node, cp2)
+        d.junctions.append(local_node)
+        d.route(positive, upper_top, (divider_x, upper_top[1] - 5 * PITCH))
+        d.label(positive, (divider_x, upper_top[1] - 5 * PITCH))
+        d.route(negative, lower_bottom, (divider_x, lower_bottom[1] + 5 * PITCH))
+        d.label(negative, (divider_x, lower_bottom[1] + 5 * PITCH))
+        d.label(reference, local_node)
     # Mixed connector is a lookup island; each terminal carries its semantic net.
     connectors = [c for c in design["components"] if c["asset"].startswith("Connector_Generic:")]
     if len(connectors) != 1:
@@ -954,15 +1429,17 @@ def active_layout(design: dict, resolved: dict[str, Asset]) -> Scene:
         d.route(net, point, end)
         d.label(net, end)
     flags = {a["net"]: a for a in design["power_assertions"]}
-    if set(flags) != {positive, negative, reference}:
+    required_flags = {positive, negative} if dividers else {positive, negative, reference}
+    if set(flags) != required_flags:
         raise InputError("missing external supply assertions")
     for net, point in (
         (positive, pos_flag),
         (negative, neg_flag),
         (reference, (cp2[0], cp2[1] + 5 * PITCH)),
     ):
-        d.positions[(flags[net]["id"], 1)] = point
-        d.angles[(flags[net]["id"], 1)] = 0
+        if net in flags:
+            d.positions[(flags[net]["id"], 1)] = point
+            d.angles[(flags[net]["id"], 1)] = 0
     # Each component is placed once even when it belongs to several relations.
     placed = {cid for cid, _ in d.positions if cid in {c["id"] for c in design["components"]}}
     if placed != {c["id"] for c in design["components"]}:
@@ -1128,6 +1605,7 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
                 max(a[0], b[0]), max(c[0], e[0])
             ):
                 raise InputError("observed unrelated wire overlap")
+    minimum_text_clearance = None
     for (ref, unit), item in observed["occurrences"].items():
         if item["lib"] == "power:PWR_FLAG":
             continue
@@ -1139,6 +1617,20 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
             half = max(635_000, len(prop["value"]) * 445_000)
             box = (x - half, y - 850_000, x + half, y + 850_000)
             for a, b in wires:
+                wire_box = (
+                    min(a[0], b[0]),
+                    min(a[1], b[1]),
+                    max(a[0], b[0]),
+                    max(a[1], b[1]),
+                )
+                clearance = max(box[0] - wire_box[2], wire_box[0] - box[2], 0) + max(
+                    box[1] - wire_box[3], wire_box[1] - box[3], 0
+                )
+                minimum_text_clearance = (
+                    clearance
+                    if minimum_text_clearance is None
+                    else min(minimum_text_clearance, clearance)
+                )
                 if (
                     a[0] == b[0]
                     and box[0] < a[0] < box[2]
@@ -1165,7 +1657,21 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
         for x, y in all_points
     ):
         raise InputError("observed content outside A4 margin")
+    extent_points = all_points + list(pin_positions.values())
+    width_mm = (max(p[0] for p in extent_points) - min(p[0] for p in extent_points)) / 1_000_000
+    height_mm = (max(p[1] for p in extent_points) - min(p[1] for p in extent_points)) / 1_000_000
+    if width_mm > 210 or height_mm > 140:
+        raise InputError("observed layout spreads unnecessarily across the page")
     by_ref = {c["id"]: c["refdes"] for c in design["components"]}
+    series_relations = [r for r in design["relationships"] if r["kind"] == "series"]
+    for upstream in series_relations:
+        for downstream in series_relations:
+            if upstream is downstream or upstream["output"] != downstream["input"]:
+                continue
+            left = pin_positions[(by_ref[upstream["component"]], "2")]
+            right = pin_positions[(by_ref[downstream["component"]], "1")]
+            if left[0] >= right[0]:
+                raise InputError("observed functional stage order reversal")
     spans = []
     for relation in design["relationships"]:
         if relation["kind"] == "feedback" and not any(
@@ -1214,7 +1720,133 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
             )
     if reversals:
         raise InputError("observed functional flow reversal")
+    relation_by_kind = {}
+    for relation in design["relationships"]:
+        relation_by_kind.setdefault(relation["kind"], []).append(relation)
+
+    def pin(component, number):
+        return by_ref[component], number
+
+    def wired_path(first, second):
+        net = pin_to_net.get(first)
+        if net is None or pin_to_net.get(second) != net:
+            return False
+        reachable = {pin_positions[first]}
+        segments = [wire for name, wire in zip(names, wires, strict=True) if name == net]
+        for _ in range(len(segments) + 1):
+            expanded = reachable | {
+                point
+                for a, b in segments
+                if any(on_segment(known, a, b) for known in reachable)
+                for point in (a, b)
+            }
+            if expanded == reachable:
+                break
+            reachable = expanded
+        return pin_positions[second] in reachable or any(
+            on_segment(pin_positions[second], a, b)
+            and any(on_segment(known, a, b) for known in reachable)
+            for a, b in segments
+        )
+
+    local_paths = []
+
+    def require_path(first, second, relation):
+        if not wired_path(first, second):
+            raise InputError(f"observed local motif lacks explicit wire path: {relation}")
+        a, b = pin_positions[first], pin_positions[second]
+        local_paths.append((abs(a[0] - b[0]) + abs(a[1] - b[1])) / 1_000_000)
+
+    for first in relation_by_kind.get("series", []):
+        for second in relation_by_kind.get("series", []):
+            if first is not second and first["output"] == second["input"]:
+                a, b = pin(first["component"], "2"), pin(second["component"], "1")
+                require_path(a, b, "ordered series")
+                if pin_positions[a][0] >= pin_positions[b][0]:
+                    raise InputError("observed functional stage order reversal")
+        for second in relation_by_kind.get("polarity", []):
+            if first["output"] == second["anode"]:
+                require_path(
+                    pin(first["component"], "2"), pin(second["component"], "2"), "series/polarity"
+                )
+        for second in relation_by_kind.get("shunt", []):
+            if first["output"] == second["node"]:
+                require_path(
+                    pin(first["component"], "2"), pin(second["component"], "1"), "series/shunt"
+                )
+        for second in relation_by_kind.get("amplifier", []):
+            if second.get("unused") or first["output"] != second["input"]:
+                continue
+            component = next(c for c in design["components"] if c["id"] == second["component"])
+            function = next(f for f in component["functions"] if f["id"] == second["function"])
+            target = pin(second["component"], function["pins"]["plus"])
+            source = pin(first["component"], "2")
+            require_path(source, target, "series/amplifier")
+            if pin_positions[source][0] >= pin_positions[target][0]:
+                raise InputError("observed functional stage order reversal")
+    for relation in relation_by_kind.get("feedback", []):
+        if any(
+            stage["component"] == relation["component"]
+            and stage["function"] == relation["function"]
+            and stage.get("unused")
+            for stage in relation_by_kind.get("amplifier", [])
+        ):
+            continue
+        source = pin(relation["component"], relation["source"])
+        sense = pin(relation["component"], relation["sense"])
+        if "resistor" in relation:
+            require_path(source, pin(relation["resistor"], "2"), "feedback source")
+            require_path(sense, pin(relation["resistor"], "1"), "feedback sense")
+        else:
+            require_path(source, sense, "direct feedback")
+    for relation in relation_by_kind.get("bridge", []):
+        peers = [
+            pin(cid, number)
+            for net in design["nets"]
+            if net["id"] == relation["first"]
+            for cid, number in net["members"]
+            if cid != relation["component"]
+            and not next(c for c in design["components"] if c["id"] == cid)["asset"].startswith(
+                "Connector_Generic:"
+            )
+        ]
+        if peers and not any(wired_path(peer, pin(relation["component"], "1")) for peer in peers):
+            raise InputError("observed bridge is visually detached")
+        for stage in relation_by_kind.get("amplifier", []):
+            if stage.get("unused") or stage["output"] != relation["second"]:
+                continue
+            component = next(c for c in design["components"] if c["id"] == stage["component"])
+            function = next(f for f in component["functions"] if f["id"] == stage["function"])
+            require_path(
+                pin(relation["component"], "2"),
+                pin(stage["component"], function["pins"]["out"]),
+                "bridge feedback",
+            )
+    for relation in relation_by_kind.get("decoupling", []):
+        consumer = pin(*relation["consumer"])
+        cap = next(
+            pin(relation["component"], number)
+            for number in ("1", "2")
+            if pin_to_net.get(pin(relation["component"], number)) == pin_to_net.get(consumer)
+        )
+        require_path(consumer, cap, "decoupling")
+    for relation in relation_by_kind.get("timing_ladder", []):
+        require_path(pin(relation["upper"], "2"), pin(relation["lower"], "1"), "timing discharge")
+        require_path(pin(relation["lower"], "2"), pin(relation["capacitor"], "1"), "timing node")
+        if not (
+            pin_positions[pin(relation["upper"], "1")][1]
+            < pin_positions[pin(relation["lower"], "1")][1]
+            < pin_positions[pin(relation["capacitor"], "1")][1]
+        ):
+            raise InputError("observed timing ladder order reversal")
+    for relation in relation_by_kind.get("reference_divider", []):
+        require_path(
+            pin(relation["upper"], "2"), pin(relation["lower"], "1"), "local reference divider"
+        )
+    if any(span > 80 for span in local_paths):
+        raise InputError("observed local motif is excessively fragmented")
     local_spans = []
+    support_spans = []
     for relation in design["relationships"]:
         kind = relation["kind"]
         if kind == "polarity":
@@ -1267,9 +1899,13 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
                 in observed["nets"].get(pin_to_net[(consumer_ref, relation["consumer"][1])], [])
             )
             cap = pin_positions[(cap_ref, member)]
-            local_spans.append((abs(consumer[0] - cap[0]) + abs(consumer[1] - cap[1])) / 1_000_000)
+            span = (abs(consumer[0] - cap[0]) + abs(consumer[1] - cap[1])) / 1_000_000
+            local_spans.append(span)
+            support_spans.append(span)
     if any(span > 80 for span in local_spans):
         raise InputError("observed motif fragmentation")
+    if any(span > 60 for span in support_spans):
+        raise InputError("observed support component detached from consumer")
     bends = sum(
         1
         for i, (a, b) in enumerate(wires)
@@ -1294,4 +1930,13 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
         "observed_feedback_span_mm": max(spans, default=0),
         "observed_wire_length_mm": sum(length_by_net.values()) / 1_000_000,
         "observed_wire_count": len(wires),
+        "observed_stage_order_reversal_count": 0,
+        "observed_local_wire_span_mm": max(local_paths, default=0),
+        "observed_support_locality_mm": max(support_spans, default=0),
+        "observed_content_width_mm": width_mm,
+        "observed_content_height_mm": height_mm,
+        "observed_page_utilization": round(width_mm * height_mm / (256.36 * 159.2), 6),
+        "observed_text_wire_clearance_mm": (
+            None if minimum_text_clearance is None else minimum_text_clearance / 1_000_000
+        ),
     }

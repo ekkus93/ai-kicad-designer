@@ -1,0 +1,106 @@
+{
+  "profile": "m2b.1",
+  "id": "rc_highpass",
+  "name": "RcHighpass",
+  "components": [
+    {
+      "id": "filter_c",
+      "refdes": "C1",
+      "asset": "Device:C",
+      "value": "10n"
+    },
+    {
+      "id": "filter_r",
+      "refdes": "R1",
+      "asset": "Device:R",
+      "value": "10k"
+    },
+    {
+      "id": "input",
+      "refdes": "J1",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Input"
+    },
+    {
+      "id": "output",
+      "refdes": "J2",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Output"
+    },
+    {
+      "id": "return",
+      "refdes": "J3",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Return"
+    }
+  ],
+  "nets": [
+    {
+      "id": "IN",
+      "members": [
+        [
+          "input",
+          "1"
+        ],
+        [
+          "filter_c",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "OUT",
+      "members": [
+        [
+          "filter_c",
+          "2"
+        ],
+        [
+          "filter_r",
+          "1"
+        ],
+        [
+          "output",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "REF",
+      "members": [
+        [
+          "filter_r",
+          "2"
+        ],
+        [
+          "return",
+          "1"
+        ]
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "series",
+      "kind": "series",
+      "component": "filter_c",
+      "input": "IN",
+      "output": "OUT"
+    },
+    {
+      "id": "shunt",
+      "kind": "shunt",
+      "component": "filter_r",
+      "node": "OUT",
+      "reference": "REF"
+    },
+    {
+      "id": "flow",
+      "kind": "signal_flow",
+      "input": "IN",
+      "output": "OUT"
+    }
+  ],
+  "no_connects": [],
+  "power_assertions": []
+}

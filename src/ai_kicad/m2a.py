@@ -670,7 +670,10 @@ def observe(schematic: Path, xml_path: Path) -> dict:
     pin_positions = {}
     for symbol in children(tree, "symbol"):
         lib = one(symbol, "lib_id")[1]
-        ref = next(p[2] for p in children(symbol, "property") if p[1] == "Reference")
+        references = [p[2] for p in children(symbol, "property") if p[1] == "Reference"]
+        if len(references) != 1:
+            raise InputError("observed required reference text missing")
+        ref = references[0]
         unit = int(one(symbol, "unit")[1])
         declared = {str(p[1]) for p in children(symbol, "pin")}
         actual = definitions[lib].get(unit, {})
