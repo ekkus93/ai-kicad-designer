@@ -1,0 +1,153 @@
+{
+  "profile": "m2b.1",
+  "id": "rc_lowpass_led_indicator",
+  "name": "BlindRcLowpassLedIndicator",
+  "components": [
+    {
+      "id": "filter_r",
+      "refdes": "R1",
+      "asset": "Device:R",
+      "value": "10k"
+    },
+    {
+      "id": "filter_c",
+      "refdes": "C1",
+      "asset": "Device:C",
+      "value": "10n"
+    },
+    {
+      "id": "input",
+      "refdes": "J1",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Input"
+    },
+    {
+      "id": "output",
+      "refdes": "J2",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Output"
+    },
+    {
+      "id": "return",
+      "refdes": "J3",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Return"
+    },
+    {
+      "id": "load_r",
+      "refdes": "R2",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "load_led",
+      "refdes": "D1",
+      "asset": "Device:LED",
+      "value": "LED"
+    }
+  ],
+  "nets": [
+    {
+      "id": "IN",
+      "members": [
+        [
+          "input",
+          "1"
+        ],
+        [
+          "filter_r",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "OUT",
+      "members": [
+        [
+          "filter_r",
+          "2"
+        ],
+        [
+          "filter_c",
+          "1"
+        ],
+        [
+          "output",
+          "1"
+        ],
+        [
+          "load_r",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "REF",
+      "members": [
+        [
+          "filter_c",
+          "2"
+        ],
+        [
+          "return",
+          "1"
+        ],
+        [
+          "load_led",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "LEDMID",
+      "members": [
+        [
+          "load_r",
+          "2"
+        ],
+        [
+          "load_led",
+          "2"
+        ]
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "series",
+      "kind": "series",
+      "component": "filter_r",
+      "input": "IN",
+      "output": "OUT"
+    },
+    {
+      "id": "shunt",
+      "kind": "shunt",
+      "component": "filter_c",
+      "node": "OUT",
+      "reference": "REF"
+    },
+    {
+      "id": "flow",
+      "kind": "signal_flow",
+      "input": "IN",
+      "output": "OUT"
+    },
+    {
+      "id": "load.series",
+      "kind": "series",
+      "component": "load_r",
+      "input": "OUT",
+      "output": "LEDMID"
+    },
+    {
+      "id": "load.polarity",
+      "kind": "polarity",
+      "component": "load_led",
+      "anode": "LEDMID",
+      "cathode": "REF"
+    }
+  ],
+  "no_connects": [],
+  "power_assertions": []
+}
