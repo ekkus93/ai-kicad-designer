@@ -7,6 +7,7 @@ import platform
 import re
 from pathlib import Path
 import subprocess
+import tempfile
 import time
 import xml.etree.ElementTree as ET
 
@@ -88,9 +89,16 @@ def validate_toolchain(path: Path, python_lock: Path) -> Path:
     if sha256(config_table.read_bytes()) != lock["configuration_digest"]:
         raise InputError("KiCad configuration hash mismatch")
     launcher = Path(entries["kicad-cli"]["path"])
-    version_probe = subprocess.run(
-        [str(launcher), "kicad-cli", "version"], capture_output=True, text=True, timeout=30
-    )
+    with tempfile.TemporaryDirectory(prefix="ai-kicad-version-") as config_home:
+        environment = os.environ.copy()
+        environment.update({"LC_ALL": "C", "TZ": "UTC", "XDG_CONFIG_HOME": config_home})
+        version_probe = subprocess.run(
+            [str(launcher), "kicad-cli", "version"],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            env=environment,
+        )
     if version_probe.returncode or version_probe.stdout.strip() != "10.0.6":
         raise ToolFailure(
             f"locked KiCad version probe failed: {version_probe.stdout} {version_probe.stderr}"
@@ -98,7 +106,9 @@ def validate_toolchain(path: Path, python_lock: Path) -> Path:
     return launcher
 
 
-def run_headless(schematic: Path, launcher: Path, stage: Path) -> tuple[Path, Path, list[Path]]:
+def run_headless(
+    schematic: Path, launcher: Path, stage: Path, symbol_table: Path | None = None
+) -> tuple[Path, Path, list[Path]]:
     reports = stage / "reports"
     raw = reports / "raw"
     renders = stage / "renders" / "schematic"
@@ -139,7 +149,7 @@ def run_headless(schematic: Path, launcher: Path, stage: Path) -> tuple[Path, Pa
         ),
         ("svg", ["sch", "export", "svg", "-o", str(renders), str(schematic)], None),
     ]
-    table = Path(__file__).resolve().parents[2] / "fixtures/m1a/sym-lib-table"
+    table = symbol_table or Path(__file__).resolve().parents[2] / "fixtures/m1a/sym-lib-table"
     configured = config / "kicad" / "10.0"
     configured.mkdir(parents=True, exist_ok=True)
     (configured / "sym-lib-table").write_bytes(table.read_bytes())
