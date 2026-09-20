@@ -245,6 +245,10 @@ def main() -> None:
     command.add_argument("--policy-lock", type=Path, required=True)
     command.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
+    if load_json(args.design).get("profile") == "m2b.1":
+        from .m2b_build import build as build_m2b
+
+        raise SystemExit(build_m2b(args))
     if load_json(args.design).get("profile") == "m2a.1":
         from .m2a_build import build as build_m2a
 

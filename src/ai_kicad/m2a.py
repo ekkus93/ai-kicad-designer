@@ -2,7 +2,7 @@
 
 import copy
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 import re
 import uuid
@@ -364,6 +364,9 @@ class Scene:
     labels: list[tuple[str, tuple[int, int]]]
     junctions: list[tuple[int, int]]
     metrics: dict
+    angles: dict[tuple[str, int], int] = field(default_factory=dict)
+    text_positions: dict[tuple[str, int], tuple[int, int]] = field(default_factory=dict)
+    text_angles: dict[tuple[str, int], int] = field(default_factory=dict)
 
 
 def layout(design: dict, assets: dict[str, Asset]) -> Scene:
@@ -600,18 +603,19 @@ def emit(design: dict, assets: dict[str, Asset], scene: Scene, out: Path) -> Pat
         x, y = scene.positions[(component, unit)]
         ref = c["refdes"]
         lines.append(
-            f"  (symbol (lib_id {quote(asset.library_id)}) (at {_mm(x)} {_mm(y)} 0) "
+            f"  (symbol (lib_id {quote(asset.library_id)}) (at {_mm(x)} {_mm(y)} {scene.angles.get((component, unit), 0)}) "
             f"(unit {unit or 1}) (in_bom yes) (on_board yes) (dnp no) "
             f"(uuid {quote(_uid(design, 'symbol', component + ':' + str(unit)))})"
         )
-        tx, ty = x + 10 * PITCH, y - 8 * PITCH
+        tx, ty = scene.text_positions.get((component, unit), (x + 10 * PITCH, y - 8 * PITCH))
+        text_angle = scene.text_angles.get((component, unit), 0)
         hidden = "(hide yes) " if c["asset"] == "power:PWR_FLAG" else ""
         lines.append(
-            f'    (property "Reference" {quote(ref)} (at {_mm(tx)} {_mm(ty)} 0) '
+            f'    (property "Reference" {quote(ref)} (at {_mm(tx)} {_mm(ty)} {text_angle}) '
             f"{hidden}(effects (font (size 1.27 1.27))))"
         )
         lines.append(
-            f'    (property "Value" {quote(c["value"])} (at {_mm(tx)} {_mm(ty + 2 * PITCH)} 0) '
+            f'    (property "Value" {quote(c["value"])} (at {_mm(tx)} {_mm(ty + 2 * PITCH)} {text_angle}) '
             f"{hidden}(effects (font (size 1.27 1.27))))"
         )
         for pin in asset.units.get(unit, asset.units.get(0, ())):
@@ -673,11 +677,14 @@ def observe(schematic: Path, xml_path: Path) -> dict:
         if declared != set(actual) or (ref, unit) in occurrences:
             raise InputError(f"invalid actual occurrence pins: {ref} unit {unit}")
         at = one(symbol, "at")
-        if at[3] != "0":
+        angle = int(at[3])
+        if angle not in (0, 90, 180, 270):
             raise InputError("unsupported occurrence rotation")
         x, y = _nm(at[1]), _nm(at[2])
         for pin, info in actual.items():
-            pin_positions[(ref, pin)] = (x + info["x"], y - info["y"])
+            px, py = info["x"], -info["y"]
+            dx, dy = {0: (px, py), 90: (py, -px), 180: (-px, -py), 270: (-py, px)}[angle]
+            pin_positions[(ref, pin)] = (x + dx, y + dy)
         properties = {
             prop[1]: {
                 "value": prop[2],

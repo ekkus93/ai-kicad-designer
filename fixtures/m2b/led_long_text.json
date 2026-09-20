@@ -1,0 +1,96 @@
+{
+  "profile": "m2b.1",
+  "id": "led_long_text",
+  "name": "LedLongText",
+  "components": [
+    {
+      "id": "limit",
+      "refdes": "R123",
+      "asset": "Device:R",
+      "value": "12.4k precision"
+    },
+    {
+      "id": "lamp",
+      "refdes": "D24",
+      "asset": "Device:LED",
+      "value": "Amber indicator LED"
+    },
+    {
+      "id": "source",
+      "refdes": "J1",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Input"
+    },
+    {
+      "id": "return",
+      "refdes": "J2",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Return"
+    }
+  ],
+  "nets": [
+    {
+      "id": "VPLUS",
+      "members": [
+        [
+          "source",
+          "1"
+        ],
+        [
+          "limit",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "MID",
+      "members": [
+        [
+          "limit",
+          "2"
+        ],
+        [
+          "lamp",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "REF",
+      "members": [
+        [
+          "lamp",
+          "1"
+        ],
+        [
+          "return",
+          "1"
+        ]
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "path",
+      "kind": "series",
+      "component": "limit",
+      "input": "VPLUS",
+      "output": "MID"
+    },
+    {
+      "id": "lamp_direction",
+      "kind": "polarity",
+      "component": "lamp",
+      "anode": "MID",
+      "cathode": "REF"
+    },
+    {
+      "id": "flow",
+      "kind": "signal_flow",
+      "input": "VPLUS",
+      "output": "REF"
+    }
+  ],
+  "no_connects": [],
+  "power_assertions": []
+}

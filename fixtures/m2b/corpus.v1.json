@@ -1,0 +1,364 @@
+{
+  "schema_version": "m2-corpus.1",
+  "freeze_policy": "Membership and fields require version bump with rationale; unsupported cases remain in split.",
+  "circuits": [
+    {
+      "id": "led_series",
+      "split": "tuning",
+      "family": "LED and resistor",
+      "challenge": "polarity and ordered source-to-load path",
+      "asset_families": [
+        "R",
+        "LED",
+        "connector"
+      ],
+      "relationships": [
+        "series",
+        "polarity",
+        "signal_flow"
+      ],
+      "expected_unsupported": false
+    },
+    {
+      "id": "led_reverse_supply",
+      "split": "tuning",
+      "family": "LED and resistor",
+      "challenge": "reverse rail presentation",
+      "asset_families": [
+        "R",
+        "LED",
+        "connector"
+      ],
+      "relationships": [
+        "series",
+        "polarity"
+      ],
+      "expected_unsupported": true
+    },
+    {
+      "id": "rc_lowpass",
+      "split": "tuning",
+      "family": "RC filter",
+      "challenge": "series resistor with shunt capacitor and output branch",
+      "asset_families": [
+        "R",
+        "C",
+        "connector"
+      ],
+      "relationships": [
+        "series",
+        "shunt",
+        "signal_flow"
+      ],
+      "expected_unsupported": false
+    },
+    {
+      "id": "rc_highpass",
+      "split": "tuning",
+      "family": "RC filter",
+      "challenge": "series capacitor and shunt resistor",
+      "asset_families": [
+        "R",
+        "C",
+        "connector"
+      ],
+      "relationships": [
+        "series",
+        "shunt",
+        "signal_flow"
+      ],
+      "expected_unsupported": true
+    },
+    {
+      "id": "dual_buffer",
+      "split": "tuning",
+      "family": "op amp buffer",
+      "challenge": "multi-unit identity and split rail support",
+      "asset_families": [
+        "NE5532",
+        "C",
+        "connector",
+        "PWR_FLAG"
+      ],
+      "relationships": [
+        "amplifier",
+        "feedback",
+        "decoupling",
+        "power_rails"
+      ],
+      "expected_unsupported": false
+    },
+    {
+      "id": "noninverting_gain",
+      "split": "tuning",
+      "family": "op amp amplifier",
+      "challenge": "resistive negative feedback and reference leg",
+      "asset_families": [
+        "NE5532",
+        "R",
+        "C",
+        "connector",
+        "PWR_FLAG"
+      ],
+      "relationships": [
+        "amplifier",
+        "feedback",
+        "series",
+        "decoupling"
+      ],
+      "expected_unsupported": false
+    },
+    {
+      "id": "inverting_gain",
+      "split": "tuning",
+      "family": "op amp amplifier",
+      "challenge": "inverting input path and reference on plus input",
+      "asset_families": [
+        "NE5532",
+        "R",
+        "C",
+        "connector",
+        "PWR_FLAG"
+      ],
+      "relationships": [
+        "amplifier",
+        "feedback",
+        "series",
+        "decoupling"
+      ],
+      "expected_unsupported": false
+    },
+    {
+      "id": "rc_to_buffer",
+      "split": "tuning",
+      "family": "composed analog stages",
+      "challenge": "RC output port feeding buffer input",
+      "asset_families": [
+        "NE5532",
+        "R",
+        "C",
+        "connector",
+        "PWR_FLAG"
+      ],
+      "relationships": [
+        "series",
+        "shunt",
+        "amplifier",
+        "feedback",
+        "decoupling"
+      ],
+      "expected_unsupported": false
+    },
+    {
+      "id": "dual_rail_reference",
+      "split": "tuning",
+      "family": "split reference",
+      "challenge": "local reference fanout and bypass",
+      "asset_families": [
+        "NE5532",
+        "R",
+        "C",
+        "connector"
+      ],
+      "relationships": [
+        "power_rails",
+        "decoupling",
+        "reference"
+      ],
+      "expected_unsupported": true
+    },
+    {
+      "id": "sallen_key",
+      "split": "tuning",
+      "family": "active filter",
+      "challenge": "overlapping capacitor and feedback relations",
+      "asset_families": [
+        "NE5532",
+        "R",
+        "C",
+        "connector"
+      ],
+      "relationships": [
+        "series",
+        "shunt",
+        "feedback"
+      ],
+      "expected_unsupported": true
+    },
+    {
+      "id": "linear_regulator",
+      "split": "tuning",
+      "family": "regulator",
+      "challenge": "input and output support capacitors",
+      "asset_families": [
+        "regulator",
+        "C",
+        "connector"
+      ],
+      "relationships": [
+        "decoupling",
+        "power_rails"
+      ],
+      "expected_unsupported": true
+    },
+    {
+      "id": "timer_astable",
+      "split": "tuning",
+      "family": "timer",
+      "challenge": "timing network and control reference",
+      "asset_families": [
+        "timer",
+        "R",
+        "C",
+        "connector"
+      ],
+      "relationships": [
+        "series",
+        "shunt",
+        "power_rails"
+      ],
+      "expected_unsupported": true
+    },
+    {
+      "id": "led_long_text",
+      "split": "holdout",
+      "family": "LED and resistor",
+      "challenge": "long legal reference and value text",
+      "asset_families": [
+        "R",
+        "LED",
+        "connector"
+      ],
+      "relationships": [
+        "series",
+        "polarity",
+        "signal_flow"
+      ],
+      "expected_unsupported": false
+    },
+    {
+      "id": "rc_loaded_output",
+      "split": "holdout",
+      "family": "RC filter",
+      "challenge": "multi-terminal output fanout",
+      "asset_families": [
+        "R",
+        "C",
+        "connector"
+      ],
+      "relationships": [
+        "series",
+        "shunt",
+        "signal_flow"
+      ],
+      "expected_unsupported": true
+    },
+    {
+      "id": "rc_to_noninverting",
+      "split": "holdout",
+      "family": "composed analog stages",
+      "challenge": "RC output port feeding gain stage",
+      "asset_families": [
+        "NE5532",
+        "R",
+        "C",
+        "connector",
+        "PWR_FLAG"
+      ],
+      "relationships": [
+        "series",
+        "shunt",
+        "amplifier",
+        "feedback",
+        "decoupling"
+      ],
+      "expected_unsupported": true
+    },
+    {
+      "id": "diode_clamp",
+      "split": "holdout",
+      "family": "diode support",
+      "challenge": "signal clamp to reference",
+      "asset_families": [
+        "diode",
+        "R",
+        "connector"
+      ],
+      "relationships": [
+        "shunt",
+        "polarity"
+      ],
+      "expected_unsupported": true
+    },
+    {
+      "id": "inverting_summing",
+      "split": "holdout",
+      "family": "op amp amplifier",
+      "challenge": "multiple inverting input paths",
+      "asset_families": [
+        "NE5532",
+        "R",
+        "C",
+        "connector"
+      ],
+      "relationships": [
+        "amplifier",
+        "feedback",
+        "series"
+      ],
+      "expected_unsupported": true
+    },
+    {
+      "id": "sallen_key_variant",
+      "split": "holdout",
+      "family": "active filter",
+      "challenge": "different component ordering and values",
+      "asset_families": [
+        "NE5532",
+        "R",
+        "C",
+        "connector"
+      ],
+      "relationships": [
+        "series",
+        "shunt",
+        "feedback"
+      ],
+      "expected_unsupported": true
+    },
+    {
+      "id": "negative_regulator",
+      "split": "holdout",
+      "family": "regulator",
+      "challenge": "negative rail and bypass polarity",
+      "asset_families": [
+        "regulator",
+        "C",
+        "connector"
+      ],
+      "relationships": [
+        "power_rails",
+        "decoupling"
+      ],
+      "expected_unsupported": true
+    },
+    {
+      "id": "switch_control",
+      "split": "holdout",
+      "family": "switching control",
+      "challenge": "feedback and local support paths",
+      "asset_families": [
+        "controller",
+        "R",
+        "C",
+        "connector"
+      ],
+      "relationships": [
+        "feedback",
+        "decoupling",
+        "power_rails"
+      ],
+      "expected_unsupported": true
+    }
+  ]
+}
