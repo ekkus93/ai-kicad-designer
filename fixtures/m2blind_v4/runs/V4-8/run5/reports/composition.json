@@ -1,0 +1,614 @@
+{
+  "schema_version": "m2e1.composition.1",
+  "blocks": [
+    {
+      "id": "interface.output",
+      "kind": "interface",
+      "relationships": [],
+      "occurrences": [
+        [
+          "output",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "interface.output.pin1",
+          "net": "FILTERED",
+          "role": "passive",
+          "terminals": [
+            [
+              "output",
+              "1"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "interface.return",
+      "kind": "interface",
+      "relationships": [],
+      "occurrences": [
+        [
+          "return",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "interface.return.pin1",
+          "net": "REF",
+          "role": "passive",
+          "terminals": [
+            [
+              "return",
+              "1"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "interface.source",
+      "kind": "interface",
+      "relationships": [],
+      "occurrences": [
+        [
+          "source",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "interface.source.pin1",
+          "net": "VCC",
+          "role": "passive",
+          "terminals": [
+            [
+              "source",
+              "1"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "passive.indicator.series",
+      "kind": "led_branch",
+      "relationships": [
+        "indicator.polarity",
+        "indicator.series"
+      ],
+      "occurrences": [
+        [
+          "indicator_led",
+          1
+        ],
+        [
+          "indicator_r",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "passive.indicator.series.input",
+          "net": "OUT",
+          "role": "signal_in",
+          "terminals": [
+            [
+              "indicator_r",
+              "1"
+            ]
+          ]
+        },
+        {
+          "id": "passive.indicator.series.output",
+          "net": "LEDMID",
+          "role": "signal_out",
+          "terminals": [
+            [
+              "indicator_r",
+              "2"
+            ]
+          ]
+        },
+        {
+          "id": "passive.indicator.series.reference",
+          "net": "REF",
+          "role": "reference",
+          "terminals": [
+            [
+              "indicator_led",
+              "1"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "passive.output.filter.series",
+      "kind": "rc",
+      "relationships": [
+        "output.filter.series",
+        "output.filter.shunt"
+      ],
+      "occurrences": [
+        [
+          "filter_c",
+          1
+        ],
+        [
+          "filter_r",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "passive.output.filter.series.input",
+          "net": "OUT",
+          "role": "signal_in",
+          "terminals": [
+            [
+              "filter_r",
+              "1"
+            ]
+          ]
+        },
+        {
+          "id": "passive.output.filter.series.output",
+          "net": "FILTERED",
+          "role": "signal_out",
+          "terminals": [
+            [
+              "filter_r",
+              "2"
+            ]
+          ]
+        },
+        {
+          "id": "passive.output.filter.series.reference",
+          "net": "REF",
+          "role": "reference",
+          "terminals": [
+            [
+              "filter_c",
+              "2"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "timer.timer",
+      "kind": "timer",
+      "relationships": [
+        "control.bypass",
+        "timer.function",
+        "timing.network"
+      ],
+      "occurrences": [
+        [
+          "charge",
+          1
+        ],
+        [
+          "control_bypass",
+          1
+        ],
+        [
+          "discharge",
+          1
+        ],
+        [
+          "timer",
+          1
+        ],
+        [
+          "timing_cap",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "timer.timer.supply",
+          "net": "VCC",
+          "role": "power_in",
+          "terminals": [
+            [
+              "timer",
+              "8"
+            ]
+          ]
+        },
+        {
+          "id": "timer.timer.output",
+          "net": "OUT",
+          "role": "signal_out",
+          "terminals": [
+            [
+              "timer",
+              "3"
+            ]
+          ]
+        },
+        {
+          "id": "timer.timer.reference",
+          "net": "REF",
+          "role": "reference",
+          "terminals": [
+            [
+              "timer",
+              "1"
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "owners": [
+    {
+      "occurrence": [
+        "charge",
+        1
+      ],
+      "fragment": "timer.timer"
+    },
+    {
+      "occurrence": [
+        "control_bypass",
+        1
+      ],
+      "fragment": "timer.timer"
+    },
+    {
+      "occurrence": [
+        "discharge",
+        1
+      ],
+      "fragment": "timer.timer"
+    },
+    {
+      "occurrence": [
+        "filter_c",
+        1
+      ],
+      "fragment": "passive.output.filter.series"
+    },
+    {
+      "occurrence": [
+        "filter_r",
+        1
+      ],
+      "fragment": "passive.output.filter.series"
+    },
+    {
+      "occurrence": [
+        "indicator_led",
+        1
+      ],
+      "fragment": "passive.indicator.series"
+    },
+    {
+      "occurrence": [
+        "indicator_r",
+        1
+      ],
+      "fragment": "passive.indicator.series"
+    },
+    {
+      "occurrence": [
+        "output",
+        1
+      ],
+      "fragment": "interface.output"
+    },
+    {
+      "occurrence": [
+        "return",
+        1
+      ],
+      "fragment": "interface.return"
+    },
+    {
+      "occurrence": [
+        "source",
+        1
+      ],
+      "fragment": "interface.source"
+    },
+    {
+      "occurrence": [
+        "timer",
+        1
+      ],
+      "fragment": "timer.timer"
+    },
+    {
+      "occurrence": [
+        "timing_cap",
+        1
+      ],
+      "fragment": "timer.timer"
+    }
+  ],
+  "edges": [
+    {
+      "kind": "branch",
+      "source": "timer.timer",
+      "target": "passive.indicator.series",
+      "net": "OUT",
+      "origins": []
+    },
+    {
+      "kind": "branch",
+      "source": "timer.timer",
+      "target": "passive.output.filter.series",
+      "net": "OUT",
+      "origins": []
+    },
+    {
+      "kind": "reference",
+      "source": "passive.indicator.series",
+      "target": "passive.output.filter.series",
+      "net": "REF",
+      "origins": []
+    },
+    {
+      "kind": "reference",
+      "source": "timer.timer",
+      "target": "passive.indicator.series",
+      "net": "REF",
+      "origins": []
+    },
+    {
+      "kind": "support",
+      "source": "timer.timer",
+      "target": "timer.timer",
+      "net": "CONT",
+      "origins": [
+        "control.bypass"
+      ]
+    }
+  ],
+  "signal_order": [
+    "passive.indicator.series",
+    "passive.output.filter.series",
+    "timer.timer"
+  ],
+  "variants": [
+    {
+      "fragment": "interface.output",
+      "variant": "interface.output.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [],
+      "local_envelope": [
+        2540000,
+        6350000,
+        23120000,
+        24130000
+      ],
+      "placed_envelope": [
+        22860000,
+        119380000,
+        43440000,
+        137160000
+      ],
+      "translation": [
+        20320000,
+        113030000
+      ],
+      "protected_wire_count": 1,
+      "obstacle_count": 1
+    },
+    {
+      "fragment": "interface.return",
+      "variant": "interface.return.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [],
+      "local_envelope": [
+        2540000,
+        6350000,
+        20450000,
+        24130000
+      ],
+      "placed_envelope": [
+        49530000,
+        119380000,
+        67440000,
+        137160000
+      ],
+      "translation": [
+        46990000,
+        113030000
+      ],
+      "protected_wire_count": 1,
+      "obstacle_count": 1
+    },
+    {
+      "fragment": "interface.source",
+      "variant": "interface.source.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [],
+      "local_envelope": [
+        2540000,
+        6350000,
+        20450000,
+        24130000
+      ],
+      "placed_envelope": [
+        73660000,
+        119380000,
+        91570000,
+        137160000
+      ],
+      "translation": [
+        71120000,
+        113030000
+      ],
+      "protected_wire_count": 1,
+      "obstacle_count": 1
+    },
+    {
+      "fragment": "passive.indicator.series",
+      "variant": "passive.indicator.series.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [
+        "indicator.polarity",
+        "indicator.series"
+      ],
+      "local_envelope": [
+        20320000,
+        3810000,
+        30480000,
+        55880000
+      ],
+      "placed_envelope": [
+        109220000,
+        29210000,
+        119380000,
+        81280000
+      ],
+      "translation": [
+        88900000,
+        25400000
+      ],
+      "protected_wire_count": 3,
+      "obstacle_count": 2
+    },
+    {
+      "fragment": "passive.output.filter.series",
+      "variant": "passive.output.filter.series.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [
+        "output.filter.series",
+        "output.filter.shunt"
+      ],
+      "local_envelope": [
+        15240000,
+        5080000,
+        54610000,
+        54610000
+      ],
+      "placed_envelope": [
+        124460000,
+        29210000,
+        163830000,
+        78740000
+      ],
+      "translation": [
+        109220000,
+        24130000
+      ],
+      "protected_wire_count": 6,
+      "obstacle_count": 2
+    },
+    {
+      "fragment": "timer.timer",
+      "variant": "timer.timer.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [
+        "control.bypass",
+        "timer.function",
+        "timing.network"
+      ],
+      "local_envelope": [
+        3810000,
+        8890000,
+        85090000,
+        93980000
+      ],
+      "placed_envelope": [
+        22860000,
+        29210000,
+        104140000,
+        114300000
+      ],
+      "translation": [
+        19050000,
+        20320000
+      ],
+      "protected_wire_count": 22,
+      "obstacle_count": 5
+    }
+  ],
+  "packing_attempts": [
+    "candidate-1:pass"
+  ],
+  "routes": [
+    {
+      "net": "OUT",
+      "edge_count": 2,
+      "segments": [
+        [
+          [
+            97790000,
+            26670000
+          ],
+          [
+            114300000,
+            26670000
+          ]
+        ],
+        [
+          [
+            97790000,
+            26670000
+          ],
+          [
+            127000000,
+            26670000
+          ]
+        ],
+        [
+          [
+            97790000,
+            68580000
+          ],
+          [
+            97790000,
+            26670000
+          ]
+        ],
+        [
+          [
+            114300000,
+            26670000
+          ],
+          [
+            114300000,
+            33020000
+          ]
+        ],
+        [
+          [
+            127000000,
+            26670000
+          ],
+          [
+            127000000,
+            43180000
+          ]
+        ]
+      ],
+      "junctions": [
+        [
+          97790000,
+          26670000
+        ]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "schema_version": "m2f1.regressions.v1",
+  "pytest": {
+    "command": ".venv/bin/pytest -q",
+    "status": "pass",
+    "tests_passed": 136,
+    "duration_seconds": 82.27,
+    "summary": "136 passed in 82.27s",
+    "coverage_includes": [
+      "M1 mutation and independent-observation tests",
+      "M2 physical identity tests",
+      "12 M2c1 tuning regressions",
+      "corpus.v2 known regressions",
+      "valid corpus.v3 known regressions",
+      "corrected V3-8-equivalent regression",
+      "M2e1 development probes",
+      "M2e1a power-source validation tests"
+    ]
+  },
+  "ruff_lint": {
+    "command": ".venv/bin/ruff check src tests tools fixtures/m2blind/*.py fixtures/m2blind_v3/*.py fixtures/m2d1/*.py fixtures/m2blind_v4/*.py",
+    "status": "pass",
+    "summary": "All checks passed!"
+  },
+  "ruff_format": {
+    "command": ".venv/bin/ruff format --check src tests tools fixtures/m2blind/*.py fixtures/m2blind_v3/*.py fixtures/m2d1/*.py fixtures/m2blind_v4/*.py",
+    "status": "fail",
+    "summary": "3 new qualification scripts would be reformatted; 37 files already formatted",
+    "files": [
+      "fixtures/m2blind_v4/author_corpus.py",
+      "fixtures/m2blind_v4/evaluate.py",
+      "fixtures/m2blind_v4/prepare_freeze.py"
+    ],
+    "repair_attempted": false
+  },
+  "git_diff_check": {
+    "command": "git diff --check",
+    "status": "pass"
+  },
+  "hand_authored_whitespace": {
+    "status": "pass",
+    "files_checked": 59,
+    "findings": 0,
+    "excluded": [
+      "generated run artifacts",
+      "review_packet",
+      "__pycache__",
+      ".local",
+      "research/legacy_openclaw"
+    ]
+  },
+  "pass": false
+}
