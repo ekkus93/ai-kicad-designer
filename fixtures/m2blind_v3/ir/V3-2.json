@@ -1,0 +1,245 @@
+{
+  "profile": "m2b.1",
+  "id": "regulator_rc_led_chain",
+  "name": "V3RegulatorRcLedChain",
+  "components": [
+    {
+      "id": "stage",
+      "refdes": "U1",
+      "asset": "Regulator_Linear:L7805",
+      "value": "L7805"
+    },
+    {
+      "id": "input_bypass",
+      "refdes": "C1",
+      "asset": "Device:C",
+      "value": "330n"
+    },
+    {
+      "id": "output_bypass",
+      "refdes": "C2",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "source",
+      "refdes": "J1",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Supply input"
+    },
+    {
+      "id": "load",
+      "refdes": "J2",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Regulated output"
+    },
+    {
+      "id": "return",
+      "refdes": "J3",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Return"
+    },
+    {
+      "id": "filter_r",
+      "refdes": "R1",
+      "asset": "Device:R",
+      "value": "100"
+    },
+    {
+      "id": "filter_c",
+      "refdes": "C3",
+      "asset": "Device:C",
+      "value": "10u"
+    },
+    {
+      "id": "indicator_r",
+      "refdes": "R2",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "indicator_led",
+      "refdes": "D1",
+      "asset": "Device:LED",
+      "value": "LED"
+    }
+  ],
+  "nets": [
+    {
+      "id": "VIN",
+      "members": [
+        [
+          "source",
+          "1"
+        ],
+        [
+          "stage",
+          "1"
+        ],
+        [
+          "input_bypass",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "VOUT",
+      "members": [
+        [
+          "stage",
+          "3"
+        ],
+        [
+          "output_bypass",
+          "1"
+        ],
+        [
+          "filter_r",
+          "1"
+        ],
+        [
+          "indicator_r",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "REF",
+      "members": [
+        [
+          "stage",
+          "2"
+        ],
+        [
+          "input_bypass",
+          "2"
+        ],
+        [
+          "output_bypass",
+          "2"
+        ],
+        [
+          "return",
+          "1"
+        ],
+        [
+          "filter_c",
+          "2"
+        ],
+        [
+          "indicator_led",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "FILTERED",
+      "members": [
+        [
+          "filter_r",
+          "2"
+        ],
+        [
+          "filter_c",
+          "1"
+        ],
+        [
+          "load",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "LEDMID",
+      "members": [
+        [
+          "indicator_r",
+          "2"
+        ],
+        [
+          "indicator_led",
+          "2"
+        ]
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "conversion",
+      "kind": "power_stage",
+      "component": "stage",
+      "input": "VIN",
+      "output": "VOUT",
+      "reference": "REF",
+      "pins": {
+        "input": "1",
+        "output": "3",
+        "reference": "2"
+      },
+      "polarity": "positive"
+    },
+    {
+      "id": "bypass.input",
+      "kind": "decoupling",
+      "component": "input_bypass",
+      "consumer": [
+        "stage",
+        "1"
+      ],
+      "supply": "VIN",
+      "return": "REF"
+    },
+    {
+      "id": "bypass.output",
+      "kind": "decoupling",
+      "component": "output_bypass",
+      "consumer": [
+        "stage",
+        "3"
+      ],
+      "supply": "VOUT",
+      "return": "REF"
+    },
+    {
+      "id": "output.filter.series",
+      "kind": "series",
+      "component": "filter_r",
+      "input": "VOUT",
+      "output": "FILTERED"
+    },
+    {
+      "id": "output.filter.shunt",
+      "kind": "shunt",
+      "component": "filter_c",
+      "node": "FILTERED",
+      "reference": "REF"
+    },
+    {
+      "id": "indicator.series",
+      "kind": "series",
+      "component": "indicator_r",
+      "input": "VOUT",
+      "output": "LEDMID"
+    },
+    {
+      "id": "indicator.polarity",
+      "kind": "polarity",
+      "component": "indicator_led",
+      "anode": "LEDMID",
+      "cathode": "REF"
+    }
+  ],
+  "no_connects": [],
+  "power_assertions": [
+    {
+      "id": "flag.input",
+      "refdes": "#FLG01",
+      "net": "VIN"
+    },
+    {
+      "id": "flag.return",
+      "refdes": "#FLG02",
+      "net": "REF"
+    }
+  ]
+}
