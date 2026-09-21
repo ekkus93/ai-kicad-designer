@@ -469,17 +469,21 @@ class Draft:
         )
 
 
-def passive_layout(design: dict, resolved: dict[str, Asset]) -> Scene:
+def passive_layout(design: dict, resolved: dict[str, Asset], partial: bool = False) -> Scene:
     """Compose series, shunt and diode relations through net anchors."""
     relations = design["relationships"]
     series = [r for r in relations if r["kind"] == "series"]
     shunts = [r for r in relations if r["kind"] == "shunt"]
     polarities = [r for r in relations if r["kind"] == "polarity"]
-    if len(series) != 1 or len(shunts) + len(polarities) != 1:
+    if not series or not shunts and not polarities:
         raise InputError("unsupported passive composition")
-    s = series[0]
     flows = [r for r in relations if r["kind"] == "signal_flow"]
-    final_net = polarities[0]["cathode"] if polarities else series[0]["output"]
+    s = next((r for r in series if flows and r["input"] == flows[0]["input"]), series[0])
+    shunts = [r for r in shunts if r["node"] == s["output"]]
+    polarities = [r for r in polarities if r["anode"] == s["output"]]
+    if len(shunts) + len(polarities) != 1:
+        raise InputError(f"series {s['id']}: no unique downstream shunt/polarity rule")
+    final_net = polarities[0]["cathode"] if polarities else s["output"]
     if len(flows) != 1 or flows[0]["input"] != s["input"] or flows[0]["output"] != final_net:
         raise InputError("signal flow relation does not match passive path")
     components = {c["id"]: c for c in design["components"]}
@@ -555,10 +559,11 @@ def passive_layout(design: dict, resolved: dict[str, Asset]) -> Scene:
         ref = d.point(ports[sh["reference"]], "1")
         d.route(sh["reference"], shunt_bottom, (shunt_bottom[0], ref[1]), ref)
         d.label(sh["reference"], ref)
-    if len(d.positions) != len(design["components"]):
+    if not partial and len(d.positions) != len(design["components"]):
         raise InputError("unsupported passive component occurrence")
-    choose_text_slots(design, d)
-    metrics = measure(design, resolved, d)
+    if not partial:
+        choose_text_slots(design, d)
+    metrics = {} if partial else measure(design, resolved, d)
     text_angles = {key: angle for key, angle in d.angles.items() if angle in (90, 270)}
     return Scene(
         d.positions,
@@ -573,7 +578,7 @@ def passive_layout(design: dict, resolved: dict[str, Asset]) -> Scene:
     )
 
 
-def power_stage_layout(design: dict, resolved: dict[str, Asset]) -> Scene:
+def power_stage_layout(design: dict, resolved: dict[str, Asset], partial: bool = False) -> Scene:
     """Place a three-terminal power stage between its interfaces and local support."""
     stages = [r for r in design["relationships"] if r["kind"] == "power_stage"]
     supports = [r for r in design["relationships"] if r["kind"] == "decoupling"]
@@ -668,10 +673,11 @@ def power_stage_layout(design: dict, resolved: dict[str, Asset]) -> Scene:
         (stage["reference"], (reference_pin[0], return_y)),
     ):
         d.positions[(flags[net]["id"], 1)] = point
-    if {cid for cid, _ in d.positions if cid in components} != set(components):
+    if not partial and {cid for cid, _ in d.positions if cid in components} != set(components):
         raise InputError("unplaced power-stage component")
-    choose_text_slots(design, d)
-    metrics = measure(design, resolved, d)
+    if not partial:
+        choose_text_slots(design, d)
+    metrics = {} if partial else measure(design, resolved, d)
     return Scene(
         d.positions,
         d.wires,
@@ -684,7 +690,7 @@ def power_stage_layout(design: dict, resolved: dict[str, Asset]) -> Scene:
     )
 
 
-def timing_layout(design: dict, resolved: dict[str, Asset]) -> Scene:
+def timing_layout(design: dict, resolved: dict[str, Asset], partial: bool = False) -> Scene:
     """Compose a vertical timing ladder beside a physical timer symbol."""
     timers = [r for r in design["relationships"] if r["kind"] == "timer"]
     ladders = [r for r in design["relationships"] if r["kind"] == "timing_ladder"]
@@ -791,10 +797,11 @@ def timing_layout(design: dict, resolved: dict[str, Asset]) -> Scene:
         (timer["reference"], (p["reference"][0], return_port[1])),
     ):
         d.positions[(flags[net]["id"], 1)] = point
-    if {cid for cid, _ in d.positions if cid in components} != set(components):
+    if not partial and {cid for cid, _ in d.positions if cid in components} != set(components):
         raise InputError("unplaced timer component")
-    choose_text_slots(design, d)
-    metrics = measure(design, resolved, d)
+    if not partial:
+        choose_text_slots(design, d)
+    metrics = {} if partial else measure(design, resolved, d)
     return Scene(
         d.positions,
         d.wires,
@@ -1133,7 +1140,7 @@ def compare(design: dict, observed: dict, resolved: dict[str, Asset] | None = No
     }
 
 
-def active_layout(design: dict, resolved: dict[str, Asset]) -> Scene:
+def active_layout(design: dict, resolved: dict[str, Asset], partial: bool = False) -> Scene:
     """Construct functional stage, feedback corridor and support islands from relations."""
     relations = design["relationships"]
     stages = [r for r in relations if r["kind"] == "amplifier"]
@@ -1142,8 +1149,12 @@ def active_layout(design: dict, resolved: dict[str, Asset]) -> Scene:
     decouplers = [r for r in relations if r["kind"] == "decoupling"]
     if len(stages) != 2 or len(rails) != 1 or len(feedbacks) != 2 or len(decouplers) != 2:
         raise InputError("unsupported active-stage relation inventory")
-    active = next((r for r in stages if not r.get("unused")), None)
-    parked = next((r for r in stages if r.get("unused")), None)
+    active_stages = [r for r in stages if not r.get("unused")]
+    active = next(
+        (r for r in active_stages if r["input"] not in {s["output"] for s in active_stages}),
+        active_stages[0] if active_stages else None,
+    )
+    parked = next((r for r in stages if r is not active), None)
     if (
         active is None
         or parked is None
@@ -1155,7 +1166,7 @@ def active_layout(design: dict, resolved: dict[str, Asset]) -> Scene:
     component = next(c for c in design["components"] if c["id"] == amp)
     functions = {f["id"]: f for f in component["functions"]}
     af, pf = functions[active["function"]], functions[parked["function"]]
-    if af["unit"] != 1 or pf["unit"] != 2 or rails[0]["unit"] != 3:
+    if {af["unit"], pf["unit"]} != {1, 2} or rails[0]["unit"] != 3:
         raise InputError("unsupported function unit assignment")
     net_members = {n["id"]: {tuple(m) for m in n["members"]} for n in design["nets"]}
     by_pin = {member: net for net, members in net_members.items() for member in members}
@@ -1176,7 +1187,7 @@ def active_layout(design: dict, resolved: dict[str, Asset]) -> Scene:
         raise InputError("positive feedback unsupported")
     d = Draft(design, resolved, {}, {}, [], [], [], [], {})
     ax, ay = 100 * PITCH, 59 * PITCH
-    bx, by = ax, ay + 57 * PITCH
+    bx, by = (ax, ay + 57 * PITCH) if parked.get("unused") else (ax + 70 * PITCH, ay)
     px, py = ax + 64 * PITCH, ay + 33 * PITCH
     d.add(amp, ax, ay, af["unit"])
     d.add(amp, bx, by, pf["unit"])
@@ -1342,7 +1353,7 @@ def active_layout(design: dict, resolved: dict[str, Asset]) -> Scene:
     if input_leg:
         d.route(plus_net, plus, (plus[0] - 7 * PITCH, plus[1]))
         d.label(plus_net, (plus[0] - 7 * PITCH, plus[1]))
-    # Parked unit is intentionally biased and locally closed.
+    # The other function may be parked or a second active stage in the same package.
     pout = d.point(amp, pf["pins"]["out"])
     pminus = d.point(amp, pf["pins"]["minus"])
     pplus = d.point(amp, pf["pins"]["plus"])
@@ -1360,8 +1371,18 @@ def active_layout(design: dict, resolved: dict[str, Asset]) -> Scene:
         pbranch,
         pout,
     )
-    d.route(by_pin[(amp, pf["pins"]["plus"])], pplus, (pplus[0] - 5 * PITCH, pplus[1]))
-    d.label(by_pin[(amp, pf["pins"]["plus"])], (pplus[0] - 5 * PITCH, pplus[1]))
+    if parked.get("unused"):
+        d.route(by_pin[(amp, pf["pins"]["plus"])], pplus, (pplus[0] - 5 * PITCH, pplus[1]))
+        d.label(by_pin[(amp, pf["pins"]["plus"])], (pplus[0] - 5 * PITCH, pplus[1]))
+    else:
+        if parked["input"] != out_net or parked["output"] != parked_net:
+            raise InputError(f"stages {active['id']}, {parked['id']}: incompatible ports")
+        first_out = (branch_x + 7 * PITCH, branch[1])
+        second_in = (pplus[0] - 5 * PITCH, pplus[1])
+        d.route(out_net, first_out, (second_in[0], first_out[1]), second_in, pplus)
+        second_out = (pbranch[0] + 7 * PITCH, pbranch[1])
+        d.route(parked_net, pbranch, second_out)
+        d.label(parked_net, second_out)
     # Power unit and split-rail decoupling are separate owned occurrences.
     pospin = d.point(amp, "8")
     negpin = d.point(amp, "4")
@@ -1442,10 +1463,13 @@ def active_layout(design: dict, resolved: dict[str, Asset]) -> Scene:
             d.angles[(flags[net]["id"], 1)] = 0
     # Each component is placed once even when it belongs to several relations.
     placed = {cid for cid, _ in d.positions if cid in {c["id"] for c in design["components"]}}
-    if placed != {c["id"] for c in design["components"]}:
-        raise InputError("unsupported unplaced active-stage component")
-    choose_text_slots(design, d)
-    metrics = measure(design, resolved, d)
+    if not partial and placed != {c["id"] for c in design["components"]}:
+        raise InputError(
+            f"components without geometry owner: {sorted({c['id'] for c in design['components']} - placed)}"
+        )
+    if not partial:
+        choose_text_slots(design, d)
+    metrics = {} if partial else measure(design, resolved, d)
     metrics.update(
         {
             "feedback_local_span_mm": (branch_x - sense_x) / 1_000_000,
@@ -1706,10 +1730,12 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
         kind = relation["kind"]
         if kind == "series":
             ref = by_ref[relation["component"]]
-            reversals += pin_positions[(ref, "1")][0] >= pin_positions[(ref, "2")][0]
+            start, end = pin_positions[(ref, "1")], pin_positions[(ref, "2")]
+            reversals += not (start[0] < end[0] or start[1] < end[1])
         elif kind == "polarity":
             ref = by_ref[relation["component"]]
-            reversals += pin_positions[(ref, "2")][0] >= pin_positions[(ref, "1")][0]
+            start, end = pin_positions[(ref, "2")], pin_positions[(ref, "1")]
+            reversals += not (start[0] < end[0] or start[1] < end[1])
         elif kind == "amplifier" and not relation.get("unused"):
             component = next(c for c in design["components"] if c["id"] == relation["component"])
             function = next(f for f in component["functions"] if f["id"] == relation["function"])
@@ -1779,8 +1805,22 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
                 continue
             component = next(c for c in design["components"] if c["id"] == second["component"])
             function = next(f for f in component["functions"] if f["id"] == second["function"])
-            target = pin(second["component"], function["pins"]["plus"])
             source = pin(first["component"], "2")
+            input_leg = next(
+                (
+                    r
+                    for r in relation_by_kind.get("series", [])
+                    if r["input"] == first["output"]
+                    and pin_to_net.get(pin(r["component"], "2"))
+                    == pin_to_net.get(pin(second["component"], function["pins"]["minus"]))
+                ),
+                None,
+            )
+            target = (
+                pin(input_leg["component"], "1")
+                if input_leg
+                else pin(second["component"], function["pins"]["plus"])
+            )
             require_path(source, target, "series/amplifier")
             if pin_positions[source][0] >= pin_positions[target][0]:
                 raise InputError("observed functional stage order reversal")

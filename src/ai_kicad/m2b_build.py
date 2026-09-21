@@ -7,16 +7,8 @@ from .assets import sha256
 from .ir import InputError, load_json
 from .kicad import ToolFailure, run_headless, validate_toolchain
 from .m2a import ROOT, emit, observe
-from .m2b import (
-    active_layout,
-    assets,
-    check_observed_layout,
-    compare,
-    passive_layout,
-    power_stage_layout,
-    timing_layout,
-    validate,
-)
+from .m2b import assets, check_observed_layout, compare, validate
+from .m2_compose import compose_layout
 
 
 def build(args) -> int:
@@ -51,15 +43,7 @@ def build(args) -> int:
         design = validate(load_json(args.design), resolved)
         stages.append({"stage": "validate_resolve", "status": "ok"})
         launcher = validate_toolchain(args.toolchain_lock, ROOT / "requirements.lock")
-        relation_kinds = {r["kind"] for r in design["relationships"]}
-        if "timer" in relation_kinds:
-            scene = timing_layout(design, resolved)
-        elif "power_stage" in relation_kinds:
-            scene = power_stage_layout(design, resolved)
-        elif "amplifier" in relation_kinds:
-            scene = active_layout(design, resolved)
-        else:
-            scene = passive_layout(design, resolved)
+        scene = compose_layout(design, resolved)
         stages.append({"stage": "layout_schematic", "status": "ok"})
         owned_assets = {c["asset"] for c in design["components"]}
         emitted_assets = {
