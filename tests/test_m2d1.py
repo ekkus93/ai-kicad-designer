@@ -89,7 +89,7 @@ def test_unmatched_relationship_reports_semantic_id():
     resolved = assets()
     design = _case(1, resolved)
     design["relationships"] = [r for r in design["relationships"] if r["kind"] != "polarity"]
-    with pytest.raises(InputError, match="relationship load.series: no unique downstream"):
+    with pytest.raises(InputError, match="SEMANTIC_OWNER_INCOMPLETE.*load_led"):
         compose_layout(design, resolved)
 
 

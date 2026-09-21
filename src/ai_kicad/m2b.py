@@ -471,6 +471,10 @@ class Draft:
 
 def passive_layout(design: dict, resolved: dict[str, Asset], partial: bool = False) -> Scene:
     """Compose series, shunt and diode relations through net anchors."""
+    if not partial:
+        from .m2_compose import compose_layout
+
+        return compose_layout(design, resolved)
     relations = design["relationships"]
     series = [r for r in relations if r["kind"] == "series"]
     shunts = [r for r in relations if r["kind"] == "shunt"]
@@ -580,6 +584,10 @@ def passive_layout(design: dict, resolved: dict[str, Asset], partial: bool = Fal
 
 def power_stage_layout(design: dict, resolved: dict[str, Asset], partial: bool = False) -> Scene:
     """Place a three-terminal power stage between its interfaces and local support."""
+    if not partial:
+        from .m2_compose import compose_layout
+
+        return compose_layout(design, resolved)
     stages = [r for r in design["relationships"] if r["kind"] == "power_stage"]
     supports = [r for r in design["relationships"] if r["kind"] == "decoupling"]
     if len(stages) != 1 or len(supports) != 2:
@@ -692,6 +700,10 @@ def power_stage_layout(design: dict, resolved: dict[str, Asset], partial: bool =
 
 def timing_layout(design: dict, resolved: dict[str, Asset], partial: bool = False) -> Scene:
     """Compose a vertical timing ladder beside a physical timer symbol."""
+    if not partial:
+        from .m2_compose import compose_layout
+
+        return compose_layout(design, resolved)
     timers = [r for r in design["relationships"] if r["kind"] == "timer"]
     ladders = [r for r in design["relationships"] if r["kind"] == "timing_ladder"]
     controls = [r for r in design["relationships"] if r["kind"] == "decoupling"]
@@ -968,13 +980,25 @@ def choose_text_slots(design: dict, draft: Draft) -> None:
         horizontal = draft.angles.get(key, 0) in (90, 270)
         slots = [draft.text_positions[key]]
         slots += (
-            [(sx, sy - 8 * PITCH), (sx, sy + 5 * PITCH), (sx, sy - 12 * PITCH)]
+            [
+                (sx, sy - 8 * PITCH),
+                (sx, sy + 5 * PITCH),
+                (sx, sy - 12 * PITCH),
+                (sx, sy + 9 * PITCH),
+                (sx, sy - 16 * PITCH),
+            ]
             if horizontal
             else [
                 (sx + 8 * PITCH, sy - 2 * PITCH),
                 (sx - 8 * PITCH, sy - 2 * PITCH),
                 (sx + 12 * PITCH, sy - 2 * PITCH),
                 (sx - 12 * PITCH, sy - 2 * PITCH),
+                (sx + 16 * PITCH, sy - 2 * PITCH),
+                (sx - 16 * PITCH, sy - 2 * PITCH),
+                (sx + 12 * PITCH, sy - 10 * PITCH),
+                (sx - 12 * PITCH, sy - 10 * PITCH),
+                (sx + 20 * PITCH, sy - 2 * PITCH),
+                (sx - 20 * PITCH, sy - 2 * PITCH),
             ]
         )
         for x, y in slots:
@@ -1142,6 +1166,10 @@ def compare(design: dict, observed: dict, resolved: dict[str, Asset] | None = No
 
 def active_layout(design: dict, resolved: dict[str, Asset], partial: bool = False) -> Scene:
     """Construct functional stage, feedback corridor and support islands from relations."""
+    if not partial:
+        from .m2_compose import compose_layout
+
+        return compose_layout(design, resolved)
     relations = design["relationships"]
     stages = [r for r in relations if r["kind"] == "amplifier"]
     rails = [r for r in relations if r["kind"] == "power_rails"]

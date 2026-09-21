@@ -1,0 +1,792 @@
+{
+  "schema_version": "m2e1.composition.1",
+  "blocks": [
+    {
+      "id": "function.amp.a",
+      "kind": "noninverting_amplifier",
+      "relationships": [
+        "gain_reference",
+        "loop.a",
+        "stage.a"
+      ],
+      "occurrences": [
+        [
+          "amp",
+          1
+        ],
+        [
+          "rf",
+          1
+        ],
+        [
+          "rg",
+          1
+        ]
+      ],
+      "function": [
+        "amp",
+        "a"
+      ],
+      "unused": false,
+      "ports": [
+        {
+          "id": "function.amp.a.input",
+          "net": "FILTERED",
+          "role": "signal_in",
+          "terminals": [
+            [
+              "amp",
+              "3"
+            ]
+          ]
+        },
+        {
+          "id": "function.amp.a.output",
+          "net": "OUT",
+          "role": "signal_out",
+          "terminals": [
+            [
+              "amp",
+              "1"
+            ]
+          ]
+        },
+        {
+          "id": "function.amp.a.reference",
+          "net": "REF",
+          "role": "reference",
+          "terminals": [
+            [
+              "amp",
+              "3"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "function.amp.b",
+      "kind": "unused_amplifier",
+      "relationships": [
+        "loop.b",
+        "stage.b"
+      ],
+      "occurrences": [
+        [
+          "amp",
+          2
+        ]
+      ],
+      "function": [
+        "amp",
+        "b"
+      ],
+      "unused": true,
+      "ports": [
+        {
+          "id": "function.amp.b.input",
+          "net": "REF",
+          "role": "signal_in",
+          "terminals": [
+            [
+              "amp",
+              "5"
+            ]
+          ]
+        },
+        {
+          "id": "function.amp.b.output",
+          "net": "PARK",
+          "role": "signal_out",
+          "terminals": [
+            [
+              "amp",
+              "7"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "interface.interface",
+      "kind": "interface",
+      "relationships": [],
+      "occurrences": [
+        [
+          "interface",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "interface.interface.pin1",
+          "net": "IN",
+          "role": "passive",
+          "terminals": [
+            [
+              "interface",
+              "1"
+            ]
+          ]
+        },
+        {
+          "id": "interface.interface.pin2",
+          "net": "OUT",
+          "role": "passive",
+          "terminals": [
+            [
+              "interface",
+              "2"
+            ]
+          ]
+        },
+        {
+          "id": "interface.interface.pin3",
+          "net": "VPLUS",
+          "role": "passive",
+          "terminals": [
+            [
+              "interface",
+              "3"
+            ]
+          ]
+        },
+        {
+          "id": "interface.interface.pin4",
+          "net": "VMINUS",
+          "role": "passive",
+          "terminals": [
+            [
+              "interface",
+              "4"
+            ]
+          ]
+        },
+        {
+          "id": "interface.interface.pin5",
+          "net": "REF",
+          "role": "passive",
+          "terminals": [
+            [
+              "interface",
+              "5"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "package.amp.power",
+      "kind": "package_power",
+      "relationships": [
+        "bypass.minus",
+        "bypass.plus",
+        "supply"
+      ],
+      "occurrences": [
+        [
+          "amp",
+          3
+        ],
+        [
+          "cneg",
+          1
+        ],
+        [
+          "cpos",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "package.amp.power.positive",
+          "net": "VPLUS",
+          "role": "power_in",
+          "terminals": [
+            [
+              "amp",
+              "8"
+            ]
+          ]
+        },
+        {
+          "id": "package.amp.power.negative",
+          "net": "VMINUS",
+          "role": "power_in",
+          "terminals": [
+            [
+              "amp",
+              "4"
+            ]
+          ]
+        },
+        {
+          "id": "package.amp.power.reference",
+          "net": "REF",
+          "role": "reference",
+          "terminals": []
+        }
+      ]
+    },
+    {
+      "id": "passive.indicator.series",
+      "kind": "led_branch",
+      "relationships": [
+        "indicator.polarity",
+        "indicator.series"
+      ],
+      "occurrences": [
+        [
+          "indicator_led",
+          1
+        ],
+        [
+          "indicator_r",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "passive.indicator.series.input",
+          "net": "OUT",
+          "role": "signal_in",
+          "terminals": [
+            [
+              "indicator_r",
+              "1"
+            ]
+          ]
+        },
+        {
+          "id": "passive.indicator.series.output",
+          "net": "LEDMID",
+          "role": "signal_out",
+          "terminals": [
+            [
+              "indicator_r",
+              "2"
+            ]
+          ]
+        },
+        {
+          "id": "passive.indicator.series.reference",
+          "net": "REF",
+          "role": "reference",
+          "terminals": [
+            [
+              "indicator_led",
+              "1"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "passive.input.lowpass.series",
+      "kind": "rc",
+      "relationships": [
+        "input.lowpass.series",
+        "input.lowpass.shunt"
+      ],
+      "occurrences": [
+        [
+          "input_c",
+          1
+        ],
+        [
+          "input_r",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "passive.input.lowpass.series.input",
+          "net": "IN",
+          "role": "signal_in",
+          "terminals": [
+            [
+              "input_r",
+              "1"
+            ]
+          ]
+        },
+        {
+          "id": "passive.input.lowpass.series.output",
+          "net": "FILTERED",
+          "role": "signal_out",
+          "terminals": [
+            [
+              "input_r",
+              "2"
+            ]
+          ]
+        },
+        {
+          "id": "passive.input.lowpass.series.reference",
+          "net": "REF",
+          "role": "reference",
+          "terminals": [
+            [
+              "input_c",
+              "2"
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "owners": [
+    {
+      "occurrence": [
+        "amp",
+        1
+      ],
+      "fragment": "function.amp.a"
+    },
+    {
+      "occurrence": [
+        "amp",
+        2
+      ],
+      "fragment": "function.amp.b"
+    },
+    {
+      "occurrence": [
+        "amp",
+        3
+      ],
+      "fragment": "package.amp.power"
+    },
+    {
+      "occurrence": [
+        "cneg",
+        1
+      ],
+      "fragment": "package.amp.power"
+    },
+    {
+      "occurrence": [
+        "cpos",
+        1
+      ],
+      "fragment": "package.amp.power"
+    },
+    {
+      "occurrence": [
+        "indicator_led",
+        1
+      ],
+      "fragment": "passive.indicator.series"
+    },
+    {
+      "occurrence": [
+        "indicator_r",
+        1
+      ],
+      "fragment": "passive.indicator.series"
+    },
+    {
+      "occurrence": [
+        "input_c",
+        1
+      ],
+      "fragment": "passive.input.lowpass.series"
+    },
+    {
+      "occurrence": [
+        "input_r",
+        1
+      ],
+      "fragment": "passive.input.lowpass.series"
+    },
+    {
+      "occurrence": [
+        "interface",
+        1
+      ],
+      "fragment": "interface.interface"
+    },
+    {
+      "occurrence": [
+        "rf",
+        1
+      ],
+      "fragment": "function.amp.a"
+    },
+    {
+      "occurrence": [
+        "rg",
+        1
+      ],
+      "fragment": "function.amp.a"
+    }
+  ],
+  "edges": [
+    {
+      "kind": "branch",
+      "source": "function.amp.a",
+      "target": "passive.indicator.series",
+      "net": "OUT",
+      "origins": []
+    },
+    {
+      "kind": "feedback",
+      "source": "function.amp.a",
+      "target": "function.amp.a",
+      "net": "OUT",
+      "origins": [
+        "loop.a"
+      ]
+    },
+    {
+      "kind": "feedback",
+      "source": "function.amp.b",
+      "target": "function.amp.b",
+      "net": "PARK",
+      "origins": [
+        "loop.b"
+      ]
+    },
+    {
+      "kind": "package",
+      "source": "function.amp.a",
+      "target": "package.amp.power",
+      "net": "",
+      "origins": [
+        "gain_reference",
+        "loop.a",
+        "stage.a"
+      ]
+    },
+    {
+      "kind": "package",
+      "source": "function.amp.b",
+      "target": "package.amp.power",
+      "net": "",
+      "origins": [
+        "loop.b",
+        "stage.b"
+      ]
+    },
+    {
+      "kind": "reference",
+      "source": "function.amp.a",
+      "target": "package.amp.power",
+      "net": "REF",
+      "origins": []
+    },
+    {
+      "kind": "reference",
+      "source": "package.amp.power",
+      "target": "passive.indicator.series",
+      "net": "REF",
+      "origins": []
+    },
+    {
+      "kind": "reference",
+      "source": "passive.indicator.series",
+      "target": "passive.input.lowpass.series",
+      "net": "REF",
+      "origins": []
+    },
+    {
+      "kind": "signal",
+      "source": "passive.input.lowpass.series",
+      "target": "function.amp.a",
+      "net": "FILTERED",
+      "origins": []
+    },
+    {
+      "kind": "support",
+      "source": "package.amp.power",
+      "target": "function.amp.a",
+      "net": "REF",
+      "origins": [
+        "bypass.minus"
+      ]
+    },
+    {
+      "kind": "support",
+      "source": "package.amp.power",
+      "target": "function.amp.a",
+      "net": "VPLUS",
+      "origins": [
+        "bypass.plus"
+      ]
+    }
+  ],
+  "signal_order": [
+    "function.amp.b",
+    "passive.indicator.series",
+    "passive.input.lowpass.series",
+    "function.amp.a"
+  ],
+  "variants": [
+    {
+      "fragment": "function.amp.a",
+      "variant": "function.amp.a.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [
+        "gain_reference",
+        "loop.a",
+        "stage.a"
+      ],
+      "local_envelope": [
+        69850000,
+        30480000,
+        118110000,
+        86360000
+      ],
+      "placed_envelope": [
+        67310000,
+        29210000,
+        115570000,
+        85090000
+      ],
+      "translation": [
+        -2540000,
+        -1270000
+      ],
+      "protected_wire_count": 10,
+      "obstacle_count": 3
+    },
+    {
+      "fragment": "function.amp.b",
+      "variant": "function.amp.b.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [
+        "loop.b",
+        "stage.b"
+      ],
+      "local_envelope": [
+        69850000,
+        30480000,
+        118110000,
+        64770000
+      ],
+      "placed_envelope": [
+        22860000,
+        90170000,
+        71120000,
+        124460000
+      ],
+      "translation": [
+        -46990000,
+        59690000
+      ],
+      "protected_wire_count": 7,
+      "obstacle_count": 1
+    },
+    {
+      "fragment": "interface.interface",
+      "variant": "interface.interface.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [],
+      "local_envelope": [
+        2540000,
+        6350000,
+        22230000,
+        29210000
+      ],
+      "placed_envelope": [
+        76200000,
+        90170000,
+        95890000,
+        113030000
+      ],
+      "translation": [
+        73660000,
+        83820000
+      ],
+      "protected_wire_count": 5,
+      "obstacle_count": 1
+    },
+    {
+      "fragment": "package.amp.power",
+      "variant": "package.amp.power.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [
+        "bypass.minus",
+        "bypass.plus",
+        "supply"
+      ],
+      "local_envelope": [
+        18288000,
+        21590000,
+        81280000,
+        48260000
+      ],
+      "placed_envelope": [
+        102108000,
+        90170000,
+        165100000,
+        116840000
+      ],
+      "translation": [
+        83820000,
+        68580000
+      ],
+      "protected_wire_count": 6,
+      "obstacle_count": 3
+    },
+    {
+      "fragment": "passive.indicator.series",
+      "variant": "passive.indicator.series.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [
+        "indicator.polarity",
+        "indicator.series"
+      ],
+      "local_envelope": [
+        20320000,
+        3810000,
+        30480000,
+        55880000
+      ],
+      "placed_envelope": [
+        120650000,
+        29210000,
+        130810000,
+        81280000
+      ],
+      "translation": [
+        100330000,
+        25400000
+      ],
+      "protected_wire_count": 3,
+      "obstacle_count": 2
+    },
+    {
+      "fragment": "passive.input.lowpass.series",
+      "variant": "passive.input.lowpass.series.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [
+        "input.lowpass.series",
+        "input.lowpass.shunt"
+      ],
+      "local_envelope": [
+        15240000,
+        5080000,
+        54610000,
+        54610000
+      ],
+      "placed_envelope": [
+        22860000,
+        29210000,
+        62230000,
+        78740000
+      ],
+      "translation": [
+        7620000,
+        24130000
+      ],
+      "protected_wire_count": 6,
+      "obstacle_count": 2
+    }
+  ],
+  "packing_attempts": [
+    "candidate-1:pass"
+  ],
+  "routes": [
+    {
+      "net": "FILTERED",
+      "edge_count": 1,
+      "segments": [
+        [
+          [
+            50800000,
+            43180000
+          ],
+          [
+            59690000,
+            43180000
+          ]
+        ],
+        [
+          [
+            59690000,
+            40640000
+          ],
+          [
+            69850000,
+            40640000
+          ]
+        ],
+        [
+          [
+            59690000,
+            43180000
+          ],
+          [
+            59690000,
+            40640000
+          ]
+        ]
+      ],
+      "junctions": [
+        [
+          59690000,
+          40640000
+        ],
+        [
+          59690000,
+          43180000
+        ]
+      ]
+    },
+    {
+      "net": "OUT",
+      "edge_count": 1,
+      "segments": [
+        [
+          [
+            113030000,
+            43180000
+          ],
+          [
+            119380000,
+            43180000
+          ]
+        ],
+        [
+          [
+            119380000,
+            33020000
+          ],
+          [
+            125730000,
+            33020000
+          ]
+        ],
+        [
+          [
+            119380000,
+            43180000
+          ],
+          [
+            119380000,
+            33020000
+          ]
+        ]
+      ],
+      "junctions": [
+        [
+          119380000,
+          33020000
+        ],
+        [
+          119380000,
+          43180000
+        ]
+      ]
+    }
+  ]
+}

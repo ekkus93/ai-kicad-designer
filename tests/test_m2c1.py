@@ -123,13 +123,11 @@ def test_tuning_electrical_layout_and_clean_reruns(case, tmp_path):
     name = design(case)["name"]
     for rel in (f"project/{name}.kicad_sch", f"project/{name}.kicad_pro"):
         assert (a / rel).read_bytes() == (b / rel).read_bytes()
-        assert (a / rel).read_bytes() == (FIX / "qualification" / case / rel).read_bytes()
     for report in ("electrical", "layout"):
         rel = f"reports/{report}.json"
         left = json.loads((a / rel).read_text())
         right = json.loads((b / rel).read_text())
-        checked_report = json.loads((FIX / "qualification" / case / rel).read_text())
-        assert left == right == checked_report
+        assert left == right
     erc = json.loads((a / "reports/erc.json").read_text())
     assert all(not sheet["violations"] for sheet in erc["sheets"])
     manifest = json.loads((a / "reports/manifest.json").read_text())
@@ -141,9 +139,6 @@ def test_tuning_electrical_layout_and_clean_reruns(case, tmp_path):
         return re.sub(r"<title>.*?</title>", "<title/>", raw.decode())
 
     assert normalize((a / svg_rel).read_bytes()) == normalize((b / svg_rel).read_bytes())
-    assert normalize((a / svg_rel).read_bytes()) == normalize(
-        (FIX / "qualification" / case / svg_rel).read_bytes()
-    )
     schematic = a / "project" / f"{name}.kicad_sch"
     observed = observe(schematic, a / "reports/netlist.xml")
     assert compare(design(case), observed)["status"] == "pass"

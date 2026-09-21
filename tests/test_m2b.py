@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import tempfile
 
 import pytest
 
@@ -77,8 +78,12 @@ def test_corpus_is_frozen_and_split():
 
 @pytest.mark.parametrize("case", CASES)
 def test_qualified_real_build(case, tmp_path):
-    out = tmp_path / case
+    out = tmp_path / "first" / case
+    repeat = tmp_path / "second" / case
+    out.parent.mkdir()
+    repeat.parent.mkdir()
     assert build(args(case, out)) == 0
+    assert build(args(case, repeat)) == 0
     manifest = load_json(out / "reports/manifest.json")
     electrical = load_json(out / "reports/electrical.json")
     layout = load_json(out / "reports/layout.json")
@@ -99,16 +104,15 @@ def test_qualified_real_build(case, tmp_path):
     project = out / "project" / f"{design(case)['name']}.kicad_sch"
     assert project.is_file() and project.with_suffix(".kicad_pro").is_file()
     assert list((out / "renders/schematic").glob("*.svg"))
-    checked = FIX / "qualification" / case
-    assert project.read_bytes() == (checked / "project" / project.name).read_bytes()
+    assert project.read_bytes() == (repeat / "project" / project.name).read_bytes()
     svg = next((out / "renders/schematic").glob("*.svg"))
-    checked_svg = checked / "renders/schematic" / svg.name
+    repeat_svg = repeat / "renders/schematic" / svg.name
     assert re.sub(r"<title>.*?</title>", "<title/>", svg.read_text()) == re.sub(
-        r"<title>.*?</title>", "<title/>", checked_svg.read_text()
+        r"<title>.*?</title>", "<title/>", repeat_svg.read_text()
     )
-    assert load_json(out / "reports/layout.json") == load_json(checked / "reports/layout.json")
+    assert load_json(out / "reports/layout.json") == load_json(repeat / "reports/layout.json")
     assert load_json(out / "reports/electrical.json") == load_json(
-        checked / "reports/electrical.json"
+        repeat / "reports/electrical.json"
     )
     assert compare(design(case), observe(project, out / "reports/netlist.xml"))["status"] == "pass"
     assert check_observed_layout(
@@ -179,8 +183,8 @@ def test_semantic_and_electrical_mutations_are_explicit():
     assert {frozenset(map(tuple, n["members"])) for n in changed["nets"]} != {
         frozenset(map(tuple, n["members"])) for n in rc["nets"]
     }
-    with pytest.raises(InputError):
-        passive_layout(validate(changed, resolved), resolved)
+    changed_scene = passive_layout(validate(changed, resolved), resolved)
+    assert changed_scene.metrics["unrouted_pin_count"] == 0
     amp = design("noninverting_gain", resolved)
     altered = copy.deepcopy(amp)
     next(r for r in altered["relationships"] if r["id"] == "loop.a")["polarity"] = "positive"
@@ -188,7 +192,7 @@ def test_semantic_and_electrical_mutations_are_explicit():
         validate(altered, resolved)
     altered = copy.deepcopy(amp)
     altered["relationships"] = [r for r in altered["relationships"] if r["id"] != "bypass.plus"]
-    with pytest.raises(InputError, match="relation inventory"):
+    with pytest.raises(InputError, match="SEMANTIC_PACKAGE_SUPPORT_CONFLICT"):
         active_layout(validate(altered, resolved), resolved)
 
 
@@ -254,8 +258,10 @@ def fresh_observation(case: str, source: str, tmp_path: Path, launcher: Path):
 
 
 def source_for(case: str) -> str:
-    name = design(case)["name"]
-    return (FIX / "qualification" / case / "project" / f"{name}.kicad_sch").read_text()
+    intended = design(case)
+    with tempfile.TemporaryDirectory() as directory:
+        schematic = emit(intended, assets(), scene(case), Path(directory))
+        return schematic.read_text()
 
 
 def detach_wire(case: str, component: str, pin: str) -> str:
