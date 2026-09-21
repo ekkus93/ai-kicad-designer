@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import copy
 from dataclasses import replace
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -21,6 +22,7 @@ from ai_kicad.m2_compose import compose_layout
 
 
 PROBES = ROOT / "fixtures/m2e1/ir"
+CORRECTED = ROOT / "fixtures/m2e1a/ir/regulator_timer_led_corrected.json"
 
 
 def _load(path: Path) -> dict:
@@ -29,6 +31,10 @@ def _load(path: Path) -> dict:
 
 def _known(name: str) -> dict:
     return _load(ROOT / "fixtures/m2blind_v3/ir" / f"{name}.json")
+
+
+def _corrected() -> dict:
+    return _load(CORRECTED)
 
 
 def _duplicate(base: dict) -> dict:
@@ -92,8 +98,8 @@ def test_repeated_regulators_timers_and_packages_are_enumerated():
 
 def test_internal_ports_do_not_depend_on_connectors():
     resolved = assets()
-    for name in ("V3-2", "V3-8"):
-        plan = semantic_plan(_known(name), resolved)
+    for design in (_known("V3-2"), _corrected()):
+        plan = semantic_plan(design, resolved)
         regulator = next(block for block in plan.blocks if block.kind == "power_stage")
         assert {port.id.rsplit(".", 1)[-1] for port in regulator.ports} == {
             "input",
@@ -125,7 +131,7 @@ def test_multiunit_functions_are_independent_from_package_power():
 
 
 def test_typed_power_signal_reference_and_support_projections():
-    plan = semantic_plan(_known("V3-8"), assets())
+    plan = semantic_plan(_corrected(), assets())
     assert any(
         edge.kind == "power"
         and edge.source.startswith("power_stage")
@@ -137,6 +143,86 @@ def test_typed_power_signal_reference_and_support_projections():
         edge.kind == "signal" and edge.source.startswith("power_stage") for edge in plan.edges
     )
     assert {edge.kind for edge in plan.edges} >= {"power", "branch", "reference", "support"}
+
+
+def test_external_power_stage_input_flag_is_accepted_without_relocation():
+    raw = json.loads(CORRECTED.read_text())
+    before = copy.deepcopy(raw)
+    design = validate(raw, assets())
+    stage = next(item for item in design["relationships"] if item["kind"] == "power_stage")
+    assertions = {item["id"]: item["net"] for item in design["power_assertions"]}
+    assert assertions["flag.supply"] == stage["input"]
+    assert stage["output"] not in assertions.values()
+    assert raw == before
+
+
+def test_flag_on_resolved_power_output_is_rejected_without_repair():
+    raw = json.loads(CORRECTED.read_text())
+    stage = next(item for item in raw["relationships"] if item["kind"] == "power_stage")
+    next(item for item in raw["power_assertions"] if item["id"] == "flag.supply")["net"] = stage[
+        "output"
+    ]
+    before = copy.deepcopy(raw)
+    with pytest.raises(
+        InputError,
+        match="POWER_ASSERTION_DRIVER_CONFLICT.*POWER_SOURCE_ASSERTION_REQUIRED",
+    ):
+        validate(raw, assets())
+    assert raw == before
+    assert (
+        next(item for item in raw["power_assertions"] if item["id"] == "flag.supply")["net"]
+        == stage["output"]
+    )
+
+
+def test_power_assertion_validation_is_independent_of_net_spelling():
+    raw = json.loads(CORRECTED.read_text())
+    mapping = {"VIN": "SOURCE_RAIL", "VCC": "GENERATED_RAIL"}
+    for net in raw["nets"]:
+        net["id"] = mapping.get(net["id"], net["id"])
+    for relation in raw["relationships"]:
+        for key, value in list(relation.items()):
+            if isinstance(value, str) and value in mapping:
+                relation[key] = mapping[value]
+    for assertion in raw["power_assertions"]:
+        assertion["net"] = mapping.get(assertion["net"], assertion["net"])
+    validate(raw, assets())
+    next(item for item in raw["power_assertions"] if item["id"] == "flag.supply")["net"] = (
+        "GENERATED_RAIL"
+    )
+    with pytest.raises(InputError, match="POWER_ASSERTION_DRIVER_CONFLICT"):
+        validate(raw, assets())
+
+
+def test_external_power_stage_input_requires_explicit_source_evidence():
+    raw = json.loads(CORRECTED.read_text())
+    raw["power_assertions"] = [
+        item for item in raw["power_assertions"] if item["id"] != "flag.supply"
+    ]
+    with pytest.raises(InputError, match="POWER_SOURCE_ASSERTION_REQUIRED"):
+        validate(raw, assets())
+
+
+def test_unproven_external_power_interface_is_rejected_instead_of_guessed():
+    raw = json.loads(CORRECTED.read_text())
+    source = next(item for item in raw["components"] if item["id"] == "source")
+    source["asset"] = "Device:C"
+    next(item for item in raw["nets"] if item["id"] == "REF")["members"].append(["source", "2"])
+    with pytest.raises(InputError, match="POWER_SOURCE_EVIDENCE_UNPROVEN"):
+        validate(raw, assets())
+
+
+def test_historical_v3_8_is_preserved_invalid_authored_power_evidence():
+    path = ROOT / "fixtures/m2blind_v3/ir/V3-8.json"
+    assert hashlib.sha256(path.read_bytes()).hexdigest() == (
+        "4e0c1f1634a23870b5e50990da49e7f1696113f9544587677c8346a520ffdf1a"
+    )
+    raw = json.loads(path.read_text())
+    with pytest.raises(
+        InputError,
+        match="POWER_ASSERTION_DRIVER_CONFLICT.*POWER_SOURCE_ASSERTION_REQUIRED",
+    ):
+        validate(raw, assets())
 
 
 def test_support_ownership_is_consumer_local_and_overlap_has_one_owner():

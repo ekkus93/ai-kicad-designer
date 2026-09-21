@@ -1,0 +1,474 @@
+{
+  "schema_version": "m2e1.composition.1",
+  "blocks": [
+    {
+      "id": "interface.load",
+      "kind": "interface",
+      "relationships": [],
+      "occurrences": [
+        [
+          "load",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "interface.load.pin1",
+          "net": "VOUT",
+          "role": "passive",
+          "terminals": [
+            [
+              "load",
+              "1"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "interface.return",
+      "kind": "interface",
+      "relationships": [],
+      "occurrences": [
+        [
+          "return",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "interface.return.pin1",
+          "net": "REF",
+          "role": "passive",
+          "terminals": [
+            [
+              "return",
+              "1"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "interface.source",
+      "kind": "interface",
+      "relationships": [],
+      "occurrences": [
+        [
+          "source",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "interface.source.pin1",
+          "net": "VIN",
+          "role": "passive",
+          "terminals": [
+            [
+              "source",
+              "1"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "passive.load.series",
+      "kind": "led_branch",
+      "relationships": [
+        "load.polarity",
+        "load.series"
+      ],
+      "occurrences": [
+        [
+          "load_led",
+          1
+        ],
+        [
+          "load_r",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "passive.load.series.input",
+          "net": "VOUT",
+          "role": "signal_in",
+          "terminals": [
+            [
+              "load_r",
+              "1"
+            ]
+          ]
+        },
+        {
+          "id": "passive.load.series.output",
+          "net": "LEDMID",
+          "role": "signal_out",
+          "terminals": [
+            [
+              "load_r",
+              "2"
+            ]
+          ]
+        },
+        {
+          "id": "passive.load.series.reference",
+          "net": "REF",
+          "role": "reference",
+          "terminals": [
+            [
+              "load_led",
+              "1"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "power_stage.stage",
+      "kind": "power_stage",
+      "relationships": [
+        "bypass.input",
+        "bypass.output",
+        "conversion"
+      ],
+      "occurrences": [
+        [
+          "input_bypass",
+          1
+        ],
+        [
+          "output_bypass",
+          1
+        ],
+        [
+          "stage",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "power_stage.stage.input",
+          "net": "VIN",
+          "role": "power_in",
+          "terminals": [
+            [
+              "stage",
+              "1"
+            ]
+          ]
+        },
+        {
+          "id": "power_stage.stage.output",
+          "net": "VOUT",
+          "role": "power_out",
+          "terminals": [
+            [
+              "stage",
+              "3"
+            ]
+          ]
+        },
+        {
+          "id": "power_stage.stage.reference",
+          "net": "REF",
+          "role": "reference",
+          "terminals": [
+            [
+              "stage",
+              "2"
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "owners": [
+    {
+      "occurrence": [
+        "input_bypass",
+        1
+      ],
+      "fragment": "power_stage.stage"
+    },
+    {
+      "occurrence": [
+        "load",
+        1
+      ],
+      "fragment": "interface.load"
+    },
+    {
+      "occurrence": [
+        "load_led",
+        1
+      ],
+      "fragment": "passive.load.series"
+    },
+    {
+      "occurrence": [
+        "load_r",
+        1
+      ],
+      "fragment": "passive.load.series"
+    },
+    {
+      "occurrence": [
+        "output_bypass",
+        1
+      ],
+      "fragment": "power_stage.stage"
+    },
+    {
+      "occurrence": [
+        "return",
+        1
+      ],
+      "fragment": "interface.return"
+    },
+    {
+      "occurrence": [
+        "source",
+        1
+      ],
+      "fragment": "interface.source"
+    },
+    {
+      "occurrence": [
+        "stage",
+        1
+      ],
+      "fragment": "power_stage.stage"
+    }
+  ],
+  "edges": [
+    {
+      "kind": "branch",
+      "source": "power_stage.stage",
+      "target": "passive.load.series",
+      "net": "VOUT",
+      "origins": []
+    },
+    {
+      "kind": "reference",
+      "source": "power_stage.stage",
+      "target": "passive.load.series",
+      "net": "REF",
+      "origins": []
+    },
+    {
+      "kind": "support",
+      "source": "power_stage.stage",
+      "target": "power_stage.stage",
+      "net": "VIN",
+      "origins": [
+        "bypass.input"
+      ]
+    },
+    {
+      "kind": "support",
+      "source": "power_stage.stage",
+      "target": "power_stage.stage",
+      "net": "VOUT",
+      "origins": [
+        "bypass.output"
+      ]
+    }
+  ],
+  "signal_order": [
+    "passive.load.series",
+    "power_stage.stage"
+  ],
+  "variants": [
+    {
+      "fragment": "interface.load",
+      "variant": "interface.load.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [],
+      "local_envelope": [
+        2540000,
+        6350000,
+        24900000,
+        24130000
+      ],
+      "placed_envelope": [
+        22860000,
+        88900000,
+        45220000,
+        106680000
+      ],
+      "translation": [
+        20320000,
+        82550000
+      ],
+      "protected_wire_count": 1,
+      "obstacle_count": 1
+    },
+    {
+      "fragment": "interface.return",
+      "variant": "interface.return.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [],
+      "local_envelope": [
+        2540000,
+        6350000,
+        20450000,
+        24130000
+      ],
+      "placed_envelope": [
+        50800000,
+        88900000,
+        68710000,
+        106680000
+      ],
+      "translation": [
+        48260000,
+        82550000
+      ],
+      "protected_wire_count": 1,
+      "obstacle_count": 1
+    },
+    {
+      "fragment": "interface.source",
+      "variant": "interface.source.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [],
+      "local_envelope": [
+        2540000,
+        6350000,
+        23120000,
+        24130000
+      ],
+      "placed_envelope": [
+        74930000,
+        88900000,
+        95510000,
+        106680000
+      ],
+      "translation": [
+        72390000,
+        82550000
+      ],
+      "protected_wire_count": 1,
+      "obstacle_count": 1
+    },
+    {
+      "fragment": "passive.load.series",
+      "variant": "passive.load.series.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [
+        "load.polarity",
+        "load.series"
+      ],
+      "local_envelope": [
+        20320000,
+        3810000,
+        30480000,
+        55880000
+      ],
+      "placed_envelope": [
+        93980000,
+        29210000,
+        104140000,
+        81280000
+      ],
+      "translation": [
+        73660000,
+        25400000
+      ],
+      "protected_wire_count": 3,
+      "obstacle_count": 2
+    },
+    {
+      "fragment": "power_stage.stage",
+      "variant": "power_stage.stage.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [
+        "bypass.input",
+        "bypass.output",
+        "conversion"
+      ],
+      "local_envelope": [
+        17018000,
+        17780000,
+        82550000,
+        72390000
+      ],
+      "placed_envelope": [
+        23368000,
+        29210000,
+        88900000,
+        83820000
+      ],
+      "translation": [
+        6350000,
+        11430000
+      ],
+      "protected_wire_count": 9,
+      "obstacle_count": 3
+    }
+  ],
+  "packing_attempts": [
+    "candidate-1:pass"
+  ],
+  "routes": [
+    {
+      "net": "VOUT",
+      "edge_count": 1,
+      "segments": [
+        [
+          [
+            73660000,
+            43180000
+          ],
+          [
+            86360000,
+            43180000
+          ]
+        ],
+        [
+          [
+            86360000,
+            33020000
+          ],
+          [
+            99060000,
+            33020000
+          ]
+        ],
+        [
+          [
+            86360000,
+            43180000
+          ],
+          [
+            86360000,
+            33020000
+          ]
+        ]
+      ],
+      "junctions": [
+        [
+          86360000,
+          33020000
+        ],
+        [
+          86360000,
+          43180000
+        ]
+      ]
+    }
+  ]
+}

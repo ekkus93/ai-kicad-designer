@@ -104,6 +104,72 @@ def _fields(item, required, optional=()):
         raise InputError(f"unsupported fields: expected {required}, optional {optional}")
 
 
+def _validate_power_assertions(
+    data: dict,
+    components: dict[str, dict],
+    nets: dict[str, set[tuple[str, str]]],
+    resolved: dict[str, Asset],
+) -> None:
+    """Validate authored source claims against resolved terminal electrical roles."""
+    terminal_types = {
+        (component["id"], pin.number): pin.electrical_type
+        for component in components.values()
+        for pins in resolved[component["asset"]].units.values()
+        for pin in pins
+    }
+    assertions_by_net: dict[str, list[dict]] = {}
+    for assertion in data["power_assertions"]:
+        assertions_by_net.setdefault(assertion["net"], []).append(assertion)
+
+    diagnostics = []
+    for net, assertions in sorted(assertions_by_net.items()):
+        drivers = sorted(
+            terminal for terminal in nets[net] if terminal_types[terminal] == "power_out"
+        )
+        if drivers:
+            diagnostics.append(
+                "POWER_ASSERTION_DRIVER_CONFLICT: authored PWR_FLAG assertion(s) "
+                f"{sorted(item['id'] for item in assertions)} on net {net!r} conflict with "
+                f"resolved Power-output terminal(s) {drivers}"
+            )
+        if len(assertions) > 1:
+            diagnostics.append(
+                "POWER_ASSERTION_DRIVER_CONFLICT: multiple authored PWR_FLAG power-output "
+                f"assertions share net {net!r}: {sorted(item['id'] for item in assertions)}"
+            )
+
+    for relation in sorted(
+        (item for item in data["relationships"] if item["kind"] == "power_stage"),
+        key=lambda item: item["id"],
+    ):
+        net = relation["input"]
+        members = nets[net]
+        types = {terminal_types[terminal] for terminal in members}
+        if "power_out" in types:
+            continue
+        interface_terminals = sorted(
+            terminal
+            for terminal in members
+            if components[terminal[0]]["asset"].startswith("Connector_")
+        )
+        if not interface_terminals or not types <= {"passive", "power_in"}:
+            diagnostics.append(
+                "POWER_SOURCE_EVIDENCE_UNPROVEN: power-stage input "
+                f"{relation['id']!r} on net {net!r} has no resolved Power-output terminal, and "
+                "the current profile cannot prove a passive external-supply interface; "
+                f"resolved electrical roles are {sorted(types)}"
+            )
+        elif net not in assertions_by_net:
+            diagnostics.append(
+                "POWER_SOURCE_ASSERTION_REQUIRED: power-stage input "
+                f"{relation['id']!r} on externally supplied net {net!r} requires an explicit "
+                f"PWR_FLAG assertion; interface terminals are {interface_terminals}"
+            )
+
+    if diagnostics:
+        raise InputError("; ".join(diagnostics))
+
+
 def validate(raw: dict, resolved: dict[str, Asset]) -> dict:
     _fields(
         raw,
@@ -392,6 +458,7 @@ def validate(raw: dict, resolved: dict[str, Asset]) -> dict:
         refs.add(a["refdes"])
     if len({a["id"] for a in data["power_assertions"]}) != len(data["power_assertions"]):
         raise InputError("duplicate power assertion ID")
+    _validate_power_assertions(data, components, nets, resolved)
     for key in ("components", "nets", "relationships", "power_assertions"):
         data[key].sort(key=lambda item: item["id"])
     for component in data["components"]:
