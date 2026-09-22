@@ -1,0 +1,719 @@
+{
+  "profile": "m2b.1",
+  "id": "m2f2_two_signal_chains_shared_rail",
+  "name": "M2f2TwoSignalChainsSharedRail",
+  "components": [
+    {
+      "id": "a_amp",
+      "refdes": "U1",
+      "asset": "Amplifier_Operational:NE5532",
+      "value": "NE5532",
+      "functions": [
+        {
+          "id": "a",
+          "role": "buffer",
+          "unit": 1,
+          "pins": {
+            "out": "1",
+            "minus": "2",
+            "plus": "3"
+          }
+        },
+        {
+          "id": "b",
+          "role": "amplifier",
+          "unit": 2,
+          "pins": {
+            "out": "7",
+            "minus": "6",
+            "plus": "5"
+          }
+        },
+        {
+          "id": "power",
+          "role": "supply",
+          "unit": 3,
+          "pins": {
+            "negative": "4",
+            "positive": "8"
+          }
+        }
+      ]
+    },
+    {
+      "id": "a_cpos",
+      "refdes": "C1",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "a_cneg",
+      "refdes": "C2",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "a_interface",
+      "refdes": "J1",
+      "asset": "Connector_Generic:Conn_01x05",
+      "value": "Conn_01x05"
+    },
+    {
+      "id": "a_rf",
+      "refdes": "R1",
+      "asset": "Device:R",
+      "value": "100k"
+    },
+    {
+      "id": "a_rg",
+      "refdes": "R2",
+      "asset": "Device:R",
+      "value": "10k"
+    },
+    {
+      "id": "a_stage_b_input",
+      "refdes": "R3",
+      "asset": "Device:R",
+      "value": "10k"
+    },
+    {
+      "id": "a_stage_b_feedback",
+      "refdes": "R4",
+      "asset": "Device:R",
+      "value": "47k"
+    },
+    {
+      "id": "b_amp",
+      "refdes": "U2",
+      "asset": "Amplifier_Operational:NE5532",
+      "value": "NE5532",
+      "functions": [
+        {
+          "id": "a",
+          "role": "buffer",
+          "unit": 1,
+          "pins": {
+            "out": "1",
+            "minus": "2",
+            "plus": "3"
+          }
+        },
+        {
+          "id": "b",
+          "role": "amplifier",
+          "unit": 2,
+          "pins": {
+            "out": "7",
+            "minus": "6",
+            "plus": "5"
+          }
+        },
+        {
+          "id": "power",
+          "role": "supply",
+          "unit": 3,
+          "pins": {
+            "negative": "4",
+            "positive": "8"
+          }
+        }
+      ]
+    },
+    {
+      "id": "b_cpos",
+      "refdes": "C5",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "b_cneg",
+      "refdes": "C6",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "b_interface",
+      "refdes": "J2",
+      "asset": "Connector_Generic:Conn_01x05",
+      "value": "Conn_01x05"
+    },
+    {
+      "id": "b_rf",
+      "refdes": "R5",
+      "asset": "Device:R",
+      "value": "100k"
+    },
+    {
+      "id": "b_rg",
+      "refdes": "R6",
+      "asset": "Device:R",
+      "value": "10k"
+    },
+    {
+      "id": "b_stage_b_input",
+      "refdes": "R7",
+      "asset": "Device:R",
+      "value": "10k"
+    },
+    {
+      "id": "b_stage_b_feedback",
+      "refdes": "R8",
+      "asset": "Device:R",
+      "value": "47k"
+    },
+    {
+      "id": "regulator",
+      "refdes": "U3",
+      "asset": "Regulator_Linear:L7805",
+      "value": "L7805"
+    },
+    {
+      "id": "regulator_input_c",
+      "refdes": "C9",
+      "asset": "Device:C",
+      "value": "330n"
+    },
+    {
+      "id": "regulator_output_c",
+      "refdes": "C10",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "source",
+      "refdes": "J3",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Positive supply input"
+    }
+  ],
+  "nets": [
+    {
+      "id": "A_IN",
+      "members": [
+        [
+          "a_interface",
+          "1"
+        ],
+        [
+          "a_amp",
+          "3"
+        ]
+      ]
+    },
+    {
+      "id": "A_OUT",
+      "members": [
+        [
+          "a_amp",
+          "1"
+        ],
+        [
+          "a_rf",
+          "2"
+        ],
+        [
+          "a_stage_b_input",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "VPLUS",
+      "members": [
+        [
+          "a_interface",
+          "3"
+        ],
+        [
+          "a_amp",
+          "8"
+        ],
+        [
+          "a_cpos",
+          "1"
+        ],
+        [
+          "b_interface",
+          "3"
+        ],
+        [
+          "b_amp",
+          "8"
+        ],
+        [
+          "b_cpos",
+          "1"
+        ],
+        [
+          "regulator",
+          "3"
+        ],
+        [
+          "regulator_output_c",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "VMINUS",
+      "members": [
+        [
+          "a_interface",
+          "4"
+        ],
+        [
+          "a_amp",
+          "4"
+        ],
+        [
+          "a_cneg",
+          "2"
+        ],
+        [
+          "b_interface",
+          "4"
+        ],
+        [
+          "b_amp",
+          "4"
+        ],
+        [
+          "b_cneg",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "REF",
+      "members": [
+        [
+          "a_interface",
+          "5"
+        ],
+        [
+          "a_cpos",
+          "2"
+        ],
+        [
+          "a_cneg",
+          "1"
+        ],
+        [
+          "a_rg",
+          "2"
+        ],
+        [
+          "a_amp",
+          "5"
+        ],
+        [
+          "b_interface",
+          "5"
+        ],
+        [
+          "b_cpos",
+          "2"
+        ],
+        [
+          "b_cneg",
+          "1"
+        ],
+        [
+          "b_rg",
+          "2"
+        ],
+        [
+          "b_amp",
+          "5"
+        ],
+        [
+          "regulator",
+          "2"
+        ],
+        [
+          "regulator_input_c",
+          "2"
+        ],
+        [
+          "regulator_output_c",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "A_FINAL",
+      "members": [
+        [
+          "a_amp",
+          "7"
+        ],
+        [
+          "a_stage_b_feedback",
+          "2"
+        ],
+        [
+          "a_interface",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "A_FB",
+      "members": [
+        [
+          "a_amp",
+          "2"
+        ],
+        [
+          "a_rf",
+          "1"
+        ],
+        [
+          "a_rg",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "A_SUM_B",
+      "members": [
+        [
+          "a_amp",
+          "6"
+        ],
+        [
+          "a_stage_b_input",
+          "2"
+        ],
+        [
+          "a_stage_b_feedback",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "B_IN",
+      "members": [
+        [
+          "b_interface",
+          "1"
+        ],
+        [
+          "b_amp",
+          "3"
+        ]
+      ]
+    },
+    {
+      "id": "B_OUT",
+      "members": [
+        [
+          "b_amp",
+          "1"
+        ],
+        [
+          "b_rf",
+          "2"
+        ],
+        [
+          "b_stage_b_input",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "B_FINAL",
+      "members": [
+        [
+          "b_amp",
+          "7"
+        ],
+        [
+          "b_stage_b_feedback",
+          "2"
+        ],
+        [
+          "b_interface",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "B_FB",
+      "members": [
+        [
+          "b_amp",
+          "2"
+        ],
+        [
+          "b_rf",
+          "1"
+        ],
+        [
+          "b_rg",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "B_SUM_B",
+      "members": [
+        [
+          "b_amp",
+          "6"
+        ],
+        [
+          "b_stage_b_input",
+          "2"
+        ],
+        [
+          "b_stage_b_feedback",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "VIN",
+      "members": [
+        [
+          "source",
+          "1"
+        ],
+        [
+          "regulator",
+          "1"
+        ],
+        [
+          "regulator_input_c",
+          "1"
+        ]
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "a.stage.a",
+      "kind": "amplifier",
+      "component": "a_amp",
+      "function": "a",
+      "input": "A_IN",
+      "output": "A_OUT",
+      "reference": "REF"
+    },
+    {
+      "id": "a.stage.b",
+      "kind": "amplifier",
+      "component": "a_amp",
+      "function": "b",
+      "input": "A_OUT",
+      "output": "A_FINAL",
+      "reference": "REF"
+    },
+    {
+      "id": "a.loop.a",
+      "kind": "feedback",
+      "component": "a_amp",
+      "function": "a",
+      "source": "1",
+      "sense": "2",
+      "net": "A_OUT",
+      "polarity": "negative",
+      "resistor": "a_rf"
+    },
+    {
+      "id": "a.loop.b",
+      "kind": "feedback",
+      "component": "a_amp",
+      "function": "b",
+      "source": "7",
+      "sense": "6",
+      "net": "A_FINAL",
+      "polarity": "negative",
+      "resistor": "a_stage_b_feedback"
+    },
+    {
+      "id": "a.supply",
+      "kind": "power_rails",
+      "component": "a_amp",
+      "unit": 3,
+      "positive": "VPLUS",
+      "negative": "VMINUS",
+      "reference": "REF"
+    },
+    {
+      "id": "a.bypass.plus",
+      "kind": "decoupling",
+      "component": "a_cpos",
+      "consumer": [
+        "a_amp",
+        "8"
+      ],
+      "supply": "VPLUS",
+      "return": "REF"
+    },
+    {
+      "id": "a.bypass.minus",
+      "kind": "decoupling",
+      "component": "a_cneg",
+      "consumer": [
+        "a_amp",
+        "4"
+      ],
+      "supply": "REF",
+      "return": "VMINUS"
+    },
+    {
+      "id": "a.gain_reference",
+      "kind": "shunt",
+      "component": "a_rg",
+      "node": "A_FB",
+      "reference": "REF"
+    },
+    {
+      "id": "a.stage_b.input_resistor",
+      "kind": "series",
+      "component": "a_stage_b_input",
+      "input": "A_OUT",
+      "output": "A_SUM_B"
+    },
+    {
+      "id": "b.stage.a",
+      "kind": "amplifier",
+      "component": "b_amp",
+      "function": "a",
+      "input": "B_IN",
+      "output": "B_OUT",
+      "reference": "REF"
+    },
+    {
+      "id": "b.stage.b",
+      "kind": "amplifier",
+      "component": "b_amp",
+      "function": "b",
+      "input": "B_OUT",
+      "output": "B_FINAL",
+      "reference": "REF"
+    },
+    {
+      "id": "b.loop.a",
+      "kind": "feedback",
+      "component": "b_amp",
+      "function": "a",
+      "source": "1",
+      "sense": "2",
+      "net": "B_OUT",
+      "polarity": "negative",
+      "resistor": "b_rf"
+    },
+    {
+      "id": "b.loop.b",
+      "kind": "feedback",
+      "component": "b_amp",
+      "function": "b",
+      "source": "7",
+      "sense": "6",
+      "net": "B_FINAL",
+      "polarity": "negative",
+      "resistor": "b_stage_b_feedback"
+    },
+    {
+      "id": "b.supply",
+      "kind": "power_rails",
+      "component": "b_amp",
+      "unit": 3,
+      "positive": "VPLUS",
+      "negative": "VMINUS",
+      "reference": "REF"
+    },
+    {
+      "id": "b.bypass.plus",
+      "kind": "decoupling",
+      "component": "b_cpos",
+      "consumer": [
+        "b_amp",
+        "8"
+      ],
+      "supply": "VPLUS",
+      "return": "REF"
+    },
+    {
+      "id": "b.bypass.minus",
+      "kind": "decoupling",
+      "component": "b_cneg",
+      "consumer": [
+        "b_amp",
+        "4"
+      ],
+      "supply": "REF",
+      "return": "VMINUS"
+    },
+    {
+      "id": "b.gain_reference",
+      "kind": "shunt",
+      "component": "b_rg",
+      "node": "B_FB",
+      "reference": "REF"
+    },
+    {
+      "id": "b.stage_b.input_resistor",
+      "kind": "series",
+      "component": "b_stage_b_input",
+      "input": "B_OUT",
+      "output": "B_SUM_B"
+    },
+    {
+      "id": "regulator.conversion",
+      "kind": "power_stage",
+      "component": "regulator",
+      "input": "VIN",
+      "output": "VPLUS",
+      "reference": "REF",
+      "pins": {
+        "input": "1",
+        "output": "3",
+        "reference": "2"
+      },
+      "polarity": "positive"
+    },
+    {
+      "id": "regulator.bypass.input",
+      "kind": "decoupling",
+      "component": "regulator_input_c",
+      "consumer": [
+        "regulator",
+        "1"
+      ],
+      "supply": "VIN",
+      "return": "REF"
+    },
+    {
+      "id": "regulator.bypass.output",
+      "kind": "decoupling",
+      "component": "regulator_output_c",
+      "consumer": [
+        "regulator",
+        "3"
+      ],
+      "supply": "VPLUS",
+      "return": "REF"
+    }
+  ],
+  "no_connects": [],
+  "power_assertions": [
+    {
+      "id": "flag.input",
+      "refdes": "#FLG01",
+      "net": "VIN"
+    },
+    {
+      "id": "flag.negative",
+      "refdes": "#FLG02",
+      "net": "VMINUS"
+    },
+    {
+      "id": "flag.return",
+      "refdes": "#FLG03",
+      "net": "REF"
+    }
+  ]
+}

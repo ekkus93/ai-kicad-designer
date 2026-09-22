@@ -1,0 +1,746 @@
+{
+  "schema_version": "m2e1.composition.1",
+  "blocks": [
+    {
+      "id": "interface.output",
+      "kind": "interface",
+      "relationships": [],
+      "occurrences": [
+        [
+          "output",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "interface.output.pin1",
+          "net": "OUT",
+          "role": "passive",
+          "terminals": [
+            [
+              "output",
+              "1"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "interface.output2",
+      "kind": "interface",
+      "relationships": [],
+      "occurrences": [
+        [
+          "output2",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "interface.output2.pin1",
+          "net": "OUT2",
+          "role": "passive",
+          "terminals": [
+            [
+              "output2",
+              "1"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "interface.return",
+      "kind": "interface",
+      "relationships": [],
+      "occurrences": [
+        [
+          "return",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "interface.return.pin1",
+          "net": "REF",
+          "role": "passive",
+          "terminals": [
+            [
+              "return",
+              "1"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "interface.source",
+      "kind": "interface",
+      "relationships": [],
+      "occurrences": [
+        [
+          "source",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "interface.source.pin1",
+          "net": "VIN",
+          "role": "passive",
+          "terminals": [
+            [
+              "source",
+              "1"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "power_stage.regulator",
+      "kind": "power_stage",
+      "relationships": [
+        "regulator.bypass.input",
+        "regulator.bypass.output",
+        "regulator.conversion"
+      ],
+      "occurrences": [
+        [
+          "regulator",
+          1
+        ],
+        [
+          "regulator_input_c",
+          1
+        ],
+        [
+          "regulator_output_c",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "power_stage.regulator.input",
+          "net": "VIN",
+          "role": "power_in",
+          "terminals": [
+            [
+              "regulator",
+              "1"
+            ]
+          ]
+        },
+        {
+          "id": "power_stage.regulator.output",
+          "net": "VCC",
+          "role": "power_out",
+          "terminals": [
+            [
+              "regulator",
+              "3"
+            ]
+          ]
+        },
+        {
+          "id": "power_stage.regulator.reference",
+          "net": "REF",
+          "role": "reference",
+          "terminals": [
+            [
+              "regulator",
+              "2"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "timer.timer",
+      "kind": "timer",
+      "relationships": [
+        "control.bypass",
+        "timer.function",
+        "timing.network"
+      ],
+      "occurrences": [
+        [
+          "charge",
+          1
+        ],
+        [
+          "control_bypass",
+          1
+        ],
+        [
+          "discharge",
+          1
+        ],
+        [
+          "timer",
+          1
+        ],
+        [
+          "timing_cap",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "timer.timer.supply",
+          "net": "VCC",
+          "role": "power_in",
+          "terminals": [
+            [
+              "timer",
+              "8"
+            ]
+          ]
+        },
+        {
+          "id": "timer.timer.output",
+          "net": "OUT",
+          "role": "signal_out",
+          "terminals": [
+            [
+              "timer",
+              "3"
+            ]
+          ]
+        },
+        {
+          "id": "timer.timer.reference",
+          "net": "REF",
+          "role": "reference",
+          "terminals": [
+            [
+              "timer",
+              "1"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "timer.timer2",
+      "kind": "timer",
+      "relationships": [
+        "control2.bypass",
+        "timer2.function",
+        "timing2.network"
+      ],
+      "occurrences": [
+        [
+          "charge2",
+          1
+        ],
+        [
+          "control_bypass2",
+          1
+        ],
+        [
+          "discharge2",
+          1
+        ],
+        [
+          "timer2",
+          1
+        ],
+        [
+          "timing_cap2",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "timer.timer2.supply",
+          "net": "VCC",
+          "role": "power_in",
+          "terminals": [
+            [
+              "timer2",
+              "8"
+            ]
+          ]
+        },
+        {
+          "id": "timer.timer2.output",
+          "net": "OUT2",
+          "role": "signal_out",
+          "terminals": [
+            [
+              "timer2",
+              "3"
+            ]
+          ]
+        },
+        {
+          "id": "timer.timer2.reference",
+          "net": "REF",
+          "role": "reference",
+          "terminals": [
+            [
+              "timer2",
+              "1"
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "owners": [
+    {
+      "occurrence": [
+        "charge",
+        1
+      ],
+      "fragment": "timer.timer"
+    },
+    {
+      "occurrence": [
+        "charge2",
+        1
+      ],
+      "fragment": "timer.timer2"
+    },
+    {
+      "occurrence": [
+        "control_bypass",
+        1
+      ],
+      "fragment": "timer.timer"
+    },
+    {
+      "occurrence": [
+        "control_bypass2",
+        1
+      ],
+      "fragment": "timer.timer2"
+    },
+    {
+      "occurrence": [
+        "discharge",
+        1
+      ],
+      "fragment": "timer.timer"
+    },
+    {
+      "occurrence": [
+        "discharge2",
+        1
+      ],
+      "fragment": "timer.timer2"
+    },
+    {
+      "occurrence": [
+        "output",
+        1
+      ],
+      "fragment": "interface.output"
+    },
+    {
+      "occurrence": [
+        "output2",
+        1
+      ],
+      "fragment": "interface.output2"
+    },
+    {
+      "occurrence": [
+        "regulator",
+        1
+      ],
+      "fragment": "power_stage.regulator"
+    },
+    {
+      "occurrence": [
+        "regulator_input_c",
+        1
+      ],
+      "fragment": "power_stage.regulator"
+    },
+    {
+      "occurrence": [
+        "regulator_output_c",
+        1
+      ],
+      "fragment": "power_stage.regulator"
+    },
+    {
+      "occurrence": [
+        "return",
+        1
+      ],
+      "fragment": "interface.return"
+    },
+    {
+      "occurrence": [
+        "source",
+        1
+      ],
+      "fragment": "interface.source"
+    },
+    {
+      "occurrence": [
+        "timer",
+        1
+      ],
+      "fragment": "timer.timer"
+    },
+    {
+      "occurrence": [
+        "timer2",
+        1
+      ],
+      "fragment": "timer.timer2"
+    },
+    {
+      "occurrence": [
+        "timing_cap",
+        1
+      ],
+      "fragment": "timer.timer"
+    },
+    {
+      "occurrence": [
+        "timing_cap2",
+        1
+      ],
+      "fragment": "timer.timer2"
+    }
+  ],
+  "edges": [
+    {
+      "kind": "power",
+      "source": "power_stage.regulator",
+      "target": "timer.timer",
+      "net": "VCC",
+      "origins": []
+    },
+    {
+      "kind": "power",
+      "source": "power_stage.regulator",
+      "target": "timer.timer2",
+      "net": "VCC",
+      "origins": []
+    },
+    {
+      "kind": "reference",
+      "source": "power_stage.regulator",
+      "target": "timer.timer",
+      "net": "REF",
+      "origins": []
+    },
+    {
+      "kind": "reference",
+      "source": "timer.timer",
+      "target": "timer.timer2",
+      "net": "REF",
+      "origins": []
+    },
+    {
+      "kind": "support",
+      "source": "power_stage.regulator",
+      "target": "power_stage.regulator",
+      "net": "VCC",
+      "origins": [
+        "regulator.bypass.output"
+      ]
+    },
+    {
+      "kind": "support",
+      "source": "power_stage.regulator",
+      "target": "power_stage.regulator",
+      "net": "VIN",
+      "origins": [
+        "regulator.bypass.input"
+      ]
+    },
+    {
+      "kind": "support",
+      "source": "timer.timer",
+      "target": "timer.timer",
+      "net": "CONT",
+      "origins": [
+        "control.bypass"
+      ]
+    },
+    {
+      "kind": "support",
+      "source": "timer.timer2",
+      "target": "timer.timer2",
+      "net": "CONT2",
+      "origins": [
+        "control2.bypass"
+      ]
+    }
+  ],
+  "signal_order": [
+    "power_stage.regulator",
+    "timer.timer",
+    "timer.timer2"
+  ],
+  "variants": [
+    {
+      "fragment": "interface.output",
+      "variant": "interface.output.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [],
+      "local_envelope": [
+        2540000,
+        6350000,
+        23120000,
+        24130000
+      ],
+      "placed_envelope": [
+        187960000,
+        83820000,
+        208540000,
+        101600000
+      ],
+      "translation": [
+        185420000,
+        77470000
+      ],
+      "protected_wire_count": 1,
+      "obstacle_count": 1
+    },
+    {
+      "fragment": "interface.output2",
+      "variant": "interface.output2.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [],
+      "local_envelope": [
+        2540000,
+        6350000,
+        23120000,
+        24130000
+      ],
+      "placed_envelope": [
+        187960000,
+        101600000,
+        208540000,
+        119380000
+      ],
+      "translation": [
+        185420000,
+        95250000
+      ],
+      "protected_wire_count": 1,
+      "obstacle_count": 1
+    },
+    {
+      "fragment": "interface.return",
+      "variant": "interface.return.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [],
+      "local_envelope": [
+        2540000,
+        6350000,
+        20450000,
+        24130000
+      ],
+      "placed_envelope": [
+        187960000,
+        119380000,
+        205870000,
+        137160000
+      ],
+      "translation": [
+        185420000,
+        113030000
+      ],
+      "protected_wire_count": 1,
+      "obstacle_count": 1
+    },
+    {
+      "fragment": "interface.source",
+      "variant": "interface.source.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [],
+      "local_envelope": [
+        2540000,
+        6350000,
+        20450000,
+        24130000
+      ],
+      "placed_envelope": [
+        187960000,
+        137160000,
+        205870000,
+        154940000
+      ],
+      "translation": [
+        185420000,
+        130810000
+      ],
+      "protected_wire_count": 1,
+      "obstacle_count": 1
+    },
+    {
+      "fragment": "power_stage.regulator",
+      "variant": "power_stage.regulator.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [
+        "regulator.bypass.input",
+        "regulator.bypass.output",
+        "regulator.conversion"
+      ],
+      "local_envelope": [
+        17018000,
+        17780000,
+        82550000,
+        72390000
+      ],
+      "placed_envelope": [
+        25908000,
+        29210000,
+        91440000,
+        83820000
+      ],
+      "translation": [
+        8890000,
+        11430000
+      ],
+      "protected_wire_count": 9,
+      "obstacle_count": 3
+    },
+    {
+      "fragment": "timer.timer",
+      "variant": "timer.timer.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [
+        "control.bypass",
+        "timer.function",
+        "timing.network"
+      ],
+      "local_envelope": [
+        3810000,
+        8890000,
+        85090000,
+        93980000
+      ],
+      "placed_envelope": [
+        25400000,
+        83820000,
+        106680000,
+        168910000
+      ],
+      "translation": [
+        21590000,
+        74930000
+      ],
+      "protected_wire_count": 22,
+      "obstacle_count": 5
+    },
+    {
+      "fragment": "timer.timer2",
+      "variant": "timer.timer2.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [
+        "control2.bypass",
+        "timer2.function",
+        "timing2.network"
+      ],
+      "local_envelope": [
+        3810000,
+        8890000,
+        85090000,
+        93980000
+      ],
+      "placed_envelope": [
+        106680000,
+        83820000,
+        187960000,
+        168910000
+      ],
+      "translation": [
+        102870000,
+        74930000
+      ],
+      "protected_wire_count": 22,
+      "obstacle_count": 5
+    }
+  ],
+  "packing_attempts": [
+    "candidate-1:side-affinity:pass:measured=178060000x134620000"
+  ],
+  "routes": [
+    {
+      "net": "VCC",
+      "edge_count": 2,
+      "segments": [
+        [
+          [
+            27940000,
+            83820000
+          ],
+          [
+            27940000,
+            93980000
+          ]
+        ],
+        [
+          [
+            27940000,
+            83820000
+          ],
+          [
+            109220000,
+            83820000
+          ]
+        ],
+        [
+          [
+            76200000,
+            43180000
+          ],
+          [
+            78740000,
+            43180000
+          ]
+        ],
+        [
+          [
+            78740000,
+            43180000
+          ],
+          [
+            78740000,
+            83820000
+          ]
+        ],
+        [
+          [
+            109220000,
+            83820000
+          ],
+          [
+            109220000,
+            93980000
+          ]
+        ]
+      ],
+      "junctions": [
+        [
+          78740000,
+          83820000
+        ]
+      ]
+    }
+  ]
+}

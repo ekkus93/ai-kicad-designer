@@ -1,0 +1,443 @@
+{
+  "schema_version": "m2e1.composition.1",
+  "blocks": [
+    {
+      "id": "interface.input",
+      "kind": "interface",
+      "relationships": [],
+      "occurrences": [
+        [
+          "input",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "interface.input.pin1",
+          "net": "IN",
+          "role": "passive",
+          "terminals": [
+            [
+              "input",
+              "1"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "interface.output",
+      "kind": "interface",
+      "relationships": [],
+      "occurrences": [
+        [
+          "output",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "interface.output.pin1",
+          "net": "OUT",
+          "role": "passive",
+          "terminals": [
+            [
+              "output",
+              "1"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "interface.return",
+      "kind": "interface",
+      "relationships": [],
+      "occurrences": [
+        [
+          "return",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "interface.return.pin1",
+          "net": "REF",
+          "role": "passive",
+          "terminals": [
+            [
+              "return",
+              "1"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "passive.load.series",
+      "kind": "led_branch",
+      "relationships": [
+        "load.polarity",
+        "load.series"
+      ],
+      "occurrences": [
+        [
+          "load_led",
+          1
+        ],
+        [
+          "load_r",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "passive.load.series.input",
+          "net": "OUT",
+          "role": "signal_in",
+          "terminals": [
+            [
+              "load_r",
+              "1"
+            ]
+          ]
+        },
+        {
+          "id": "passive.load.series.output",
+          "net": "LEDMID",
+          "role": "signal_out",
+          "terminals": [
+            [
+              "load_r",
+              "2"
+            ]
+          ]
+        },
+        {
+          "id": "passive.load.series.reference",
+          "net": "REF",
+          "role": "reference",
+          "terminals": [
+            [
+              "load_led",
+              "1"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "passive.series",
+      "kind": "rc",
+      "relationships": [
+        "series",
+        "shunt"
+      ],
+      "occurrences": [
+        [
+          "filter_c",
+          1
+        ],
+        [
+          "filter_r",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "passive.series.input",
+          "net": "IN",
+          "role": "signal_in",
+          "terminals": [
+            [
+              "filter_r",
+              "1"
+            ]
+          ]
+        },
+        {
+          "id": "passive.series.output",
+          "net": "OUT",
+          "role": "signal_out",
+          "terminals": [
+            [
+              "filter_r",
+              "2"
+            ]
+          ]
+        },
+        {
+          "id": "passive.series.reference",
+          "net": "REF",
+          "role": "reference",
+          "terminals": [
+            [
+              "filter_c",
+              "2"
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "owners": [
+    {
+      "occurrence": [
+        "filter_c",
+        1
+      ],
+      "fragment": "passive.series"
+    },
+    {
+      "occurrence": [
+        "filter_r",
+        1
+      ],
+      "fragment": "passive.series"
+    },
+    {
+      "occurrence": [
+        "input",
+        1
+      ],
+      "fragment": "interface.input"
+    },
+    {
+      "occurrence": [
+        "load_led",
+        1
+      ],
+      "fragment": "passive.load.series"
+    },
+    {
+      "occurrence": [
+        "load_r",
+        1
+      ],
+      "fragment": "passive.load.series"
+    },
+    {
+      "occurrence": [
+        "output",
+        1
+      ],
+      "fragment": "interface.output"
+    },
+    {
+      "occurrence": [
+        "return",
+        1
+      ],
+      "fragment": "interface.return"
+    }
+  ],
+  "edges": [
+    {
+      "kind": "branch",
+      "source": "passive.series",
+      "target": "passive.load.series",
+      "net": "OUT",
+      "origins": []
+    },
+    {
+      "kind": "reference",
+      "source": "passive.load.series",
+      "target": "passive.series",
+      "net": "REF",
+      "origins": []
+    }
+  ],
+  "signal_order": [
+    "passive.load.series",
+    "passive.series"
+  ],
+  "variants": [
+    {
+      "fragment": "interface.input",
+      "variant": "interface.input.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [],
+      "local_envelope": [
+        2540000,
+        6350000,
+        20320000,
+        24130000
+      ],
+      "placed_envelope": [
+        74930000,
+        29210000,
+        92710000,
+        46990000
+      ],
+      "translation": [
+        72390000,
+        22860000
+      ],
+      "protected_wire_count": 1,
+      "obstacle_count": 1
+    },
+    {
+      "fragment": "interface.output",
+      "variant": "interface.output.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [],
+      "local_envelope": [
+        2540000,
+        6350000,
+        20450000,
+        24130000
+      ],
+      "placed_envelope": [
+        74930000,
+        46990000,
+        92840000,
+        64770000
+      ],
+      "translation": [
+        72390000,
+        40640000
+      ],
+      "protected_wire_count": 1,
+      "obstacle_count": 1
+    },
+    {
+      "fragment": "interface.return",
+      "variant": "interface.return.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [],
+      "local_envelope": [
+        2540000,
+        6350000,
+        20450000,
+        24130000
+      ],
+      "placed_envelope": [
+        74930000,
+        64770000,
+        92840000,
+        82550000
+      ],
+      "translation": [
+        72390000,
+        58420000
+      ],
+      "protected_wire_count": 1,
+      "obstacle_count": 1
+    },
+    {
+      "fragment": "passive.load.series",
+      "variant": "passive.load.series.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [
+        "load.polarity",
+        "load.series"
+      ],
+      "local_envelope": [
+        20320000,
+        3810000,
+        30480000,
+        55880000
+      ],
+      "placed_envelope": [
+        64770000,
+        29210000,
+        74930000,
+        81280000
+      ],
+      "translation": [
+        44450000,
+        25400000
+      ],
+      "protected_wire_count": 3,
+      "obstacle_count": 2
+    },
+    {
+      "fragment": "passive.series",
+      "variant": "passive.series.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [
+        "series",
+        "shunt"
+      ],
+      "local_envelope": [
+        15240000,
+        5080000,
+        54610000,
+        54610000
+      ],
+      "placed_envelope": [
+        25400000,
+        29210000,
+        64770000,
+        78740000
+      ],
+      "translation": [
+        10160000,
+        24130000
+      ],
+      "protected_wire_count": 6,
+      "obstacle_count": 2
+    }
+  ],
+  "packing_attempts": [
+    "candidate-1:side-affinity:pass:measured=62360000x48260000"
+  ],
+  "routes": [
+    {
+      "net": "OUT",
+      "edge_count": 1,
+      "segments": [
+        [
+          [
+            53340000,
+            43180000
+          ],
+          [
+            64770000,
+            43180000
+          ]
+        ],
+        [
+          [
+            64770000,
+            33020000
+          ],
+          [
+            69850000,
+            33020000
+          ]
+        ],
+        [
+          [
+            64770000,
+            43180000
+          ],
+          [
+            64770000,
+            33020000
+          ]
+        ]
+      ],
+      "junctions": [
+        [
+          64770000,
+          33020000
+        ],
+        [
+          64770000,
+          43180000
+        ]
+      ]
+    }
+  ]
+}
