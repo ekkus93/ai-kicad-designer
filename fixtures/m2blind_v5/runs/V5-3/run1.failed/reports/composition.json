@@ -1,0 +1,791 @@
+{
+  "schema_version": "m2e1.composition.1",
+  "blocks": [
+    {
+      "id": "function.amp.a",
+      "kind": "sallen_key",
+      "relationships": [
+        "filter_series",
+        "filter_shunt",
+        "loop.a",
+        "reactive.feedback",
+        "stage.a",
+        "upstream.series"
+      ],
+      "occurrences": [
+        [
+          "amp",
+          1
+        ],
+        [
+          "feedback_c",
+          1
+        ],
+        [
+          "filter_c",
+          1
+        ],
+        [
+          "filter_r",
+          1
+        ],
+        [
+          "upstream_r",
+          1
+        ]
+      ],
+      "function": [
+        "amp",
+        "a"
+      ],
+      "unused": false,
+      "ports": [
+        {
+          "id": "function.amp.a.input",
+          "net": "IN",
+          "role": "signal_in",
+          "terminals": [
+            [
+              "upstream_r",
+              "1"
+            ]
+          ]
+        },
+        {
+          "id": "function.amp.a.output",
+          "net": "OUT",
+          "role": "signal_out",
+          "terminals": [
+            [
+              "amp",
+              "1"
+            ]
+          ]
+        },
+        {
+          "id": "function.amp.a.reference",
+          "net": "REF",
+          "role": "reference",
+          "terminals": [
+            [
+              "amp",
+              "3"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "function.amp.b",
+      "kind": "inverting_amplifier",
+      "relationships": [
+        "invert.input",
+        "loop.b",
+        "stage.b"
+      ],
+      "occurrences": [
+        [
+          "amp",
+          2
+        ],
+        [
+          "invert_feedback",
+          1
+        ],
+        [
+          "invert_input",
+          1
+        ]
+      ],
+      "function": [
+        "amp",
+        "b"
+      ],
+      "unused": false,
+      "ports": [
+        {
+          "id": "function.amp.b.input",
+          "net": "OUT",
+          "role": "signal_in",
+          "terminals": [
+            [
+              "invert_input",
+              "1"
+            ]
+          ]
+        },
+        {
+          "id": "function.amp.b.output",
+          "net": "FINAL",
+          "role": "signal_out",
+          "terminals": [
+            [
+              "amp",
+              "7"
+            ]
+          ]
+        },
+        {
+          "id": "function.amp.b.reference",
+          "net": "REF",
+          "role": "reference",
+          "terminals": [
+            [
+              "amp",
+              "5"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "interface.interface",
+      "kind": "interface",
+      "relationships": [],
+      "occurrences": [
+        [
+          "interface",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "interface.interface.pin1",
+          "net": "IN",
+          "role": "passive",
+          "terminals": [
+            [
+              "interface",
+              "1"
+            ]
+          ]
+        },
+        {
+          "id": "interface.interface.pin2",
+          "net": "FILTERED",
+          "role": "passive",
+          "terminals": [
+            [
+              "interface",
+              "2"
+            ]
+          ]
+        },
+        {
+          "id": "interface.interface.pin3",
+          "net": "VPLUS",
+          "role": "passive",
+          "terminals": [
+            [
+              "interface",
+              "3"
+            ]
+          ]
+        },
+        {
+          "id": "interface.interface.pin4",
+          "net": "VMINUS",
+          "role": "passive",
+          "terminals": [
+            [
+              "interface",
+              "4"
+            ]
+          ]
+        },
+        {
+          "id": "interface.interface.pin5",
+          "net": "REF",
+          "role": "passive",
+          "terminals": [
+            [
+              "interface",
+              "5"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "package.amp.power",
+      "kind": "package_power",
+      "relationships": [
+        "bypass.minus",
+        "bypass.plus",
+        "supply"
+      ],
+      "occurrences": [
+        [
+          "amp",
+          3
+        ],
+        [
+          "cneg",
+          1
+        ],
+        [
+          "cpos",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "package.amp.power.positive",
+          "net": "VPLUS",
+          "role": "power_in",
+          "terminals": [
+            [
+              "amp",
+              "8"
+            ]
+          ]
+        },
+        {
+          "id": "package.amp.power.negative",
+          "net": "VMINUS",
+          "role": "power_in",
+          "terminals": [
+            [
+              "amp",
+              "4"
+            ]
+          ]
+        },
+        {
+          "id": "package.amp.power.reference",
+          "net": "REF",
+          "role": "reference",
+          "terminals": []
+        }
+      ]
+    },
+    {
+      "id": "passive.output.filter.series",
+      "kind": "rc",
+      "relationships": [
+        "output.filter.series",
+        "output.filter.shunt"
+      ],
+      "occurrences": [
+        [
+          "output_c",
+          1
+        ],
+        [
+          "output_r",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "passive.output.filter.series.input",
+          "net": "FINAL",
+          "role": "signal_in",
+          "terminals": [
+            [
+              "output_r",
+              "1"
+            ]
+          ]
+        },
+        {
+          "id": "passive.output.filter.series.output",
+          "net": "FILTERED",
+          "role": "signal_out",
+          "terminals": [
+            [
+              "output_r",
+              "2"
+            ]
+          ]
+        },
+        {
+          "id": "passive.output.filter.series.reference",
+          "net": "REF",
+          "role": "reference",
+          "terminals": [
+            [
+              "output_c",
+              "2"
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "owners": [
+    {
+      "occurrence": [
+        "amp",
+        1
+      ],
+      "fragment": "function.amp.a"
+    },
+    {
+      "occurrence": [
+        "amp",
+        2
+      ],
+      "fragment": "function.amp.b"
+    },
+    {
+      "occurrence": [
+        "amp",
+        3
+      ],
+      "fragment": "package.amp.power"
+    },
+    {
+      "occurrence": [
+        "cneg",
+        1
+      ],
+      "fragment": "package.amp.power"
+    },
+    {
+      "occurrence": [
+        "cpos",
+        1
+      ],
+      "fragment": "package.amp.power"
+    },
+    {
+      "occurrence": [
+        "feedback_c",
+        1
+      ],
+      "fragment": "function.amp.a"
+    },
+    {
+      "occurrence": [
+        "filter_c",
+        1
+      ],
+      "fragment": "function.amp.a"
+    },
+    {
+      "occurrence": [
+        "filter_r",
+        1
+      ],
+      "fragment": "function.amp.a"
+    },
+    {
+      "occurrence": [
+        "interface",
+        1
+      ],
+      "fragment": "interface.interface"
+    },
+    {
+      "occurrence": [
+        "invert_feedback",
+        1
+      ],
+      "fragment": "function.amp.b"
+    },
+    {
+      "occurrence": [
+        "invert_input",
+        1
+      ],
+      "fragment": "function.amp.b"
+    },
+    {
+      "occurrence": [
+        "output_c",
+        1
+      ],
+      "fragment": "passive.output.filter.series"
+    },
+    {
+      "occurrence": [
+        "output_r",
+        1
+      ],
+      "fragment": "passive.output.filter.series"
+    },
+    {
+      "occurrence": [
+        "upstream_r",
+        1
+      ],
+      "fragment": "function.amp.a"
+    }
+  ],
+  "edges": [
+    {
+      "kind": "branch",
+      "source": "function.amp.b",
+      "target": "passive.output.filter.series",
+      "net": "FINAL",
+      "origins": []
+    },
+    {
+      "kind": "feedback",
+      "source": "function.amp.a",
+      "target": "function.amp.a",
+      "net": "OUT",
+      "origins": [
+        "loop.a"
+      ]
+    },
+    {
+      "kind": "feedback",
+      "source": "function.amp.b",
+      "target": "function.amp.b",
+      "net": "FINAL",
+      "origins": [
+        "loop.b"
+      ]
+    },
+    {
+      "kind": "package",
+      "source": "function.amp.a",
+      "target": "package.amp.power",
+      "net": "",
+      "origins": [
+        "filter_series",
+        "filter_shunt",
+        "loop.a",
+        "reactive.feedback",
+        "stage.a",
+        "upstream.series"
+      ]
+    },
+    {
+      "kind": "package",
+      "source": "function.amp.b",
+      "target": "package.amp.power",
+      "net": "",
+      "origins": [
+        "invert.input",
+        "loop.b",
+        "stage.b"
+      ]
+    },
+    {
+      "kind": "reference",
+      "source": "function.amp.a",
+      "target": "function.amp.b",
+      "net": "REF",
+      "origins": []
+    },
+    {
+      "kind": "reference",
+      "source": "function.amp.b",
+      "target": "package.amp.power",
+      "net": "REF",
+      "origins": []
+    },
+    {
+      "kind": "reference",
+      "source": "package.amp.power",
+      "target": "passive.output.filter.series",
+      "net": "REF",
+      "origins": []
+    },
+    {
+      "kind": "signal",
+      "source": "function.amp.a",
+      "target": "function.amp.b",
+      "net": "OUT",
+      "origins": []
+    },
+    {
+      "kind": "support",
+      "source": "package.amp.power",
+      "target": "function.amp.a",
+      "net": "REF",
+      "origins": [
+        "bypass.minus"
+      ]
+    },
+    {
+      "kind": "support",
+      "source": "package.amp.power",
+      "target": "function.amp.a",
+      "net": "VPLUS",
+      "origins": [
+        "bypass.plus"
+      ]
+    }
+  ],
+  "signal_order": [
+    "function.amp.a",
+    "passive.output.filter.series",
+    "function.amp.b"
+  ],
+  "variants": [
+    {
+      "fragment": "function.amp.a",
+      "variant": "function.amp.a.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [
+        "filter_series",
+        "filter_shunt",
+        "loop.a",
+        "reactive.feedback",
+        "stage.a",
+        "upstream.series"
+      ],
+      "local_envelope": [
+        5080000,
+        11430000,
+        118110000,
+        74930000
+      ],
+      "placed_envelope": [
+        25400000,
+        29210000,
+        138430000,
+        92710000
+      ],
+      "translation": [
+        20320000,
+        17780000
+      ],
+      "protected_wire_count": 17,
+      "obstacle_count": 5
+    },
+    {
+      "fragment": "function.amp.b",
+      "variant": "function.amp.b.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [
+        "invert.input",
+        "loop.b",
+        "stage.b"
+      ],
+      "local_envelope": [
+        44450000,
+        30480000,
+        118110000,
+        65786000
+      ],
+      "placed_envelope": [
+        138430000,
+        29210000,
+        212090000,
+        64516000
+      ],
+      "translation": [
+        93980000,
+        -1270000
+      ],
+      "protected_wire_count": 10,
+      "obstacle_count": 3
+    },
+    {
+      "fragment": "interface.interface",
+      "variant": "interface.interface.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [],
+      "local_envelope": [
+        2540000,
+        6350000,
+        22230000,
+        29210000
+      ],
+      "placed_envelope": [
+        212090000,
+        29210000,
+        231780000,
+        52070000
+      ],
+      "translation": [
+        209550000,
+        22860000
+      ],
+      "protected_wire_count": 5,
+      "obstacle_count": 1
+    },
+    {
+      "fragment": "package.amp.power",
+      "variant": "package.amp.power.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [
+        "bypass.minus",
+        "bypass.plus",
+        "supply"
+      ],
+      "local_envelope": [
+        18288000,
+        21590000,
+        81280000,
+        48260000
+      ],
+      "placed_envelope": [
+        25908000,
+        142240000,
+        88900000,
+        168910000
+      ],
+      "translation": [
+        7620000,
+        120650000
+      ],
+      "protected_wire_count": 6,
+      "obstacle_count": 3
+    },
+    {
+      "fragment": "passive.output.filter.series",
+      "variant": "passive.output.filter.series.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [
+        "output.filter.series",
+        "output.filter.shunt"
+      ],
+      "local_envelope": [
+        15240000,
+        5080000,
+        54610000,
+        54610000
+      ],
+      "placed_envelope": [
+        156210000,
+        92710000,
+        195580000,
+        142240000
+      ],
+      "translation": [
+        140970000,
+        87630000
+      ],
+      "protected_wire_count": 6,
+      "obstacle_count": 2
+    }
+  ],
+  "packing_attempts": [
+    "candidate-1:side-affinity:unit-spread-overflow:function.amp.a,function.amp.b,passive.output.filter.series:226060000x63500000",
+    "candidate-2:lower-affinity:pass:measured=201300000x134620000"
+  ],
+  "routes": [
+    {
+      "net": "FINAL",
+      "edge_count": 1,
+      "segments": [
+        [
+          [
+            156210000,
+            92710000
+          ],
+          [
+            156210000,
+            106680000
+          ]
+        ],
+        [
+          [
+            156210000,
+            106680000
+          ],
+          [
+            158750000,
+            106680000
+          ]
+        ],
+        [
+          [
+            209550000,
+            43180000
+          ],
+          [
+            212090000,
+            43180000
+          ]
+        ],
+        [
+          [
+            212090000,
+            43180000
+          ],
+          [
+            212090000,
+            92710000
+          ]
+        ],
+        [
+          [
+            212090000,
+            92710000
+          ],
+          [
+            156210000,
+            92710000
+          ]
+        ]
+      ],
+      "junctions": [
+        [
+          156210000,
+          92710000
+        ],
+        [
+          156210000,
+          106680000
+        ],
+        [
+          212090000,
+          43180000
+        ],
+        [
+          212090000,
+          92710000
+        ]
+      ]
+    },
+    {
+      "net": "OUT",
+      "edge_count": 1,
+      "segments": [
+        [
+          [
+            135890000,
+            62230000
+          ],
+          [
+            138430000,
+            62230000
+          ]
+        ],
+        [
+          [
+            138430000,
+            45720000
+          ],
+          [
+            140970000,
+            45720000
+          ]
+        ],
+        [
+          [
+            138430000,
+            62230000
+          ],
+          [
+            138430000,
+            45720000
+          ]
+        ]
+      ],
+      "junctions": [
+        [
+          138430000,
+          45720000
+        ],
+        [
+          138430000,
+          62230000
+        ]
+      ]
+    }
+  ]
+}

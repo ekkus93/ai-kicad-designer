@@ -1,0 +1,434 @@
+{
+  "profile": "m2b.1",
+  "id": "sallen_key_inverting_rc",
+  "name": "V5SallenKeyInvertingRc",
+  "components": [
+    {
+      "id": "amp",
+      "refdes": "U1",
+      "asset": "Amplifier_Operational:NE5532",
+      "value": "NE5532",
+      "functions": [
+        {
+          "id": "a",
+          "role": "buffer",
+          "unit": 1,
+          "pins": {
+            "out": "1",
+            "minus": "2",
+            "plus": "3"
+          }
+        },
+        {
+          "id": "b",
+          "role": "buffer",
+          "unit": 2,
+          "pins": {
+            "out": "7",
+            "minus": "6",
+            "plus": "5"
+          }
+        },
+        {
+          "id": "power",
+          "role": "supply",
+          "unit": 3,
+          "pins": {
+            "negative": "4",
+            "positive": "8"
+          }
+        }
+      ]
+    },
+    {
+      "id": "cpos",
+      "refdes": "C1",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "cneg",
+      "refdes": "C2",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "interface",
+      "refdes": "J1",
+      "asset": "Connector_Generic:Conn_01x05",
+      "value": "Conn_01x05"
+    },
+    {
+      "id": "filter_r",
+      "refdes": "R2",
+      "asset": "Device:R",
+      "value": "10k"
+    },
+    {
+      "id": "filter_c",
+      "refdes": "C3",
+      "asset": "Device:C",
+      "value": "10n"
+    },
+    {
+      "id": "upstream_r",
+      "refdes": "R1",
+      "asset": "Device:R",
+      "value": "10k"
+    },
+    {
+      "id": "feedback_c",
+      "refdes": "C4",
+      "asset": "Device:C",
+      "value": "10n"
+    },
+    {
+      "id": "invert_input",
+      "refdes": "R3",
+      "asset": "Device:R",
+      "value": "10k"
+    },
+    {
+      "id": "invert_feedback",
+      "refdes": "R4",
+      "asset": "Device:R",
+      "value": "100k"
+    },
+    {
+      "id": "output_r",
+      "refdes": "R5",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "output_c",
+      "refdes": "C5",
+      "asset": "Device:C",
+      "value": "100n"
+    }
+  ],
+  "nets": [
+    {
+      "id": "IN",
+      "members": [
+        [
+          "interface",
+          "1"
+        ],
+        [
+          "upstream_r",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "OUT",
+      "members": [
+        [
+          "amp",
+          "1"
+        ],
+        [
+          "amp",
+          "2"
+        ],
+        [
+          "feedback_c",
+          "2"
+        ],
+        [
+          "invert_input",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "VPLUS",
+      "members": [
+        [
+          "interface",
+          "3"
+        ],
+        [
+          "amp",
+          "8"
+        ],
+        [
+          "cpos",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "VMINUS",
+      "members": [
+        [
+          "interface",
+          "4"
+        ],
+        [
+          "amp",
+          "4"
+        ],
+        [
+          "cneg",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "REF",
+      "members": [
+        [
+          "interface",
+          "5"
+        ],
+        [
+          "cpos",
+          "2"
+        ],
+        [
+          "cneg",
+          "1"
+        ],
+        [
+          "filter_c",
+          "2"
+        ],
+        [
+          "amp",
+          "5"
+        ],
+        [
+          "output_c",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "FINAL",
+      "members": [
+        [
+          "amp",
+          "7"
+        ],
+        [
+          "invert_feedback",
+          "2"
+        ],
+        [
+          "output_r",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "FILTER",
+      "members": [
+        [
+          "filter_r",
+          "2"
+        ],
+        [
+          "filter_c",
+          "1"
+        ],
+        [
+          "amp",
+          "3"
+        ]
+      ]
+    },
+    {
+      "id": "INTERMEDIATE",
+      "members": [
+        [
+          "upstream_r",
+          "2"
+        ],
+        [
+          "filter_r",
+          "1"
+        ],
+        [
+          "feedback_c",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "SUM_B",
+      "members": [
+        [
+          "amp",
+          "6"
+        ],
+        [
+          "invert_input",
+          "2"
+        ],
+        [
+          "invert_feedback",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "FILTERED",
+      "members": [
+        [
+          "output_r",
+          "2"
+        ],
+        [
+          "output_c",
+          "1"
+        ],
+        [
+          "interface",
+          "2"
+        ]
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "stage.a",
+      "kind": "amplifier",
+      "component": "amp",
+      "function": "a",
+      "input": "FILTER",
+      "output": "OUT",
+      "reference": "REF"
+    },
+    {
+      "id": "stage.b",
+      "kind": "amplifier",
+      "component": "amp",
+      "function": "b",
+      "input": "OUT",
+      "output": "FINAL",
+      "reference": "REF"
+    },
+    {
+      "id": "loop.a",
+      "kind": "feedback",
+      "component": "amp",
+      "function": "a",
+      "source": "1",
+      "sense": "2",
+      "net": "OUT",
+      "polarity": "negative"
+    },
+    {
+      "id": "loop.b",
+      "kind": "feedback",
+      "component": "amp",
+      "function": "b",
+      "source": "7",
+      "sense": "6",
+      "net": "FINAL",
+      "polarity": "negative",
+      "resistor": "invert_feedback"
+    },
+    {
+      "id": "supply",
+      "kind": "power_rails",
+      "component": "amp",
+      "unit": 3,
+      "positive": "VPLUS",
+      "negative": "VMINUS",
+      "reference": "REF"
+    },
+    {
+      "id": "bypass.plus",
+      "kind": "decoupling",
+      "component": "cpos",
+      "consumer": [
+        "amp",
+        "8"
+      ],
+      "supply": "VPLUS",
+      "return": "REF"
+    },
+    {
+      "id": "bypass.minus",
+      "kind": "decoupling",
+      "component": "cneg",
+      "consumer": [
+        "amp",
+        "4"
+      ],
+      "supply": "REF",
+      "return": "VMINUS"
+    },
+    {
+      "id": "filter_series",
+      "kind": "series",
+      "component": "filter_r",
+      "input": "INTERMEDIATE",
+      "output": "FILTER"
+    },
+    {
+      "id": "filter_shunt",
+      "kind": "shunt",
+      "component": "filter_c",
+      "node": "FILTER",
+      "reference": "REF"
+    },
+    {
+      "id": "upstream.series",
+      "kind": "series",
+      "component": "upstream_r",
+      "input": "IN",
+      "output": "INTERMEDIATE"
+    },
+    {
+      "id": "reactive.feedback",
+      "kind": "bridge",
+      "component": "feedback_c",
+      "first": "INTERMEDIATE",
+      "second": "OUT",
+      "purpose": "feedback"
+    },
+    {
+      "id": "invert.input",
+      "kind": "series",
+      "component": "invert_input",
+      "input": "OUT",
+      "output": "SUM_B"
+    },
+    {
+      "id": "output.filter.series",
+      "kind": "series",
+      "component": "output_r",
+      "input": "FINAL",
+      "output": "FILTERED"
+    },
+    {
+      "id": "output.filter.shunt",
+      "kind": "shunt",
+      "component": "output_c",
+      "node": "FILTERED",
+      "reference": "REF"
+    }
+  ],
+  "no_connects": [],
+  "power_assertions": [
+    {
+      "id": "flag.positive",
+      "refdes": "#FLG01",
+      "net": "VPLUS"
+    },
+    {
+      "id": "flag.negative",
+      "refdes": "#FLG02",
+      "net": "VMINUS"
+    },
+    {
+      "id": "flag.reference",
+      "refdes": "#FLG03",
+      "net": "REF"
+    }
+  ]
+}

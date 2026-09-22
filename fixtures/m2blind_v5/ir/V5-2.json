@@ -1,0 +1,464 @@
+{
+  "profile": "m2b.1",
+  "id": "timer_buffer_led",
+  "name": "V5TimerBufferLed",
+  "components": [
+    {
+      "id": "timer",
+      "refdes": "U1",
+      "asset": "Timer:NE555D",
+      "value": "NE555D"
+    },
+    {
+      "id": "charge",
+      "refdes": "R1",
+      "asset": "Device:R",
+      "value": "10k"
+    },
+    {
+      "id": "discharge",
+      "refdes": "R2",
+      "asset": "Device:R",
+      "value": "47k"
+    },
+    {
+      "id": "timing_cap",
+      "refdes": "C1",
+      "asset": "Device:C",
+      "value": "10u"
+    },
+    {
+      "id": "control_bypass",
+      "refdes": "C2",
+      "asset": "Device:C",
+      "value": "10n"
+    },
+    {
+      "id": "source",
+      "refdes": "J1",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Supply"
+    },
+    {
+      "id": "output",
+      "refdes": "J2",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Pulse output"
+    },
+    {
+      "id": "return",
+      "refdes": "J3",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Return"
+    },
+    {
+      "id": "amp",
+      "refdes": "U2",
+      "asset": "Amplifier_Operational:NE5532",
+      "value": "NE5532",
+      "functions": [
+        {
+          "id": "a",
+          "role": "buffer",
+          "unit": 1,
+          "pins": {
+            "out": "1",
+            "minus": "2",
+            "plus": "3"
+          }
+        },
+        {
+          "id": "b",
+          "role": "parked_buffer",
+          "unit": 2,
+          "pins": {
+            "out": "7",
+            "minus": "6",
+            "plus": "5"
+          }
+        },
+        {
+          "id": "power",
+          "role": "supply",
+          "unit": 3,
+          "pins": {
+            "negative": "4",
+            "positive": "8"
+          }
+        }
+      ]
+    },
+    {
+      "id": "cpos",
+      "refdes": "C3",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "cneg",
+      "refdes": "C4",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "negative",
+      "refdes": "J4",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Negative rail"
+    },
+    {
+      "id": "indicator_r",
+      "refdes": "R3",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "indicator_led",
+      "refdes": "D1",
+      "asset": "Device:LED",
+      "value": "LED"
+    }
+  ],
+  "nets": [
+    {
+      "id": "VCC",
+      "members": [
+        [
+          "source",
+          "1"
+        ],
+        [
+          "timer",
+          "8"
+        ],
+        [
+          "timer",
+          "4"
+        ],
+        [
+          "charge",
+          "1"
+        ],
+        [
+          "amp",
+          "8"
+        ],
+        [
+          "cpos",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "DISCH",
+      "members": [
+        [
+          "charge",
+          "2"
+        ],
+        [
+          "discharge",
+          "1"
+        ],
+        [
+          "timer",
+          "7"
+        ]
+      ]
+    },
+    {
+      "id": "TIMING",
+      "members": [
+        [
+          "discharge",
+          "2"
+        ],
+        [
+          "timing_cap",
+          "1"
+        ],
+        [
+          "timer",
+          "2"
+        ],
+        [
+          "timer",
+          "6"
+        ]
+      ]
+    },
+    {
+      "id": "OUT",
+      "members": [
+        [
+          "timer",
+          "3"
+        ],
+        [
+          "amp",
+          "3"
+        ]
+      ]
+    },
+    {
+      "id": "REF",
+      "members": [
+        [
+          "timer",
+          "1"
+        ],
+        [
+          "timing_cap",
+          "2"
+        ],
+        [
+          "control_bypass",
+          "2"
+        ],
+        [
+          "return",
+          "1"
+        ],
+        [
+          "cpos",
+          "2"
+        ],
+        [
+          "cneg",
+          "1"
+        ],
+        [
+          "amp",
+          "5"
+        ],
+        [
+          "indicator_led",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "CONT",
+      "members": [
+        [
+          "timer",
+          "5"
+        ],
+        [
+          "control_bypass",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "VMINUS",
+      "members": [
+        [
+          "negative",
+          "1"
+        ],
+        [
+          "amp",
+          "4"
+        ],
+        [
+          "cneg",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "BUFFERED",
+      "members": [
+        [
+          "amp",
+          "1"
+        ],
+        [
+          "amp",
+          "2"
+        ],
+        [
+          "output",
+          "1"
+        ],
+        [
+          "indicator_r",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "PARK",
+      "members": [
+        [
+          "amp",
+          "6"
+        ],
+        [
+          "amp",
+          "7"
+        ]
+      ]
+    },
+    {
+      "id": "LEDMID",
+      "members": [
+        [
+          "indicator_r",
+          "2"
+        ],
+        [
+          "indicator_led",
+          "2"
+        ]
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "timer.function",
+      "kind": "timer",
+      "component": "timer",
+      "supply": "VCC",
+      "reference": "REF",
+      "output": "OUT",
+      "timing": "TIMING",
+      "discharge": "DISCH",
+      "control": "CONT",
+      "pins": {
+        "supply": "8",
+        "reference": "1",
+        "output": "3",
+        "trigger": "2",
+        "threshold": "6",
+        "discharge": "7",
+        "control": "5",
+        "reset": "4"
+      }
+    },
+    {
+      "id": "timing.network",
+      "kind": "timing_ladder",
+      "upper": "charge",
+      "lower": "discharge",
+      "capacitor": "timing_cap",
+      "supply": "VCC",
+      "discharge": "DISCH",
+      "timing": "TIMING",
+      "reference": "REF"
+    },
+    {
+      "id": "control.bypass",
+      "kind": "decoupling",
+      "component": "control_bypass",
+      "consumer": [
+        "timer",
+        "5"
+      ],
+      "supply": "CONT",
+      "return": "REF"
+    },
+    {
+      "id": "buffer.stage",
+      "kind": "amplifier",
+      "component": "amp",
+      "function": "a",
+      "input": "OUT",
+      "output": "BUFFERED",
+      "reference": "REF"
+    },
+    {
+      "id": "buffer.loop",
+      "kind": "feedback",
+      "component": "amp",
+      "function": "a",
+      "source": "1",
+      "sense": "2",
+      "net": "BUFFERED",
+      "polarity": "negative"
+    },
+    {
+      "id": "park.stage",
+      "kind": "amplifier",
+      "component": "amp",
+      "function": "b",
+      "input": "REF",
+      "output": "PARK",
+      "unused": true
+    },
+    {
+      "id": "park.loop",
+      "kind": "feedback",
+      "component": "amp",
+      "function": "b",
+      "source": "7",
+      "sense": "6",
+      "net": "PARK",
+      "polarity": "negative"
+    },
+    {
+      "id": "amp.supply",
+      "kind": "power_rails",
+      "component": "amp",
+      "unit": 3,
+      "positive": "VCC",
+      "negative": "VMINUS",
+      "reference": "REF"
+    },
+    {
+      "id": "amp.bypass.plus",
+      "kind": "decoupling",
+      "component": "cpos",
+      "consumer": [
+        "amp",
+        "8"
+      ],
+      "supply": "VCC",
+      "return": "REF"
+    },
+    {
+      "id": "amp.bypass.minus",
+      "kind": "decoupling",
+      "component": "cneg",
+      "consumer": [
+        "amp",
+        "4"
+      ],
+      "supply": "REF",
+      "return": "VMINUS"
+    },
+    {
+      "id": "indicator.series",
+      "kind": "series",
+      "component": "indicator_r",
+      "input": "BUFFERED",
+      "output": "LEDMID"
+    },
+    {
+      "id": "indicator.polarity",
+      "kind": "polarity",
+      "component": "indicator_led",
+      "anode": "LEDMID",
+      "cathode": "REF"
+    }
+  ],
+  "no_connects": [],
+  "power_assertions": [
+    {
+      "id": "flag.supply",
+      "refdes": "#FLG01",
+      "net": "VCC"
+    },
+    {
+      "id": "flag.negative",
+      "refdes": "#FLG02",
+      "net": "VMINUS"
+    },
+    {
+      "id": "flag.return",
+      "refdes": "#FLG03",
+      "net": "REF"
+    }
+  ]
+}

@@ -1,0 +1,402 @@
+{
+  "profile": "m2b.1",
+  "id": "regulated_timer_dual_output_load",
+  "name": "V5RegulatedTimerDualOutputLoad",
+  "components": [
+    {
+      "id": "timer",
+      "refdes": "U2",
+      "asset": "Timer:NE555D",
+      "value": "NE555D"
+    },
+    {
+      "id": "charge",
+      "refdes": "R1",
+      "asset": "Device:R",
+      "value": "10k"
+    },
+    {
+      "id": "discharge",
+      "refdes": "R2",
+      "asset": "Device:R",
+      "value": "47k"
+    },
+    {
+      "id": "timing_cap",
+      "refdes": "C1",
+      "asset": "Device:C",
+      "value": "10u"
+    },
+    {
+      "id": "control_bypass",
+      "refdes": "C2",
+      "asset": "Device:C",
+      "value": "10n"
+    },
+    {
+      "id": "source",
+      "refdes": "J1",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Supply"
+    },
+    {
+      "id": "output",
+      "refdes": "J2",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Pulse output"
+    },
+    {
+      "id": "return",
+      "refdes": "J3",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Return"
+    },
+    {
+      "id": "regulator",
+      "refdes": "U1",
+      "asset": "Regulator_Linear:L7805",
+      "value": "L7805"
+    },
+    {
+      "id": "regulator_input_c",
+      "refdes": "C3",
+      "asset": "Device:C",
+      "value": "330n"
+    },
+    {
+      "id": "regulator_output_c",
+      "refdes": "C4",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "filter_r",
+      "refdes": "R3",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "filter_c",
+      "refdes": "C5",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "indicator_r",
+      "refdes": "R4",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "indicator_led",
+      "refdes": "D1",
+      "asset": "Device:LED",
+      "value": "LED"
+    }
+  ],
+  "nets": [
+    {
+      "id": "VCC",
+      "members": [
+        [
+          "timer",
+          "8"
+        ],
+        [
+          "timer",
+          "4"
+        ],
+        [
+          "charge",
+          "1"
+        ],
+        [
+          "regulator",
+          "3"
+        ],
+        [
+          "regulator_output_c",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "DISCH",
+      "members": [
+        [
+          "charge",
+          "2"
+        ],
+        [
+          "discharge",
+          "1"
+        ],
+        [
+          "timer",
+          "7"
+        ]
+      ]
+    },
+    {
+      "id": "TIMING",
+      "members": [
+        [
+          "discharge",
+          "2"
+        ],
+        [
+          "timing_cap",
+          "1"
+        ],
+        [
+          "timer",
+          "2"
+        ],
+        [
+          "timer",
+          "6"
+        ]
+      ]
+    },
+    {
+      "id": "OUT",
+      "members": [
+        [
+          "timer",
+          "3"
+        ],
+        [
+          "filter_r",
+          "1"
+        ],
+        [
+          "indicator_r",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "REF",
+      "members": [
+        [
+          "timer",
+          "1"
+        ],
+        [
+          "timing_cap",
+          "2"
+        ],
+        [
+          "control_bypass",
+          "2"
+        ],
+        [
+          "return",
+          "1"
+        ],
+        [
+          "regulator",
+          "2"
+        ],
+        [
+          "regulator_input_c",
+          "2"
+        ],
+        [
+          "regulator_output_c",
+          "2"
+        ],
+        [
+          "filter_c",
+          "2"
+        ],
+        [
+          "indicator_led",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "CONT",
+      "members": [
+        [
+          "timer",
+          "5"
+        ],
+        [
+          "control_bypass",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "VIN",
+      "members": [
+        [
+          "source",
+          "1"
+        ],
+        [
+          "regulator",
+          "1"
+        ],
+        [
+          "regulator_input_c",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "FILTERED",
+      "members": [
+        [
+          "filter_r",
+          "2"
+        ],
+        [
+          "filter_c",
+          "1"
+        ],
+        [
+          "output",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "LEDMID",
+      "members": [
+        [
+          "indicator_r",
+          "2"
+        ],
+        [
+          "indicator_led",
+          "2"
+        ]
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "timer.function",
+      "kind": "timer",
+      "component": "timer",
+      "supply": "VCC",
+      "reference": "REF",
+      "output": "OUT",
+      "timing": "TIMING",
+      "discharge": "DISCH",
+      "control": "CONT",
+      "pins": {
+        "supply": "8",
+        "reference": "1",
+        "output": "3",
+        "trigger": "2",
+        "threshold": "6",
+        "discharge": "7",
+        "control": "5",
+        "reset": "4"
+      }
+    },
+    {
+      "id": "timing.network",
+      "kind": "timing_ladder",
+      "upper": "charge",
+      "lower": "discharge",
+      "capacitor": "timing_cap",
+      "supply": "VCC",
+      "discharge": "DISCH",
+      "timing": "TIMING",
+      "reference": "REF"
+    },
+    {
+      "id": "control.bypass",
+      "kind": "decoupling",
+      "component": "control_bypass",
+      "consumer": [
+        "timer",
+        "5"
+      ],
+      "supply": "CONT",
+      "return": "REF"
+    },
+    {
+      "id": "regulator.conversion",
+      "kind": "power_stage",
+      "component": "regulator",
+      "input": "VIN",
+      "output": "VCC",
+      "reference": "REF",
+      "pins": {
+        "input": "1",
+        "output": "3",
+        "reference": "2"
+      },
+      "polarity": "positive"
+    },
+    {
+      "id": "regulator.bypass.input",
+      "kind": "decoupling",
+      "component": "regulator_input_c",
+      "consumer": [
+        "regulator",
+        "1"
+      ],
+      "supply": "VIN",
+      "return": "REF"
+    },
+    {
+      "id": "regulator.bypass.output",
+      "kind": "decoupling",
+      "component": "regulator_output_c",
+      "consumer": [
+        "regulator",
+        "3"
+      ],
+      "supply": "VCC",
+      "return": "REF"
+    },
+    {
+      "id": "output.filter.series",
+      "kind": "series",
+      "component": "filter_r",
+      "input": "OUT",
+      "output": "FILTERED"
+    },
+    {
+      "id": "output.filter.shunt",
+      "kind": "shunt",
+      "component": "filter_c",
+      "node": "FILTERED",
+      "reference": "REF"
+    },
+    {
+      "id": "indicator.series",
+      "kind": "series",
+      "component": "indicator_r",
+      "input": "OUT",
+      "output": "LEDMID"
+    },
+    {
+      "id": "indicator.polarity",
+      "kind": "polarity",
+      "component": "indicator_led",
+      "anode": "LEDMID",
+      "cathode": "REF"
+    }
+  ],
+  "no_connects": [],
+  "power_assertions": [
+    {
+      "id": "flag.supply",
+      "refdes": "#FLG01",
+      "net": "VIN"
+    },
+    {
+      "id": "flag.return",
+      "refdes": "#FLG02",
+      "net": "REF"
+    }
+  ]
+}
