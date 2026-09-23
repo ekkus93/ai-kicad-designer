@@ -432,26 +432,47 @@ def route_between_fragments(
     for edge in plan.edges:
         if edge.net and edge.kind in {"signal", "power", "branch"}:
             grouped.setdefault(edge.net, []).append(edge)
+    # A shared internal reference has no connector and may have no directed
+    # edge at all. Its terminal inventory still demands a physical distribution.
+    for net in plan.presentation_nets:
+        if net.explicit_geometry_required and len(net.fragments) > 1:
+            grouped.setdefault(net.id, [])
+
+    def net_gateways(net: str) -> tuple[Gateway, ...]:
+        return tuple(gateway for item in placed for gateway in item.gateways if gateway.net == net)
 
     def group_order(item: tuple[str, list[SemanticEdge]]) -> tuple[int, int, int, str]:
         net, edges = item
         endpoints = tuple((by_id[edge.source], True) for edge in edges) + tuple(
             (by_id[edge.target], False) for edge in edges
         )
-        legal_directions = min(
-            len(_gateway(fragment, net, output).approach_directions)
-            for fragment, output in endpoints
+        selected = (
+            tuple(_gateway(fragment, net, output) for fragment, output in endpoints)
+            if endpoints
+            else net_gateways(net)
         )
-        fanout = len({_gateway(fragment, net, output).id for fragment, output in endpoints})
+        legal_directions = min(len(gateway.approach_directions) for gateway in selected)
+        fanout = len({gateway.id for gateway in selected})
         return _route_class(edges), legal_directions, -fanout, net
 
     ordered_groups = sorted(grouped.items(), key=group_order)
+    producer_fragments = {net.id: set(net.producer_fragments) for net in plan.presentation_nets}
+    gateway_fragment = {
+        gateway.id: item.fragment.block.id for item in placed for gateway in item.gateways
+    }
     active_gateway_ids = {
         gateway.id
         for net, edges in ordered_groups
         for edge in edges
-        for item, output in ((by_id[edge.source], True), (by_id[edge.target], False))
-        for gateway in (_gateway(item, net, output),)
+        for gateway in (
+            tuple(
+                _gateway(item, net, output)
+                for edge in edges
+                for item, output in ((by_id[edge.source], True), (by_id[edge.target], False))
+            )
+            if edges
+            else net_gateways(net)
+        )
     }
     scene_reservations = tuple(
         reservation for item in placed for reservation in item.reservations
@@ -496,6 +517,8 @@ def route_between_fragments(
             target = _gateway(by_id[edge.target], net, False)
             gateways[source.id] = source
             gateways[target.id] = target
+        if not ordered:
+            gateways.update((gateway.id, gateway) for gateway in net_gateways(net))
         role_by_id = {port.port.id: port.port.role for item in placed for port in item.ports}
         sources = sorted(
             (
@@ -510,7 +533,11 @@ def route_between_fragments(
             if sources
             else min(
                 gateways.values(),
-                key=lambda gateway: (len(gateway.approach_directions), gateway.id),
+                key=lambda gateway: (
+                    gateway_fragment[gateway.id] not in producer_fragments.get(net, set()),
+                    len(gateway.approach_directions),
+                    gateway.id,
+                ),
             )
         )
         owner = f"tree.{net}"
@@ -610,8 +637,8 @@ def route_between_fragments(
                         length = trial_tree.length - base_tree.length
                         target_choices.append(
                             (
-                                bends,
                                 length,
+                                bends,
                                 target.id,
                                 tap[0],
                                 tap[1],

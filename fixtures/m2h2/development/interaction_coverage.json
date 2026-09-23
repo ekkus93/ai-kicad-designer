@@ -1,0 +1,652 @@
+{
+  "schema_version": "m2h2.interaction-coverage.1",
+  "frozen_before_layout_tuning": true,
+  "factors": {
+    "serial_depth": [
+      "1",
+      "2",
+      "3+"
+    ],
+    "parallel_breadth": [
+      "1",
+      "2",
+      "3+"
+    ],
+    "active_cores": [
+      "0",
+      "1",
+      "2",
+      "3+"
+    ],
+    "shared_packages": [
+      "0",
+      "1",
+      "2+"
+    ],
+    "supply_consumers": [
+      "1",
+      "2",
+      "3+"
+    ],
+    "branch_degree": [
+      "1",
+      "2",
+      "3+"
+    ],
+    "reference": [
+      "external",
+      "internal",
+      "distinct"
+    ],
+    "support_count": [
+      "0",
+      "1-2",
+      "3+"
+    ],
+    "protected_paths": [
+      "local",
+      "cross",
+      "mixed"
+    ],
+    "distribution_consumers": [
+      "1",
+      "2",
+      "3+"
+    ],
+    "bands": [
+      "one",
+      "multiple",
+      "interleaved"
+    ],
+    "text_stress": [
+      "nominal",
+      "long"
+    ]
+  },
+  "rows": {
+    "I1": {
+      "factor_pairs": [
+        [
+          "serial_depth",
+          "branch_degree"
+        ]
+      ],
+      "required_cells": [
+        "I1:serial_depth=1|branch_degree=1",
+        "I1:serial_depth=1|branch_degree=2",
+        "I1:serial_depth=1|branch_degree=3+",
+        "I1:serial_depth=2|branch_degree=1",
+        "I1:serial_depth=2|branch_degree=2",
+        "I1:serial_depth=2|branch_degree=3+",
+        "I1:serial_depth=3+|branch_degree=1",
+        "I1:serial_depth=3+|branch_degree=2",
+        "I1:serial_depth=3+|branch_degree=3+"
+      ],
+      "covered_cells": [],
+      "unsupported_cells": [],
+      "selected_triple": [
+        "passive_intermediate",
+        "active_successor",
+        "multiple_bands"
+      ],
+      "selected_triple_status": "not_evaluated"
+    },
+    "I2": {
+      "factor_pairs": [
+        [
+          "reference",
+          "distribution_consumers"
+        ]
+      ],
+      "required_cells": [
+        "I2:reference=external|distribution_consumers=1",
+        "I2:reference=external|distribution_consumers=2",
+        "I2:reference=external|distribution_consumers=3+",
+        "I2:reference=internal|distribution_consumers=1",
+        "I2:reference=internal|distribution_consumers=2",
+        "I2:reference=internal|distribution_consumers=3+",
+        "I2:reference=distinct|distribution_consumers=1",
+        "I2:reference=distinct|distribution_consumers=2",
+        "I2:reference=distinct|distribution_consumers=3+"
+      ],
+      "covered_cells": [],
+      "unsupported_cells": [],
+      "selected_triple": [
+        "internal_reference",
+        "parked_input",
+        "shunt_return"
+      ],
+      "selected_triple_status": "not_evaluated"
+    },
+    "I3": {
+      "factor_pairs": [
+        [
+          "active_cores",
+          "bands"
+        ]
+      ],
+      "required_cells": [
+        "I3:active_cores=0|bands=one",
+        "I3:active_cores=0|bands=multiple",
+        "I3:active_cores=0|bands=interleaved",
+        "I3:active_cores=1|bands=one",
+        "I3:active_cores=1|bands=multiple",
+        "I3:active_cores=1|bands=interleaved",
+        "I3:active_cores=2|bands=one",
+        "I3:active_cores=2|bands=multiple",
+        "I3:active_cores=2|bands=interleaved",
+        "I3:active_cores=3+|bands=one",
+        "I3:active_cores=3+|bands=multiple",
+        "I3:active_cores=3+|bands=interleaved"
+      ],
+      "covered_cells": [],
+      "unsupported_cells": [],
+      "selected_triple": [
+        "two_tall_cores",
+        "shared_package",
+        "long_text"
+      ],
+      "selected_triple_status": "not_evaluated"
+    },
+    "I4": {
+      "factor_pairs": [
+        [
+          "parallel_breadth",
+          "protected_paths"
+        ]
+      ],
+      "required_cells": [
+        "I4:parallel_breadth=1|protected_paths=local",
+        "I4:parallel_breadth=1|protected_paths=cross",
+        "I4:parallel_breadth=1|protected_paths=mixed",
+        "I4:parallel_breadth=2|protected_paths=local",
+        "I4:parallel_breadth=2|protected_paths=cross",
+        "I4:parallel_breadth=2|protected_paths=mixed",
+        "I4:parallel_breadth=3+|protected_paths=local",
+        "I4:parallel_breadth=3+|protected_paths=cross",
+        "I4:parallel_breadth=3+|protected_paths=mixed"
+      ],
+      "covered_cells": [],
+      "unsupported_cells": [],
+      "selected_triple": [
+        "unequal_consumers",
+        "cross_fragment_bound",
+        "sibling_vertical_order"
+      ],
+      "selected_triple_status": "not_evaluated"
+    },
+    "I5": {
+      "factor_pairs": [
+        [
+          "supply_consumers",
+          "support_count"
+        ]
+      ],
+      "required_cells": [
+        "I5:supply_consumers=1|support_count=0",
+        "I5:supply_consumers=1|support_count=1-2",
+        "I5:supply_consumers=1|support_count=3+",
+        "I5:supply_consumers=2|support_count=0",
+        "I5:supply_consumers=2|support_count=1-2",
+        "I5:supply_consumers=2|support_count=3+",
+        "I5:supply_consumers=3+|support_count=0",
+        "I5:supply_consumers=3+|support_count=1-2",
+        "I5:supply_consumers=3+|support_count=3+"
+      ],
+      "covered_cells": [],
+      "unsupported_cells": [],
+      "selected_triple": [
+        "three_gateway_distribution",
+        "multiple_shelves",
+        "restricted_entry"
+      ],
+      "selected_triple_status": "not_evaluated"
+    },
+    "I6": {
+      "factor_pairs": [
+        [
+          "shared_packages",
+          "reference"
+        ],
+        [
+          "text_stress",
+          "support_count"
+        ],
+        [
+          "text_stress",
+          "branch_degree"
+        ]
+      ],
+      "required_cells": [
+        "I6:shared_packages=0|reference=external",
+        "I6:shared_packages=0|reference=internal",
+        "I6:shared_packages=0|reference=distinct",
+        "I6:shared_packages=1|reference=external",
+        "I6:shared_packages=1|reference=internal",
+        "I6:shared_packages=1|reference=distinct",
+        "I6:shared_packages=2+|reference=external",
+        "I6:shared_packages=2+|reference=internal",
+        "I6:shared_packages=2+|reference=distinct",
+        "I6:text_stress=nominal|support_count=0",
+        "I6:text_stress=nominal|support_count=1-2",
+        "I6:text_stress=nominal|support_count=3+",
+        "I6:text_stress=long|support_count=0",
+        "I6:text_stress=long|support_count=1-2",
+        "I6:text_stress=long|support_count=3+",
+        "I6:text_stress=nominal|branch_degree=1",
+        "I6:text_stress=nominal|branch_degree=2",
+        "I6:text_stress=nominal|branch_degree=3+",
+        "I6:text_stress=long|branch_degree=1",
+        "I6:text_stress=long|branch_degree=2",
+        "I6:text_stress=long|branch_degree=3+"
+      ],
+      "covered_cells": [],
+      "unsupported_cells": [],
+      "selected_triple": null,
+      "selected_triple_status": null
+    }
+  },
+  "selected_cases": [
+    {
+      "id": "IC01",
+      "factors": {
+        "serial_depth": "1",
+        "parallel_breadth": "1",
+        "active_cores": "0",
+        "shared_packages": "0",
+        "supply_consumers": "1",
+        "branch_degree": "1",
+        "reference": "external",
+        "support_count": "0",
+        "protected_paths": "local",
+        "distribution_consumers": "1",
+        "bands": "one",
+        "text_stress": "nominal"
+      },
+      "planned_cells": [
+        "I1:serial_depth=1|branch_degree=1",
+        "I2:reference=external|distribution_consumers=1",
+        "I3:active_cores=0|bands=one",
+        "I4:parallel_breadth=1|protected_paths=local",
+        "I5:supply_consumers=1|support_count=0",
+        "I6:shared_packages=0|reference=external",
+        "I6:text_stress=nominal|branch_degree=1",
+        "I6:text_stress=nominal|support_count=0"
+      ],
+      "result": "not_evaluated"
+    },
+    {
+      "id": "IC02",
+      "factors": {
+        "serial_depth": "1",
+        "parallel_breadth": "1",
+        "active_cores": "0",
+        "shared_packages": "2+",
+        "supply_consumers": "2",
+        "branch_degree": "2",
+        "reference": "external",
+        "support_count": "0",
+        "protected_paths": "mixed",
+        "distribution_consumers": "3+",
+        "bands": "multiple",
+        "text_stress": "long"
+      },
+      "planned_cells": [
+        "I1:serial_depth=1|branch_degree=2",
+        "I2:reference=external|distribution_consumers=3+",
+        "I3:active_cores=0|bands=multiple",
+        "I4:parallel_breadth=1|protected_paths=mixed",
+        "I5:supply_consumers=2|support_count=0",
+        "I6:shared_packages=2+|reference=external",
+        "I6:text_stress=long|branch_degree=2",
+        "I6:text_stress=long|support_count=0"
+      ],
+      "result": "not_evaluated"
+    },
+    {
+      "id": "IC03",
+      "factors": {
+        "serial_depth": "1",
+        "parallel_breadth": "2",
+        "active_cores": "2",
+        "shared_packages": "1",
+        "supply_consumers": "2",
+        "branch_degree": "3+",
+        "reference": "internal",
+        "support_count": "3+",
+        "protected_paths": "mixed",
+        "distribution_consumers": "1",
+        "bands": "interleaved",
+        "text_stress": "nominal"
+      },
+      "planned_cells": [
+        "I1:serial_depth=1|branch_degree=3+",
+        "I2:reference=internal|distribution_consumers=1",
+        "I3:active_cores=2|bands=interleaved",
+        "I4:parallel_breadth=2|protected_paths=mixed",
+        "I5:supply_consumers=2|support_count=3+",
+        "I6:shared_packages=1|reference=internal",
+        "I6:text_stress=nominal|branch_degree=3+",
+        "I6:text_stress=nominal|support_count=3+"
+      ],
+      "result": "not_evaluated"
+    },
+    {
+      "id": "IC04",
+      "factors": {
+        "serial_depth": "2",
+        "parallel_breadth": "3+",
+        "active_cores": "3+",
+        "shared_packages": "0",
+        "supply_consumers": "3+",
+        "branch_degree": "1",
+        "reference": "internal",
+        "support_count": "1-2",
+        "protected_paths": "local",
+        "distribution_consumers": "2",
+        "bands": "interleaved",
+        "text_stress": "long"
+      },
+      "planned_cells": [
+        "I1:serial_depth=2|branch_degree=1",
+        "I2:reference=internal|distribution_consumers=2",
+        "I3:active_cores=3+|bands=interleaved",
+        "I4:parallel_breadth=3+|protected_paths=local",
+        "I5:supply_consumers=3+|support_count=1-2",
+        "I6:shared_packages=0|reference=internal",
+        "I6:text_stress=long|branch_degree=1",
+        "I6:text_stress=long|support_count=1-2"
+      ],
+      "result": "not_evaluated"
+    },
+    {
+      "id": "IC05",
+      "factors": {
+        "serial_depth": "2",
+        "parallel_breadth": "2",
+        "active_cores": "2",
+        "shared_packages": "2+",
+        "supply_consumers": "3+",
+        "branch_degree": "3+",
+        "reference": "distinct",
+        "support_count": "0",
+        "protected_paths": "local",
+        "distribution_consumers": "1",
+        "bands": "one",
+        "text_stress": "long"
+      },
+      "planned_cells": [
+        "I1:serial_depth=2|branch_degree=3+",
+        "I2:reference=distinct|distribution_consumers=1",
+        "I3:active_cores=2|bands=one",
+        "I4:parallel_breadth=2|protected_paths=local",
+        "I5:supply_consumers=3+|support_count=0",
+        "I6:shared_packages=2+|reference=distinct",
+        "I6:text_stress=long|branch_degree=3+"
+      ],
+      "result": "not_evaluated"
+    },
+    {
+      "id": "IC06",
+      "factors": {
+        "serial_depth": "3+",
+        "parallel_breadth": "1",
+        "active_cores": "3+",
+        "shared_packages": "1",
+        "supply_consumers": "1",
+        "branch_degree": "2",
+        "reference": "distinct",
+        "support_count": "3+",
+        "protected_paths": "cross",
+        "distribution_consumers": "3+",
+        "bands": "one",
+        "text_stress": "nominal"
+      },
+      "planned_cells": [
+        "I1:serial_depth=3+|branch_degree=2",
+        "I2:reference=distinct|distribution_consumers=3+",
+        "I3:active_cores=3+|bands=one",
+        "I4:parallel_breadth=1|protected_paths=cross",
+        "I5:supply_consumers=1|support_count=3+",
+        "I6:shared_packages=1|reference=distinct",
+        "I6:text_stress=nominal|branch_degree=2"
+      ],
+      "result": "not_evaluated"
+    },
+    {
+      "id": "IC07",
+      "factors": {
+        "serial_depth": "3+",
+        "parallel_breadth": "3+",
+        "active_cores": "0",
+        "shared_packages": "0",
+        "supply_consumers": "1",
+        "branch_degree": "1",
+        "reference": "distinct",
+        "support_count": "1-2",
+        "protected_paths": "cross",
+        "distribution_consumers": "2",
+        "bands": "one",
+        "text_stress": "long"
+      },
+      "planned_cells": [
+        "I1:serial_depth=3+|branch_degree=1",
+        "I2:reference=distinct|distribution_consumers=2",
+        "I4:parallel_breadth=3+|protected_paths=cross",
+        "I5:supply_consumers=1|support_count=1-2",
+        "I6:shared_packages=0|reference=distinct"
+      ],
+      "result": "not_evaluated"
+    },
+    {
+      "id": "IC08",
+      "factors": {
+        "serial_depth": "1",
+        "parallel_breadth": "3+",
+        "active_cores": "1",
+        "shared_packages": "1",
+        "supply_consumers": "2",
+        "branch_degree": "1",
+        "reference": "external",
+        "support_count": "3+",
+        "protected_paths": "mixed",
+        "distribution_consumers": "2",
+        "bands": "multiple",
+        "text_stress": "nominal"
+      },
+      "planned_cells": [
+        "I2:reference=external|distribution_consumers=2",
+        "I3:active_cores=1|bands=multiple",
+        "I4:parallel_breadth=3+|protected_paths=mixed",
+        "I6:shared_packages=1|reference=external"
+      ],
+      "result": "not_evaluated"
+    },
+    {
+      "id": "IC09",
+      "factors": {
+        "serial_depth": "2",
+        "parallel_breadth": "1",
+        "active_cores": "1",
+        "shared_packages": "2+",
+        "supply_consumers": "3+",
+        "branch_degree": "2",
+        "reference": "internal",
+        "support_count": "0",
+        "protected_paths": "local",
+        "distribution_consumers": "3+",
+        "bands": "interleaved",
+        "text_stress": "long"
+      },
+      "planned_cells": [
+        "I1:serial_depth=2|branch_degree=2",
+        "I2:reference=internal|distribution_consumers=3+",
+        "I3:active_cores=1|bands=interleaved",
+        "I6:shared_packages=2+|reference=internal"
+      ],
+      "result": "not_evaluated"
+    },
+    {
+      "id": "IC10",
+      "factors": {
+        "serial_depth": "3+",
+        "parallel_breadth": "2",
+        "active_cores": "2",
+        "shared_packages": "0",
+        "supply_consumers": "1",
+        "branch_degree": "3+",
+        "reference": "external",
+        "support_count": "1-2",
+        "protected_paths": "cross",
+        "distribution_consumers": "1",
+        "bands": "multiple",
+        "text_stress": "long"
+      },
+      "planned_cells": [
+        "I1:serial_depth=3+|branch_degree=3+",
+        "I3:active_cores=2|bands=multiple",
+        "I4:parallel_breadth=2|protected_paths=cross"
+      ],
+      "result": "not_evaluated"
+    },
+    {
+      "id": "IC11",
+      "factors": {
+        "serial_depth": "1",
+        "parallel_breadth": "1",
+        "active_cores": "0",
+        "shared_packages": "0",
+        "supply_consumers": "2",
+        "branch_degree": "1",
+        "reference": "external",
+        "support_count": "1-2",
+        "protected_paths": "local",
+        "distribution_consumers": "1",
+        "bands": "one",
+        "text_stress": "nominal"
+      },
+      "planned_cells": [
+        "I5:supply_consumers=2|support_count=1-2",
+        "I6:text_stress=nominal|support_count=1-2"
+      ],
+      "result": "not_evaluated"
+    },
+    {
+      "id": "IC12",
+      "factors": {
+        "serial_depth": "1",
+        "parallel_breadth": "1",
+        "active_cores": "0",
+        "shared_packages": "0",
+        "supply_consumers": "1",
+        "branch_degree": "1",
+        "reference": "external",
+        "support_count": "0",
+        "protected_paths": "local",
+        "distribution_consumers": "1",
+        "bands": "interleaved",
+        "text_stress": "nominal"
+      },
+      "planned_cells": [
+        "I3:active_cores=0|bands=interleaved"
+      ],
+      "result": "not_evaluated"
+    },
+    {
+      "id": "IC13",
+      "factors": {
+        "serial_depth": "1",
+        "parallel_breadth": "1",
+        "active_cores": "0",
+        "shared_packages": "0",
+        "supply_consumers": "1",
+        "branch_degree": "1",
+        "reference": "external",
+        "support_count": "3+",
+        "protected_paths": "local",
+        "distribution_consumers": "1",
+        "bands": "one",
+        "text_stress": "long"
+      },
+      "planned_cells": [
+        "I6:text_stress=long|support_count=3+"
+      ],
+      "result": "not_evaluated"
+    },
+    {
+      "id": "IC14",
+      "factors": {
+        "serial_depth": "1",
+        "parallel_breadth": "1",
+        "active_cores": "0",
+        "shared_packages": "0",
+        "supply_consumers": "3+",
+        "branch_degree": "1",
+        "reference": "external",
+        "support_count": "3+",
+        "protected_paths": "local",
+        "distribution_consumers": "1",
+        "bands": "one",
+        "text_stress": "nominal"
+      },
+      "planned_cells": [
+        "I5:supply_consumers=3+|support_count=3+"
+      ],
+      "result": "not_evaluated"
+    },
+    {
+      "id": "IC15",
+      "factors": {
+        "serial_depth": "1",
+        "parallel_breadth": "1",
+        "active_cores": "1",
+        "shared_packages": "0",
+        "supply_consumers": "1",
+        "branch_degree": "1",
+        "reference": "external",
+        "support_count": "0",
+        "protected_paths": "local",
+        "distribution_consumers": "1",
+        "bands": "one",
+        "text_stress": "nominal"
+      },
+      "planned_cells": [
+        "I3:active_cores=1|bands=one"
+      ],
+      "result": "not_evaluated"
+    },
+    {
+      "id": "IC16",
+      "factors": {
+        "serial_depth": "1",
+        "parallel_breadth": "1",
+        "active_cores": "3+",
+        "shared_packages": "0",
+        "supply_consumers": "1",
+        "branch_degree": "1",
+        "reference": "external",
+        "support_count": "0",
+        "protected_paths": "local",
+        "distribution_consumers": "1",
+        "bands": "multiple",
+        "text_stress": "nominal"
+      },
+      "planned_cells": [
+        "I3:active_cores=3+|bands=multiple"
+      ],
+      "result": "not_evaluated"
+    }
+  ],
+  "coverage_rule": "A cell passes only after every expected invariant passes; planned cells are not covered.",
+  "mutation_dimensions": [
+    "80mm_below_exact_above",
+    "spread_below_exact_above",
+    "alternate_trunk",
+    "reference_connector_present_absent",
+    "unit_exchange",
+    "set_permutation",
+    "translate_reflect",
+    "extra_consumer",
+    "sibling_order"
+  ]
+}

@@ -1,0 +1,539 @@
+{
+  "profile": "m2b.1",
+  "id": "m2h2_dp2_dual_package_internal_reference",
+  "name": "M2h2Dp2DualPackageReference",
+  "components": [
+    {
+      "id": "positive",
+      "refdes": "J1",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Positive rail"
+    },
+    {
+      "id": "negative",
+      "refdes": "J2",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Negative rail"
+    },
+    {
+      "id": "input_a",
+      "refdes": "J3",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Buffer input"
+    },
+    {
+      "id": "output_a",
+      "refdes": "J4",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Buffer output"
+    },
+    {
+      "id": "input_b",
+      "refdes": "J5",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Gain input"
+    },
+    {
+      "id": "output_b",
+      "refdes": "J6",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Gain output"
+    },
+    {
+      "id": "divider_upper",
+      "refdes": "R1",
+      "asset": "Device:R",
+      "value": "10k"
+    },
+    {
+      "id": "divider_lower",
+      "refdes": "R2",
+      "asset": "Device:R",
+      "value": "10k"
+    },
+    {
+      "id": "amp_a",
+      "refdes": "U1",
+      "asset": "Amplifier_Operational:NE5532",
+      "value": "NE5532",
+      "functions": [
+        {
+          "id": "a",
+          "role": "buffer",
+          "unit": 1,
+          "pins": {
+            "out": "1",
+            "minus": "2",
+            "plus": "3"
+          }
+        },
+        {
+          "id": "b",
+          "role": "parked_buffer",
+          "unit": 2,
+          "pins": {
+            "out": "7",
+            "minus": "6",
+            "plus": "5"
+          }
+        },
+        {
+          "id": "power",
+          "role": "supply",
+          "unit": 3,
+          "pins": {
+            "negative": "4",
+            "positive": "8"
+          }
+        }
+      ]
+    },
+    {
+      "id": "amp_a_cpos",
+      "refdes": "C1",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "amp_a_cneg",
+      "refdes": "C2",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "amp_b",
+      "refdes": "U2",
+      "asset": "Amplifier_Operational:NE5532",
+      "value": "NE5532",
+      "functions": [
+        {
+          "id": "a",
+          "role": "amplifier",
+          "unit": 1,
+          "pins": {
+            "out": "1",
+            "minus": "2",
+            "plus": "3"
+          }
+        },
+        {
+          "id": "b",
+          "role": "parked_buffer",
+          "unit": 2,
+          "pins": {
+            "out": "7",
+            "minus": "6",
+            "plus": "5"
+          }
+        },
+        {
+          "id": "power",
+          "role": "supply",
+          "unit": 3,
+          "pins": {
+            "negative": "4",
+            "positive": "8"
+          }
+        }
+      ]
+    },
+    {
+      "id": "amp_b_cpos",
+      "refdes": "C3",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "amp_b_cneg",
+      "refdes": "C4",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "amp_b_input",
+      "refdes": "R5",
+      "asset": "Device:R",
+      "value": "10k"
+    },
+    {
+      "id": "amp_b_feedback",
+      "refdes": "R6",
+      "asset": "Device:R",
+      "value": "47k"
+    }
+  ],
+  "nets": [
+    {
+      "id": "VPLUS",
+      "members": [
+        [
+          "positive",
+          "1"
+        ],
+        [
+          "divider_upper",
+          "1"
+        ],
+        [
+          "amp_a",
+          "8"
+        ],
+        [
+          "amp_a_cpos",
+          "1"
+        ],
+        [
+          "amp_b",
+          "8"
+        ],
+        [
+          "amp_b_cpos",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "VMINUS",
+      "members": [
+        [
+          "negative",
+          "1"
+        ],
+        [
+          "divider_lower",
+          "2"
+        ],
+        [
+          "amp_a",
+          "4"
+        ],
+        [
+          "amp_a_cneg",
+          "2"
+        ],
+        [
+          "amp_b",
+          "4"
+        ],
+        [
+          "amp_b_cneg",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "VREF",
+      "members": [
+        [
+          "divider_upper",
+          "2"
+        ],
+        [
+          "divider_lower",
+          "1"
+        ],
+        [
+          "amp_a",
+          "5"
+        ],
+        [
+          "amp_a_cpos",
+          "2"
+        ],
+        [
+          "amp_a_cneg",
+          "1"
+        ],
+        [
+          "amp_b",
+          "5"
+        ],
+        [
+          "amp_b_cpos",
+          "2"
+        ],
+        [
+          "amp_b_cneg",
+          "1"
+        ],
+        [
+          "amp_b",
+          "3"
+        ]
+      ]
+    },
+    {
+      "id": "IN_A",
+      "members": [
+        [
+          "input_a",
+          "1"
+        ],
+        [
+          "amp_a",
+          "3"
+        ]
+      ]
+    },
+    {
+      "id": "OUT_A",
+      "members": [
+        [
+          "output_a",
+          "1"
+        ],
+        [
+          "amp_a",
+          "1"
+        ],
+        [
+          "amp_a",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "IN_B",
+      "members": [
+        [
+          "input_b",
+          "1"
+        ],
+        [
+          "amp_b_input",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "OUT_B",
+      "members": [
+        [
+          "output_b",
+          "1"
+        ],
+        [
+          "amp_b",
+          "1"
+        ],
+        [
+          "amp_b_feedback",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "AMP_A_PARK",
+      "members": [
+        [
+          "amp_a",
+          "7"
+        ],
+        [
+          "amp_a",
+          "6"
+        ]
+      ]
+    },
+    {
+      "id": "AMP_B_PARK",
+      "members": [
+        [
+          "amp_b",
+          "7"
+        ],
+        [
+          "amp_b",
+          "6"
+        ]
+      ]
+    },
+    {
+      "id": "AMP_B_SUM",
+      "members": [
+        [
+          "amp_b_input",
+          "2"
+        ],
+        [
+          "amp_b",
+          "2"
+        ],
+        [
+          "amp_b_feedback",
+          "1"
+        ]
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "divider",
+      "kind": "reference_divider",
+      "upper": "divider_upper",
+      "lower": "divider_lower",
+      "positive": "VPLUS",
+      "local": "VREF",
+      "negative": "VMINUS"
+    },
+    {
+      "id": "amp_a.loop",
+      "kind": "feedback",
+      "component": "amp_a",
+      "function": "a",
+      "source": "1",
+      "sense": "2",
+      "net": "OUT_A",
+      "polarity": "negative"
+    },
+    {
+      "id": "amp_a.stage",
+      "kind": "amplifier",
+      "component": "amp_a",
+      "function": "a",
+      "input": "IN_A",
+      "output": "OUT_A",
+      "reference": "VREF"
+    },
+    {
+      "id": "amp_a.park",
+      "kind": "amplifier",
+      "component": "amp_a",
+      "function": "b",
+      "input": "VREF",
+      "output": "AMP_A_PARK",
+      "unused": true
+    },
+    {
+      "id": "amp_a.park_loop",
+      "kind": "feedback",
+      "component": "amp_a",
+      "function": "b",
+      "source": "7",
+      "sense": "6",
+      "net": "AMP_A_PARK",
+      "polarity": "negative"
+    },
+    {
+      "id": "amp_a.rails",
+      "kind": "power_rails",
+      "component": "amp_a",
+      "unit": 3,
+      "positive": "VPLUS",
+      "negative": "VMINUS",
+      "reference": "VREF"
+    },
+    {
+      "id": "amp_a.cpos",
+      "kind": "decoupling",
+      "component": "amp_a_cpos",
+      "consumer": [
+        "amp_a",
+        "8"
+      ],
+      "supply": "VPLUS",
+      "return": "VREF"
+    },
+    {
+      "id": "amp_a.cneg",
+      "kind": "decoupling",
+      "component": "amp_a_cneg",
+      "consumer": [
+        "amp_a",
+        "4"
+      ],
+      "supply": "VREF",
+      "return": "VMINUS"
+    },
+    {
+      "id": "amp_b.input",
+      "kind": "series",
+      "component": "amp_b_input",
+      "input": "IN_B",
+      "output": "AMP_B_SUM"
+    },
+    {
+      "id": "amp_b.loop",
+      "kind": "feedback",
+      "component": "amp_b",
+      "function": "a",
+      "source": "1",
+      "sense": "2",
+      "net": "OUT_B",
+      "polarity": "negative",
+      "resistor": "amp_b_feedback"
+    },
+    {
+      "id": "amp_b.stage",
+      "kind": "amplifier",
+      "component": "amp_b",
+      "function": "a",
+      "input": "IN_B",
+      "output": "OUT_B",
+      "reference": "VREF"
+    },
+    {
+      "id": "amp_b.park",
+      "kind": "amplifier",
+      "component": "amp_b",
+      "function": "b",
+      "input": "VREF",
+      "output": "AMP_B_PARK",
+      "unused": true
+    },
+    {
+      "id": "amp_b.park_loop",
+      "kind": "feedback",
+      "component": "amp_b",
+      "function": "b",
+      "source": "7",
+      "sense": "6",
+      "net": "AMP_B_PARK",
+      "polarity": "negative"
+    },
+    {
+      "id": "amp_b.rails",
+      "kind": "power_rails",
+      "component": "amp_b",
+      "unit": 3,
+      "positive": "VPLUS",
+      "negative": "VMINUS",
+      "reference": "VREF"
+    },
+    {
+      "id": "amp_b.cpos",
+      "kind": "decoupling",
+      "component": "amp_b_cpos",
+      "consumer": [
+        "amp_b",
+        "8"
+      ],
+      "supply": "VPLUS",
+      "return": "VREF"
+    },
+    {
+      "id": "amp_b.cneg",
+      "kind": "decoupling",
+      "component": "amp_b_cneg",
+      "consumer": [
+        "amp_b",
+        "4"
+      ],
+      "supply": "VREF",
+      "return": "VMINUS"
+    }
+  ],
+  "no_connects": [],
+  "power_assertions": [
+    {
+      "id": "flag.1",
+      "refdes": "#FLG01",
+      "net": "VPLUS"
+    },
+    {
+      "id": "flag.2",
+      "refdes": "#FLG02",
+      "net": "VMINUS"
+    }
+  ]
+}

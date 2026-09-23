@@ -153,7 +153,14 @@ def build(args) -> int:
         print(out)
         return 0
     except Exception as exc:
-        attempts = list(exc.attempts) if isinstance(exc, LayoutBudgetError) else []
+        completed_composition = locals().get("composition")
+        attempts = (
+            list(exc.attempts)
+            if isinstance(exc, LayoutBudgetError)
+            else list(completed_composition["layout_attempts"])
+            if completed_composition is not None
+            else []
+        )
         if isinstance(exc, LayoutBudgetError) and exc.evidence:
             (reports / "composition.json").write_text(json.dumps(exc.evidence, indent=2) + "\n")
         (reports / "layout_attempts.json").write_text(json.dumps(attempts, indent=2) + "\n")
@@ -176,6 +183,12 @@ def build(args) -> int:
                         else None
                     ),
                     "stages": stages,
+                    "composition_metrics": (
+                        scene.metrics if "scene" in locals() else "not_evaluated"
+                    ),
+                    "electrical_observation": (
+                        electrical if "electrical" in locals() else "not_evaluated"
+                    ),
                     "stage_status": {
                         name: "complete" if name in completed else "not_evaluated"
                         for name in (
@@ -190,7 +203,13 @@ def build(args) -> int:
                         "seed_limit": 8,
                         "repair_rounds_per_seed": 3,
                         "complete_attempt_limit": 32,
-                        "complete_attempts_used": len(attempts),
+                        "complete_attempts_used": (
+                            completed_composition["budgets"]["complete_attempts_used"]
+                            if completed_composition is not None
+                            else exc.evidence["budgets"]["complete_attempts_used"]
+                            if isinstance(exc, LayoutBudgetError) and exc.evidence
+                            else "not_evaluated"
+                        ),
                     },
                 },
                 indent=2,

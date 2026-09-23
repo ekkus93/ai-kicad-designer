@@ -1,0 +1,517 @@
+{
+  "ancestry_comparison": [
+    "No typed inventory/degree fingerprint match among 42 historical IRs"
+  ],
+  "frozen_before_layout_tuning": true,
+  "partitions": {
+    "A_OUT": [
+      [
+        "filter_a_c",
+        "1"
+      ],
+      [
+        "filter_a_r",
+        "2"
+      ],
+      [
+        "out_a",
+        "1"
+      ]
+    ],
+    "A_RAW": [
+      [
+        "filter_a_r",
+        "1"
+      ],
+      [
+        "timer_a",
+        "3"
+      ]
+    ],
+    "B_OUT": [
+      [
+        "filter_b_c",
+        "1"
+      ],
+      [
+        "filter_b_r",
+        "2"
+      ],
+      [
+        "out_b",
+        "1"
+      ]
+    ],
+    "B_RAW": [
+      [
+        "filter_b_r",
+        "1"
+      ],
+      [
+        "timer_b",
+        "3"
+      ]
+    ],
+    "REF": [
+      [
+        "filter_a_c",
+        "2"
+      ],
+      [
+        "filter_b_c",
+        "2"
+      ],
+      [
+        "return",
+        "1"
+      ],
+      [
+        "timer_a",
+        "1"
+      ],
+      [
+        "timer_a_control_bypass",
+        "2"
+      ],
+      [
+        "timer_a_timing_cap",
+        "2"
+      ],
+      [
+        "timer_b",
+        "1"
+      ],
+      [
+        "timer_b_control_bypass",
+        "2"
+      ],
+      [
+        "timer_b_timing_cap",
+        "2"
+      ]
+    ],
+    "TIMER_A_CONT": [
+      [
+        "timer_a",
+        "5"
+      ],
+      [
+        "timer_a_control_bypass",
+        "1"
+      ]
+    ],
+    "TIMER_A_DISCH": [
+      [
+        "timer_a",
+        "7"
+      ],
+      [
+        "timer_a_charge",
+        "2"
+      ],
+      [
+        "timer_a_discharge",
+        "1"
+      ]
+    ],
+    "TIMER_A_TIMING": [
+      [
+        "timer_a",
+        "2"
+      ],
+      [
+        "timer_a",
+        "6"
+      ],
+      [
+        "timer_a_discharge",
+        "2"
+      ],
+      [
+        "timer_a_timing_cap",
+        "1"
+      ]
+    ],
+    "TIMER_B_CONT": [
+      [
+        "timer_b",
+        "5"
+      ],
+      [
+        "timer_b_control_bypass",
+        "1"
+      ]
+    ],
+    "TIMER_B_DISCH": [
+      [
+        "timer_b",
+        "7"
+      ],
+      [
+        "timer_b_charge",
+        "2"
+      ],
+      [
+        "timer_b_discharge",
+        "1"
+      ]
+    ],
+    "TIMER_B_TIMING": [
+      [
+        "timer_b",
+        "2"
+      ],
+      [
+        "timer_b",
+        "6"
+      ],
+      [
+        "timer_b_discharge",
+        "2"
+      ],
+      [
+        "timer_b_timing_cap",
+        "1"
+      ]
+    ],
+    "VCC": [
+      [
+        "source",
+        "1"
+      ],
+      [
+        "timer_a",
+        "4"
+      ],
+      [
+        "timer_a",
+        "8"
+      ],
+      [
+        "timer_a_charge",
+        "1"
+      ],
+      [
+        "timer_b",
+        "4"
+      ],
+      [
+        "timer_b",
+        "8"
+      ],
+      [
+        "timer_b_charge",
+        "1"
+      ]
+    ]
+  },
+  "path_obligations": [
+    {
+      "from": [
+        "timer_a",
+        "7"
+      ],
+      "id": "timer_a.timing_path",
+      "kind": "timing_local",
+      "maximum_span_nm": 80000000,
+      "to": [
+        "timer_a",
+        "2"
+      ]
+    },
+    {
+      "from": [
+        "timer_a",
+        "5"
+      ],
+      "id": "timer_a.control_path",
+      "kind": "support",
+      "maximum_span_nm": 60000000,
+      "to": [
+        "timer_a_control_bypass",
+        "1"
+      ]
+    },
+    {
+      "from": [
+        "timer_b",
+        "7"
+      ],
+      "id": "timer_b.timing_path",
+      "kind": "timing_local",
+      "maximum_span_nm": 80000000,
+      "to": [
+        "timer_b",
+        "2"
+      ]
+    },
+    {
+      "from": [
+        "timer_b",
+        "5"
+      ],
+      "id": "timer_b.control_path",
+      "kind": "support",
+      "maximum_span_nm": 60000000,
+      "to": [
+        "timer_b_control_bypass",
+        "1"
+      ]
+    },
+    {
+      "from": [
+        "filter_a_r",
+        "2"
+      ],
+      "id": "filter_a.shunt_path",
+      "kind": "local_rc",
+      "maximum_span_nm": 80000000,
+      "to": [
+        "filter_a_c",
+        "1"
+      ]
+    },
+    {
+      "from": [
+        "filter_b_r",
+        "2"
+      ],
+      "id": "filter_b.shunt_path",
+      "kind": "local_rc",
+      "maximum_span_nm": 80000000,
+      "to": [
+        "filter_b_c",
+        "1"
+      ]
+    },
+    {
+      "from": [
+        "timer_a",
+        "3"
+      ],
+      "id": "timer_a.to_filter",
+      "kind": "precedence_cross_fragment",
+      "maximum_span_nm": 80000000,
+      "to": [
+        "filter_a_r",
+        "1"
+      ]
+    },
+    {
+      "from": [
+        "timer_b",
+        "3"
+      ],
+      "id": "timer_b.to_filter",
+      "kind": "precedence_cross_fragment",
+      "maximum_span_nm": 80000000,
+      "to": [
+        "filter_b_r",
+        "1"
+      ]
+    }
+  ],
+  "precedence": [
+    {
+      "source": [
+        "timer_a",
+        "3"
+      ],
+      "strict_x": true,
+      "target": [
+        "filter_a_r",
+        "1"
+      ]
+    },
+    {
+      "source": [
+        "timer_b",
+        "3"
+      ],
+      "strict_x": true,
+      "target": [
+        "filter_b_r",
+        "1"
+      ]
+    }
+  ],
+  "schema_version": "m2h2.development-expectations.1",
+  "terminal_inventory": [
+    [
+      "filter_a_c",
+      "1"
+    ],
+    [
+      "filter_a_c",
+      "2"
+    ],
+    [
+      "filter_a_r",
+      "1"
+    ],
+    [
+      "filter_a_r",
+      "2"
+    ],
+    [
+      "filter_b_c",
+      "1"
+    ],
+    [
+      "filter_b_c",
+      "2"
+    ],
+    [
+      "filter_b_r",
+      "1"
+    ],
+    [
+      "filter_b_r",
+      "2"
+    ],
+    [
+      "out_a",
+      "1"
+    ],
+    [
+      "out_b",
+      "1"
+    ],
+    [
+      "return",
+      "1"
+    ],
+    [
+      "source",
+      "1"
+    ],
+    [
+      "timer_a",
+      "1"
+    ],
+    [
+      "timer_a",
+      "2"
+    ],
+    [
+      "timer_a",
+      "3"
+    ],
+    [
+      "timer_a",
+      "4"
+    ],
+    [
+      "timer_a",
+      "5"
+    ],
+    [
+      "timer_a",
+      "6"
+    ],
+    [
+      "timer_a",
+      "7"
+    ],
+    [
+      "timer_a",
+      "8"
+    ],
+    [
+      "timer_a_charge",
+      "1"
+    ],
+    [
+      "timer_a_charge",
+      "2"
+    ],
+    [
+      "timer_a_control_bypass",
+      "1"
+    ],
+    [
+      "timer_a_control_bypass",
+      "2"
+    ],
+    [
+      "timer_a_discharge",
+      "1"
+    ],
+    [
+      "timer_a_discharge",
+      "2"
+    ],
+    [
+      "timer_a_timing_cap",
+      "1"
+    ],
+    [
+      "timer_a_timing_cap",
+      "2"
+    ],
+    [
+      "timer_b",
+      "1"
+    ],
+    [
+      "timer_b",
+      "2"
+    ],
+    [
+      "timer_b",
+      "3"
+    ],
+    [
+      "timer_b",
+      "4"
+    ],
+    [
+      "timer_b",
+      "5"
+    ],
+    [
+      "timer_b",
+      "6"
+    ],
+    [
+      "timer_b",
+      "7"
+    ],
+    [
+      "timer_b",
+      "8"
+    ],
+    [
+      "timer_b_charge",
+      "1"
+    ],
+    [
+      "timer_b_charge",
+      "2"
+    ],
+    [
+      "timer_b_control_bypass",
+      "1"
+    ],
+    [
+      "timer_b_control_bypass",
+      "2"
+    ],
+    [
+      "timer_b_discharge",
+      "1"
+    ],
+    [
+      "timer_b_discharge",
+      "2"
+    ],
+    [
+      "timer_b_timing_cap",
+      "1"
+    ],
+    [
+      "timer_b_timing_cap",
+      "2"
+    ]
+  ]
+}

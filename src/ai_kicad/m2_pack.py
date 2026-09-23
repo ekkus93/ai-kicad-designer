@@ -138,7 +138,6 @@ def _topological(nodes: set[str], pairs: set[tuple[str, str]]) -> tuple[str, ...
 def _signal_chains(plan: SemanticPlan) -> tuple[tuple[str, ...], ...]:
     """Return independent shelves from the signal-only graph projection."""
     by_id = {block.id: block for block in plan.blocks}
-    branch_targets = {edge.target for edge in plan.edges if edge.kind == "branch"}
     nodes = {
         block.id
         for block in plan.blocks
@@ -148,14 +147,16 @@ def _signal_chains(plan: SemanticPlan) -> tuple[tuple[str, ...], ...]:
             "package_power",
             "power_stage",
             "unused_amplifier",
-            "led_branch",
         }
-        and block.id not in branch_targets
     }
     pairs = {
         (edge.source, edge.target)
         for edge in plan.edges
-        if edge.kind == "signal" and edge.source in nodes and edge.target in nodes
+        if edge.kind in {"signal", "branch"} and edge.source in nodes and edge.target in nodes
+    } | {
+        (edge.source_fragment, edge.target_fragment)
+        for edge in plan.precedence
+        if edge.source_fragment in nodes and edge.target_fragment in nodes
     }
     neighbors = {node: set() for node in nodes}
     for source, target in pairs:
@@ -194,7 +195,12 @@ def _make_units(
     attached: set[str] = set()
     if attach_branches:
         for edge in sorted(plan.edges, key=lambda item: (item.source, item.target, item.net)):
-            if edge.kind != "branch" or edge.source not in assigned or edge.target in attached:
+            if (
+                edge.kind != "branch"
+                or edge.source not in assigned
+                or edge.target in assigned
+                or edge.target in attached
+            ):
                 continue
             attachments.setdefault(edge.source, []).append(edge.target)
             attached.add(edge.target)
@@ -212,7 +218,9 @@ def _make_units(
             node: {
                 edge.source
                 for edge in plan.edges
-                if edge.kind == "signal" and edge.target == node and edge.source in chain_set
+                if edge.kind in {"signal", "branch"}
+                and edge.target == node
+                and edge.source in chain_set
             }
             for node in chain
         }
@@ -222,33 +230,59 @@ def _make_units(
         by_rank: dict[int, list[str]] = {}
         for node in chain:
             by_rank.setdefault(rank[node], []).append(node)
-        rank_widths = {
-            value: max(chosen[node].envelope[2] - chosen[node].envelope[0] for node in nodes)
+        rank_columns = {
+            value: (
+                (
+                    tuple(sorted(nodes[: (len(nodes) + 1) // 2])),
+                    tuple(sorted(nodes[(len(nodes) + 1) // 2 :])),
+                )
+                if len(nodes) >= 3
+                else (tuple(sorted(nodes)),)
+            )
             for value, nodes in by_rank.items()
+        }
+        rank_widths = {
+            value: sum(
+                max(chosen[node].envelope[2] - chosen[node].envelope[0] for node in column)
+                for column in columns
+            )
+            + CHANNEL_GAP * (len(columns) - 1)
+            for value, columns in rank_columns.items()
         }
         rank_x = {}
         x = 0
         for value in sorted(by_rank):
             rank_x[value] = x
-            x += rank_widths[value] + CHANNEL_GAP
+            next_rank = value + 1
+            branch_only_next = next_rank in by_rank and all(
+                edge.kind == "branch"
+                for edge in plan.edges
+                if edge.target in by_rank[next_rank] and edge.source in chain_set
+            )
+            x += rank_widths[value] + (0 if branch_only_next else CHANNEL_GAP)
         if x:
             x -= CHANNEL_GAP
         main_height = 0
         source_x: dict[str, int] = {}
         source_width: dict[str, int] = {}
-        for value, nodes in sorted(by_rank.items()):
-            y = 0
-            for fragment_id in sorted(nodes):
-                fragment = chosen[fragment_id]
-                width = fragment.envelope[2] - fragment.envelope[0]
-                height = fragment.envelope[3] - fragment.envelope[1]
-                offsets.append((fragment_id, rank_x[value], y))
-                source_x[fragment_id] = rank_x[value]
-                source_width[fragment_id] = width
-                y += height + CHANNEL_GAP
-            if y:
-                y -= CHANNEL_GAP
-            main_height = max(main_height, y)
+        for value, columns in sorted(rank_columns.items()):
+            column_x = rank_x[value]
+            for column in columns:
+                y = 0
+                column_width = 0
+                for fragment_id in column:
+                    fragment = chosen[fragment_id]
+                    width = fragment.envelope[2] - fragment.envelope[0]
+                    height = fragment.envelope[3] - fragment.envelope[1]
+                    offsets.append((fragment_id, column_x, y))
+                    source_x[fragment_id] = column_x
+                    source_width[fragment_id] = width
+                    column_width = max(column_width, width)
+                    y += height + CHANNEL_GAP
+                if y:
+                    y -= CHANNEL_GAP
+                main_height = max(main_height, y)
+                column_x += column_width + CHANNEL_GAP
         width, height = x, main_height
         # A physical package support unit belongs near its owned functional
         # units, but it is not a serial signal stage.  Backfill a genuinely
@@ -338,34 +372,10 @@ def _make_units(
                     else:
                         source_relative_x = source_gateway.point[0] - chosen[source].envelope[0]
                         target_relative_x = target_gateway.point[0] - chosen[target].envelope[0]
-                    shared_references = sorted(
-                        {
-                            gateway.net
-                            for gateway in chosen[source].gateways
-                            if source_roles[gateway.id] == "reference"
-                        }
-                        & {
-                            gateway.net
-                            for gateway in chosen[target].gateways
-                            if target_roles[gateway.id] == "reference"
-                        }
-                    )
-                    if shared_references:
-                        reference_net = shared_references[0]
-                        source_reference = next(
-                            gateway
-                            for gateway in chosen[source].gateways
-                            if gateway.net == reference_net
-                            and source_roles[gateway.id] == "reference"
-                        )
-                        target_reference = next(
-                            gateway
-                            for gateway in chosen[target].gateways
-                            if gateway.net == reference_net
-                            and target_roles[gateway.id] == "reference"
-                        )
-                        source_relative_x = source_reference.point[0] - chosen[source].envelope[0]
-                        target_relative_x = target_reference.point[0] - chosen[target].envelope[0]
+                    # A shared reference is a distribution demand, never a
+                    # replacement for the branch's signal entrance/exit
+                    # inequality. Keep the signal gateways as the alignment
+                    # anchors; reference routing is handled separately.
                     local_x = max(
                         0,
                         source_x[source] + source_relative_x - target_relative_x,
@@ -562,12 +572,12 @@ def _arrangements(
         branches_beside=True,
         stack_interfaces=True,
     )
-    lower_affinity = _make_units(
+    open_interfaces = _make_units(
         plan,
         chosen,
         attach_branches=True,
-        branches_beside=False,
-        stack_interfaces=True,
+        branches_beside=True,
+        stack_interfaces=False,
     )
     flat = _make_units(
         plan,
@@ -578,7 +588,7 @@ def _arrangements(
     )
     return (
         ("side-affinity", _typed_unit_order(plan, affinity)),
-        ("lower-affinity", _typed_unit_order(plan, lower_affinity)),
+        ("open-interface-band", _typed_unit_order(plan, open_interfaces)),
         ("typed", _typed_unit_order(plan, flat)),
         ("height", sorted(flat, key=lambda unit: (-unit.height, -unit.width, unit.ids))),
     )
@@ -894,13 +904,26 @@ def pack_fragment_candidates(
             if by_block[key].kind != kind:
                 continue
             alternate = next(
-                (choice for choice in ordered_choices[key][1:] if ".above." in choice.rule_id),
+                (
+                    choice
+                    for choice in ordered_choices[key][1:]
+                    if ".above." in choice.rule_id or ".compact." in choice.rule_id
+                ),
                 None,
             )
             if alternate is not None:
                 aspect_candidate[key] = alternate
         if any(aspect_candidate[key] is not baseline[key] for key in keys):
             proposals.append(((-1, f"aspect-{kind}"), aspect_candidate))
+    compact_candidate = {
+        key: next(
+            (choice for choice in ordered_choices[key] if ".compact." in choice.rule_id),
+            baseline[key],
+        )
+        for key in keys
+    }
+    if any(compact_candidate[key] is not baseline[key] for key in keys):
+        proposals.append(((-2, "all-compact"), compact_candidate))
 
     rules = sorted(
         {
@@ -963,7 +986,7 @@ def pack_fragment_candidates(
         for rank, priority, key, choice in substitutions
     )
     seen = {tuple((key, baseline[key].id) for key in keys)}
-    for _, candidate in sorted(proposals, key=lambda item: item[0]):
+    for _, candidate in sorted(proposals, key=lambda item: (item[0][0], str(item[0][1:]))):
         identity = tuple((key, candidate[key].id) for key in keys)
         if identity in seen:
             continue
@@ -974,7 +997,10 @@ def pack_fragment_candidates(
 
     successful: list[Packing] = []
     arranged = [(chosen, _arrangements(plan, chosen)) for chosen in beam]
-    preferred = [(index, index % 4) for index in range(len(arranged))]
+    # Reserve beam slots for different variant assignments as well as shelf
+    # arrangements. A repeated baseline shelf must not hide support orientation
+    # or compactness choices behind the eight complete-candidate limit.
+    preferred = [(0, 0), (0, 1)] + [(index, (index - 1) % 2) for index in range(1, len(arranged))]
     remaining = [
         (chosen_index, arrangement_index)
         for arrangement_index in range(4)

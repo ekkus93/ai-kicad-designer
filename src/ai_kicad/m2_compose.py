@@ -9,7 +9,13 @@ from .ir import InputError
 from .m2a import PITCH, Scene
 from .m2b import Draft, measure
 from .m2_fragments import fragment_variants
-from .m2_geometry import ConductorSegment, GeometryItem, Reservation, canonical_conductor_tree
+from .m2_geometry import (
+    ConductorSegment,
+    GeometryItem,
+    Reservation,
+    canonical_conductor_tree,
+    prove_conductor_graph,
+)
 from .m2_pack import (
     BOTTOM,
     LEFT,
@@ -18,10 +24,279 @@ from .m2_pack import (
     RIGHT,
     TOP,
     Packing,
+    _place,
     pack_fragment_candidates,
 )
 from .m2_route import route_between_fragments
-from .m2_semantics import semantic_plan
+from .m2_semantics import PlacementConflict, check_placement_constraints, semantic_plan
+
+
+class ConductorLengthConflict(InputError):
+    """Canonical union over a hard net budget, with geometric owners."""
+
+    kind = "canonical_net_length"
+
+    def __init__(self, net: str, actual: int, local: int, global_length: int):
+        self.net = net
+        self.actual = actual
+        self.local = local
+        self.global_length = global_length
+        self.limit = 250_000_000
+        super().__init__(
+            f"NET_DETOUR_OVERFLOW: net={net} actual={actual} local={local} "
+            f"global={global_length} threshold={self.limit}"
+        )
+
+
+def _distribution_repack(
+    design, resolved, plan, packing: Packing, conflict: ConductorLengthConflict
+):
+    """Relocate a typed producer toward its consumer gateways within fixed bounds."""
+    connected = [
+        (item, gateway)
+        for item in packing.fragments
+        for gateway in item.gateways
+        if gateway.net == conflict.net
+    ]
+    if len(connected) < 2:
+        raise InputError(f"DISTRIBUTION_REPAIR_UNAVAILABLE: {conflict.net}")
+    roles = {port.id: port.role for block in plan.blocks for port in block.ports}
+    producers = [
+        (item, gateway) for item, gateway in connected if roles.get(gateway.id) == "power_out"
+    ]
+    if producers:
+        target = min(producers, key=lambda pair: pair[0].fragment.block.id)[0]
+    else:
+        # A reference divider is an authored producer even when the net has no
+        # directed power port. Otherwise use the most constrained island.
+        divider_ids = {
+            relation["id"]
+            for relation in design["relationships"]
+            if relation["kind"] == "reference_divider" and relation["local"] == conflict.net
+        }
+        authored = [
+            (item, gateway)
+            for item, gateway in connected
+            if divider_ids & set(item.fragment.block.relationships)
+        ]
+        if authored:
+            target = min(authored, key=lambda pair: pair[0].fragment.block.id)[0]
+        else:
+            center_x = sum(gateway.point[0] for _, gateway in connected) // len(connected)
+            center_y = sum(gateway.point[1] for _, gateway in connected) // len(connected)
+            target = max(
+                connected,
+                key=lambda pair: (
+                    abs(pair[1].point[0] - center_x) + abs(pair[1].point[1] - center_y),
+                    pair[0].fragment.block.id,
+                ),
+            )[0]
+    other = [item for item in packing.fragments if item is not target]
+    gateway = next(gateway for item, gateway in connected if item is target)
+    baseline_box = (
+        max(g.point[0] for _, g in connected)
+        - min(g.point[0] for _, g in connected)
+        + max(g.point[1] for _, g in connected)
+        - min(g.point[1] for _, g in connected)
+    )
+    consumer_points = [g.point for item, g in connected if item is not target]
+    center_x = sum(point[0] for point in consumer_points) // len(consumer_points)
+    center_y = sum(point[1] for point in consumer_points) // len(consumer_points)
+    width = target.envelope[2] - target.envelope[0]
+    height = target.envelope[3] - target.envelope[1]
+    lefts = {target.envelope[0] + center_x - gateway.point[0]}
+    tops = {target.envelope[1] + center_y - gateway.point[1]}
+    for obstacle in other:
+        lefts.update((obstacle.envelope[0] - width - PITCH, obstacle.envelope[2] + PITCH))
+        tops.update(
+            (
+                obstacle.envelope[1] - height - PITCH,
+                obstacle.envelope[3] + PITCH,
+                obstacle.envelope[1],
+            )
+        )
+    candidates = []
+    for left in lefts:
+        for top in tops:
+            moved = _place(target.fragment, left, top)
+            if moved.delta == target.delta or moved.envelope[0] < LEFT or moved.envelope[1] < TOP:
+                continue
+            if moved.envelope[2] > RIGHT or moved.envelope[3] > BOTTOM:
+                continue
+            if any(
+                max(moved.envelope[0], item.envelope[0]) < min(moved.envelope[2], item.envelope[2])
+                and max(moved.envelope[1], item.envelope[1])
+                < min(moved.envelope[3], item.envelope[3])
+                for item in other
+            ):
+                continue
+            changed = tuple(moved if item is target else item for item in packing.fragments)
+            if (
+                max(item.content_envelope[2] for item in changed)
+                - min(item.content_envelope[0] for item in changed)
+                > MAX_CONTENT_WIDTH
+                or max(item.content_envelope[3] for item in changed)
+                - min(item.content_envelope[1] for item in changed)
+                > MAX_CONTENT_HEIGHT
+            ):
+                continue
+            new_points = [
+                (
+                    g.point[0] + moved.delta[0] - target.delta[0],
+                    g.point[1] + moved.delta[1] - target.delta[1],
+                )
+                if item is target
+                else g.point
+                for item, g in connected
+            ]
+            box = (
+                max(point[0] for point in new_points)
+                - min(point[0] for point in new_points)
+                + max(point[1] for point in new_points)
+                - min(point[1] for point in new_points)
+            )
+            if box >= baseline_box:
+                continue
+            positions = {
+                key: (point[0] + item.delta[0], point[1] + item.delta[1])
+                for item in changed
+                for key, point in item.fragment.positions.items()
+            }
+            angles = {key: angle for item in changed for key, angle in item.fragment.angles.items()}
+            draft = Draft(design, resolved, positions, angles, [], [], [], [], {})
+            try:
+                check_placement_constraints(plan, draft.point)
+            except PlacementConflict:
+                continue
+            candidates.append((box, moved.envelope[0], moved.envelope[1], changed, moved))
+    if not candidates:
+        raise InputError(f"DISTRIBUTION_REPAIR_EXHAUSTED: {conflict.net}")
+    box, _, _, changed, moved = min(candidates, key=lambda item: item[:3])
+    return Packing(changed, packing.attempts + (f"distribution:{conflict.net}",)), {
+        "kind": conflict.kind,
+        "net": conflict.net,
+        "fragment": target.fragment.block.id,
+        "from": list(target.delta),
+        "to": list(moved.delta),
+        "gateway_bbox_before_nm": baseline_box,
+        "gateway_bbox_after_nm": box,
+    }
+
+
+def _structural_repack(design, resolved, plan, packing: Packing, conflict: PlacementConflict):
+    """Move the responsible fragment to a measured adjacent legal slot."""
+    by_id = {item.fragment.block.id: item for item in packing.fragments}
+    source = by_id.get(conflict.source_fragment)
+    target = by_id.get(conflict.target_fragment)
+    if source is None or target is None or source is target:
+        raise InputError(f"STRUCTURAL_REPAIR_UNAVAILABLE: {conflict.obligation}")
+    positions = {
+        key: (point[0] + item.delta[0], point[1] + item.delta[1])
+        for item in packing.fragments
+        for key, point in item.fragment.positions.items()
+    }
+    angles = {
+        key: angle for item in packing.fragments for key, angle in item.fragment.angles.items()
+    }
+    draft = Draft(design, resolved, positions, angles, [], [], [], [], {})
+    relation = next((item for item in plan.precedence if item.id == conflict.obligation), None)
+    if relation is None:
+        relation = next((item for item in plan.local_spans if item.id == conflict.obligation), None)
+    first_terminal = (
+        relation.source_terminal if hasattr(relation, "source_terminal") else relation.first
+    )
+    second_terminal = (
+        relation.target_terminal if hasattr(relation, "target_terminal") else relation.second
+    )
+    first_point = draft.point(*first_terminal)
+    second_point = draft.point(*second_terminal)
+    target_width = target.envelope[2] - target.envelope[0]
+    target_height = target.envelope[3] - target.envelope[1]
+    lefts = {
+        target.envelope[0] + first_point[0] + 5 * PITCH - second_point[0],
+        source.envelope[2] + PITCH,
+        source.envelope[2] + 2 * PITCH,
+        source.envelope[0],
+    }
+    tops = {
+        target.envelope[1] + first_point[1] - second_point[1],
+        source.envelope[1],
+        source.envelope[3] - target_height,
+        source.envelope[3] + PITCH,
+        source.envelope[1] - target_height - PITCH,
+    }
+    for obstacle in packing.fragments:
+        if obstacle is target:
+            continue
+        lefts.update(
+            (
+                obstacle.envelope[0],
+                obstacle.envelope[2] + PITCH,
+                obstacle.envelope[0] - target_width - PITCH,
+            )
+        )
+        tops.update(
+            (
+                obstacle.envelope[1],
+                obstacle.envelope[3] + PITCH,
+                obstacle.envelope[1] - target_height - PITCH,
+            )
+        )
+
+    def overlaps(a, b):
+        return max(a[0], b[0]) < min(a[2], b[2]) and max(a[1], b[1]) < min(a[3], b[3])
+
+    ranked_origins = sorted(
+        ((left, top) for left in lefts for top in tops),
+        key=lambda pair: (
+            abs(second_point[0] + pair[0] - target.envelope[0] - first_point[0])
+            + abs(second_point[1] + pair[1] - target.envelope[1] - first_point[1]),
+            pair,
+        ),
+    )[:4096]
+    for left, top in ranked_origins:
+        moved = _place(target.fragment, left, top)
+        if moved.delta == target.delta:
+            continue
+        if any(
+            overlaps(moved.envelope, other.envelope)
+            for other in packing.fragments
+            if other is not target
+        ):
+            continue
+        if (
+            moved.envelope[0] < LEFT
+            or moved.envelope[1] < TOP
+            or moved.envelope[2] > RIGHT
+            or moved.envelope[3] > BOTTOM
+        ):
+            continue
+        changed = tuple(moved if item is target else item for item in packing.fragments)
+        min_x = min(item.content_envelope[0] for item in changed)
+        max_x = max(item.content_envelope[2] for item in changed)
+        min_y = min(item.content_envelope[1] for item in changed)
+        max_y = max(item.content_envelope[3] for item in changed)
+        if max_x - min_x > MAX_CONTENT_WIDTH or max_y - min_y > MAX_CONTENT_HEIGHT:
+            continue
+        moved_positions = {
+            key: (point[0] + item.delta[0], point[1] + item.delta[1])
+            for item in changed
+            for key, point in item.fragment.positions.items()
+        }
+        trial = Draft(design, resolved, moved_positions, angles, [], [], [], [], {})
+        try:
+            check_placement_constraints(plan, trial.point)
+        except PlacementConflict:
+            continue
+        return Packing(changed, packing.attempts + (f"structural:{conflict.kind}",)), {
+            "kind": conflict.kind,
+            "obligation": conflict.obligation,
+            "fragment": target.fragment.block.id,
+            "from": list(target.delta),
+            "to": list(moved.delta),
+            "changed_terminal_count": len(moved_positions),
+        }
+    raise InputError(f"STRUCTURAL_REPAIR_EXHAUSTED: {conflict.obligation}")
 
 
 def _substitution_repack(plan, variants, packing: Packing, conflict: str, ordinal: int):
@@ -246,6 +521,9 @@ def _assemble_candidate(design: dict, resolved: dict, plan, packing: Packing, re
             )
         )
 
+    # Pin inequalities are hard gates on this exact translated candidate.
+    placement_proofs = check_placement_constraints(plan, draft.point)
+
     route_trees = route_between_fragments(plan, packing.fragments, retry_index=retry)
     for tree in route_trees:
         conductors.extend(
@@ -292,6 +570,10 @@ def _assemble_candidate(design: dict, resolved: dict, plan, packing: Packing, re
         canonical_trees.append(
             canonical_conductor_tree(
                 (segment for segment in conductors if segment.net == net),
+                junctions=(
+                    *draft.junctions,
+                    *(point for tree in route_trees for point in tree.junctions),
+                ),
                 pins=(
                     draft.point(component["id"], pin.number)
                     for component in design["components"]
@@ -306,9 +588,71 @@ def _assemble_candidate(design: dict, resolved: dict, plan, packing: Packing, re
                 ),
             )
         )
-    excessive = [(tree.net, tree.length) for tree in canonical_trees if tree.length > 250_000_000]
+    assertion_points = {}
+    for assertion in design["power_assertions"]:
+        candidates = sorted(point for net, point in draft.labels if net == assertion["net"])
+        candidates.extend(
+            sorted(
+                gateway.point
+                for item in packing.fragments
+                for gateway in item.gateways
+                if gateway.net == assertion["net"]
+            )
+        )
+        if not candidates:
+            raise InputError(
+                f"COMPOSE_ASSERTION_PORT_MISSING: {assertion['id']}:{assertion['net']}"
+            )
+        assertion_points[assertion["id"]] = candidates[0]
+    net_proofs = []
+    presentation_by_net = {item.id: item for item in plan.presentation_nets}
+    for tree in canonical_trees:
+        presentation = presentation_by_net.get(tree.net)
+        if presentation is None:
+            raise InputError(f"CONDUCTOR_NET_UNDECLARED: {tree.net}")
+        net_proofs.append(
+            prove_conductor_graph(
+                tree,
+                {terminal: draft.point(*terminal) for terminal in presentation.terminals},
+                labels=(point for net, point in draft.labels if net == tree.net),
+                allow_labeled_islands=not presentation.explicit_geometry_required,
+                # The canonical junction inventory is the one serialization
+                # will write; earlier local lists are construction inputs.
+                declared_junctions=tree.junctions,
+                intentional_ends=(
+                    *(
+                        gateway.point
+                        for item in packing.fragments
+                        for gateway in item.gateways
+                        if gateway.net == tree.net
+                    ),
+                    *(
+                        assertion_points[assertion["id"]]
+                        for assertion in design["power_assertions"]
+                        if assertion["net"] == tree.net
+                    ),
+                ),
+            )
+        )
+    missing_nets = set(presentation_by_net) - {tree.net for tree in canonical_trees}
+    if missing_nets:
+        raise InputError(f"CONDUCTOR_NET_MISSING: {sorted(missing_nets)}")
+    excessive = [tree for tree in canonical_trees if tree.length > 250_000_000]
     if excessive:
-        raise InputError(f"NET_DETOUR_OVERFLOW: {excessive} threshold=250000000")
+        worst = max(excessive, key=lambda tree: (tree.length, tree.net))
+        local_segments = [
+            segment
+            for segment in conductors
+            if segment.net == worst.net and not segment.owner.startswith("tree.")
+        ]
+        global_segments = [
+            segment
+            for segment in conductors
+            if segment.net == worst.net and segment.owner.startswith("tree.")
+        ]
+        local_length = canonical_conductor_tree(local_segments).length if local_segments else 0
+        global_length = canonical_conductor_tree(global_segments).length if global_segments else 0
+        raise ConductorLengthConflict(worst.net, worst.length, local_length, global_length)
     draft.wires = [
         (segment.start, segment.end) for tree in canonical_trees for segment in tree.segments
     ]
@@ -324,21 +668,32 @@ def _assemble_candidate(design: dict, resolved: dict, plan, packing: Packing, re
             f"extra={sorted(actual - expected)}"
         )
     for assertion in design["power_assertions"]:
-        candidates = sorted(point for net, point in draft.labels if net == assertion["net"])
-        candidates.extend(
-            sorted(
-                gateway.point
-                for item in packing.fragments
-                for gateway in item.gateways
-                if gateway.net == assertion["net"]
-            )
-        )
-        if not candidates:
-            raise InputError(
-                f"COMPOSE_ASSERTION_PORT_MISSING: {assertion['id']}:{assertion['net']}"
-            )
-        point = candidates[0]
+        point = assertion_points[assertion["id"]]
         draft.positions[(assertion["id"], 1)] = point
+        # KiCad serializes hidden source properties too. Give them a measured
+        # on-page position instead of the emitter's unmeasured fallback offset.
+        draft.text_positions[(assertion["id"], 1)] = (
+            min(max(point[0], LEFT), RIGHT),
+            min(max(point[1], TOP + 2 * PITCH), BOTTOM - 2 * PITCH),
+        )
+        text_x, text_y = draft.text_positions[(assertion["id"], 1)]
+        for offset in (0, 2 * PITCH):
+            property_item = GeometryItem(
+                f"{assertion['id']}.hidden_property.{offset}",
+                "source_property",
+                assertion["id"],
+                (text_x, text_y + offset, text_x, text_y + offset),
+            )
+            occupied.append(property_item)
+            reservations.append(
+                Reservation(
+                    f"source_property.{assertion['id']}.{offset}",
+                    "exclusive",
+                    assertion["id"],
+                    "source_property",
+                    property_item.rect,
+                )
+            )
         glyph = GeometryItem(
             assertion["id"],
             "source_glyph",
@@ -371,11 +726,13 @@ def _assemble_candidate(design: dict, resolved: dict, plan, packing: Packing, re
         max(item.rect[2] for item in occupied),
         max(item.rect[3] for item in occupied),
     )
+    # The packing corridor uses an inset search box. Final occupied geometry
+    # is certified against the historical A4 content margins themselves.
     if (
-        final_rect[0] < LEFT
-        or final_rect[1] < TOP
-        or final_rect[2] > RIGHT
-        or final_rect[3] > BOTTOM
+        final_rect[0] < 20_320_000
+        or final_rect[1] < 25_400_000
+        or final_rect[2] > 276_680_000
+        or final_rect[3] > 184_600_000
     ):
         raise InputError(f"PAGE_CONTENT_OVERFLOW: final={final_rect}")
     final_width = final_rect[2] - final_rect[0]
@@ -395,6 +752,14 @@ def _assemble_candidate(design: dict, resolved: dict, plan, packing: Packing, re
             "final_content_width_mm": final_width / 1_000_000,
             "final_content_height_mm": final_height / 1_000_000,
             "reservation_containment_pass": True,
+            "pre_emission_conductor_components": {
+                proof.net: len(proof.components) for proof in net_proofs
+            },
+            "pre_emission_terminal_coverage": {
+                proof.net: len(proof.terminal_components) for proof in net_proofs
+            },
+            "pre_emission_precedence_count": len(plan.precedence),
+            "pre_emission_placement_proofs": [list(item) for item in placement_proofs],
         }
     )
     return draft, route_trees, canonical_trees, tuple(reservations), metrics
@@ -411,14 +776,36 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
     for seed_index, packing in enumerate(seeds[:8]):
         state_digests = set()
         working_packing = packing
+        last_conflict = None
         for round_index in range(4):
             substitution = None
             growth = None
+            if round_index == 1 and isinstance(last_conflict, PlacementConflict):
+                attempts.append(
+                    {
+                        "seed": seed_index,
+                        "round": round_index,
+                        "operation": "route_retry",
+                        "result": "not_applicable_to_placement_conflict",
+                        "failure_class": last_conflict.kind,
+                        "conflict": str(last_conflict),
+                    }
+                )
+                continue
             if round_index == 2 and last_error:
                 try:
-                    working_packing, substitution = _substitution_repack(
-                        plan, variants, working_packing, last_error, seed_index
-                    )
+                    if isinstance(last_conflict, PlacementConflict):
+                        working_packing, substitution = _structural_repack(
+                            design, resolved, plan, working_packing, last_conflict
+                        )
+                    elif isinstance(last_conflict, ConductorLengthConflict):
+                        working_packing, substitution = _distribution_repack(
+                            design, resolved, plan, working_packing, last_conflict
+                        )
+                    else:
+                        working_packing, substitution = _substitution_repack(
+                            plan, variants, working_packing, last_error, seed_index
+                        )
                 except InputError as exc:
                     last_error = str(exc)
                     attempts.append(
@@ -433,6 +820,18 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
                     )
                     continue
             if round_index == 3 and last_error:
+                if isinstance(last_conflict, (PlacementConflict, ConductorLengthConflict)):
+                    attempts.append(
+                        {
+                            "seed": seed_index,
+                            "round": round_index,
+                            "operation": "reservation_growth",
+                            "result": "not_applicable_to_placement_conflict",
+                            "failure_class": last_conflict.kind,
+                            "conflict": str(last_conflict),
+                        }
+                    )
+                    continue
                 try:
                     working_packing, growth = _reservation_growth_repack(
                         plan, working_packing, last_error, seed_index
@@ -481,6 +880,7 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
                 )
             except InputError as exc:
                 last_error = str(exc)
+                last_conflict = exc
                 attempts.append(
                     {
                         "seed": seed_index,
@@ -492,7 +892,9 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
                             "reservation_growth",
                         )[round_index],
                         "result": "rejected",
-                        "failure_class": (
+                        "failure_class": exc.kind
+                        if isinstance(exc, (PlacementConflict, ConductorLengthConflict))
+                        else (
                             "connectivity/protection"
                             if "ROUTE" in last_error or "CONDUCTOR" in last_error
                             else "body/pin"

@@ -16,8 +16,8 @@ from .m2_geometry import (
     ProtectedPath,
     Reservation,
     canonical_conductor_tree,
-    conductor_reachable,
     content_envelope,
+    prove_gateway_witnesses,
 )
 from .m2a import Asset, PITCH, Pin
 from .m2b import Draft, choose_text_slots, orientation_for_flow, _turn
@@ -459,11 +459,11 @@ def _finish(
             pins=_placed_terminal_points(draft, resolved, design, terminal_nets, net),
         )
         for gateway in (item for item in gateways if item.net == net):
-            if not any(
-                conductor_reachable(tree, draft.point(*terminal), gateway.point)
-                for terminal in gateway.terminals
-            ):
-                raise InputError(f"FRAGMENT_GATEWAY_DETACHED: {gateway.id}")
+            prove_gateway_witnesses(
+                tree,
+                gateway,
+                {terminal: draft.point(*terminal) for terminal in gateway.terminals},
+            )
     protected_edges = local_segments[:original_wire_count]
     protected_corridors = tuple(
         Reservation(
@@ -711,9 +711,36 @@ def _package_fragment(
     cn1, cn2 = d.point(cap_neg["component"], "1"), d.point(cap_neg["component"], "2")
     pos_end = (pos[0], cp1[1])
     neg_end = (neg[0], cn2[1])
-    d.route(rail["positive"], pos, pos_end, cp1)
+    if reference_side == "up":
+        positive_side_x = cp1[0] - 5 * PITCH
+        d.route(
+            rail["positive"],
+            pos,
+            (positive_side_x, pos[1]),
+            (positive_side_x, cp1[1]),
+            cp1,
+        )
+        pos_end = (positive_side_x, cp2[1] - 2 * PITCH)
+    else:
+        d.route(rail["positive"], pos, pos_end, cp1)
     d.route(rail["negative"], neg, neg_end, cn2)
     ref1, ref2 = cp2, cn1
+    # Both decoupler returns belong to the same physical reference island.
+    # The right-hand capacitor's upper pin needs a side approach so the wire
+    # does not pass through its body or the package power unit.
+    if reference_side == "up":
+        d.route(rail["reference"], cp2, cn1)
+    else:
+        reference_bottom = max(cp2[1], cn1[1]) + 9 * PITCH
+        reference_right = cn1[0] + 5 * PITCH
+        d.route(
+            rail["reference"],
+            cp2,
+            (cp2[0], reference_bottom),
+            (reference_right, reference_bottom),
+            (reference_right, cn1[1]),
+            cn1,
+        )
     d.label(rail["reference"], ref1)
     d.label(rail["reference"], ref2)
     dividers = [
@@ -739,11 +766,6 @@ def _package_fragment(
         ref1 = local
     positive_anchor = pos_end
     positive_direction = "up"
-    if reference_side == "up":
-        side = (cp1[0] - 5 * PITCH, cp1[1])
-        positive_anchor = (side[0], cp2[1] - 2 * PITCH)
-        d.route(rail["positive"], cp1, side, positive_anchor)
-        positive_direction = "up"
     anchors = {
         "positive": (positive_anchor, positive_direction),
         "negative": (neg_end, "down"),
@@ -822,7 +844,9 @@ def _power_stage_fragment(
     )
 
 
-def _timer_fragment(design: dict, resolved: dict[str, Asset], block: BlockPlan) -> FragmentVariant:
+def _timer_fragment(
+    design: dict, resolved: dict[str, Asset], block: BlockPlan, *, compact: bool = False
+) -> FragmentVariant:
     timer = next(
         r
         for r in design["relationships"]
@@ -842,11 +866,13 @@ def _timer_fragment(design: dict, resolved: dict[str, Asset], block: BlockPlan) 
     tx, ty, lx = 42 * PITCH, 38 * PITCH, 15 * PITCH
     d.add(timer["component"], tx, ty)
     p = {role: d.point(timer["component"], number) for role, number in timer["pins"].items()}
-    d.add(ladder["upper"], lx, ty - 20 * PITCH)
+    # The compact construction keeps the same ordered ladder terminals while
+    # using separate measured body/text clearances for a shorter support band.
+    d.add(ladder["upper"], lx, ty - (14 if compact else 20) * PITCH)
     d.add(ladder["lower"], lx, ty)
-    d.add(ladder["capacitor"], lx, ty + 24 * PITCH)
+    d.add(ladder["capacitor"], lx, ty + (17 if compact else 24) * PITCH)
     # Keep the control bypass out of the timing-ladder/discharge corridor.
-    d.add(control["component"], tx + 14 * PITCH, ty - 10 * PITCH)
+    d.add(control["component"], tx + 14 * PITCH, ty - (8 if compact else 10) * PITCH)
     ut, ub = d.point(ladder["upper"], "1"), d.point(ladder["upper"], "2")
     lt, lb = d.point(ladder["lower"], "1"), d.point(ladder["lower"], "2")
     ct, cb = d.point(ladder["capacitor"], "1"), d.point(ladder["capacitor"], "2")
@@ -903,7 +929,7 @@ def _timer_fragment(design: dict, resolved: dict[str, Asset], block: BlockPlan) 
 
 
 def _passive_fragment(
-    design: dict, resolved: dict[str, Asset], block: BlockPlan
+    design: dict, resolved: dict[str, Asset], block: BlockPlan, *, compact: bool = False
 ) -> FragmentVariant:
     relation = next(
         r
@@ -921,10 +947,10 @@ def _passive_fragment(
         x, y = 20 * PITCH, 14 * PITCH
         d.add(relation["component"], x, y)
         first, second = d.point(relation["component"], "1"), d.point(relation["component"], "2")
-        d.add(polarity["component"], x, y + 12 * PITCH, angle=90)
+        d.add(polarity["component"], x, y + (9 if compact else 12) * PITCH, angle=90)
         anode, cathode = d.point(polarity["component"], "2"), d.point(polarity["component"], "1")
         d.route(relation["output"], second, anode)
-        input_end = (first[0], first[1] - 5 * PITCH)
+        input_end = (first[0], first[1] - (4 if compact else 5) * PITCH)
         reference_end = cathode
         d.route(relation["input"], first, input_end)
         anchors.update(
@@ -945,12 +971,12 @@ def _passive_fragment(
                 if r["kind"] == "shunt" and r["id"] in block.relationships
             )
             node = (second[0] + 4 * PITCH, second[1])
-            d.add(shunt["component"], node[0], y + 18 * PITCH)
+            d.add(shunt["component"], node[0], y + (11 if compact else 18) * PITCH)
             top, bottom = d.point(shunt["component"], "1"), d.point(shunt["component"], "2")
             d.route(relation["output"], second, node, top)
             d.route(relation["output"], node, output_end)
             d.junctions.append(node)
-            ref_end = (bottom[0], bottom[1] + 5 * PITCH)
+            ref_end = (bottom[0], bottom[1] + (2 if compact else 5) * PITCH)
             d.route(shunt["reference"], bottom, ref_end)
             anchors["reference"] = (ref_end, "down")
     return _finish(design, resolved, block, d, anchors)
@@ -1126,8 +1152,17 @@ def fragment_variants(
             bases = [_power_stage_fragment(design, resolved, block)]
         elif block.kind == "timer":
             bases = [_timer_fragment(design, resolved, block)]
+            try:
+                bases.append(_timer_fragment(design, resolved, block, compact=True))
+            except InputError:
+                pass
         elif block.kind in {"series", "rc", "led_branch"}:
             bases = [_passive_fragment(design, resolved, block)]
+            if block.kind in {"rc", "led_branch"}:
+                try:
+                    bases.append(_passive_fragment(design, resolved, block, compact=True))
+                except InputError:
+                    pass
         elif block.kind == "interface":
             bases = [_interface_fragment(design, resolved, block)]
         else:
@@ -1155,12 +1190,18 @@ def fragment_variants(
                     break
             if len(retained) == 8:
                 break
+
+        def structural_name(index: int) -> str:
+            if block.kind in {"timer", "rc", "led_branch"}:
+                return "compact" if index else "expanded"
+            return "above" if index else "below"
+
         result[block.id] = tuple(
             replace(
                 candidate,
                 id=f"{block.id}.v{index}",
                 rule_id=(
-                    f"m2g2.local-aspect.{block.kind}.{'below' if family_index == 0 else 'above'}.v1"
+                    f"m2g2.local-aspect.{block.kind}.{structural_name(family_index)}.v1"
                     if len(families) > 1
                     else candidate.rule_id
                 ),

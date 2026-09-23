@@ -1,0 +1,482 @@
+{
+  "profile": "m2b.1",
+  "id": "m2h2_dp3_dual_timer_rc",
+  "name": "M2h2Dp3DualTimerRc",
+  "components": [
+    {
+      "id": "source",
+      "refdes": "J1",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Shared supply"
+    },
+    {
+      "id": "return",
+      "refdes": "J2",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Common return"
+    },
+    {
+      "id": "out_a",
+      "refdes": "J3",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Timer A filtered"
+    },
+    {
+      "id": "out_b",
+      "refdes": "J4",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Timer B filtered"
+    },
+    {
+      "id": "timer_a",
+      "refdes": "U1",
+      "asset": "Timer:NE555D",
+      "value": "NE555D"
+    },
+    {
+      "id": "timer_a_charge",
+      "refdes": "R1",
+      "asset": "Device:R",
+      "value": "10k"
+    },
+    {
+      "id": "timer_a_discharge",
+      "refdes": "R2",
+      "asset": "Device:R",
+      "value": "47k"
+    },
+    {
+      "id": "timer_a_timing_cap",
+      "refdes": "C1",
+      "asset": "Device:C",
+      "value": "10u"
+    },
+    {
+      "id": "timer_a_control_bypass",
+      "refdes": "C2",
+      "asset": "Device:C",
+      "value": "10n"
+    },
+    {
+      "id": "timer_b",
+      "refdes": "U2",
+      "asset": "Timer:NE555D",
+      "value": "NE555D"
+    },
+    {
+      "id": "timer_b_charge",
+      "refdes": "R3",
+      "asset": "Device:R",
+      "value": "10k"
+    },
+    {
+      "id": "timer_b_discharge",
+      "refdes": "R4",
+      "asset": "Device:R",
+      "value": "47k"
+    },
+    {
+      "id": "timer_b_timing_cap",
+      "refdes": "C3",
+      "asset": "Device:C",
+      "value": "10u"
+    },
+    {
+      "id": "timer_b_control_bypass",
+      "refdes": "C4",
+      "asset": "Device:C",
+      "value": "10n"
+    },
+    {
+      "id": "filter_a_r",
+      "refdes": "R5",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "filter_a_c",
+      "refdes": "C5",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "filter_b_r",
+      "refdes": "R6",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "filter_b_c",
+      "refdes": "C6",
+      "asset": "Device:C",
+      "value": "100n"
+    }
+  ],
+  "nets": [
+    {
+      "id": "VCC",
+      "members": [
+        [
+          "source",
+          "1"
+        ],
+        [
+          "timer_a",
+          "8"
+        ],
+        [
+          "timer_a",
+          "4"
+        ],
+        [
+          "timer_a_charge",
+          "1"
+        ],
+        [
+          "timer_b",
+          "8"
+        ],
+        [
+          "timer_b",
+          "4"
+        ],
+        [
+          "timer_b_charge",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "REF",
+      "members": [
+        [
+          "return",
+          "1"
+        ],
+        [
+          "timer_a",
+          "1"
+        ],
+        [
+          "timer_a_timing_cap",
+          "2"
+        ],
+        [
+          "timer_a_control_bypass",
+          "2"
+        ],
+        [
+          "timer_b",
+          "1"
+        ],
+        [
+          "timer_b_timing_cap",
+          "2"
+        ],
+        [
+          "timer_b_control_bypass",
+          "2"
+        ],
+        [
+          "filter_a_c",
+          "2"
+        ],
+        [
+          "filter_b_c",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_A_DISCH",
+      "members": [
+        [
+          "timer_a",
+          "7"
+        ],
+        [
+          "timer_a_charge",
+          "2"
+        ],
+        [
+          "timer_a_discharge",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_A_TIMING",
+      "members": [
+        [
+          "timer_a",
+          "2"
+        ],
+        [
+          "timer_a",
+          "6"
+        ],
+        [
+          "timer_a_discharge",
+          "2"
+        ],
+        [
+          "timer_a_timing_cap",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_A_CONT",
+      "members": [
+        [
+          "timer_a",
+          "5"
+        ],
+        [
+          "timer_a_control_bypass",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "A_RAW",
+      "members": [
+        [
+          "timer_a",
+          "3"
+        ],
+        [
+          "filter_a_r",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_B_DISCH",
+      "members": [
+        [
+          "timer_b",
+          "7"
+        ],
+        [
+          "timer_b_charge",
+          "2"
+        ],
+        [
+          "timer_b_discharge",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_B_TIMING",
+      "members": [
+        [
+          "timer_b",
+          "2"
+        ],
+        [
+          "timer_b",
+          "6"
+        ],
+        [
+          "timer_b_discharge",
+          "2"
+        ],
+        [
+          "timer_b_timing_cap",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_B_CONT",
+      "members": [
+        [
+          "timer_b",
+          "5"
+        ],
+        [
+          "timer_b_control_bypass",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "B_RAW",
+      "members": [
+        [
+          "timer_b",
+          "3"
+        ],
+        [
+          "filter_b_r",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "A_OUT",
+      "members": [
+        [
+          "filter_a_r",
+          "2"
+        ],
+        [
+          "filter_a_c",
+          "1"
+        ],
+        [
+          "out_a",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "B_OUT",
+      "members": [
+        [
+          "filter_b_r",
+          "2"
+        ],
+        [
+          "filter_b_c",
+          "1"
+        ],
+        [
+          "out_b",
+          "1"
+        ]
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "timer_a.function",
+      "kind": "timer",
+      "component": "timer_a",
+      "supply": "VCC",
+      "reference": "REF",
+      "output": "A_RAW",
+      "timing": "TIMER_A_TIMING",
+      "discharge": "TIMER_A_DISCH",
+      "control": "TIMER_A_CONT",
+      "pins": {
+        "supply": "8",
+        "reference": "1",
+        "output": "3",
+        "trigger": "2",
+        "threshold": "6",
+        "discharge": "7",
+        "control": "5",
+        "reset": "4"
+      }
+    },
+    {
+      "id": "timer_a.ladder",
+      "kind": "timing_ladder",
+      "upper": "timer_a_charge",
+      "lower": "timer_a_discharge",
+      "capacitor": "timer_a_timing_cap",
+      "supply": "VCC",
+      "discharge": "TIMER_A_DISCH",
+      "timing": "TIMER_A_TIMING",
+      "reference": "REF"
+    },
+    {
+      "id": "timer_a.control",
+      "kind": "decoupling",
+      "component": "timer_a_control_bypass",
+      "consumer": [
+        "timer_a",
+        "5"
+      ],
+      "supply": "TIMER_A_CONT",
+      "return": "REF"
+    },
+    {
+      "id": "timer_b.function",
+      "kind": "timer",
+      "component": "timer_b",
+      "supply": "VCC",
+      "reference": "REF",
+      "output": "B_RAW",
+      "timing": "TIMER_B_TIMING",
+      "discharge": "TIMER_B_DISCH",
+      "control": "TIMER_B_CONT",
+      "pins": {
+        "supply": "8",
+        "reference": "1",
+        "output": "3",
+        "trigger": "2",
+        "threshold": "6",
+        "discharge": "7",
+        "control": "5",
+        "reset": "4"
+      }
+    },
+    {
+      "id": "timer_b.ladder",
+      "kind": "timing_ladder",
+      "upper": "timer_b_charge",
+      "lower": "timer_b_discharge",
+      "capacitor": "timer_b_timing_cap",
+      "supply": "VCC",
+      "discharge": "TIMER_B_DISCH",
+      "timing": "TIMER_B_TIMING",
+      "reference": "REF"
+    },
+    {
+      "id": "timer_b.control",
+      "kind": "decoupling",
+      "component": "timer_b_control_bypass",
+      "consumer": [
+        "timer_b",
+        "5"
+      ],
+      "supply": "TIMER_B_CONT",
+      "return": "REF"
+    },
+    {
+      "id": "filter_a.series",
+      "kind": "series",
+      "component": "filter_a_r",
+      "input": "A_RAW",
+      "output": "A_OUT"
+    },
+    {
+      "id": "filter_a.shunt",
+      "kind": "shunt",
+      "component": "filter_a_c",
+      "node": "A_OUT",
+      "reference": "REF"
+    },
+    {
+      "id": "filter_b.series",
+      "kind": "series",
+      "component": "filter_b_r",
+      "input": "B_RAW",
+      "output": "B_OUT"
+    },
+    {
+      "id": "filter_b.shunt",
+      "kind": "shunt",
+      "component": "filter_b_c",
+      "node": "B_OUT",
+      "reference": "REF"
+    }
+  ],
+  "no_connects": [],
+  "power_assertions": [
+    {
+      "id": "flag.1",
+      "refdes": "#FLG01",
+      "net": "VCC"
+    },
+    {
+      "id": "flag.2",
+      "refdes": "#FLG02",
+      "net": "REF"
+    }
+  ]
+}

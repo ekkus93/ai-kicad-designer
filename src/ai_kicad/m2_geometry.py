@@ -184,6 +184,100 @@ class CanonicalTree:
     geometry_signature: tuple[tuple[Point, Point], ...]
 
 
+@dataclass(frozen=True)
+class ConductorProof:
+    net: str
+    components: tuple[frozenset[Point], ...]
+    terminal_components: tuple[tuple[tuple[str, str], int], ...]
+    label_components: tuple[tuple[Point, int], ...]
+    length: int
+
+
+def conductor_components(tree: CanonicalTree) -> tuple[frozenset[Point], ...]:
+    """Report actual wire islands; a common net string creates no edge."""
+    adjacency: dict[Point, set[Point]] = defaultdict(set)
+    for segment in tree.segments:
+        adjacency[segment.start].add(segment.end)
+        adjacency[segment.end].add(segment.start)
+    pending = set(adjacency)
+    result = []
+    while pending:
+        seed = min(pending)
+        reached = {seed}
+        queue = deque((seed,))
+        while queue:
+            point = queue.popleft()
+            for neighbor in adjacency[point] - reached:
+                reached.add(neighbor)
+                queue.append(neighbor)
+        result.append(frozenset(reached))
+        pending.difference_update(reached)
+    return tuple(result)
+
+
+def prove_conductor_graph(
+    tree: CanonicalTree,
+    terminals: dict[tuple[str, str], Point],
+    *,
+    labels: Iterable[Point] = (),
+    allow_labeled_islands: bool = False,
+    declared_junctions: Iterable[Point] = (),
+    intentional_ends: Iterable[Point] = (),
+) -> ConductorProof:
+    """Prove terminal coverage and permitted island joins from exact geometry."""
+    components = conductor_components(tree)
+
+    def component_at(point: Point) -> int | None:
+        for index, component in enumerate(components):
+            if point in component or any(
+                point_on_segment(point, segment.start, segment.end)
+                and segment.start in component
+                and segment.end in component
+                for segment in tree.segments
+            ):
+                return index
+        return None
+
+    terminal_components = []
+    label_points = set(labels)
+    for terminal, point in sorted(terminals.items()):
+        index = component_at(point)
+        if index is None and allow_labeled_islands and point in label_points:
+            # Explicit labels placed exactly on pins are an existing permitted
+            # presentation choice for externally scoped nets.
+            index = -1
+        if index is None:
+            raise InputError(f"CONDUCTOR_TERMINAL_DETACHED: {tree.net}:{terminal}:{point}")
+        terminal_components.append((terminal, index))
+    label_components = []
+    for point in sorted(label_points):
+        index = component_at(point)
+        if index is None and allow_labeled_islands and point in terminals.values():
+            index = -1
+        if index is None:
+            raise InputError(f"CONDUCTOR_LABEL_DETACHED: {tree.net}:{point}")
+        label_components.append((point, index))
+    missing_junctions = set(tree.junctions) - set(declared_junctions)
+    if missing_junctions:
+        raise InputError(f"CONDUCTOR_JUNCTION_MISSING: {tree.net}:{sorted(missing_junctions)}")
+    if len(components) > 1 and not (
+        allow_labeled_islands
+        and set(range(len(components))) <= {index for _, index in label_components}
+    ):
+        raise InputError(f"CONDUCTOR_ISLANDS_DISCONNECTED: {tree.net}:{len(components)}")
+    permitted_ends = set(terminals.values()) | label_points | set(intentional_ends)
+    dangling = sorted(
+        point
+        for point, degree in tree.degree.items()
+        if degree == 1 and point not in permitted_ends
+    )
+    if dangling:
+        raise InputError(f"CONDUCTOR_ENDPOINT_DANGLING: {tree.net}:{dangling}")
+    return ConductorProof(
+        tree.net, components, tuple(terminal_components), tuple(label_components), tree.length
+    )
+
+
 def content_envelope(items: Iterable[GeometryItem]) -> Rect:
     values = tuple(items)
     if not values:
@@ -397,6 +491,23 @@ def conductor_reachable(
             visited.add(neighbor)
             pending.append(neighbor)
     return first == second and bool(starts)
+
+
+def prove_gateway_witnesses(
+    tree: CanonicalTree,
+    gateway: Gateway,
+    actual_pins: dict[tuple[str, str], Point],
+) -> tuple[tuple[str, str], ...]:
+    """Prove every declared witness through preserved conductor geometry."""
+    if gateway.net != tree.net or not gateway.terminals:
+        raise InputError(f"GATEWAY_GRAPH_IDENTITY: {gateway.id}")
+    if not conductor_reachable(tree, gateway.anchor, gateway.point):
+        raise InputError(f"GATEWAY_ESCAPE_DETACHED: {gateway.id}")
+    for terminal in gateway.terminals:
+        point = actual_pins.get(terminal)
+        if point is None or not conductor_reachable(tree, point, gateway.point):
+            raise InputError(f"GATEWAY_PIN_DETACHED: {gateway.id}:{terminal}:{point}")
+    return gateway.terminals
 
 
 def segment_is_admissible(

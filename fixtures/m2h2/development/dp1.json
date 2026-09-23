@@ -1,0 +1,314 @@
+{
+  "profile": "m2b.1",
+  "id": "m2h2_dp1_passive_three_way",
+  "name": "M2h2Dp1PassiveThreeWay",
+  "components": [
+    {
+      "id": "input",
+      "refdes": "J1",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Signal input"
+    },
+    {
+      "id": "return",
+      "refdes": "J2",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Common return"
+    },
+    {
+      "id": "out_a",
+      "refdes": "J3",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Branch A output"
+    },
+    {
+      "id": "out_b",
+      "refdes": "J4",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Branch B output"
+    },
+    {
+      "id": "out_c",
+      "refdes": "J5",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Branch C output"
+    },
+    {
+      "id": "root_r",
+      "refdes": "R1",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "root_c",
+      "refdes": "C1",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "a_r",
+      "refdes": "R2",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "a_c",
+      "refdes": "C2",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "b_r",
+      "refdes": "R3",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "b_c",
+      "refdes": "C3",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "d_r",
+      "refdes": "R4",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "d_c",
+      "refdes": "C4",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "load_r",
+      "refdes": "R5",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "load_led",
+      "refdes": "D1",
+      "asset": "Device:LED",
+      "value": "LED"
+    }
+  ],
+  "nets": [
+    {
+      "id": "INPUT",
+      "members": [
+        [
+          "input",
+          "1"
+        ],
+        [
+          "root_r",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "REF",
+      "members": [
+        [
+          "return",
+          "1"
+        ],
+        [
+          "root_c",
+          "2"
+        ],
+        [
+          "a_c",
+          "2"
+        ],
+        [
+          "b_c",
+          "2"
+        ],
+        [
+          "d_c",
+          "2"
+        ],
+        [
+          "load_led",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "FORK",
+      "members": [
+        [
+          "root_r",
+          "2"
+        ],
+        [
+          "root_c",
+          "1"
+        ],
+        [
+          "a_r",
+          "1"
+        ],
+        [
+          "b_r",
+          "1"
+        ],
+        [
+          "d_r",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "A",
+      "members": [
+        [
+          "a_r",
+          "2"
+        ],
+        [
+          "a_c",
+          "1"
+        ],
+        [
+          "out_a",
+          "1"
+        ],
+        [
+          "load_r",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "B",
+      "members": [
+        [
+          "b_r",
+          "2"
+        ],
+        [
+          "b_c",
+          "1"
+        ],
+        [
+          "out_b",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "D",
+      "members": [
+        [
+          "d_r",
+          "2"
+        ],
+        [
+          "d_c",
+          "1"
+        ],
+        [
+          "out_c",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "LED_NODE",
+      "members": [
+        [
+          "load_r",
+          "2"
+        ],
+        [
+          "load_led",
+          "2"
+        ]
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "root.series",
+      "kind": "series",
+      "component": "root_r",
+      "input": "INPUT",
+      "output": "FORK"
+    },
+    {
+      "id": "root.shunt",
+      "kind": "shunt",
+      "component": "root_c",
+      "node": "FORK",
+      "reference": "REF"
+    },
+    {
+      "id": "a.series",
+      "kind": "series",
+      "component": "a_r",
+      "input": "FORK",
+      "output": "A"
+    },
+    {
+      "id": "a.shunt",
+      "kind": "shunt",
+      "component": "a_c",
+      "node": "A",
+      "reference": "REF"
+    },
+    {
+      "id": "b.series",
+      "kind": "series",
+      "component": "b_r",
+      "input": "FORK",
+      "output": "B"
+    },
+    {
+      "id": "b.shunt",
+      "kind": "shunt",
+      "component": "b_c",
+      "node": "B",
+      "reference": "REF"
+    },
+    {
+      "id": "d.series",
+      "kind": "series",
+      "component": "d_r",
+      "input": "FORK",
+      "output": "D"
+    },
+    {
+      "id": "d.shunt",
+      "kind": "shunt",
+      "component": "d_c",
+      "node": "D",
+      "reference": "REF"
+    },
+    {
+      "id": "load.series",
+      "kind": "series",
+      "component": "load_r",
+      "input": "A",
+      "output": "LED_NODE"
+    },
+    {
+      "id": "load.polarity",
+      "kind": "polarity",
+      "component": "load_led",
+      "anode": "LED_NODE",
+      "cathode": "REF"
+    }
+  ],
+  "no_connects": [],
+  "power_assertions": [
+    {
+      "id": "flag.1",
+      "refdes": "#FLG01",
+      "net": "REF"
+    }
+  ]
+}

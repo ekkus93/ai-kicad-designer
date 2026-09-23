@@ -70,12 +70,140 @@ class SemanticConstraint:
 
 
 @dataclass(frozen=True)
+class SignalPrecedence:
+    """A terminal inequality independent of route and branch presentation."""
+
+    id: str
+    source_fragment: str
+    target_fragment: str
+    source_terminal: Terminal
+    target_terminal: Terminal
+    net: str
+    origins: tuple[str, ...]
+    minimum_x_separation: int = 1
+
+
+@dataclass(frozen=True)
+class PhysicalTerminalObligation:
+    terminal: Terminal
+    occurrence: Occurrence
+    owner: str
+    asset: str
+    unit: int
+    pin_name: str
+    pin_x: int
+    pin_y: int
+    net: str
+
+
+@dataclass(frozen=True)
+class PresentationNet:
+    id: str
+    terminals: tuple[Terminal, ...]
+    fragments: tuple[str, ...]
+    role: Literal["signal", "distributive"]
+    internally_generated: bool
+    explicit_geometry_required: bool = False
+    producer_fragments: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class LocalSpanObligation:
+    id: str
+    first: Terminal
+    second: Terminal
+    maximum: int
+    metric: Literal["manhattan", "horizontal"]
+    subtype: str
+    origins: tuple[str, ...]
+
+
+class PlacementConflict(InputError):
+    """Typed hard conflict with the structural owners needed for repair."""
+
+    def __init__(
+        self,
+        kind: Literal["precedence_violation", "local_span_violation"],
+        obligation: str,
+        source_fragment: str,
+        target_fragment: str,
+        actual: int,
+        limit: int,
+    ) -> None:
+        self.kind = kind
+        self.obligation = obligation
+        self.source_fragment = source_fragment
+        self.target_fragment = target_fragment
+        self.actual = actual
+        self.limit = limit
+        super().__init__(
+            f"{kind.upper()}: {obligation} actual={actual} limit={limit} "
+            f"owners={source_fragment},{target_fragment}"
+        )
+
+
+@dataclass(frozen=True)
 class SemanticPlan:
     blocks: tuple[BlockPlan, ...]
     edges: tuple[SemanticEdge, ...]
     owners: dict[Occurrence, str]
     signal_order: tuple[str, ...]
     constraints: tuple[SemanticConstraint, ...] = ()
+    precedence: tuple[SignalPrecedence, ...] = ()
+    terminals: tuple[PhysicalTerminalObligation, ...] = ()
+    presentation_nets: tuple[PresentationNet, ...] = ()
+    local_spans: tuple[LocalSpanObligation, ...] = ()
+
+
+def check_placement_constraints(plan: SemanticPlan, point) -> tuple[tuple[str, int, int], ...]:
+    """Evaluate exact pin coordinates after each complete placement transform."""
+    results = []
+    for obligation in plan.precedence:
+        source = point(*obligation.source_terminal)
+        target = point(*obligation.target_terminal)
+        actual = target[0] - source[0]
+        if actual < obligation.minimum_x_separation:
+            raise PlacementConflict(
+                "precedence_violation",
+                obligation.id,
+                obligation.source_fragment,
+                obligation.target_fragment,
+                actual,
+                obligation.minimum_x_separation,
+            )
+        results.append((obligation.id, actual, obligation.minimum_x_separation))
+    for obligation in plan.local_spans:
+        first, second = point(*obligation.first), point(*obligation.second)
+        actual = abs(first[0] - second[0])
+        if obligation.metric == "manhattan":
+            actual += abs(first[1] - second[1])
+        if actual > obligation.maximum:
+            first_owner = next(
+                (
+                    block_id
+                    for occurrence, block_id in plan.owners.items()
+                    if occurrence[0] == obligation.first[0]
+                ),
+                "",
+            )
+            second_owner = next(
+                (
+                    block_id
+                    for occurrence, block_id in plan.owners.items()
+                    if occurrence[0] == obligation.second[0]
+                ),
+                "",
+            )
+            raise PlacementConflict(
+                "local_span_violation",
+                obligation.id,
+                first_owner,
+                second_owner,
+                actual,
+                obligation.maximum,
+            )
+        results.append((obligation.id, actual, obligation.maximum))
+    return tuple(results)
 
 
 def _indices(design: dict) -> tuple[dict, dict, dict, dict]:
@@ -276,6 +404,14 @@ def semantic_plan(design: dict, resolved: dict[str, Asset]) -> SemanticPlan:
             if r["kind"] == "reference_divider"
             and (r["positive"], r["local"], r["negative"])
             == (rail["positive"], rail["reference"], rail["negative"])
+            and rail["id"]
+            == min(
+                candidate["id"]
+                for candidate in design["relationships"]
+                if candidate["kind"] == "power_rails"
+                and (candidate["positive"], candidate["reference"], candidate["negative"])
+                == (r["positive"], r["local"], r["negative"])
+            )
         ]
         for divider in dividers:
             occurrences.update(((divider["upper"], 1), (divider["lower"], 1)))
@@ -574,7 +710,33 @@ def semantic_plan(design: dict, resolved: dict[str, Asset]) -> SemanticPlan:
             if any(candidate.id == package for candidate in blocks):
                 edges.add(SemanticEdge("package", block.id, package, "", block.relationships))
 
-    signal_pairs = {(e.source, e.target) for e in edges if e.kind == "signal"}
+    precedence = tuple(
+        SignalPrecedence(
+            f"precedence.{source.id}.{target.id}",
+            source.fragment,
+            target.fragment,
+            source.terminals[0],
+            target.terminals[0],
+            source.net,
+            tuple(
+                sorted(
+                    set(
+                        next(block for block in blocks if block.id == source.fragment).relationships
+                        + next(
+                            block for block in blocks if block.id == target.fragment
+                        ).relationships
+                    )
+                )
+            ),
+        )
+        for source in sorted(ports, key=lambda port: port.id)
+        if source.role == "signal_out"
+        for target in sorted(ports, key=lambda port: port.id)
+        if target.role == "signal_in"
+        and target.net == source.net
+        and target.fragment != source.fragment
+    )
+    signal_pairs = {(p.source_fragment, p.target_fragment) for p in precedence}
     remaining = {b.id for b in blocks if b.kind not in {"interface", "package_power"}}
     order: list[str] = []
     while remaining:
@@ -600,10 +762,125 @@ def semantic_plan(design: dict, resolved: dict[str, Asset]) -> SemanticPlan:
             sorted(edges, key=lambda edge: (edge.kind, edge.source, edge.target, edge.net))
         )
     )
+    physical_terminals = []
+    for component in sorted(design["components"], key=lambda item: item["id"]):
+        asset = resolved[component["asset"]]
+        for unit, pins in sorted(asset.units.items()):
+            occurrence = (component["id"], unit)
+            for pin in pins:
+                terminal = (component["id"], pin.number)
+                if terminal not in by_terminal:
+                    raise InputError(f"SEMANTIC_TERMINAL_MISSING: {terminal}")
+                physical_terminals.append(
+                    PhysicalTerminalObligation(
+                        terminal,
+                        occurrence,
+                        owners[occurrence],
+                        component["asset"],
+                        unit,
+                        pin.name,
+                        pin.x,
+                        pin.y,
+                        by_terminal[terminal],
+                    )
+                )
+    terminal_owner = {item.terminal: item.owner for item in physical_terminals}
+    connector_ids = {
+        component["id"]
+        for component in design["components"]
+        if component["asset"].startswith("Connector_Generic:")
+    }
+    presentation_nets = tuple(
+        PresentationNet(
+            net,
+            tuple(sorted(members)),
+            tuple(sorted({terminal_owner[terminal] for terminal in members})),
+            "distributive"
+            if any(
+                port.net == net and port.role in {"reference", "power_in", "power_out"}
+                for port in ports
+            )
+            else "signal",
+            not any(terminal[0] in connector_ids for terminal in members),
+            not any(terminal[0] in connector_ids for terminal in members)
+            and any(port.net == net and port.role == "reference" for port in ports),
+            tuple(
+                sorted(
+                    {
+                        block.id
+                        for relation in design["relationships"]
+                        if relation["kind"] == "reference_divider" and relation["local"] == net
+                        for block in blocks
+                        if relation["id"] in block.relationships
+                    }
+                )
+            ),
+        )
+        for net, members in sorted(nets.items())
+    )
+    block_by_id = {block.id: block for block in blocks}
+    local_spans = []
+    passive_kinds = {"rc", "series", "led_branch"}
+    for obligation in precedence:
+        source_kind = block_by_id[obligation.source_fragment].kind
+        target_kind = block_by_id[obligation.target_fragment].kind
+        if source_kind in passive_kinds or target_kind in passive_kinds:
+            local_spans.append(
+                LocalSpanObligation(
+                    f"span.{obligation.id}",
+                    obligation.source_terminal,
+                    obligation.target_terminal,
+                    80_000_000,
+                    "manhattan",
+                    "protected_signal",
+                    obligation.origins,
+                )
+            )
+    for relation in design["relationships"]:
+        if relation["kind"] == "decoupling":
+            consumer = tuple(relation["consumer"])
+            support_pin = next(
+                (relation["component"], pin)
+                for pin in ("1", "2")
+                if by_terminal[(relation["component"], pin)] == by_terminal[consumer]
+            )
+            local_spans.append(
+                LocalSpanObligation(
+                    f"span.{relation['id']}",
+                    consumer,
+                    support_pin,
+                    60_000_000,
+                    "manhattan",
+                    "support",
+                    (relation["id"],),
+                )
+            )
+        elif relation["kind"] == "feedback" and not any(
+            item["kind"] == "amplifier"
+            and item["component"] == relation["component"]
+            and item["function"] == relation["function"]
+            and item.get("unused")
+            for item in design["relationships"]
+        ):
+            local_spans.append(
+                LocalSpanObligation(
+                    f"span.{relation['id']}",
+                    (relation["component"], relation["source"]),
+                    (relation["component"], relation["sense"]),
+                    45_000_000,
+                    "horizontal",
+                    "feedback",
+                    (relation["id"],),
+                )
+            )
     return SemanticPlan(
         tuple(sorted(blocks, key=lambda block: block.id)),
         tuple(sorted(edges, key=lambda edge: (edge.kind, edge.source, edge.target, edge.net))),
         owners,
         tuple(order),
         constraints,
+        precedence,
+        tuple(physical_terminals),
+        presentation_nets,
+        tuple(sorted(local_spans, key=lambda item: item.id)),
     )
