@@ -1,0 +1,414 @@
+{
+  "profile": "m2b.1",
+  "id": "highpass_parallel_mixed_dual_opamp",
+  "name": "V6HighpassParallelMixedDualOpamp",
+  "components": [
+    {
+      "id": "positive",
+      "refdes": "J1",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Positive rail"
+    },
+    {
+      "id": "negative",
+      "refdes": "J2",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Negative rail"
+    },
+    {
+      "id": "return",
+      "refdes": "J3",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Reference"
+    },
+    {
+      "id": "input",
+      "refdes": "J4",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Signal input"
+    },
+    {
+      "id": "output_a",
+      "refdes": "J5",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Output A"
+    },
+    {
+      "id": "output_b",
+      "refdes": "J6",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Output B"
+    },
+    {
+      "id": "highpass_c",
+      "refdes": "C1",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "highpass_r",
+      "refdes": "R1",
+      "asset": "Device:R",
+      "value": "100k"
+    },
+    {
+      "id": "amp",
+      "refdes": "U3",
+      "asset": "Amplifier_Operational:NE5532",
+      "value": "NE5532",
+      "functions": [
+        {
+          "id": "a",
+          "role": "amplifier",
+          "unit": 1,
+          "pins": {
+            "out": "1",
+            "minus": "2",
+            "plus": "3"
+          }
+        },
+        {
+          "id": "b",
+          "role": "amplifier",
+          "unit": 2,
+          "pins": {
+            "out": "7",
+            "minus": "6",
+            "plus": "5"
+          }
+        },
+        {
+          "id": "power",
+          "role": "supply",
+          "unit": 3,
+          "pins": {
+            "negative": "4",
+            "positive": "8"
+          }
+        }
+      ]
+    },
+    {
+      "id": "amp_cpos",
+      "refdes": "C2",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "amp_cneg",
+      "refdes": "C3",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "amp_a_feedback",
+      "refdes": "R2",
+      "asset": "Device:R",
+      "value": "100k"
+    },
+    {
+      "id": "amp_a_gain",
+      "refdes": "R3",
+      "asset": "Device:R",
+      "value": "10k"
+    },
+    {
+      "id": "amp_b_input",
+      "refdes": "R4",
+      "asset": "Device:R",
+      "value": "10k"
+    },
+    {
+      "id": "amp_b_feedback",
+      "refdes": "R5",
+      "asset": "Device:R",
+      "value": "100k"
+    }
+  ],
+  "nets": [
+    {
+      "id": "VPLUS",
+      "members": [
+        [
+          "positive",
+          "1"
+        ],
+        [
+          "amp",
+          "8"
+        ],
+        [
+          "amp_cpos",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "VMINUS",
+      "members": [
+        [
+          "negative",
+          "1"
+        ],
+        [
+          "amp",
+          "4"
+        ],
+        [
+          "amp_cneg",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "REF",
+      "members": [
+        [
+          "return",
+          "1"
+        ],
+        [
+          "highpass_r",
+          "2"
+        ],
+        [
+          "amp_cpos",
+          "2"
+        ],
+        [
+          "amp_cneg",
+          "1"
+        ],
+        [
+          "amp_a_gain",
+          "2"
+        ],
+        [
+          "amp",
+          "5"
+        ]
+      ]
+    },
+    {
+      "id": "IN",
+      "members": [
+        [
+          "input",
+          "1"
+        ],
+        [
+          "highpass_c",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "OUT_A",
+      "members": [
+        [
+          "output_a",
+          "1"
+        ],
+        [
+          "amp",
+          "1"
+        ],
+        [
+          "amp_a_feedback",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "OUT_B",
+      "members": [
+        [
+          "output_b",
+          "1"
+        ],
+        [
+          "amp_b_feedback",
+          "2"
+        ],
+        [
+          "amp",
+          "7"
+        ]
+      ]
+    },
+    {
+      "id": "HIGHPASS",
+      "members": [
+        [
+          "highpass_c",
+          "2"
+        ],
+        [
+          "highpass_r",
+          "1"
+        ],
+        [
+          "amp",
+          "3"
+        ],
+        [
+          "amp_b_input",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "AMP_A_FB",
+      "members": [
+        [
+          "amp",
+          "2"
+        ],
+        [
+          "amp_a_feedback",
+          "1"
+        ],
+        [
+          "amp_a_gain",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "AMP_B_SUM",
+      "members": [
+        [
+          "amp_b_input",
+          "2"
+        ],
+        [
+          "amp",
+          "6"
+        ],
+        [
+          "amp_b_feedback",
+          "1"
+        ]
+      ]
+    }
+  ],
+  "no_connects": [],
+  "relationships": [
+    {
+      "id": "highpass.series",
+      "kind": "series",
+      "component": "highpass_c",
+      "input": "IN",
+      "output": "HIGHPASS"
+    },
+    {
+      "id": "highpass.shunt",
+      "kind": "shunt",
+      "component": "highpass_r",
+      "node": "HIGHPASS",
+      "reference": "REF"
+    },
+    {
+      "id": "amp.supply",
+      "kind": "power_rails",
+      "component": "amp",
+      "unit": 3,
+      "positive": "VPLUS",
+      "negative": "VMINUS",
+      "reference": "REF"
+    },
+    {
+      "id": "amp.bypass.plus",
+      "kind": "decoupling",
+      "component": "amp_cpos",
+      "consumer": [
+        "amp",
+        "8"
+      ],
+      "supply": "VPLUS",
+      "return": "REF"
+    },
+    {
+      "id": "amp.bypass.minus",
+      "kind": "decoupling",
+      "component": "amp_cneg",
+      "consumer": [
+        "amp",
+        "4"
+      ],
+      "supply": "REF",
+      "return": "VMINUS"
+    },
+    {
+      "id": "amp.a.stage",
+      "kind": "amplifier",
+      "component": "amp",
+      "function": "a",
+      "input": "HIGHPASS",
+      "output": "OUT_A",
+      "reference": "REF"
+    },
+    {
+      "id": "amp.a.loop",
+      "kind": "feedback",
+      "component": "amp",
+      "function": "a",
+      "source": "1",
+      "sense": "2",
+      "net": "OUT_A",
+      "polarity": "negative",
+      "resistor": "amp_a_feedback"
+    },
+    {
+      "id": "amp.a.gain",
+      "kind": "shunt",
+      "component": "amp_a_gain",
+      "node": "AMP_A_FB",
+      "reference": "REF"
+    },
+    {
+      "id": "amp.b.stage",
+      "kind": "amplifier",
+      "component": "amp",
+      "function": "b",
+      "input": "HIGHPASS",
+      "output": "OUT_B",
+      "reference": "REF"
+    },
+    {
+      "id": "amp.b.loop",
+      "kind": "feedback",
+      "component": "amp",
+      "function": "b",
+      "source": "7",
+      "sense": "6",
+      "net": "OUT_B",
+      "polarity": "negative",
+      "resistor": "amp_b_feedback"
+    },
+    {
+      "id": "amp.b.input",
+      "kind": "series",
+      "component": "amp_b_input",
+      "input": "HIGHPASS",
+      "output": "AMP_B_SUM"
+    }
+  ],
+  "power_assertions": [
+    {
+      "id": "flag.positive",
+      "refdes": "#FLG01",
+      "net": "VPLUS"
+    },
+    {
+      "id": "flag.negative",
+      "refdes": "#FLG02",
+      "net": "VMINUS"
+    },
+    {
+      "id": "flag.reference",
+      "refdes": "#FLG03",
+      "net": "REF"
+    }
+  ]
+}

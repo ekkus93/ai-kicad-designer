@@ -1,0 +1,625 @@
+{
+  "profile": "m2b.1",
+  "id": "dual_timer_to_dual_opamp",
+  "name": "V6DualTimerToDualOpamp",
+  "components": [
+    {
+      "id": "source",
+      "refdes": "J1",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Shared supply"
+    },
+    {
+      "id": "return",
+      "refdes": "J2",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Return"
+    },
+    {
+      "id": "negative",
+      "refdes": "J3",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Negative rail"
+    },
+    {
+      "id": "output_a",
+      "refdes": "J4",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Output A"
+    },
+    {
+      "id": "output_b",
+      "refdes": "J5",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Output B"
+    },
+    {
+      "id": "timer_a",
+      "refdes": "U1",
+      "asset": "Timer:NE555D",
+      "value": "NE555D"
+    },
+    {
+      "id": "timer_a_charge",
+      "refdes": "R1",
+      "asset": "Device:R",
+      "value": "10k"
+    },
+    {
+      "id": "timer_a_discharge",
+      "refdes": "R2",
+      "asset": "Device:R",
+      "value": "47k"
+    },
+    {
+      "id": "timer_a_timing_cap",
+      "refdes": "C1",
+      "asset": "Device:C",
+      "value": "10u"
+    },
+    {
+      "id": "timer_a_control_bypass",
+      "refdes": "C2",
+      "asset": "Device:C",
+      "value": "10n"
+    },
+    {
+      "id": "timer_b",
+      "refdes": "U2",
+      "asset": "Timer:NE555D",
+      "value": "NE555D"
+    },
+    {
+      "id": "timer_b_charge",
+      "refdes": "R3",
+      "asset": "Device:R",
+      "value": "10k"
+    },
+    {
+      "id": "timer_b_discharge",
+      "refdes": "R4",
+      "asset": "Device:R",
+      "value": "47k"
+    },
+    {
+      "id": "timer_b_timing_cap",
+      "refdes": "C3",
+      "asset": "Device:C",
+      "value": "10u"
+    },
+    {
+      "id": "timer_b_control_bypass",
+      "refdes": "C4",
+      "asset": "Device:C",
+      "value": "10n"
+    },
+    {
+      "id": "amp",
+      "refdes": "U3",
+      "asset": "Amplifier_Operational:NE5532",
+      "value": "NE5532",
+      "functions": [
+        {
+          "id": "a",
+          "role": "buffer",
+          "unit": 1,
+          "pins": {
+            "out": "1",
+            "minus": "2",
+            "plus": "3"
+          }
+        },
+        {
+          "id": "b",
+          "role": "amplifier",
+          "unit": 2,
+          "pins": {
+            "out": "7",
+            "minus": "6",
+            "plus": "5"
+          }
+        },
+        {
+          "id": "power",
+          "role": "supply",
+          "unit": 3,
+          "pins": {
+            "negative": "4",
+            "positive": "8"
+          }
+        }
+      ]
+    },
+    {
+      "id": "amp_cpos",
+      "refdes": "C5",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "amp_cneg",
+      "refdes": "C6",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "amp_b_feedback",
+      "refdes": "R5",
+      "asset": "Device:R",
+      "value": "100k"
+    },
+    {
+      "id": "amp_b_gain",
+      "refdes": "R6",
+      "asset": "Device:R",
+      "value": "10k"
+    }
+  ],
+  "nets": [
+    {
+      "id": "VCC",
+      "members": [
+        [
+          "source",
+          "1"
+        ],
+        [
+          "timer_a",
+          "8"
+        ],
+        [
+          "timer_a",
+          "4"
+        ],
+        [
+          "timer_a_charge",
+          "1"
+        ],
+        [
+          "timer_b",
+          "8"
+        ],
+        [
+          "timer_b",
+          "4"
+        ],
+        [
+          "timer_b_charge",
+          "1"
+        ],
+        [
+          "amp",
+          "8"
+        ],
+        [
+          "amp_cpos",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "REF",
+      "members": [
+        [
+          "return",
+          "1"
+        ],
+        [
+          "timer_a",
+          "1"
+        ],
+        [
+          "timer_a_timing_cap",
+          "2"
+        ],
+        [
+          "timer_a_control_bypass",
+          "2"
+        ],
+        [
+          "timer_b",
+          "1"
+        ],
+        [
+          "timer_b_timing_cap",
+          "2"
+        ],
+        [
+          "timer_b_control_bypass",
+          "2"
+        ],
+        [
+          "amp_cpos",
+          "2"
+        ],
+        [
+          "amp_cneg",
+          "1"
+        ],
+        [
+          "amp_b_gain",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "VMINUS",
+      "members": [
+        [
+          "negative",
+          "1"
+        ],
+        [
+          "amp",
+          "4"
+        ],
+        [
+          "amp_cneg",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "OUT_A",
+      "members": [
+        [
+          "output_a",
+          "1"
+        ],
+        [
+          "amp",
+          "1"
+        ],
+        [
+          "amp",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "OUT_B",
+      "members": [
+        [
+          "output_b",
+          "1"
+        ],
+        [
+          "amp",
+          "7"
+        ],
+        [
+          "amp_b_feedback",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_A_OUT",
+      "members": [
+        [
+          "timer_a",
+          "3"
+        ],
+        [
+          "amp",
+          "3"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_A_DISCH",
+      "members": [
+        [
+          "timer_a",
+          "7"
+        ],
+        [
+          "timer_a_charge",
+          "2"
+        ],
+        [
+          "timer_a_discharge",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_A_TIMING",
+      "members": [
+        [
+          "timer_a",
+          "2"
+        ],
+        [
+          "timer_a",
+          "6"
+        ],
+        [
+          "timer_a_discharge",
+          "2"
+        ],
+        [
+          "timer_a_timing_cap",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_A_CONT",
+      "members": [
+        [
+          "timer_a",
+          "5"
+        ],
+        [
+          "timer_a_control_bypass",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_B_OUT",
+      "members": [
+        [
+          "timer_b",
+          "3"
+        ],
+        [
+          "amp",
+          "5"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_B_DISCH",
+      "members": [
+        [
+          "timer_b",
+          "7"
+        ],
+        [
+          "timer_b_charge",
+          "2"
+        ],
+        [
+          "timer_b_discharge",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_B_TIMING",
+      "members": [
+        [
+          "timer_b",
+          "2"
+        ],
+        [
+          "timer_b",
+          "6"
+        ],
+        [
+          "timer_b_discharge",
+          "2"
+        ],
+        [
+          "timer_b_timing_cap",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_B_CONT",
+      "members": [
+        [
+          "timer_b",
+          "5"
+        ],
+        [
+          "timer_b_control_bypass",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "AMP_B_FB",
+      "members": [
+        [
+          "amp",
+          "6"
+        ],
+        [
+          "amp_b_feedback",
+          "1"
+        ],
+        [
+          "amp_b_gain",
+          "1"
+        ]
+      ]
+    }
+  ],
+  "no_connects": [],
+  "relationships": [
+    {
+      "id": "timer_a.function",
+      "kind": "timer",
+      "component": "timer_a",
+      "supply": "VCC",
+      "reference": "REF",
+      "output": "TIMER_A_OUT",
+      "timing": "TIMER_A_TIMING",
+      "discharge": "TIMER_A_DISCH",
+      "control": "TIMER_A_CONT",
+      "pins": {
+        "supply": "8",
+        "reference": "1",
+        "output": "3",
+        "trigger": "2",
+        "threshold": "6",
+        "discharge": "7",
+        "control": "5",
+        "reset": "4"
+      }
+    },
+    {
+      "id": "timer_a.timing",
+      "kind": "timing_ladder",
+      "upper": "timer_a_charge",
+      "lower": "timer_a_discharge",
+      "capacitor": "timer_a_timing_cap",
+      "supply": "VCC",
+      "discharge": "TIMER_A_DISCH",
+      "timing": "TIMER_A_TIMING",
+      "reference": "REF"
+    },
+    {
+      "id": "timer_a.control",
+      "kind": "decoupling",
+      "component": "timer_a_control_bypass",
+      "consumer": [
+        "timer_a",
+        "5"
+      ],
+      "supply": "TIMER_A_CONT",
+      "return": "REF"
+    },
+    {
+      "id": "timer_b.function",
+      "kind": "timer",
+      "component": "timer_b",
+      "supply": "VCC",
+      "reference": "REF",
+      "output": "TIMER_B_OUT",
+      "timing": "TIMER_B_TIMING",
+      "discharge": "TIMER_B_DISCH",
+      "control": "TIMER_B_CONT",
+      "pins": {
+        "supply": "8",
+        "reference": "1",
+        "output": "3",
+        "trigger": "2",
+        "threshold": "6",
+        "discharge": "7",
+        "control": "5",
+        "reset": "4"
+      }
+    },
+    {
+      "id": "timer_b.timing",
+      "kind": "timing_ladder",
+      "upper": "timer_b_charge",
+      "lower": "timer_b_discharge",
+      "capacitor": "timer_b_timing_cap",
+      "supply": "VCC",
+      "discharge": "TIMER_B_DISCH",
+      "timing": "TIMER_B_TIMING",
+      "reference": "REF"
+    },
+    {
+      "id": "timer_b.control",
+      "kind": "decoupling",
+      "component": "timer_b_control_bypass",
+      "consumer": [
+        "timer_b",
+        "5"
+      ],
+      "supply": "TIMER_B_CONT",
+      "return": "REF"
+    },
+    {
+      "id": "amp.supply",
+      "kind": "power_rails",
+      "component": "amp",
+      "unit": 3,
+      "positive": "VCC",
+      "negative": "VMINUS",
+      "reference": "REF"
+    },
+    {
+      "id": "amp.bypass.plus",
+      "kind": "decoupling",
+      "component": "amp_cpos",
+      "consumer": [
+        "amp",
+        "8"
+      ],
+      "supply": "VCC",
+      "return": "REF"
+    },
+    {
+      "id": "amp.bypass.minus",
+      "kind": "decoupling",
+      "component": "amp_cneg",
+      "consumer": [
+        "amp",
+        "4"
+      ],
+      "supply": "REF",
+      "return": "VMINUS"
+    },
+    {
+      "id": "amp.a.stage",
+      "kind": "amplifier",
+      "component": "amp",
+      "function": "a",
+      "input": "TIMER_A_OUT",
+      "output": "OUT_A",
+      "reference": "REF"
+    },
+    {
+      "id": "amp.a.loop",
+      "kind": "feedback",
+      "component": "amp",
+      "function": "a",
+      "source": "1",
+      "sense": "2",
+      "net": "OUT_A",
+      "polarity": "negative"
+    },
+    {
+      "id": "amp.b.stage",
+      "kind": "amplifier",
+      "component": "amp",
+      "function": "b",
+      "input": "TIMER_B_OUT",
+      "output": "OUT_B",
+      "reference": "REF"
+    },
+    {
+      "id": "amp.b.loop",
+      "kind": "feedback",
+      "component": "amp",
+      "function": "b",
+      "source": "7",
+      "sense": "6",
+      "net": "OUT_B",
+      "polarity": "negative",
+      "resistor": "amp_b_feedback"
+    },
+    {
+      "id": "amp.b.gain",
+      "kind": "shunt",
+      "component": "amp_b_gain",
+      "node": "AMP_B_FB",
+      "reference": "REF"
+    }
+  ],
+  "power_assertions": [
+    {
+      "id": "flag.supply",
+      "refdes": "#FLG01",
+      "net": "VCC"
+    },
+    {
+      "id": "flag.negative",
+      "refdes": "#FLG02",
+      "net": "VMINUS"
+    },
+    {
+      "id": "flag.return",
+      "refdes": "#FLG03",
+      "net": "REF"
+    }
+  ]
+}

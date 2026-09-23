@@ -1,0 +1,598 @@
+{
+  "profile": "m2b.1",
+  "id": "regulated_timer_buffer_dual_branch",
+  "name": "V6RegulatedTimerBufferDualBranch",
+  "components": [
+    {
+      "id": "source",
+      "refdes": "J1",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "External supply"
+    },
+    {
+      "id": "return",
+      "refdes": "J2",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Return"
+    },
+    {
+      "id": "negative",
+      "refdes": "J3",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Negative rail"
+    },
+    {
+      "id": "output",
+      "refdes": "J4",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Filtered output"
+    },
+    {
+      "id": "regulator",
+      "refdes": "U1",
+      "asset": "Regulator_Linear:L7805",
+      "value": "L7805"
+    },
+    {
+      "id": "regulator_input_c",
+      "refdes": "C1",
+      "asset": "Device:C",
+      "value": "330n"
+    },
+    {
+      "id": "regulator_output_c",
+      "refdes": "C2",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "timer",
+      "refdes": "U2",
+      "asset": "Timer:NE555D",
+      "value": "NE555D"
+    },
+    {
+      "id": "timer_charge",
+      "refdes": "R1",
+      "asset": "Device:R",
+      "value": "10k"
+    },
+    {
+      "id": "timer_discharge",
+      "refdes": "R2",
+      "asset": "Device:R",
+      "value": "47k"
+    },
+    {
+      "id": "timer_timing_cap",
+      "refdes": "C3",
+      "asset": "Device:C",
+      "value": "10u"
+    },
+    {
+      "id": "timer_control_bypass",
+      "refdes": "C4",
+      "asset": "Device:C",
+      "value": "10n"
+    },
+    {
+      "id": "amp",
+      "refdes": "U3",
+      "asset": "Amplifier_Operational:NE5532",
+      "value": "NE5532",
+      "functions": [
+        {
+          "id": "a",
+          "role": "buffer",
+          "unit": 1,
+          "pins": {
+            "out": "1",
+            "minus": "2",
+            "plus": "3"
+          }
+        },
+        {
+          "id": "b",
+          "role": "parked_buffer",
+          "unit": 2,
+          "pins": {
+            "out": "7",
+            "minus": "6",
+            "plus": "5"
+          }
+        },
+        {
+          "id": "power",
+          "role": "supply",
+          "unit": 3,
+          "pins": {
+            "negative": "4",
+            "positive": "8"
+          }
+        }
+      ]
+    },
+    {
+      "id": "amp_cpos",
+      "refdes": "C5",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "amp_cneg",
+      "refdes": "C6",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "indicator_r",
+      "refdes": "R3",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "indicator_led",
+      "refdes": "D1",
+      "asset": "Device:LED",
+      "value": "LED"
+    },
+    {
+      "id": "output_filter_r",
+      "refdes": "R4",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "output_filter_c",
+      "refdes": "C7",
+      "asset": "Device:C",
+      "value": "100n"
+    }
+  ],
+  "nets": [
+    {
+      "id": "VIN",
+      "members": [
+        [
+          "source",
+          "1"
+        ],
+        [
+          "regulator",
+          "1"
+        ],
+        [
+          "regulator_input_c",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "REF",
+      "members": [
+        [
+          "return",
+          "1"
+        ],
+        [
+          "regulator",
+          "2"
+        ],
+        [
+          "regulator_input_c",
+          "2"
+        ],
+        [
+          "regulator_output_c",
+          "2"
+        ],
+        [
+          "timer",
+          "1"
+        ],
+        [
+          "timer_timing_cap",
+          "2"
+        ],
+        [
+          "timer_control_bypass",
+          "2"
+        ],
+        [
+          "amp_cpos",
+          "2"
+        ],
+        [
+          "amp_cneg",
+          "1"
+        ],
+        [
+          "amp",
+          "5"
+        ],
+        [
+          "indicator_led",
+          "1"
+        ],
+        [
+          "output_filter_c",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "VMINUS",
+      "members": [
+        [
+          "negative",
+          "1"
+        ],
+        [
+          "amp",
+          "4"
+        ],
+        [
+          "amp_cneg",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "FINAL",
+      "members": [
+        [
+          "output",
+          "1"
+        ],
+        [
+          "output_filter_r",
+          "2"
+        ],
+        [
+          "output_filter_c",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "VCC",
+      "members": [
+        [
+          "regulator",
+          "3"
+        ],
+        [
+          "regulator_output_c",
+          "1"
+        ],
+        [
+          "timer",
+          "8"
+        ],
+        [
+          "timer",
+          "4"
+        ],
+        [
+          "timer_charge",
+          "1"
+        ],
+        [
+          "amp",
+          "8"
+        ],
+        [
+          "amp_cpos",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_OUT",
+      "members": [
+        [
+          "timer",
+          "3"
+        ],
+        [
+          "amp",
+          "3"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_DISCH",
+      "members": [
+        [
+          "timer",
+          "7"
+        ],
+        [
+          "timer_charge",
+          "2"
+        ],
+        [
+          "timer_discharge",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_TIMING",
+      "members": [
+        [
+          "timer",
+          "2"
+        ],
+        [
+          "timer",
+          "6"
+        ],
+        [
+          "timer_discharge",
+          "2"
+        ],
+        [
+          "timer_timing_cap",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_CONT",
+      "members": [
+        [
+          "timer",
+          "5"
+        ],
+        [
+          "timer_control_bypass",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "BUFFERED",
+      "members": [
+        [
+          "amp",
+          "1"
+        ],
+        [
+          "amp",
+          "2"
+        ],
+        [
+          "indicator_r",
+          "1"
+        ],
+        [
+          "output_filter_r",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "PARK",
+      "members": [
+        [
+          "amp",
+          "7"
+        ],
+        [
+          "amp",
+          "6"
+        ]
+      ]
+    },
+    {
+      "id": "INDICATOR_MID",
+      "members": [
+        [
+          "indicator_r",
+          "2"
+        ],
+        [
+          "indicator_led",
+          "2"
+        ]
+      ]
+    }
+  ],
+  "no_connects": [],
+  "relationships": [
+    {
+      "id": "regulator.conversion",
+      "kind": "power_stage",
+      "component": "regulator",
+      "input": "VIN",
+      "output": "VCC",
+      "reference": "REF",
+      "pins": {
+        "input": "1",
+        "output": "3",
+        "reference": "2"
+      },
+      "polarity": "positive"
+    },
+    {
+      "id": "regulator.bypass.input",
+      "kind": "decoupling",
+      "component": "regulator_input_c",
+      "consumer": [
+        "regulator",
+        "1"
+      ],
+      "supply": "VIN",
+      "return": "REF"
+    },
+    {
+      "id": "regulator.bypass.output",
+      "kind": "decoupling",
+      "component": "regulator_output_c",
+      "consumer": [
+        "regulator",
+        "3"
+      ],
+      "supply": "VCC",
+      "return": "REF"
+    },
+    {
+      "id": "timer.function",
+      "kind": "timer",
+      "component": "timer",
+      "supply": "VCC",
+      "reference": "REF",
+      "output": "TIMER_OUT",
+      "timing": "TIMER_TIMING",
+      "discharge": "TIMER_DISCH",
+      "control": "TIMER_CONT",
+      "pins": {
+        "supply": "8",
+        "reference": "1",
+        "output": "3",
+        "trigger": "2",
+        "threshold": "6",
+        "discharge": "7",
+        "control": "5",
+        "reset": "4"
+      }
+    },
+    {
+      "id": "timer.timing",
+      "kind": "timing_ladder",
+      "upper": "timer_charge",
+      "lower": "timer_discharge",
+      "capacitor": "timer_timing_cap",
+      "supply": "VCC",
+      "discharge": "TIMER_DISCH",
+      "timing": "TIMER_TIMING",
+      "reference": "REF"
+    },
+    {
+      "id": "timer.control",
+      "kind": "decoupling",
+      "component": "timer_control_bypass",
+      "consumer": [
+        "timer",
+        "5"
+      ],
+      "supply": "TIMER_CONT",
+      "return": "REF"
+    },
+    {
+      "id": "amp.supply",
+      "kind": "power_rails",
+      "component": "amp",
+      "unit": 3,
+      "positive": "VCC",
+      "negative": "VMINUS",
+      "reference": "REF"
+    },
+    {
+      "id": "amp.bypass.plus",
+      "kind": "decoupling",
+      "component": "amp_cpos",
+      "consumer": [
+        "amp",
+        "8"
+      ],
+      "supply": "VCC",
+      "return": "REF"
+    },
+    {
+      "id": "amp.bypass.minus",
+      "kind": "decoupling",
+      "component": "amp_cneg",
+      "consumer": [
+        "amp",
+        "4"
+      ],
+      "supply": "REF",
+      "return": "VMINUS"
+    },
+    {
+      "id": "amp.a.stage",
+      "kind": "amplifier",
+      "component": "amp",
+      "function": "a",
+      "input": "TIMER_OUT",
+      "output": "BUFFERED",
+      "reference": "REF"
+    },
+    {
+      "id": "amp.a.loop",
+      "kind": "feedback",
+      "component": "amp",
+      "function": "a",
+      "source": "1",
+      "sense": "2",
+      "net": "BUFFERED",
+      "polarity": "negative"
+    },
+    {
+      "id": "amp.b.stage",
+      "kind": "amplifier",
+      "component": "amp",
+      "function": "b",
+      "input": "REF",
+      "output": "PARK",
+      "unused": true
+    },
+    {
+      "id": "amp.b.loop",
+      "kind": "feedback",
+      "component": "amp",
+      "function": "b",
+      "source": "7",
+      "sense": "6",
+      "net": "PARK",
+      "polarity": "negative"
+    },
+    {
+      "id": "indicator.series",
+      "kind": "series",
+      "component": "indicator_r",
+      "input": "BUFFERED",
+      "output": "INDICATOR_MID"
+    },
+    {
+      "id": "indicator.polarity",
+      "kind": "polarity",
+      "component": "indicator_led",
+      "anode": "INDICATOR_MID",
+      "cathode": "REF"
+    },
+    {
+      "id": "output_filter.series",
+      "kind": "series",
+      "component": "output_filter_r",
+      "input": "BUFFERED",
+      "output": "FINAL"
+    },
+    {
+      "id": "output_filter.shunt",
+      "kind": "shunt",
+      "component": "output_filter_c",
+      "node": "FINAL",
+      "reference": "REF"
+    }
+  ],
+  "power_assertions": [
+    {
+      "id": "flag.input",
+      "refdes": "#FLG01",
+      "net": "VIN"
+    },
+    {
+      "id": "flag.negative",
+      "refdes": "#FLG02",
+      "net": "VMINUS"
+    },
+    {
+      "id": "flag.return",
+      "refdes": "#FLG03",
+      "net": "REF"
+    }
+  ]
+}
