@@ -207,13 +207,19 @@ def _amp_block(
         _port(fragment_id, "output", out_net, "signal_out", [out_terminal]),
     ]
     if kind not in {"buffer", "unused_amplifier"}:
+        if kind == "sallen_key":
+            reference_terminals = [(shunt["component"], "2")]
+        elif kind == "noninverting_amplifier":
+            reference_terminals = [(gain_leg["component"], "2")]
+        else:
+            reference_terminals = [plus_terminal]
         ports.append(
             _port(
                 fragment_id,
                 "reference",
                 stage.get("reference", plus_net),
                 "reference",
-                [plus_terminal],
+                reference_terminals,
             )
         )
     claimed.update(owned - {amp["id"]})
@@ -277,7 +283,18 @@ def semantic_plan(design: dict, resolved: dict[str, Asset]) -> SemanticPlan:
         ports = (
             _port(fid, "positive", rail["positive"], "power_in", [(component["id"], "8")]),
             _port(fid, "negative", rail["negative"], "power_in", [(component["id"], "4")]),
-            _port(fid, "reference", rail["reference"], "reference", []),
+            _port(
+                fid,
+                "reference",
+                rail["reference"],
+                "reference",
+                [
+                    (support["component"], pin)
+                    for support in supports
+                    for pin in ("1", "2")
+                    if by_terminal[(support["component"], pin)] == rail["reference"]
+                ],
+            ),
         )
         blocks.append(
             BlockPlan(

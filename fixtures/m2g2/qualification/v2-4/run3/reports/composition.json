@@ -1,0 +1,3265 @@
+{
+  "schema_version": "m2g2.composition.1",
+  "blocks": [
+    {
+      "id": "function.amp.a",
+      "kind": "buffer",
+      "relationships": [
+        "loop.a",
+        "stage.a"
+      ],
+      "occurrences": [
+        [
+          "amp",
+          1
+        ]
+      ],
+      "function": [
+        "amp",
+        "a"
+      ],
+      "unused": false,
+      "ports": [
+        {
+          "id": "function.amp.a.input",
+          "net": "IN",
+          "role": "signal_in",
+          "terminals": [
+            [
+              "amp",
+              "3"
+            ]
+          ]
+        },
+        {
+          "id": "function.amp.a.output",
+          "net": "OUT",
+          "role": "signal_out",
+          "terminals": [
+            [
+              "amp",
+              "1"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "function.amp.b",
+      "kind": "buffer",
+      "relationships": [
+        "loop.b",
+        "stage.b"
+      ],
+      "occurrences": [
+        [
+          "amp",
+          2
+        ]
+      ],
+      "function": [
+        "amp",
+        "b"
+      ],
+      "unused": false,
+      "ports": [
+        {
+          "id": "function.amp.b.input",
+          "net": "OUT",
+          "role": "signal_in",
+          "terminals": [
+            [
+              "amp",
+              "5"
+            ]
+          ]
+        },
+        {
+          "id": "function.amp.b.output",
+          "net": "CHAIN_OUT",
+          "role": "signal_out",
+          "terminals": [
+            [
+              "amp",
+              "7"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "interface.interface",
+      "kind": "interface",
+      "relationships": [],
+      "occurrences": [
+        [
+          "interface",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "interface.interface.pin1",
+          "net": "IN",
+          "role": "passive",
+          "terminals": [
+            [
+              "interface",
+              "1"
+            ]
+          ]
+        },
+        {
+          "id": "interface.interface.pin2",
+          "net": "CHAIN_OUT",
+          "role": "passive",
+          "terminals": [
+            [
+              "interface",
+              "2"
+            ]
+          ]
+        },
+        {
+          "id": "interface.interface.pin3",
+          "net": "VPLUS",
+          "role": "passive",
+          "terminals": [
+            [
+              "interface",
+              "3"
+            ]
+          ]
+        },
+        {
+          "id": "interface.interface.pin4",
+          "net": "VMINUS",
+          "role": "passive",
+          "terminals": [
+            [
+              "interface",
+              "4"
+            ]
+          ]
+        },
+        {
+          "id": "interface.interface.pin5",
+          "net": "REF",
+          "role": "passive",
+          "terminals": [
+            [
+              "interface",
+              "5"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "package.amp.power",
+      "kind": "package_power",
+      "relationships": [
+        "bypass.minus",
+        "bypass.plus",
+        "supply"
+      ],
+      "occurrences": [
+        [
+          "amp",
+          3
+        ],
+        [
+          "cneg",
+          1
+        ],
+        [
+          "cpos",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "package.amp.power.positive",
+          "net": "VPLUS",
+          "role": "power_in",
+          "terminals": [
+            [
+              "amp",
+              "8"
+            ]
+          ]
+        },
+        {
+          "id": "package.amp.power.negative",
+          "net": "VMINUS",
+          "role": "power_in",
+          "terminals": [
+            [
+              "amp",
+              "4"
+            ]
+          ]
+        },
+        {
+          "id": "package.amp.power.reference",
+          "net": "REF",
+          "role": "reference",
+          "terminals": [
+            [
+              "cneg",
+              "1"
+            ],
+            [
+              "cpos",
+              "2"
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "owners": [
+    {
+      "occurrence": [
+        "amp",
+        1
+      ],
+      "fragment": "function.amp.a"
+    },
+    {
+      "occurrence": [
+        "amp",
+        2
+      ],
+      "fragment": "function.amp.b"
+    },
+    {
+      "occurrence": [
+        "amp",
+        3
+      ],
+      "fragment": "package.amp.power"
+    },
+    {
+      "occurrence": [
+        "cneg",
+        1
+      ],
+      "fragment": "package.amp.power"
+    },
+    {
+      "occurrence": [
+        "cpos",
+        1
+      ],
+      "fragment": "package.amp.power"
+    },
+    {
+      "occurrence": [
+        "interface",
+        1
+      ],
+      "fragment": "interface.interface"
+    }
+  ],
+  "edges": [
+    {
+      "kind": "feedback",
+      "source": "function.amp.a",
+      "target": "function.amp.a",
+      "net": "OUT",
+      "origins": [
+        "loop.a"
+      ]
+    },
+    {
+      "kind": "feedback",
+      "source": "function.amp.b",
+      "target": "function.amp.b",
+      "net": "CHAIN_OUT",
+      "origins": [
+        "loop.b"
+      ]
+    },
+    {
+      "kind": "package",
+      "source": "function.amp.a",
+      "target": "package.amp.power",
+      "net": "",
+      "origins": [
+        "loop.a",
+        "stage.a"
+      ]
+    },
+    {
+      "kind": "package",
+      "source": "function.amp.b",
+      "target": "package.amp.power",
+      "net": "",
+      "origins": [
+        "loop.b",
+        "stage.b"
+      ]
+    },
+    {
+      "kind": "signal",
+      "source": "function.amp.a",
+      "target": "function.amp.b",
+      "net": "OUT",
+      "origins": []
+    },
+    {
+      "kind": "support",
+      "source": "package.amp.power",
+      "target": "function.amp.a",
+      "net": "REF",
+      "origins": [
+        "bypass.minus"
+      ]
+    },
+    {
+      "kind": "support",
+      "source": "package.amp.power",
+      "target": "function.amp.a",
+      "net": "VPLUS",
+      "origins": [
+        "bypass.plus"
+      ]
+    }
+  ],
+  "signal_order": [
+    "function.amp.a",
+    "function.amp.b"
+  ],
+  "variants": [
+    {
+      "fragment": "function.amp.a",
+      "variant": "function.amp.a.v0",
+      "rule": "m2g2.local-aspect.buffer.below.v1",
+      "origins": [
+        "loop.a",
+        "stage.a"
+      ],
+      "local_envelope": [
+        71500000,
+        31750000,
+        114365000,
+        58920000
+      ],
+      "content_envelope": [
+        72770000,
+        33440000,
+        113095000,
+        58420000
+      ],
+      "packing_envelope": [
+        71500000,
+        31750000,
+        114365000,
+        58920000
+      ],
+      "placed_envelope": [
+        25780000,
+        29210000,
+        68645000,
+        56380000
+      ],
+      "translation": [
+        -45720000,
+        -2540000
+      ],
+      "protected_wire_count": 7,
+      "obstacle_count": 1,
+      "reservation_count": 27,
+      "gateways": [
+        {
+          "id": "function.amp.a.input",
+          "net": "IN",
+          "terminals": [
+            [
+              "amp",
+              "3"
+            ]
+          ],
+          "anchor": [
+            29210000,
+            39370000
+          ],
+          "escape_direction": "left",
+          "escape_polyline": [
+            [
+              29210000,
+              39370000
+            ],
+            [
+              27940000,
+              39370000
+            ]
+          ]
+        },
+        {
+          "id": "function.amp.a.output",
+          "net": "OUT",
+          "terminals": [
+            [
+              "amp",
+              "1"
+            ]
+          ],
+          "anchor": [
+            64770000,
+            41910000
+          ],
+          "escape_direction": "right",
+          "escape_polyline": [
+            [
+              64770000,
+              41910000
+            ],
+            [
+              66040000,
+              41910000
+            ]
+          ]
+        }
+      ],
+      "protected_paths": [
+        "function.amp.a.local"
+      ]
+    },
+    {
+      "fragment": "function.amp.b",
+      "variant": "function.amp.b.v0",
+      "rule": "m2g2.local-aspect.buffer.below.v1",
+      "origins": [
+        "loop.b",
+        "stage.b"
+      ],
+      "local_envelope": [
+        71055000,
+        31750000,
+        117035000,
+        58920000
+      ],
+      "content_envelope": [
+        72325000,
+        33440000,
+        115765000,
+        58420000
+      ],
+      "packing_envelope": [
+        71055000,
+        31750000,
+        117035000,
+        58920000
+      ],
+      "placed_envelope": [
+        69785000,
+        29210000,
+        115765000,
+        56380000
+      ],
+      "translation": [
+        -1270000,
+        -2540000
+      ],
+      "protected_wire_count": 7,
+      "obstacle_count": 1,
+      "reservation_count": 27,
+      "gateways": [
+        {
+          "id": "function.amp.b.input",
+          "net": "OUT",
+          "terminals": [
+            [
+              "amp",
+              "5"
+            ]
+          ],
+          "anchor": [
+            73660000,
+            39370000
+          ],
+          "escape_direction": "left",
+          "escape_polyline": [
+            [
+              73660000,
+              39370000
+            ],
+            [
+              72390000,
+              39370000
+            ]
+          ]
+        },
+        {
+          "id": "function.amp.b.output",
+          "net": "CHAIN_OUT",
+          "terminals": [
+            [
+              "amp",
+              "7"
+            ]
+          ],
+          "anchor": [
+            109220000,
+            41910000
+          ],
+          "escape_direction": "right",
+          "escape_polyline": [
+            [
+              109220000,
+              41910000
+            ],
+            [
+              110490000,
+              41910000
+            ]
+          ]
+        }
+      ],
+      "protected_paths": [
+        "function.amp.b.local"
+      ]
+    },
+    {
+      "fragment": "interface.interface",
+      "variant": "interface.interface.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [],
+      "local_envelope": [
+        1075000,
+        7620000,
+        21590000,
+        27940000
+      ],
+      "content_envelope": [
+        2345000,
+        9310000,
+        19690000,
+        26670000
+      ],
+      "packing_envelope": [
+        1075000,
+        7620000,
+        21590000,
+        27940000
+      ],
+      "placed_envelope": [
+        117915000,
+        29210000,
+        138430000,
+        49530000
+      ],
+      "translation": [
+        116840000,
+        21590000
+      ],
+      "protected_wire_count": 5,
+      "obstacle_count": 1,
+      "reservation_count": 33,
+      "gateways": [
+        {
+          "id": "interface.interface.pin1",
+          "net": "IN",
+          "terminals": [
+            [
+              "interface",
+              "1"
+            ]
+          ],
+          "anchor": [
+            124460000,
+            36830000
+          ],
+          "escape_direction": "left",
+          "escape_polyline": [
+            [
+              124460000,
+              36830000
+            ],
+            [
+              123190000,
+              36830000
+            ]
+          ]
+        },
+        {
+          "id": "interface.interface.pin2",
+          "net": "CHAIN_OUT",
+          "terminals": [
+            [
+              "interface",
+              "2"
+            ]
+          ],
+          "anchor": [
+            124460000,
+            39370000
+          ],
+          "escape_direction": "left",
+          "escape_polyline": [
+            [
+              124460000,
+              39370000
+            ],
+            [
+              123190000,
+              39370000
+            ]
+          ]
+        },
+        {
+          "id": "interface.interface.pin3",
+          "net": "VPLUS",
+          "terminals": [
+            [
+              "interface",
+              "3"
+            ]
+          ],
+          "anchor": [
+            124460000,
+            41910000
+          ],
+          "escape_direction": "left",
+          "escape_polyline": [
+            [
+              124460000,
+              41910000
+            ],
+            [
+              123190000,
+              41910000
+            ]
+          ]
+        },
+        {
+          "id": "interface.interface.pin4",
+          "net": "VMINUS",
+          "terminals": [
+            [
+              "interface",
+              "4"
+            ]
+          ],
+          "anchor": [
+            124460000,
+            44450000
+          ],
+          "escape_direction": "left",
+          "escape_polyline": [
+            [
+              124460000,
+              44450000
+            ],
+            [
+              123190000,
+              44450000
+            ]
+          ]
+        },
+        {
+          "id": "interface.interface.pin5",
+          "net": "REF",
+          "terminals": [
+            [
+              "interface",
+              "5"
+            ]
+          ],
+          "anchor": [
+            124460000,
+            46990000
+          ],
+          "escape_direction": "left",
+          "escape_polyline": [
+            [
+              124460000,
+              46990000
+            ],
+            [
+              123190000,
+              46990000
+            ]
+          ]
+        }
+      ],
+      "protected_paths": [
+        "interface.interface.local"
+      ]
+    },
+    {
+      "fragment": "package.amp.power",
+      "variant": "package.amp.power.v0",
+      "rule": "m2g2.local-aspect.package_power.below.v1",
+      "origins": [
+        "bypass.minus",
+        "bypass.plus",
+        "supply"
+      ],
+      "local_envelope": [
+        16510000,
+        22860000,
+        72390000,
+        45300000
+      ],
+      "content_envelope": [
+        18540000,
+        24550000,
+        70360000,
+        44030000
+      ],
+      "packing_envelope": [
+        16510000,
+        22860000,
+        72390000,
+        45300000
+      ],
+      "placed_envelope": [
+        139700000,
+        29210000,
+        195580000,
+        51650000
+      ],
+      "translation": [
+        123190000,
+        6350000
+      ],
+      "protected_wire_count": 4,
+      "obstacle_count": 3,
+      "reservation_count": 34,
+      "gateways": [
+        {
+          "id": "package.amp.power.positive",
+          "net": "VPLUS",
+          "terminals": [
+            [
+              "amp",
+              "8"
+            ]
+          ],
+          "anchor": [
+            165100000,
+            38100000
+          ],
+          "escape_direction": "up",
+          "escape_polyline": [
+            [
+              165100000,
+              38100000
+            ],
+            [
+              165100000,
+              34290000
+            ]
+          ]
+        },
+        {
+          "id": "package.amp.power.negative",
+          "net": "VMINUS",
+          "terminals": [
+            [
+              "amp",
+              "4"
+            ]
+          ],
+          "anchor": [
+            165100000,
+            45720000
+          ],
+          "escape_direction": "down",
+          "escape_polyline": [
+            [
+              165100000,
+              45720000
+            ],
+            [
+              165100000,
+              49530000
+            ]
+          ]
+        },
+        {
+          "id": "package.amp.power.reference",
+          "net": "REF",
+          "terminals": [
+            [
+              "cneg",
+              "1"
+            ],
+            [
+              "cpos",
+              "2"
+            ]
+          ],
+          "anchor": [
+            153670000,
+            45720000
+          ],
+          "escape_direction": "down",
+          "escape_polyline": [
+            [
+              153670000,
+              45720000
+            ],
+            [
+              153670000,
+              49530000
+            ]
+          ]
+        }
+      ],
+      "protected_paths": [
+        "package.amp.power.local"
+      ]
+    }
+  ],
+  "packing_attempts": [
+    "candidate-1:side-affinity:pass:measured=166500000x24980000"
+  ],
+  "routes": [
+    {
+      "net": "OUT",
+      "edge_count": 1,
+      "segments": [
+        [
+          [
+            66040000,
+            41910000
+          ],
+          [
+            67310000,
+            41910000
+          ]
+        ],
+        [
+          [
+            67310000,
+            39370000
+          ],
+          [
+            67310000,
+            41910000
+          ]
+        ],
+        [
+          [
+            67310000,
+            39370000
+          ],
+          [
+            71120000,
+            39370000
+          ]
+        ],
+        [
+          [
+            71120000,
+            39370000
+          ],
+          [
+            72390000,
+            39370000
+          ]
+        ]
+      ],
+      "junctions": [],
+      "owner": "tree.OUT",
+      "segment_provenance": [
+        [
+          "function.amp.a.output",
+          "seed"
+        ],
+        [
+          "function.amp.b.input",
+          "tap.(67310000, 41910000)"
+        ],
+        [
+          "function.amp.b.input",
+          "tap.(67310000, 41910000)"
+        ],
+        [
+          "escape",
+          "function.amp.b.input"
+        ]
+      ],
+      "tap_tests": 2,
+      "state_expansions": 2355
+    }
+  ],
+  "canonical_trees": [
+    {
+      "net": "CHAIN_OUT",
+      "segments": [
+        [
+          [
+            73660000,
+            44450000
+          ],
+          [
+            73660000,
+            55880000
+          ]
+        ],
+        [
+          [
+            73660000,
+            44450000
+          ],
+          [
+            80010000,
+            44450000
+          ]
+        ],
+        [
+          [
+            73660000,
+            55880000
+          ],
+          [
+            104140000,
+            55880000
+          ]
+        ],
+        [
+          [
+            95250000,
+            41910000
+          ],
+          [
+            104140000,
+            41910000
+          ]
+        ],
+        [
+          [
+            104140000,
+            41910000
+          ],
+          [
+            104140000,
+            55880000
+          ]
+        ],
+        [
+          [
+            104140000,
+            41910000
+          ],
+          [
+            109220000,
+            41910000
+          ]
+        ],
+        [
+          [
+            109220000,
+            41910000
+          ],
+          [
+            110490000,
+            41910000
+          ]
+        ],
+        [
+          [
+            123190000,
+            39370000
+          ],
+          [
+            124460000,
+            39370000
+          ]
+        ],
+        [
+          [
+            124460000,
+            39370000
+          ],
+          [
+            127000000,
+            39370000
+          ]
+        ]
+      ],
+      "junctions": [
+        [
+          104140000,
+          41910000
+        ]
+      ],
+      "length_nm": 81280000,
+      "bends": 3,
+      "provenance": [
+        [
+          "function.amp.b.wire.1"
+        ],
+        [
+          "function.amp.b.wire.0"
+        ],
+        [
+          "function.amp.b.wire.2"
+        ],
+        [
+          "function.amp.b.wire.4"
+        ],
+        [
+          "function.amp.b.wire.3"
+        ],
+        [
+          "function.amp.b.wire.5"
+        ],
+        [
+          "function.amp.b.wire.8"
+        ],
+        [
+          "interface.interface.wire.6"
+        ],
+        [
+          "interface.interface.wire.1"
+        ]
+      ]
+    },
+    {
+      "net": "IN",
+      "segments": [
+        [
+          [
+            27940000,
+            39370000
+          ],
+          [
+            29210000,
+            39370000
+          ]
+        ],
+        [
+          [
+            29210000,
+            39370000
+          ],
+          [
+            35560000,
+            39370000
+          ]
+        ],
+        [
+          [
+            123190000,
+            36830000
+          ],
+          [
+            124460000,
+            36830000
+          ]
+        ],
+        [
+          [
+            124460000,
+            36830000
+          ],
+          [
+            127000000,
+            36830000
+          ]
+        ]
+      ],
+      "junctions": [],
+      "length_nm": 11430000,
+      "bends": 0,
+      "provenance": [
+        [
+          "function.amp.a.wire.7"
+        ],
+        [
+          "function.amp.a.wire.6"
+        ],
+        [
+          "interface.interface.wire.5"
+        ],
+        [
+          "interface.interface.wire.0"
+        ]
+      ]
+    },
+    {
+      "net": "OUT",
+      "segments": [
+        [
+          [
+            29210000,
+            44450000
+          ],
+          [
+            29210000,
+            55880000
+          ]
+        ],
+        [
+          [
+            29210000,
+            44450000
+          ],
+          [
+            35560000,
+            44450000
+          ]
+        ],
+        [
+          [
+            29210000,
+            55880000
+          ],
+          [
+            59690000,
+            55880000
+          ]
+        ],
+        [
+          [
+            50800000,
+            41910000
+          ],
+          [
+            59690000,
+            41910000
+          ]
+        ],
+        [
+          [
+            59690000,
+            41910000
+          ],
+          [
+            59690000,
+            55880000
+          ]
+        ],
+        [
+          [
+            59690000,
+            41910000
+          ],
+          [
+            64770000,
+            41910000
+          ]
+        ],
+        [
+          [
+            64770000,
+            41910000
+          ],
+          [
+            66040000,
+            41910000
+          ]
+        ],
+        [
+          [
+            66040000,
+            41910000
+          ],
+          [
+            67310000,
+            41910000
+          ]
+        ],
+        [
+          [
+            67310000,
+            39370000
+          ],
+          [
+            67310000,
+            41910000
+          ]
+        ],
+        [
+          [
+            67310000,
+            39370000
+          ],
+          [
+            71120000,
+            39370000
+          ]
+        ],
+        [
+          [
+            71120000,
+            39370000
+          ],
+          [
+            72390000,
+            39370000
+          ]
+        ],
+        [
+          [
+            72390000,
+            39370000
+          ],
+          [
+            73660000,
+            39370000
+          ]
+        ],
+        [
+          [
+            73660000,
+            39370000
+          ],
+          [
+            80010000,
+            39370000
+          ]
+        ]
+      ],
+      "junctions": [
+        [
+          59690000,
+          41910000
+        ]
+      ],
+      "length_nm": 93980000,
+      "bends": 5,
+      "provenance": [
+        [
+          "function.amp.a.wire.1"
+        ],
+        [
+          "function.amp.a.wire.0"
+        ],
+        [
+          "function.amp.a.wire.2"
+        ],
+        [
+          "function.amp.a.wire.4"
+        ],
+        [
+          "function.amp.a.wire.3"
+        ],
+        [
+          "function.amp.a.wire.5"
+        ],
+        [
+          "function.amp.a.wire.8"
+        ],
+        [
+          "function.amp.a.output",
+          "seed"
+        ],
+        [
+          "function.amp.b.input",
+          "tap.(67310000, 41910000)"
+        ],
+        [
+          "function.amp.b.input",
+          "tap.(67310000, 41910000)"
+        ],
+        [
+          "escape",
+          "function.amp.b.input"
+        ],
+        [
+          "function.amp.b.wire.7"
+        ],
+        [
+          "function.amp.b.wire.6"
+        ]
+      ]
+    },
+    {
+      "net": "REF",
+      "segments": [
+        [
+          [
+            123190000,
+            46990000
+          ],
+          [
+            124460000,
+            46990000
+          ]
+        ],
+        [
+          [
+            124460000,
+            46990000
+          ],
+          [
+            127000000,
+            46990000
+          ]
+        ],
+        [
+          [
+            153670000,
+            45720000
+          ],
+          [
+            153670000,
+            49530000
+          ]
+        ]
+      ],
+      "junctions": [],
+      "length_nm": 7620000,
+      "bends": 0,
+      "provenance": [
+        [
+          "interface.interface.wire.9"
+        ],
+        [
+          "interface.interface.wire.4"
+        ],
+        [
+          "package.amp.power.wire.6"
+        ]
+      ]
+    },
+    {
+      "net": "VMINUS",
+      "segments": [
+        [
+          [
+            123190000,
+            44450000
+          ],
+          [
+            124460000,
+            44450000
+          ]
+        ],
+        [
+          [
+            124460000,
+            44450000
+          ],
+          [
+            127000000,
+            44450000
+          ]
+        ],
+        [
+          [
+            165100000,
+            45720000
+          ],
+          [
+            165100000,
+            49530000
+          ]
+        ],
+        [
+          [
+            165100000,
+            45720000
+          ],
+          [
+            181610000,
+            45720000
+          ]
+        ]
+      ],
+      "junctions": [],
+      "length_nm": 24130000,
+      "bends": 1,
+      "provenance": [
+        [
+          "interface.interface.wire.8"
+        ],
+        [
+          "interface.interface.wire.3"
+        ],
+        [
+          "package.amp.power.wire.2",
+          "package.amp.power.wire.5"
+        ],
+        [
+          "package.amp.power.wire.3"
+        ]
+      ]
+    },
+    {
+      "net": "VPLUS",
+      "segments": [
+        [
+          [
+            123190000,
+            41910000
+          ],
+          [
+            124460000,
+            41910000
+          ]
+        ],
+        [
+          [
+            124460000,
+            41910000
+          ],
+          [
+            127000000,
+            41910000
+          ]
+        ],
+        [
+          [
+            153670000,
+            38100000
+          ],
+          [
+            165100000,
+            38100000
+          ]
+        ],
+        [
+          [
+            165100000,
+            34290000
+          ],
+          [
+            165100000,
+            38100000
+          ]
+        ]
+      ],
+      "junctions": [],
+      "length_nm": 19050000,
+      "bends": 1,
+      "provenance": [
+        [
+          "interface.interface.wire.7"
+        ],
+        [
+          "interface.interface.wire.2"
+        ],
+        [
+          "package.amp.power.wire.1"
+        ],
+        [
+          "package.amp.power.wire.0",
+          "package.amp.power.wire.4"
+        ]
+      ]
+    }
+  ],
+  "reservations": [
+    {
+      "id": "reservation.('amp', 1).body",
+      "owner": "function.amp.a",
+      "class": "body",
+      "occupancy": "exclusive",
+      "rect": [
+        36830000,
+        35560000,
+        49530000,
+        48260000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('amp', 1).reference",
+      "owner": "function.amp.a",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        39370000,
+        29210000,
+        46990000,
+        34290000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('amp', 1).value",
+      "owner": "function.amp.a",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        38100000,
+        31750000,
+        48260000,
+        36830000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('amp', 1).pin.1",
+      "owner": "function.amp.a",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        49530000,
+        40640000,
+        52070000,
+        43180000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('amp', 1).pin.2",
+      "owner": "function.amp.a",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        34290000,
+        43180000,
+        36830000,
+        45720000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('amp', 1).pin.3",
+      "owner": "function.amp.a",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        34290000,
+        38100000,
+        36830000,
+        40640000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.0",
+      "owner": "function.amp.a",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        28960000,
+        44200000,
+        35810000,
+        44700000
+      ],
+      "net": "OUT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.1",
+      "owner": "function.amp.a",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        28960000,
+        44200000,
+        29460000,
+        56130000
+      ],
+      "net": "OUT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.2",
+      "owner": "function.amp.a",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        28960000,
+        55630000,
+        59940000,
+        56130000
+      ],
+      "net": "OUT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.3",
+      "owner": "function.amp.a",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        59440000,
+        41660000,
+        59940000,
+        56130000
+      ],
+      "net": "OUT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.4",
+      "owner": "function.amp.a",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        50550000,
+        41660000,
+        59940000,
+        42160000
+      ],
+      "net": "OUT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.5",
+      "owner": "function.amp.a",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        59440000,
+        41660000,
+        65020000,
+        42160000
+      ],
+      "net": "OUT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.6",
+      "owner": "function.amp.a",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        28960000,
+        39120000,
+        35810000,
+        39620000
+      ],
+      "net": "IN",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.7",
+      "owner": "function.amp.a",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        27690000,
+        39120000,
+        29460000,
+        39620000
+      ],
+      "net": "IN",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.8",
+      "owner": "function.amp.a",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        64520000,
+        41660000,
+        66290000,
+        42160000
+      ],
+      "net": "OUT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.0",
+      "owner": "function.amp.a",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        25780000,
+        37250000,
+        30100000,
+        41490000
+      ],
+      "net": "IN",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.1",
+      "owner": "function.amp.a",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        63435000,
+        39790000,
+        68645000,
+        44030000
+      ],
+      "net": "OUT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.junction.0",
+      "owner": "function.amp.a",
+      "class": "junction",
+      "occupancy": "exclusive",
+      "rect": [
+        59690000,
+        41910000,
+        59690000,
+        41910000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "gateway.function.amp.a.input",
+      "owner": "function.amp.a",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        26670000,
+        38100000,
+        29210000,
+        40640000
+      ],
+      "net": "IN",
+      "capacity": 1
+    },
+    {
+      "id": "gateway.function.amp.a.output",
+      "owner": "function.amp.a",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        64770000,
+        40640000,
+        67310000,
+        43180000
+      ],
+      "net": "OUT",
+      "capacity": 1
+    },
+    {
+      "id": "protected.0",
+      "owner": "function.amp.a",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        28710000,
+        43950000,
+        36060000,
+        44950000
+      ],
+      "net": "OUT",
+      "capacity": 0
+    },
+    {
+      "id": "protected.1",
+      "owner": "function.amp.a",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        28710000,
+        43950000,
+        29710000,
+        56380000
+      ],
+      "net": "OUT",
+      "capacity": 0
+    },
+    {
+      "id": "protected.2",
+      "owner": "function.amp.a",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        28710000,
+        55380000,
+        60190000,
+        56380000
+      ],
+      "net": "OUT",
+      "capacity": 0
+    },
+    {
+      "id": "protected.3",
+      "owner": "function.amp.a",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        59190000,
+        41410000,
+        60190000,
+        56380000
+      ],
+      "net": "OUT",
+      "capacity": 0
+    },
+    {
+      "id": "protected.4",
+      "owner": "function.amp.a",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        50300000,
+        41410000,
+        60190000,
+        42410000
+      ],
+      "net": "OUT",
+      "capacity": 0
+    },
+    {
+      "id": "protected.5",
+      "owner": "function.amp.a",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        59190000,
+        41410000,
+        65270000,
+        42410000
+      ],
+      "net": "OUT",
+      "capacity": 0
+    },
+    {
+      "id": "protected.6",
+      "owner": "function.amp.a",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        28710000,
+        38870000,
+        36060000,
+        39870000
+      ],
+      "net": "IN",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('amp', 2).body",
+      "owner": "function.amp.b",
+      "class": "body",
+      "occupancy": "exclusive",
+      "rect": [
+        81280000,
+        35560000,
+        93980000,
+        48260000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('amp', 2).reference",
+      "owner": "function.amp.b",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        83820000,
+        29210000,
+        91440000,
+        34290000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('amp', 2).value",
+      "owner": "function.amp.b",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        82550000,
+        31750000,
+        92710000,
+        36830000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('amp', 2).pin.5",
+      "owner": "function.amp.b",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        78740000,
+        38100000,
+        81280000,
+        40640000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('amp', 2).pin.6",
+      "owner": "function.amp.b",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        78740000,
+        43180000,
+        81280000,
+        45720000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('amp', 2).pin.7",
+      "owner": "function.amp.b",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        93980000,
+        40640000,
+        96520000,
+        43180000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.0",
+      "owner": "function.amp.b",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        73410000,
+        44200000,
+        80260000,
+        44700000
+      ],
+      "net": "CHAIN_OUT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.1",
+      "owner": "function.amp.b",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        73410000,
+        44200000,
+        73910000,
+        56130000
+      ],
+      "net": "CHAIN_OUT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.2",
+      "owner": "function.amp.b",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        73410000,
+        55630000,
+        104390000,
+        56130000
+      ],
+      "net": "CHAIN_OUT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.3",
+      "owner": "function.amp.b",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        103890000,
+        41660000,
+        104390000,
+        56130000
+      ],
+      "net": "CHAIN_OUT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.4",
+      "owner": "function.amp.b",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        95000000,
+        41660000,
+        104390000,
+        42160000
+      ],
+      "net": "CHAIN_OUT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.5",
+      "owner": "function.amp.b",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        103890000,
+        41660000,
+        109470000,
+        42160000
+      ],
+      "net": "CHAIN_OUT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.6",
+      "owner": "function.amp.b",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        73410000,
+        39120000,
+        80260000,
+        39620000
+      ],
+      "net": "OUT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.7",
+      "owner": "function.amp.b",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        72140000,
+        39120000,
+        73910000,
+        39620000
+      ],
+      "net": "OUT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.8",
+      "owner": "function.amp.b",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        108970000,
+        41660000,
+        110740000,
+        42160000
+      ],
+      "net": "CHAIN_OUT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.0",
+      "owner": "function.amp.b",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        69785000,
+        37250000,
+        74995000,
+        41490000
+      ],
+      "net": "OUT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.1",
+      "owner": "function.amp.b",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        105215000,
+        39790000,
+        115765000,
+        44030000
+      ],
+      "net": "CHAIN_OUT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.junction.0",
+      "owner": "function.amp.b",
+      "class": "junction",
+      "occupancy": "exclusive",
+      "rect": [
+        104140000,
+        41910000,
+        104140000,
+        41910000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "gateway.function.amp.b.input",
+      "owner": "function.amp.b",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        71120000,
+        38100000,
+        73660000,
+        40640000
+      ],
+      "net": "OUT",
+      "capacity": 1
+    },
+    {
+      "id": "gateway.function.amp.b.output",
+      "owner": "function.amp.b",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        109220000,
+        40640000,
+        111760000,
+        43180000
+      ],
+      "net": "CHAIN_OUT",
+      "capacity": 1
+    },
+    {
+      "id": "protected.0",
+      "owner": "function.amp.b",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        73160000,
+        43950000,
+        80510000,
+        44950000
+      ],
+      "net": "CHAIN_OUT",
+      "capacity": 0
+    },
+    {
+      "id": "protected.1",
+      "owner": "function.amp.b",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        73160000,
+        43950000,
+        74160000,
+        56380000
+      ],
+      "net": "CHAIN_OUT",
+      "capacity": 0
+    },
+    {
+      "id": "protected.2",
+      "owner": "function.amp.b",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        73160000,
+        55380000,
+        104640000,
+        56380000
+      ],
+      "net": "CHAIN_OUT",
+      "capacity": 0
+    },
+    {
+      "id": "protected.3",
+      "owner": "function.amp.b",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        103640000,
+        41410000,
+        104640000,
+        56380000
+      ],
+      "net": "CHAIN_OUT",
+      "capacity": 0
+    },
+    {
+      "id": "protected.4",
+      "owner": "function.amp.b",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        94750000,
+        41410000,
+        104640000,
+        42410000
+      ],
+      "net": "CHAIN_OUT",
+      "capacity": 0
+    },
+    {
+      "id": "protected.5",
+      "owner": "function.amp.b",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        103640000,
+        41410000,
+        109720000,
+        42410000
+      ],
+      "net": "CHAIN_OUT",
+      "capacity": 0
+    },
+    {
+      "id": "protected.6",
+      "owner": "function.amp.b",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        73160000,
+        38870000,
+        80510000,
+        39870000
+      ],
+      "net": "OUT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('interface', 1).body",
+      "owner": "interface.interface",
+      "class": "body",
+      "occupancy": "exclusive",
+      "rect": [
+        129540000,
+        34290000,
+        134620000,
+        49530000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('interface', 1).reference",
+      "owner": "interface.interface",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        128270000,
+        29210000,
+        135890000,
+        34290000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('interface', 1).value",
+      "owner": "interface.interface",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        125730000,
+        31750000,
+        138430000,
+        36830000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('interface', 1).pin.1",
+      "owner": "interface.interface",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        125730000,
+        35560000,
+        128270000,
+        38100000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('interface', 1).pin.2",
+      "owner": "interface.interface",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        125730000,
+        38100000,
+        128270000,
+        40640000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('interface', 1).pin.3",
+      "owner": "interface.interface",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        125730000,
+        40640000,
+        128270000,
+        43180000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('interface', 1).pin.4",
+      "owner": "interface.interface",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        125730000,
+        43180000,
+        128270000,
+        45720000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('interface', 1).pin.5",
+      "owner": "interface.interface",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        125730000,
+        45720000,
+        128270000,
+        48260000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.0",
+      "owner": "interface.interface",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        124210000,
+        36580000,
+        127250000,
+        37080000
+      ],
+      "net": "IN",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.1",
+      "owner": "interface.interface",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        124210000,
+        39120000,
+        127250000,
+        39620000
+      ],
+      "net": "CHAIN_OUT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.2",
+      "owner": "interface.interface",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        124210000,
+        41660000,
+        127250000,
+        42160000
+      ],
+      "net": "VPLUS",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.3",
+      "owner": "interface.interface",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        124210000,
+        44200000,
+        127250000,
+        44700000
+      ],
+      "net": "VMINUS",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.4",
+      "owner": "interface.interface",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        124210000,
+        46740000,
+        127250000,
+        47240000
+      ],
+      "net": "REF",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.5",
+      "owner": "interface.interface",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        122940000,
+        36580000,
+        124710000,
+        37080000
+      ],
+      "net": "IN",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.6",
+      "owner": "interface.interface",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        122940000,
+        39120000,
+        124710000,
+        39620000
+      ],
+      "net": "CHAIN_OUT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.7",
+      "owner": "interface.interface",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        122940000,
+        41660000,
+        124710000,
+        42160000
+      ],
+      "net": "VPLUS",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.8",
+      "owner": "interface.interface",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        122940000,
+        44200000,
+        124710000,
+        44700000
+      ],
+      "net": "VMINUS",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.9",
+      "owner": "interface.interface",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        122940000,
+        46740000,
+        124710000,
+        47240000
+      ],
+      "net": "REF",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.0",
+      "owner": "interface.interface",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        121030000,
+        34710000,
+        125350000,
+        38950000
+      ],
+      "net": "IN",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.1",
+      "owner": "interface.interface",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        117915000,
+        37250000,
+        128465000,
+        41490000
+      ],
+      "net": "CHAIN_OUT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.2",
+      "owner": "interface.interface",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        119695000,
+        39790000,
+        126685000,
+        44030000
+      ],
+      "net": "VPLUS",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.3",
+      "owner": "interface.interface",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        119250000,
+        42330000,
+        127130000,
+        46570000
+      ],
+      "net": "VMINUS",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.4",
+      "owner": "interface.interface",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        120585000,
+        44870000,
+        125795000,
+        49110000
+      ],
+      "net": "REF",
+      "capacity": 0
+    },
+    {
+      "id": "gateway.interface.interface.pin1",
+      "owner": "interface.interface",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        121920000,
+        35560000,
+        124460000,
+        38100000
+      ],
+      "net": "IN",
+      "capacity": 1
+    },
+    {
+      "id": "gateway.interface.interface.pin2",
+      "owner": "interface.interface",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        121920000,
+        38100000,
+        124460000,
+        40640000
+      ],
+      "net": "CHAIN_OUT",
+      "capacity": 1
+    },
+    {
+      "id": "gateway.interface.interface.pin3",
+      "owner": "interface.interface",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        121920000,
+        40640000,
+        124460000,
+        43180000
+      ],
+      "net": "VPLUS",
+      "capacity": 1
+    },
+    {
+      "id": "gateway.interface.interface.pin4",
+      "owner": "interface.interface",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        121920000,
+        43180000,
+        124460000,
+        45720000
+      ],
+      "net": "VMINUS",
+      "capacity": 1
+    },
+    {
+      "id": "gateway.interface.interface.pin5",
+      "owner": "interface.interface",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        121920000,
+        45720000,
+        124460000,
+        48260000
+      ],
+      "net": "REF",
+      "capacity": 1
+    },
+    {
+      "id": "protected.0",
+      "owner": "interface.interface",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        123960000,
+        36330000,
+        127500000,
+        37330000
+      ],
+      "net": "IN",
+      "capacity": 0
+    },
+    {
+      "id": "protected.1",
+      "owner": "interface.interface",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        123960000,
+        38870000,
+        127500000,
+        39870000
+      ],
+      "net": "CHAIN_OUT",
+      "capacity": 0
+    },
+    {
+      "id": "protected.2",
+      "owner": "interface.interface",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        123960000,
+        41410000,
+        127500000,
+        42410000
+      ],
+      "net": "VPLUS",
+      "capacity": 0
+    },
+    {
+      "id": "protected.3",
+      "owner": "interface.interface",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        123960000,
+        43950000,
+        127500000,
+        44950000
+      ],
+      "net": "VMINUS",
+      "capacity": 0
+    },
+    {
+      "id": "protected.4",
+      "owner": "interface.interface",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        123960000,
+        46490000,
+        127500000,
+        47490000
+      ],
+      "net": "REF",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('amp', 3).body",
+      "owner": "package.amp.power",
+      "class": "body",
+      "occupancy": "exclusive",
+      "rect": [
+        162560000,
+        36830000,
+        172720000,
+        46990000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('amp', 3).reference",
+      "owner": "package.amp.power",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        179070000,
+        29210000,
+        186690000,
+        34290000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('amp', 3).value",
+      "owner": "package.amp.power",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        177800000,
+        31750000,
+        187960000,
+        36830000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('amp', 3).pin.4",
+      "owner": "package.amp.power",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        163830000,
+        48260000,
+        166370000,
+        50800000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('amp', 3).pin.8",
+      "owner": "package.amp.power",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        163830000,
+        33020000,
+        166370000,
+        35560000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('cneg', 1).body",
+      "owner": "package.amp.power",
+      "class": "body",
+      "occupancy": "exclusive",
+      "rect": [
+        178308000,
+        39878000,
+        184912000,
+        43942000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('cneg', 1).reference",
+      "owner": "package.amp.power",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        187960000,
+        36830000,
+        195580000,
+        41910000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('cneg', 1).value",
+      "owner": "package.amp.power",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        187960000,
+        39370000,
+        195580000,
+        44450000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('cneg', 1).pin.1",
+      "owner": "package.amp.power",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        180340000,
+        36830000,
+        182880000,
+        39370000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('cneg', 1).pin.2",
+      "owner": "package.amp.power",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        180340000,
+        44450000,
+        182880000,
+        46990000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('cpos', 1).body",
+      "owner": "package.amp.power",
+      "class": "body",
+      "occupancy": "exclusive",
+      "rect": [
+        150368000,
+        39878000,
+        156972000,
+        43942000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('cpos', 1).reference",
+      "owner": "package.amp.power",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        139700000,
+        36830000,
+        147320000,
+        41910000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('cpos', 1).value",
+      "owner": "package.amp.power",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        139700000,
+        39370000,
+        147320000,
+        44450000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('cpos', 1).pin.1",
+      "owner": "package.amp.power",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        152400000,
+        36830000,
+        154940000,
+        39370000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('cpos', 1).pin.2",
+      "owner": "package.amp.power",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        152400000,
+        44450000,
+        154940000,
+        46990000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.0",
+      "owner": "package.amp.power",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        164850000,
+        34040000,
+        165350000,
+        38350000
+      ],
+      "net": "VPLUS",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.1",
+      "owner": "package.amp.power",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        153420000,
+        37850000,
+        165350000,
+        38350000
+      ],
+      "net": "VPLUS",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.2",
+      "owner": "package.amp.power",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        164850000,
+        45470000,
+        165350000,
+        49780000
+      ],
+      "net": "VMINUS",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.3",
+      "owner": "package.amp.power",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        164850000,
+        45470000,
+        181860000,
+        45970000
+      ],
+      "net": "VMINUS",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.4",
+      "owner": "package.amp.power",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        164850000,
+        34040000,
+        165350000,
+        38350000
+      ],
+      "net": "VPLUS",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.5",
+      "owner": "package.amp.power",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        164850000,
+        45470000,
+        165350000,
+        49780000
+      ],
+      "net": "VMINUS",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.6",
+      "owner": "package.amp.power",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        153420000,
+        45470000,
+        153920000,
+        49780000
+      ],
+      "net": "REF",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.0",
+      "owner": "package.amp.power",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        151065000,
+        43600000,
+        156275000,
+        47840000
+      ],
+      "net": "REF",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.1",
+      "owner": "package.amp.power",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        179005000,
+        35980000,
+        184215000,
+        40220000
+      ],
+      "net": "REF",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.2",
+      "owner": "package.amp.power",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        161605000,
+        32170000,
+        168595000,
+        36410000
+      ],
+      "net": "VPLUS",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.3",
+      "owner": "package.amp.power",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        161160000,
+        47410000,
+        169040000,
+        51650000
+      ],
+      "net": "VMINUS",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.4",
+      "owner": "package.amp.power",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        151065000,
+        47410000,
+        156275000,
+        51650000
+      ],
+      "net": "REF",
+      "capacity": 0
+    },
+    {
+      "id": "gateway.package.amp.power.positive",
+      "owner": "package.amp.power",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        163830000,
+        33020000,
+        166370000,
+        35560000
+      ],
+      "net": "VPLUS",
+      "capacity": 1
+    },
+    {
+      "id": "gateway.package.amp.power.negative",
+      "owner": "package.amp.power",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        163830000,
+        48260000,
+        166370000,
+        50800000
+      ],
+      "net": "VMINUS",
+      "capacity": 1
+    },
+    {
+      "id": "gateway.package.amp.power.reference",
+      "owner": "package.amp.power",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        152400000,
+        48260000,
+        154940000,
+        50800000
+      ],
+      "net": "REF",
+      "capacity": 1
+    },
+    {
+      "id": "protected.0",
+      "owner": "package.amp.power",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        164600000,
+        33790000,
+        165600000,
+        38600000
+      ],
+      "net": "VPLUS",
+      "capacity": 0
+    },
+    {
+      "id": "protected.1",
+      "owner": "package.amp.power",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        153170000,
+        37600000,
+        165600000,
+        38600000
+      ],
+      "net": "VPLUS",
+      "capacity": 0
+    },
+    {
+      "id": "protected.2",
+      "owner": "package.amp.power",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        164600000,
+        45220000,
+        165600000,
+        50030000
+      ],
+      "net": "VMINUS",
+      "capacity": 0
+    },
+    {
+      "id": "protected.3",
+      "owner": "package.amp.power",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        164600000,
+        45220000,
+        182110000,
+        46220000
+      ],
+      "net": "VMINUS",
+      "capacity": 0
+    },
+    {
+      "id": "route.OUT.0",
+      "owner": "tree.OUT",
+      "class": "global_route",
+      "occupancy": "channel",
+      "rect": [
+        65790000,
+        41660000,
+        67560000,
+        42160000
+      ],
+      "net": "OUT",
+      "capacity": 1
+    },
+    {
+      "id": "route.OUT.1",
+      "owner": "tree.OUT",
+      "class": "global_route",
+      "occupancy": "channel",
+      "rect": [
+        67060000,
+        39120000,
+        67560000,
+        42160000
+      ],
+      "net": "OUT",
+      "capacity": 1
+    },
+    {
+      "id": "route.OUT.2",
+      "owner": "tree.OUT",
+      "class": "global_route",
+      "occupancy": "channel",
+      "rect": [
+        67060000,
+        39120000,
+        71370000,
+        39620000
+      ],
+      "net": "OUT",
+      "capacity": 1
+    },
+    {
+      "id": "route.OUT.3",
+      "owner": "tree.OUT",
+      "class": "global_route",
+      "occupancy": "channel",
+      "rect": [
+        70870000,
+        39120000,
+        72640000,
+        39620000
+      ],
+      "net": "OUT",
+      "capacity": 1
+    },
+    {
+      "id": "source.flag.1",
+      "owner": "flag.1",
+      "class": "source_glyph",
+      "occupancy": "exclusive",
+      "rect": [
+        121920000,
+        40640000,
+        124460000,
+        43180000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "source.flag.2",
+      "owner": "flag.2",
+      "class": "source_glyph",
+      "occupancy": "exclusive",
+      "rect": [
+        121920000,
+        43180000,
+        124460000,
+        45720000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "source.flag.3",
+      "owner": "flag.3",
+      "class": "source_glyph",
+      "occupancy": "exclusive",
+      "rect": [
+        121920000,
+        45720000,
+        124460000,
+        48260000
+      ],
+      "net": null,
+      "capacity": 0
+    }
+  ],
+  "layout_attempts": [
+    {
+      "seed": 0,
+      "round": 0,
+      "operation": "initial",
+      "result": "pass",
+      "reservation_growth_pitch": 0,
+      "reservation_growth": null,
+      "substitution": null
+    }
+  ],
+  "budgets": {
+    "seed_limit": 8,
+    "repair_rounds_per_seed": 3,
+    "complete_attempt_limit": 32,
+    "complete_attempts_used": 1
+  }
+}

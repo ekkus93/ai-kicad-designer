@@ -9,6 +9,7 @@ from pathlib import Path
 from .assets import _extract_symbol, sha256
 from .ir import InputError
 from .m2a import Asset, Pin, PITCH, ROOT, Scene, _nm, load_assets
+from .m2_geometry import ConductorSegment, canonical_conductor_tree, conductor_reachable
 from .sexpr import children, one, parse, quote
 
 EXTRA = {
@@ -1043,6 +1044,8 @@ def choose_text_slots(design: dict, draft: Draft) -> None:
         if c["asset"] not in ("Device:C", "Device:R"):
             continue
         key = (c["id"], 1)
+        if key not in draft.positions:
+            continue
         sx, sy = draft.positions[key]
         horizontal = draft.angles.get(key, 0) in (90, 270)
         slots = [draft.text_positions[key]]
@@ -1677,6 +1680,35 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
     if any(len(names) != 1 for names in wire_net):
         raise InputError("observed wire net attribution ambiguous")
     names = [next(iter(x)) for x in wire_net]
+    observed_junctions = set(observed.get("junctions", ()))
+    conductor_trees = {}
+    for net in sorted(set(names)):
+        indexed = [
+            (index, wire)
+            for index, (name, wire) in enumerate(zip(names, wires, strict=True))
+            if name == net
+        ]
+        conductor_trees[net] = canonical_conductor_tree(
+            (
+                ConductorSegment(a, b, net, "independent-observer", (f"wire.{index}",))
+                for index, (a, b) in indexed
+            ),
+            junctions=observed_junctions,
+            pins=(
+                point
+                for terminal, point in pin_positions.items()
+                if pin_to_net.get(terminal) == net
+            ),
+        )
+    if "junctions" in observed:
+        missing_junctions = sorted(
+            point
+            for tree in conductor_trees.values()
+            for point in tree.junctions
+            if point not in observed_junctions
+        )
+        if missing_junctions:
+            raise InputError(f"observed branch junction missing: {missing_junctions}")
     for i, (a, b) in enumerate(wires):
         for ref, rect in rectangles:
             if a in {point for (r, _), point in pin_positions.items() if r == ref} or b in {
@@ -1807,9 +1839,7 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
             spans.append(span)
             if span > 45:
                 raise InputError("excessive local feedback span")
-    length_by_net = {}
-    for name, (a, b) in zip(names, wires, strict=True):
-        length_by_net[name] = length_by_net.get(name, 0) + abs(a[0] - b[0]) + abs(a[1] - b[1])
+    length_by_net = {net: tree.length for net, tree in conductor_trees.items()}
     if any(length > 250_000_000 for length in length_by_net.values()):
         raise InputError("obvious excessive net detour")
     endpoints = {p for a, b in wires for p in (a, b)} | {p for _, p in labels}
@@ -1852,22 +1882,10 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
         net = pin_to_net.get(first)
         if net is None or pin_to_net.get(second) != net:
             return False
-        reachable = {pin_positions[first]}
-        segments = [wire for name, wire in zip(names, wires, strict=True) if name == net]
-        for _ in range(len(segments) + 1):
-            expanded = reachable | {
-                point
-                for a, b in segments
-                if any(on_segment(known, a, b) for known in reachable)
-                for point in (a, b)
-            }
-            if expanded == reachable:
-                break
-            reachable = expanded
-        return pin_positions[second] in reachable or any(
-            on_segment(pin_positions[second], a, b)
-            and any(on_segment(known, a, b) for known in reachable)
-            for a, b in segments
+        if net not in conductor_trees:
+            return False
+        return conductor_reachable(
+            conductor_trees[net], pin_positions[first], pin_positions[second]
         )
 
     local_paths = []
@@ -1876,7 +1894,7 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
         if not wired_path(first, second):
             raise InputError(f"observed local motif lacks explicit wire path: {relation}")
         a, b = pin_positions[first], pin_positions[second]
-        local_paths.append((abs(a[0] - b[0]) + abs(a[1] - b[1])) / 1_000_000)
+        local_paths.append((relation, (abs(a[0] - b[0]) + abs(a[1] - b[1])) / 1_000_000))
 
     for first in relation_by_kind.get("series", []):
         for second in relation_by_kind.get("series", []):
@@ -1978,8 +1996,12 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
         require_path(
             pin(relation["upper"], "2"), pin(relation["lower"], "1"), "local reference divider"
         )
-    if any(span > 80 for span in local_paths):
-        raise InputError("observed local motif is excessively fragmented")
+    excessive_local_paths = [item for item in local_paths if item[1] > 80]
+    if excessive_local_paths:
+        raise InputError(
+            "observed local motif is excessively fragmented: "
+            f"paths={excessive_local_paths} threshold_mm=80"
+        )
     local_spans = []
     support_spans = []
     for relation in design["relationships"]:
@@ -2041,12 +2063,7 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
         raise InputError("observed motif fragmentation")
     if any(span > 60 for span in support_spans):
         raise InputError("observed support component detached from consumer")
-    bends = sum(
-        1
-        for i, (a, b) in enumerate(wires)
-        for c, e in wires[i + 1 :]
-        if b == c and (a[0] == b[0]) != (c[0] == e[0])
-    )
+    bends = sum(tree.bends for tree in conductor_trees.values())
     if bends > max(16, len(wires) * 3):
         raise InputError("observed excessive bends")
     return {
@@ -2063,10 +2080,20 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
         * sum(item["lib"] != "power:PWR_FLAG" for item in observed["occurrences"].values()),
         "observed_page_margin_pass": True,
         "observed_feedback_span_mm": max(spans, default=0),
-        "observed_wire_length_mm": sum(length_by_net.values()) / 1_000_000,
-        "observed_wire_count": len(wires),
+        "observed_wire_length_mm": sum(tree.length for tree in conductor_trees.values())
+        / 1_000_000,
+        "observed_wire_count": sum(
+            len(tree.geometry_signature) for tree in conductor_trees.values()
+        ),
+        "observed_raw_wire_count": len(wires),
+        "observed_actual_junction_count": sum(
+            len(tree.junctions) for tree in conductor_trees.values()
+        ),
         "observed_stage_order_reversal_count": 0,
-        "observed_local_wire_span_mm": max(local_paths, default=0),
+        "observed_local_wire_span_mm": max((span for _, span in local_paths), default=0),
+        "observed_local_wire_span_witness": max(
+            local_paths, key=lambda item: item[1], default=None
+        ),
         "observed_support_locality_mm": max(support_spans, default=0),
         "observed_content_width_mm": width_mm,
         "observed_content_height_mm": height_mm,

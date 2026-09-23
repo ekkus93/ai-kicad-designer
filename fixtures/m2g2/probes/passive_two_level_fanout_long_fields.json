@@ -1,0 +1,257 @@
+{
+  "profile": "m2b.1",
+  "id": "m2g2_passive_two_level_fanout_long_fields",
+  "name": "M2g2PassiveTwoLevelFanoutLongFields",
+  "components": [
+    {
+      "id": "input",
+      "refdes": "J1",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Signal input"
+    },
+    {
+      "id": "return",
+      "refdes": "J2",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Return"
+    },
+    {
+      "id": "out_a",
+      "refdes": "J3",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Branch A output"
+    },
+    {
+      "id": "out_b",
+      "refdes": "J4",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "CONNECTOR_VALUE_24_CHARS"
+    },
+    {
+      "id": "root_r",
+      "refdes": "R1",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "root_c",
+      "refdes": "C1",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "a_r",
+      "refdes": "R2",
+      "asset": "Device:R",
+      "value": "2k2"
+    },
+    {
+      "id": "a_c",
+      "refdes": "C2",
+      "asset": "Device:C",
+      "value": "47n"
+    },
+    {
+      "id": "b_r",
+      "refdes": "R3",
+      "asset": "Device:R",
+      "value": "4k7"
+    },
+    {
+      "id": "b_c",
+      "refdes": "C3",
+      "asset": "Device:C",
+      "value": "22n"
+    },
+    {
+      "id": "load_r",
+      "refdes": "R4",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "load_led",
+      "refdes": "D1",
+      "asset": "Device:LED",
+      "value": "LED"
+    }
+  ],
+  "nets": [
+    {
+      "id": "INPUT",
+      "members": [
+        [
+          "input",
+          "1"
+        ],
+        [
+          "root_r",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "FANOUT",
+      "members": [
+        [
+          "root_r",
+          "2"
+        ],
+        [
+          "root_c",
+          "1"
+        ],
+        [
+          "a_r",
+          "1"
+        ],
+        [
+          "b_r",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "BRANCH_A",
+      "members": [
+        [
+          "a_r",
+          "2"
+        ],
+        [
+          "a_c",
+          "1"
+        ],
+        [
+          "out_a",
+          "1"
+        ],
+        [
+          "load_r",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "REQUIRED_NET_LABEL20",
+      "members": [
+        [
+          "b_r",
+          "2"
+        ],
+        [
+          "b_c",
+          "1"
+        ],
+        [
+          "out_b",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "LED_NODE",
+      "members": [
+        [
+          "load_r",
+          "2"
+        ],
+        [
+          "load_led",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "REF",
+      "members": [
+        [
+          "return",
+          "1"
+        ],
+        [
+          "root_c",
+          "2"
+        ],
+        [
+          "a_c",
+          "2"
+        ],
+        [
+          "b_c",
+          "2"
+        ],
+        [
+          "load_led",
+          "1"
+        ]
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "root.series",
+      "kind": "series",
+      "component": "root_r",
+      "input": "INPUT",
+      "output": "FANOUT"
+    },
+    {
+      "id": "root.shunt",
+      "kind": "shunt",
+      "component": "root_c",
+      "node": "FANOUT",
+      "reference": "REF"
+    },
+    {
+      "id": "branch.a.series",
+      "kind": "series",
+      "component": "a_r",
+      "input": "FANOUT",
+      "output": "BRANCH_A"
+    },
+    {
+      "id": "branch.a.shunt",
+      "kind": "shunt",
+      "component": "a_c",
+      "node": "BRANCH_A",
+      "reference": "REF"
+    },
+    {
+      "id": "branch.b.series",
+      "kind": "series",
+      "component": "b_r",
+      "input": "FANOUT",
+      "output": "REQUIRED_NET_LABEL20"
+    },
+    {
+      "id": "branch.b.shunt",
+      "kind": "shunt",
+      "component": "b_c",
+      "node": "REQUIRED_NET_LABEL20",
+      "reference": "REF"
+    },
+    {
+      "id": "branch.a.load.series",
+      "kind": "series",
+      "component": "load_r",
+      "input": "BRANCH_A",
+      "output": "LED_NODE"
+    },
+    {
+      "id": "branch.a.load.polarity",
+      "kind": "polarity",
+      "component": "load_led",
+      "anode": "LED_NODE",
+      "cathode": "REF"
+    }
+  ],
+  "no_connects": [],
+  "power_assertions": [
+    {
+      "id": "flag.return",
+      "refdes": "#FLG01",
+      "net": "REF"
+    }
+  ]
+}

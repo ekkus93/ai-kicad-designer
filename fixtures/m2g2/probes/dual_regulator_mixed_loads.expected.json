@@ -1,0 +1,206 @@
+{
+  "ancestry_comparison": [
+    "new topology; compared with m2e1 regulator_parallel_rc and m2f2 regulator_three_consumers"
+  ],
+  "frozen_before_layout_tuning": true,
+  "minimum_local_access_variants": 2,
+  "partitions": {
+    "FILTERED_A": [
+      [
+        "filter_c",
+        "1"
+      ],
+      [
+        "filter_r",
+        "2"
+      ],
+      [
+        "out_a",
+        "1"
+      ]
+    ],
+    "LED_B": [
+      [
+        "indicator_led",
+        "2"
+      ],
+      [
+        "indicator_r",
+        "2"
+      ]
+    ],
+    "REF": [
+      [
+        "a_in_c",
+        "2"
+      ],
+      [
+        "a_out_c",
+        "2"
+      ],
+      [
+        "b_in_c",
+        "2"
+      ],
+      [
+        "b_out_c",
+        "2"
+      ],
+      [
+        "filter_c",
+        "2"
+      ],
+      [
+        "indicator_led",
+        "1"
+      ],
+      [
+        "reg_a",
+        "2"
+      ],
+      [
+        "reg_b",
+        "2"
+      ],
+      [
+        "return",
+        "1"
+      ]
+    ],
+    "VIN": [
+      [
+        "a_in_c",
+        "1"
+      ],
+      [
+        "b_in_c",
+        "1"
+      ],
+      [
+        "reg_a",
+        "1"
+      ],
+      [
+        "reg_b",
+        "1"
+      ],
+      [
+        "source",
+        "1"
+      ]
+    ],
+    "VOUT_A": [
+      [
+        "a_out_c",
+        "1"
+      ],
+      [
+        "filter_r",
+        "1"
+      ],
+      [
+        "reg_a",
+        "3"
+      ]
+    ],
+    "VOUT_B": [
+      [
+        "b_out_c",
+        "1"
+      ],
+      [
+        "indicator_r",
+        "1"
+      ],
+      [
+        "out_b",
+        "1"
+      ],
+      [
+        "reg_b",
+        "3"
+      ]
+    ]
+  },
+  "path_obligations": [
+    {
+      "from": [
+        "reg_a",
+        "1"
+      ],
+      "id": "support.reg_a.1",
+      "net": "VIN",
+      "through": [
+        "a_in_c",
+        "1"
+      ]
+    },
+    {
+      "from": [
+        "reg_a",
+        "3"
+      ],
+      "id": "support.reg_a.3",
+      "net": "VOUT_A",
+      "through": [
+        "a_out_c",
+        "1"
+      ]
+    },
+    {
+      "from": [
+        "reg_b",
+        "1"
+      ],
+      "id": "support.reg_b.1",
+      "net": "VIN",
+      "through": [
+        "b_in_c",
+        "1"
+      ]
+    },
+    {
+      "from": [
+        "reg_b",
+        "3"
+      ],
+      "id": "support.reg_b.3",
+      "net": "VOUT_B",
+      "through": [
+        "b_out_c",
+        "1"
+      ]
+    },
+    {
+      "from": [
+        "reg_a",
+        "3"
+      ],
+      "id": "path.output_a",
+      "through": [
+        "filter_r",
+        "1"
+      ],
+      "to": [
+        "out_a",
+        "1"
+      ]
+    },
+    {
+      "from": [
+        "reg_b",
+        "3"
+      ],
+      "id": "path.output_b",
+      "through": [
+        "indicator_r",
+        "1"
+      ],
+      "to": [
+        "indicator_led",
+        "2"
+      ]
+    }
+  ],
+  "schema_version": "m2g2.probe-expectations.1"
+}

@@ -1,0 +1,164 @@
+{
+  "ancestry_comparison": [
+    "new passive-only two-level topology; no active-stage ancestor"
+  ],
+  "frozen_before_layout_tuning": true,
+  "minimum_local_access_variants": 2,
+  "partitions": {
+    "BRANCH_A": [
+      [
+        "a_c",
+        "1"
+      ],
+      [
+        "a_r",
+        "2"
+      ],
+      [
+        "load_r",
+        "1"
+      ],
+      [
+        "out_a",
+        "1"
+      ]
+    ],
+    "BRANCH_B": [
+      [
+        "b_c",
+        "1"
+      ],
+      [
+        "b_r",
+        "2"
+      ],
+      [
+        "out_b",
+        "1"
+      ]
+    ],
+    "FANOUT": [
+      [
+        "a_r",
+        "1"
+      ],
+      [
+        "b_r",
+        "1"
+      ],
+      [
+        "root_c",
+        "1"
+      ],
+      [
+        "root_r",
+        "2"
+      ]
+    ],
+    "INPUT": [
+      [
+        "input",
+        "1"
+      ],
+      [
+        "root_r",
+        "1"
+      ]
+    ],
+    "LED_NODE": [
+      [
+        "load_led",
+        "2"
+      ],
+      [
+        "load_r",
+        "2"
+      ]
+    ],
+    "REF": [
+      [
+        "a_c",
+        "2"
+      ],
+      [
+        "b_c",
+        "2"
+      ],
+      [
+        "load_led",
+        "1"
+      ],
+      [
+        "return",
+        "1"
+      ],
+      [
+        "root_c",
+        "2"
+      ]
+    ]
+  },
+  "path_obligations": [
+    {
+      "from": [
+        "input",
+        "1"
+      ],
+      "id": "path.root",
+      "through": [
+        "root_r",
+        "1"
+      ],
+      "to": [
+        "root_r",
+        "2"
+      ]
+    },
+    {
+      "from": [
+        "root_r",
+        "2"
+      ],
+      "id": "path.branch_a",
+      "through": [
+        "a_r",
+        "1"
+      ],
+      "to": [
+        "out_a",
+        "1"
+      ]
+    },
+    {
+      "from": [
+        "root_r",
+        "2"
+      ],
+      "id": "path.branch_b",
+      "through": [
+        "b_r",
+        "1"
+      ],
+      "to": [
+        "out_b",
+        "1"
+      ]
+    },
+    {
+      "from": [
+        "a_r",
+        "2"
+      ],
+      "id": "path.second_depth",
+      "through": [
+        "load_r",
+        "1"
+      ],
+      "to": [
+        "load_led",
+        "2"
+      ]
+    }
+  ],
+  "schema_version": "m2g2.probe-expectations.1"
+}

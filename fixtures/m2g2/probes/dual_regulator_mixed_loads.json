@@ -1,0 +1,342 @@
+{
+  "profile": "m2b.1",
+  "id": "m2g2_dual_regulator_mixed_loads",
+  "name": "M2g2DualRegulatorMixedLoads",
+  "components": [
+    {
+      "id": "source",
+      "refdes": "J1",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Shared supply input"
+    },
+    {
+      "id": "return",
+      "refdes": "J2",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Shared return"
+    },
+    {
+      "id": "out_a",
+      "refdes": "J3",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Filtered output A"
+    },
+    {
+      "id": "out_b",
+      "refdes": "J4",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Regulated output B"
+    },
+    {
+      "id": "reg_a",
+      "refdes": "U1",
+      "asset": "Regulator_Linear:L7805",
+      "value": "L7805"
+    },
+    {
+      "id": "reg_b",
+      "refdes": "U2",
+      "asset": "Regulator_Linear:L7805",
+      "value": "L7805"
+    },
+    {
+      "id": "a_in_c",
+      "refdes": "C1",
+      "asset": "Device:C",
+      "value": "330n"
+    },
+    {
+      "id": "a_out_c",
+      "refdes": "C2",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "b_in_c",
+      "refdes": "C3",
+      "asset": "Device:C",
+      "value": "330n"
+    },
+    {
+      "id": "b_out_c",
+      "refdes": "C4",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "filter_r",
+      "refdes": "R1",
+      "asset": "Device:R",
+      "value": "100"
+    },
+    {
+      "id": "filter_c",
+      "refdes": "C5",
+      "asset": "Device:C",
+      "value": "10u"
+    },
+    {
+      "id": "indicator_r",
+      "refdes": "R2",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "indicator_led",
+      "refdes": "D1",
+      "asset": "Device:LED",
+      "value": "LED"
+    }
+  ],
+  "nets": [
+    {
+      "id": "VIN",
+      "members": [
+        [
+          "source",
+          "1"
+        ],
+        [
+          "reg_a",
+          "1"
+        ],
+        [
+          "a_in_c",
+          "1"
+        ],
+        [
+          "reg_b",
+          "1"
+        ],
+        [
+          "b_in_c",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "REF",
+      "members": [
+        [
+          "return",
+          "1"
+        ],
+        [
+          "reg_a",
+          "2"
+        ],
+        [
+          "a_in_c",
+          "2"
+        ],
+        [
+          "a_out_c",
+          "2"
+        ],
+        [
+          "reg_b",
+          "2"
+        ],
+        [
+          "b_in_c",
+          "2"
+        ],
+        [
+          "b_out_c",
+          "2"
+        ],
+        [
+          "filter_c",
+          "2"
+        ],
+        [
+          "indicator_led",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "VOUT_A",
+      "members": [
+        [
+          "reg_a",
+          "3"
+        ],
+        [
+          "a_out_c",
+          "1"
+        ],
+        [
+          "filter_r",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "FILTERED_A",
+      "members": [
+        [
+          "filter_r",
+          "2"
+        ],
+        [
+          "filter_c",
+          "1"
+        ],
+        [
+          "out_a",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "VOUT_B",
+      "members": [
+        [
+          "reg_b",
+          "3"
+        ],
+        [
+          "b_out_c",
+          "1"
+        ],
+        [
+          "indicator_r",
+          "1"
+        ],
+        [
+          "out_b",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "LED_B",
+      "members": [
+        [
+          "indicator_r",
+          "2"
+        ],
+        [
+          "indicator_led",
+          "2"
+        ]
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "reg.a",
+      "kind": "power_stage",
+      "component": "reg_a",
+      "input": "VIN",
+      "output": "VOUT_A",
+      "reference": "REF",
+      "pins": {
+        "input": "1",
+        "output": "3",
+        "reference": "2"
+      },
+      "polarity": "positive"
+    },
+    {
+      "id": "reg.a.input_support",
+      "kind": "decoupling",
+      "component": "a_in_c",
+      "consumer": [
+        "reg_a",
+        "1"
+      ],
+      "supply": "VIN",
+      "return": "REF"
+    },
+    {
+      "id": "reg.a.output_support",
+      "kind": "decoupling",
+      "component": "a_out_c",
+      "consumer": [
+        "reg_a",
+        "3"
+      ],
+      "supply": "VOUT_A",
+      "return": "REF"
+    },
+    {
+      "id": "reg.b",
+      "kind": "power_stage",
+      "component": "reg_b",
+      "input": "VIN",
+      "output": "VOUT_B",
+      "reference": "REF",
+      "pins": {
+        "input": "1",
+        "output": "3",
+        "reference": "2"
+      },
+      "polarity": "positive"
+    },
+    {
+      "id": "reg.b.input_support",
+      "kind": "decoupling",
+      "component": "b_in_c",
+      "consumer": [
+        "reg_b",
+        "1"
+      ],
+      "supply": "VIN",
+      "return": "REF"
+    },
+    {
+      "id": "reg.b.output_support",
+      "kind": "decoupling",
+      "component": "b_out_c",
+      "consumer": [
+        "reg_b",
+        "3"
+      ],
+      "supply": "VOUT_B",
+      "return": "REF"
+    },
+    {
+      "id": "a.filter.series",
+      "kind": "series",
+      "component": "filter_r",
+      "input": "VOUT_A",
+      "output": "FILTERED_A"
+    },
+    {
+      "id": "a.filter.shunt",
+      "kind": "shunt",
+      "component": "filter_c",
+      "node": "FILTERED_A",
+      "reference": "REF"
+    },
+    {
+      "id": "b.indicator.series",
+      "kind": "series",
+      "component": "indicator_r",
+      "input": "VOUT_B",
+      "output": "LED_B"
+    },
+    {
+      "id": "b.indicator.polarity",
+      "kind": "polarity",
+      "component": "indicator_led",
+      "anode": "LED_B",
+      "cathode": "REF"
+    }
+  ],
+  "no_connects": [],
+  "power_assertions": [
+    {
+      "id": "flag.input",
+      "refdes": "#FLG01",
+      "net": "VIN"
+    },
+    {
+      "id": "flag.return",
+      "refdes": "#FLG02",
+      "net": "REF"
+    }
+  ]
+}

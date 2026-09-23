@@ -8,7 +8,21 @@ from .ir import InputError, load_json
 from .kicad import ToolFailure, run_headless, validate_toolchain
 from .m2a import ROOT, emit, observe
 from .m2b import assets, check_observed_layout, compare, validate
-from .m2_compose import compose_with_evidence
+from .m2_compose import LayoutBudgetError, compose_with_evidence
+
+
+def _failure_class(message: str) -> str:
+    if "ROUTE" in message or "CONDUCTOR" in message:
+        return "connectivity/protection"
+    if "body" in message.lower() or "pin" in message.lower():
+        return "body/pin"
+    if "text" in message.lower():
+        return "text"
+    if "OVERFLOW" in message or "SPREAD" in message or "page" in message.lower():
+        return "page/spread"
+    if "BUDGET" in message:
+        return "budget_exhausted"
+    return "other_quality"
 
 
 def build(args) -> int:
@@ -27,7 +41,10 @@ def build(args) -> int:
         print("output, staging or failed directory already exists", file=sys.stderr)
         return 4
     stage.mkdir(parents=True)
+    reports = stage / "reports"
+    reports.mkdir(exist_ok=True)
     stages = []
+    input_hash = sha256(args.design.read_bytes())
     try:
         if args.target != "schematic":
             raise InputError("M2b supports only target schematic")
@@ -45,9 +62,10 @@ def build(args) -> int:
         launcher = validate_toolchain(args.toolchain_lock, ROOT / "requirements.lock")
         scene, composition = compose_with_evidence(design, resolved)
         stages.append({"stage": "layout_schematic", "status": "ok"})
-        reports = stage / "reports"
-        reports.mkdir(exist_ok=True)
         (reports / "composition.json").write_text(json.dumps(composition, indent=2) + "\n")
+        (reports / "layout_attempts.json").write_text(
+            json.dumps(composition["layout_attempts"], indent=2) + "\n"
+        )
         owned_assets = {c["asset"] for c in design["components"]}
         emitted_assets = {
             key: asset
@@ -135,14 +153,45 @@ def build(args) -> int:
         print(out)
         return 0
     except Exception as exc:
-        reports = stage / "reports"
-        reports.mkdir(exist_ok=True)
+        attempts = list(exc.attempts) if isinstance(exc, LayoutBudgetError) else []
+        if isinstance(exc, LayoutBudgetError) and exc.evidence:
+            (reports / "composition.json").write_text(json.dumps(exc.evidence, indent=2) + "\n")
+        (reports / "layout_attempts.json").write_text(json.dumps(attempts, indent=2) + "\n")
+        completed = {item["stage"] for item in stages}
         (reports / "failure.json").write_text(
             json.dumps(
                 {
                     "status": "invalid" if isinstance(exc, InputError) else "tool_failed",
                     "message": str(exc),
+                    "failure_class": _failure_class(str(exc)),
+                    "actual_metric": str(exc),
+                    "input_sha256": input_hash,
+                    "source_sha256": sha256((ROOT / "src/ai_kicad/m2_compose.py").read_bytes()),
+                    "toolchain_lock_sha256": sha256(args.toolchain_lock.read_bytes()),
+                    "asset_lock_sha256": sha256(args.assets_lock.read_bytes()),
+                    "policy_lock_sha256": sha256(args.policy_lock.read_bytes()),
+                    "threshold": (
+                        "210 mm x 140 mm observed spread"
+                        if "OVERFLOW" in str(exc) or "SPREAD" in str(exc)
+                        else None
+                    ),
                     "stages": stages,
+                    "stage_status": {
+                        name: "complete" if name in completed else "not_evaluated"
+                        for name in (
+                            "validate_resolve",
+                            "layout_schematic",
+                            "emit_schematic",
+                            "kicad_cli",
+                            "verify_electrical_layout",
+                        )
+                    },
+                    "budgets": {
+                        "seed_limit": 8,
+                        "repair_rounds_per_seed": 3,
+                        "complete_attempt_limit": 32,
+                        "complete_attempts_used": len(attempts),
+                    },
                 },
                 indent=2,
             )

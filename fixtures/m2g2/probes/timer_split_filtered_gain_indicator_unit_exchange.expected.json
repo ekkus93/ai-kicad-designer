@@ -1,0 +1,288 @@
+{
+  "ancestry_comparison": [
+    "supported A/B unit exchange of timer_split_filtered_gain_indicator"
+  ],
+  "frozen_before_layout_tuning": true,
+  "minimum_local_access_variants": 2,
+  "partitions": {
+    "CONT": [
+      [
+        "control_bypass",
+        "1"
+      ],
+      [
+        "timer",
+        "5"
+      ]
+    ],
+    "COUPLED": [
+      [
+        "amp_input_r",
+        "1"
+      ],
+      [
+        "highpass_c",
+        "2"
+      ],
+      [
+        "highpass_r",
+        "1"
+      ]
+    ],
+    "DISCH": [
+      [
+        "charge",
+        "2"
+      ],
+      [
+        "discharge",
+        "1"
+      ],
+      [
+        "timer",
+        "7"
+      ]
+    ],
+    "GAIN_OUT": [
+      [
+        "amp",
+        "7"
+      ],
+      [
+        "feedback_r",
+        "2"
+      ],
+      [
+        "output",
+        "1"
+      ]
+    ],
+    "LEDMID": [
+      [
+        "indicator_led",
+        "2"
+      ],
+      [
+        "indicator_r",
+        "2"
+      ]
+    ],
+    "OUT": [
+      [
+        "highpass_c",
+        "1"
+      ],
+      [
+        "indicator_r",
+        "1"
+      ],
+      [
+        "timer",
+        "3"
+      ]
+    ],
+    "PARK": [
+      [
+        "amp",
+        "1"
+      ],
+      [
+        "amp",
+        "2"
+      ]
+    ],
+    "REF": [
+      [
+        "amp",
+        "3"
+      ],
+      [
+        "amp",
+        "5"
+      ],
+      [
+        "cneg",
+        "1"
+      ],
+      [
+        "control_bypass",
+        "2"
+      ],
+      [
+        "cpos",
+        "2"
+      ],
+      [
+        "highpass_r",
+        "2"
+      ],
+      [
+        "indicator_led",
+        "1"
+      ],
+      [
+        "return",
+        "1"
+      ],
+      [
+        "timer",
+        "1"
+      ],
+      [
+        "timing_cap",
+        "2"
+      ]
+    ],
+    "SUM": [
+      [
+        "amp",
+        "6"
+      ],
+      [
+        "amp_input_r",
+        "2"
+      ],
+      [
+        "feedback_r",
+        "1"
+      ]
+    ],
+    "TIMING": [
+      [
+        "discharge",
+        "2"
+      ],
+      [
+        "timer",
+        "2"
+      ],
+      [
+        "timer",
+        "6"
+      ],
+      [
+        "timing_cap",
+        "1"
+      ]
+    ],
+    "VCC": [
+      [
+        "amp",
+        "8"
+      ],
+      [
+        "charge",
+        "1"
+      ],
+      [
+        "cpos",
+        "1"
+      ],
+      [
+        "source",
+        "1"
+      ],
+      [
+        "timer",
+        "4"
+      ],
+      [
+        "timer",
+        "8"
+      ]
+    ],
+    "VMINUS": [
+      [
+        "amp",
+        "4"
+      ],
+      [
+        "cneg",
+        "2"
+      ],
+      [
+        "negative",
+        "1"
+      ]
+    ]
+  },
+  "path_obligations": [
+    {
+      "from": [
+        "timer",
+        "3"
+      ],
+      "id": "path.timer_highpass_gain",
+      "through": [
+        [
+          "highpass_c",
+          "1"
+        ],
+        [
+          "amp_input_r",
+          "1"
+        ],
+        [
+          "amp",
+          "2"
+        ]
+      ],
+      "to": [
+        "amp",
+        "1"
+      ]
+    },
+    {
+      "from": [
+        "timer",
+        "3"
+      ],
+      "id": "path.timer_indicator",
+      "through": [
+        "indicator_r",
+        "1"
+      ],
+      "to": [
+        "indicator_led",
+        "2"
+      ]
+    },
+    {
+      "from": [
+        "amp",
+        "1"
+      ],
+      "id": "path.gain_feedback",
+      "through": [
+        "feedback_r",
+        "2"
+      ],
+      "to": [
+        "amp",
+        "2"
+      ]
+    },
+    {
+      "from": [
+        "timer",
+        "7"
+      ],
+      "id": "path.timer_timing",
+      "through": [
+        [
+          "charge",
+          "2"
+        ],
+        [
+          "discharge",
+          "1"
+        ]
+      ],
+      "to": [
+        "timer",
+        "2"
+      ]
+    }
+  ],
+  "schema_version": "m2g2.probe-expectations.1"
+}

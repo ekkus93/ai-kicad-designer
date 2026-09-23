@@ -725,6 +725,10 @@ def observe(schematic: Path, xml_path: Path) -> dict:
         (label[1], (_nm(one(label, "at")[1]), _nm(one(label, "at")[2])))
         for label in children(tree, "label")
     ]
+    actual_junctions = [
+        (_nm(one(junction, "at")[1]), _nm(one(junction, "at")[2]))
+        for junction in children(tree, "junction")
+    ]
     nets = {}
     for net in xml.findall("./nets/net"):
         nets[net.attrib["name"].lstrip("/")] = sorted(
@@ -737,6 +741,7 @@ def observe(schematic: Path, xml_path: Path) -> dict:
         "pin_positions": pin_positions,
         "labels": actual_labels,
         "wires": actual_wires,
+        "junctions": actual_junctions,
     }
 
 
