@@ -32,6 +32,22 @@ jobs:
       - name: Ruff lint
         run: python -m ruff check src/ai_kicad tests tools
 
+      - name: Ruff format diagnostic
+        run: |
+          set +e
+          python -m ruff format --diff src/ai_kicad tests tools > ruff-format.diff
+          status=$?
+          python - <<'PY'
+          import base64
+          from pathlib import Path
+
+          data = Path('ruff-format.diff').read_bytes()
+          print('RUFF_FORMAT_DIFF_BASE64_BEGIN')
+          print(base64.b64encode(data).decode())
+          print('RUFF_FORMAT_DIFF_BASE64_END')
+          PY
+          exit "$status"
+
       - name: Ruff format check
         run: python -m ruff format --check src/ai_kicad tests tools
 
