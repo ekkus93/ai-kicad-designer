@@ -31,6 +31,10 @@ from ai_kicad.m2_semantics import (
 )
 
 
+def _load_interaction(path: str) -> dict:
+    return json.loads((ROOT / path).read_text())
+
+
 def _role_bound_plan(
     *,
     edge_kind: str | None,
@@ -87,27 +91,26 @@ def _role_bound_plan(
             wire_provenance=tuple(("local-long",) for _ in wires),
         )
 
-    edge = (
-        ()
-        if edge_kind is None
-        else (SemanticEdge(edge_kind, "source", "sink", net, ("case",)),)
+    if edge_kind is None:
+        edges = ()
+    else:
+        edges = (SemanticEdge(edge_kind, "source", "sink", net, ("case",)),)
+
+    presentation = PresentationNet(
+        net,
+        (("source", "1"), ("sink", "1")),
+        ("source", "sink"),
+        presentation_role,
+        edge_kind is None,
+        True,
+        ("source",),
     )
     plan = SemanticPlan(
         (source, sink),
-        edge,
+        edges,
         {},
         (),
-        presentation_nets=(
-            PresentationNet(
-                net,
-                (("source", "1"), ("sink", "1")),
-                ("source", "sink"),
-                presentation_role,
-                edge_kind is None,
-                True,
-                ("source",),
-            ),
-        ),
+        presentation_nets=(presentation,),
     )
     placed = (
         _place(fragment(source, source_port, True), 20 * PITCH, 30 * PITCH),
@@ -161,7 +164,7 @@ def test_typed_growth_repairs_use_conflict_fields_for_remaining_categories(
 ) -> None:
     resolved = assets()
     design = validate(
-        json.loads((ROOT / "fixtures/m2h2/interaction/i2/internal_2.json").read_text()),
+        _load_interaction("fixtures/m2h2/interaction/i2/internal_2.json"),
         resolved,
     )
     plan = semantic_plan(design, resolved)
@@ -187,14 +190,14 @@ def test_typed_growth_repairs_use_conflict_fields_for_remaining_categories(
     conflict.gateways = (gateway.id,)
 
     repaired, decision = _reservation_growth_repack(plan, seed, conflict, 0)
+    before_state = tuple((item.fragment.id, item.delta) for item in seed.fragments)
+    after_state = tuple((item.fragment.id, item.delta) for item in repaired.fragments)
 
     assert decision["net"] == net
     assert decision["gateway"] == gateway.id
     assert decision["growth_nm"] == PITCH
     assert "parseable routing tokens" in decision["witness"]
-    assert tuple((item.fragment.id, item.delta) for item in repaired.fragments) != tuple(
-        (item.fragment.id, item.delta) for item in seed.fragments
-    )
+    assert after_state != before_state
 
 
 def test_route_corridor_capacity_is_checked_before_candidate_acceptance() -> None:
@@ -229,7 +232,7 @@ def test_route_corridor_capacity_is_checked_before_candidate_acceptance() -> Non
 def test_composition_evidence_reports_structural_diversity_not_raw_attempt_count() -> None:
     resolved = assets()
     design = validate(
-        json.loads((ROOT / "fixtures/m2h2/interaction/i3/a0_interleaved.json").read_text()),
+        _load_interaction("fixtures/m2h2/interaction/i3/a0_interleaved.json"),
         resolved,
     )
     _scene, evidence = compose_with_evidence(design, resolved)
@@ -237,7 +240,8 @@ def test_composition_evidence_reports_structural_diversity_not_raw_attempt_count
     search = evidence["structural_search"]
     assert search["seed_count"] >= search["attempted_structure_count"]
     assert search["proved_structure_count"] >= 2
-    assert all(seed["structure"] and seed["placement_class"] for seed in search["seeds"])
+    assert all(seed["structure"] for seed in search["seeds"])
+    assert all(seed["placement_class"] for seed in search["seeds"])
 
     selection = evidence["candidate_selection"]
     assert selection["proved_candidate_count"] >= 2
@@ -251,7 +255,7 @@ def test_failure_exit_preserves_candidate_decisions_and_exact_failure_witness(
 ) -> None:
     resolved = assets()
     design = validate(
-        json.loads((ROOT / "fixtures/m2h2/interaction/i2/internal_2.json").read_text()),
+        _load_interaction("fixtures/m2h2/interaction/i2/internal_2.json"),
         resolved,
     )
     conflict = compose_module.ConductorLengthConflict("VREF", 250_000_001, 0, 250_000_001)
@@ -281,7 +285,7 @@ def test_failure_exit_preserves_candidate_decisions_and_exact_failure_witness(
 def test_obligation_certificate_exports_pre_emission_invariant_witnesses() -> None:
     resolved = assets()
     design = validate(
-        json.loads((ROOT / "fixtures/m2h2/interaction/i2/internal_2.json").read_text()),
+        _load_interaction("fixtures/m2h2/interaction/i2/internal_2.json"),
         resolved,
     )
     scene, evidence = compose_with_evidence(design, resolved)
@@ -295,22 +299,19 @@ def test_obligation_certificate_exports_pre_emission_invariant_witnesses() -> No
         for proof in certificate["net_graph_witnesses"]
         for entry in proof["terminal_components"]
     }
+    gateway_witnesses = certificate["gateway_witnesses"]
     assert certificate["terminal_inventory_count"] == len(terminal_components)
-    assert all(
-        proof["component_count"] >= 1 for proof in certificate["net_graph_witnesses"]
-    )
-    assert all(
-        witness["proved"] and witness["terminals"]
-        for witness in certificate["gateway_witnesses"]
-    )
+    for proof in certificate["net_graph_witnesses"]:
+        assert proof["component_count"] >= 1
+    for witness in gateway_witnesses:
+        assert witness["proved"]
+        assert witness["terminals"]
 
     left, top, right, bottom = certificate["final_content_envelope_nm"]
+    canonical_lengths = certificate["canonical_lengths_nm"].values()
     assert right - left <= 210_000_000
     assert bottom - top <= 140_000_000
-    assert all(
-        length <= 250_000_000
-        for length in certificate["canonical_lengths_nm"].values()
-    )
+    assert all(length <= 250_000_000 for length in canonical_lengths)
     assert certificate["reservation_containment_pass"] is True
     assert certificate["reservation_allocation_count"] > 0
     assert certificate["no_unintended_dangling_endpoints"] is True
@@ -323,7 +324,7 @@ def test_obligation_certificate_exports_pre_emission_invariant_witnesses() -> No
 def test_certificate_covers_required_net_graphs_and_placement_obligations() -> None:
     resolved = assets()
     design = validate(
-        json.loads((ROOT / "fixtures/m2h2/interaction/i1/d2_b1.json").read_text()),
+        _load_interaction("fixtures/m2h2/interaction/i1/d2_b1.json"),
         resolved,
     )
     plan = semantic_plan(design, resolved)
@@ -339,28 +340,29 @@ def test_certificate_covers_required_net_graphs_and_placement_obligations() -> N
             assert proof["component_count"] == 1
         assert proof["canonical_length_nm"] <= 250_000_000
 
+    placement_witness_count = len(certificate["placement_witnesses"])
     assert certificate["local_span_obligation_count"] == len(plan.local_spans)
-    assert len(certificate["placement_witnesses"]) == len(plan.precedence) + len(
-        plan.local_spans
-    )
+    assert placement_witness_count == len(plan.precedence) + len(plan.local_spans)
     assert certificate["placement_witnesses"]
-    assert all(len(witness) == 3 for witness in certificate["placement_witnesses"])
+    for witness in certificate["placement_witnesses"]:
+        assert len(witness) == 3
 
 
 def test_certificate_exports_complete_semantic_obligation_inventory() -> None:
     resolved = assets()
     design = validate(
-        json.loads((ROOT / "fixtures/m2h2/interaction/i1/d2_b1.json").read_text()),
+        _load_interaction("fixtures/m2h2/interaction/i1/d2_b1.json"),
         resolved,
     )
     plan = semantic_plan(design, resolved)
     _scene, evidence = compose_with_evidence(design, resolved)
     obligations = evidence["obligation_certificate"]["semantic_obligations"]
 
-    assert {item["id"] for item in obligations["ports"]} == {
-        port.id for block in plan.blocks for port in block.ports
-    }
-    assert [
+    exported_ports = {item["id"] for item in obligations["ports"]}
+    expected_ports = {port.id for block in plan.blocks for port in block.ports}
+    assert exported_ports == expected_ports
+
+    exported_edges = [
         (
             item["kind"],
             item["source"],
@@ -369,25 +371,24 @@ def test_certificate_exports_complete_semantic_obligation_inventory() -> None:
             tuple(item["origins"]),
         )
         for item in obligations["edges"]
-    ] == [
+    ]
+    expected_edges = [
         (edge.kind, edge.source, edge.target, edge.net, edge.origins)
         for edge in plan.edges
     ]
-    assert {item["id"] for item in obligations["constraints"]} == {
-        item.id for item in plan.constraints
-    }
-    assert {item["id"] for item in obligations["precedence"]} == {
-        item.id for item in plan.precedence
-    }
-    assert {tuple(item["terminal"]) for item in obligations["terminals"]} == {
-        item.terminal for item in plan.terminals
-    }
-    assert {item["id"] for item in obligations["presentation_nets"]} == {
-        item.id for item in plan.presentation_nets
-    }
-    assert {item["id"] for item in obligations["local_spans"]} == {
-        item.id for item in plan.local_spans
-    }
+    assert exported_edges == expected_edges
+
+    exported_constraints = {item["id"] for item in obligations["constraints"]}
+    exported_precedence = {item["id"] for item in obligations["precedence"]}
+    exported_terminals = {tuple(item["terminal"]) for item in obligations["terminals"]}
+    exported_nets = {item["id"] for item in obligations["presentation_nets"]}
+    exported_spans = {item["id"] for item in obligations["local_spans"]}
+
+    assert exported_constraints == {item.id for item in plan.constraints}
+    assert exported_precedence == {item.id for item in plan.precedence}
+    assert exported_terminals == {item.terminal for item in plan.terminals}
+    assert exported_nets == {item.id for item in plan.presentation_nets}
+    assert exported_spans == {item.id for item in plan.local_spans}
     assert len(obligations["terminals"]) == len(plan.terminals)
     assert len(obligations["precedence"]) == len(plan.precedence)
     assert len(obligations["local_spans"]) == len(plan.local_spans)
@@ -396,7 +397,7 @@ def test_certificate_exports_complete_semantic_obligation_inventory() -> None:
 def test_failed_certificate_prevents_successful_schematic_emission(tmp_path) -> None:
     resolved = assets()
     design = validate(
-        json.loads((ROOT / "fixtures/m2h2/interaction/i2/internal_2.json").read_text()),
+        _load_interaction("fixtures/m2h2/interaction/i2/internal_2.json"),
         resolved,
     )
     scene, _evidence = compose_with_evidence(design, resolved)
