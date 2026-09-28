@@ -41,9 +41,19 @@ def _role_bound_plan(
     """Build a tiny two-fragment case with an impossible fixed conductor union."""
     net = "RAIL"
     source_port = SemanticPort(
-        "source.port", "source", net, source_role, (("source", "1"),)
+        "source.port",
+        "source",
+        net,
+        source_role,
+        (("source", "1"),),
     )
-    target_port = SemanticPort("sink.port", "sink", net, target_role, (("sink", "1"),))
+    target_port = SemanticPort(
+        "sink.port",
+        "sink",
+        net,
+        target_role,
+        (("sink", "1"),),
+    )
     source = BlockPlan("source", "rc", (), frozenset(), (source_port,))
     sink = BlockPlan("sink", "rc", (), frozenset(), (target_port,))
 
@@ -158,7 +168,12 @@ def test_typed_growth_repairs_use_conflict_fields_for_remaining_categories(
     variants = fragment_variants(design, resolved, plan)
     seed = pack_fragment_candidates(plan, variants)[0]
     net = next(item.id for item in plan.presentation_nets if item.internally_generated)
-    gateway = next(item for placed in seed.fragments for item in placed.gateways if item.net == net)
+    gateway = next(
+        item
+        for placed in seed.fragments
+        for item in placed.gateways
+        if item.net == net
+    )
     conflict = TypedConflict(
         category,
         f"opaque {category.value} diagnostic without parseable routing tokens",
@@ -332,12 +347,24 @@ def test_certificate_exports_complete_semantic_obligation_inventory() -> None:
     assert [
         (item["kind"], item["source"], item["target"], item["net"], tuple(item["origins"]))
         for item in obligations["edges"]
-    ] == [(edge.kind, edge.source, edge.target, edge.net, edge.origins) for edge in plan.edges]
-    assert {item["id"] for item in obligations["constraints"]} == {item.id for item in plan.constraints}
-    assert {item["id"] for item in obligations["precedence"]} == {item.id for item in plan.precedence}
-    assert {tuple(item["terminal"]) for item in obligations["terminals"]} == {item.terminal for item in plan.terminals}
-    assert {item["id"] for item in obligations["presentation_nets"]} == {item.id for item in plan.presentation_nets}
-    assert {item["id"] for item in obligations["local_spans"]} == {item.id for item in plan.local_spans}
+    ] == [
+        (edge.kind, edge.source, edge.target, edge.net, edge.origins) for edge in plan.edges
+    ]
+    assert {item["id"] for item in obligations["constraints"]} == {
+        item.id for item in plan.constraints
+    }
+    assert {item["id"] for item in obligations["precedence"]} == {
+        item.id for item in plan.precedence
+    }
+    assert {tuple(item["terminal"]) for item in obligations["terminals"]} == {
+        item.terminal for item in plan.terminals
+    }
+    assert {item["id"] for item in obligations["presentation_nets"]} == {
+        item.id for item in plan.presentation_nets
+    }
+    assert {item["id"] for item in obligations["local_spans"]} == {
+        item.id for item in plan.local_spans
+    }
     assert len(obligations["terminals"]) == len(plan.terminals)
     assert len(obligations["precedence"]) == len(plan.precedence)
     assert len(obligations["local_spans"]) == len(plan.local_spans)
