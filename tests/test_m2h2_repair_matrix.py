@@ -33,7 +33,9 @@ def _role_bound_plan(
 ) -> tuple[SemanticPlan, tuple]:
     """Build a tiny two-fragment case with an impossible fixed conductor union."""
     net = "RAIL"
-    source_port = SemanticPort("source.port", "source", net, source_role, (("source", "1"),))
+    source_port = SemanticPort(
+        "source.port", "source", net, source_role, (("source", "1"),)
+    )
     target_port = SemanticPort("sink.port", "sink", net, target_role, (("sink", "1"),))
     source = BlockPlan("source", "rc", (), frozenset(), (source_port,))
     sink = BlockPlan("sink", "rc", (), frozenset(), (target_port,))
@@ -68,7 +70,11 @@ def _role_bound_plan(
             wire_provenance=tuple(("local-long",) for _ in wires),
         )
 
-    edge = () if edge_kind is None else (SemanticEdge(edge_kind, "source", "sink", net, ("case",)),)
+    edge = (
+        ()
+        if edge_kind is None
+        else (SemanticEdge(edge_kind, "source", "sink", net, ("case",)),)
+    )
     plan = SemanticPlan(
         (source, sink),
         edge,
@@ -151,7 +157,9 @@ def test_typed_growth_repairs_use_conflict_fields_for_remaining_categories(
         f"opaque {category.value} diagnostic without parseable routing tokens",
         net=net,
         owners=(gateway.island.split(":", 1)[0],),
-        offending_geometry=((gateway.point[0], gateway.point[1], gateway.point[0], gateway.point[1]),),
+        offending_geometry=(
+            (gateway.point[0], gateway.point[1], gateway.point[0], gateway.point[1]),
+        ),
         repair_classes=("reservation_growth", "gateway_access", "distribution_placement"),
     )
     conflict.gateways = (gateway.id,)
