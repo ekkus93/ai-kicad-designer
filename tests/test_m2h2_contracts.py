@@ -761,13 +761,16 @@ def test_internal_reference_net_rename_preserves_geometry_and_search_decisions()
         item["variant"] for item in renamed_evidence["variants"]
     ]
     assert original_evidence["packing_attempts"] == renamed_evidence["packing_attempts"]
-    assert original_evidence["candidate_selection"]["selected_seed"] == renamed_evidence[
-        "candidate_selection"
-    ]["selected_seed"]
+    assert (
+        original_evidence["candidate_selection"]["selected_seed"]
+        == renamed_evidence["candidate_selection"]["selected_seed"]
+    )
     assert [
-        (item["strategy"], item["segments"]) for item in original_evidence["routes"]
+        (item["strategy"], item["segments"])
+        for item in original_evidence["routes"]
     ] == [
-        (item["strategy"], item["segments"]) for item in renamed_evidence["routes"]
+        (item["strategy"], item["segments"])
+        for item in renamed_evidence["routes"]
     ]
 
 
@@ -796,7 +799,9 @@ def test_typed_repairs_use_structured_conflict_fields_and_change_state() -> None
     assert order_decision["kind"] == "precedence_violation"
     assert tuple(
         (item.fragment.id, item.delta) for item in order_repaired.fragments
-    ) != tuple((item.fragment.id, item.delta) for item in passive_seed.fragments)
+    ) != tuple(
+        (item.fragment.id, item.delta) for item in passive_seed.fragments
+    )
 
     span = passive_plan.local_spans[0]
 
@@ -822,7 +827,9 @@ def test_typed_repairs_use_structured_conflict_fields_and_change_state() -> None
     assert span_decision["kind"] == "local_span_violation"
     assert tuple(
         (item.fragment.id, item.delta) for item in span_repaired.fragments
-    ) != tuple((item.fragment.id, item.delta) for item in passive_seed.fragments)
+    ) != tuple(
+        (item.fragment.id, item.delta) for item in passive_seed.fragments
+    )
 
     reference_path = ROOT / "fixtures/m2h2/interaction/i2/internal_2.json"
     reference_design = validate(json.loads(reference_path.read_text()), resolved)
@@ -847,7 +854,9 @@ def test_typed_repairs_use_structured_conflict_fields_and_change_state() -> None
     assert growth_decision["growth_nm"] == PITCH
     assert tuple(
         (item.fragment.id, item.delta) for item in grown.fragments
-    ) != tuple((item.fragment.id, item.delta) for item in reference_seed.fragments)
+    ) != tuple(
+        (item.fragment.id, item.delta) for item in reference_seed.fragments
+    )
 
     detour = ConductorLengthConflict(reference_net, 250_000_001, 100_000_000, 150_000_001)
     detour.args = ("length conflict without a parseable net token",)
@@ -858,4 +867,6 @@ def test_typed_repairs_use_structured_conflict_fields_and_change_state() -> None
     assert substitution["from"] != substitution["to"]
     assert tuple(
         (item.fragment.id, item.delta) for item in substituted.fragments
-    ) != tuple((item.fragment.id, item.delta) for item in reference_seed.fragments)
+    ) != tuple(
+        (item.fragment.id, item.delta) for item in reference_seed.fragments
+    )
