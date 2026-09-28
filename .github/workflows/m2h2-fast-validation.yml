@@ -40,8 +40,85 @@ jobs:
           python -m ruff format --check \
             $(find src/ai_kicad -name '*.py' ! -path 'src/ai_kicad/m2_compose.py' | sort)
 
-      - name: Ruff format check test_m2h2_repair_matrix
-        run: python -m ruff format --check tests/test_m2h2_repair_matrix.py
+      - name: Repair matrix format diff lines 1-80
+        run: |
+          cp tests/test_m2h2_repair_matrix.py /tmp/repair_matrix_orig.py
+          cp tests/test_m2h2_repair_matrix.py /tmp/repair_matrix_fmt.py
+          python -m ruff format --config pyproject.toml /tmp/repair_matrix_fmt.py
+          python - <<'PY'
+          import difflib
+          from pathlib import Path
+          lo, hi = 1, 80
+          orig = Path('/tmp/repair_matrix_orig.py').read_text().splitlines()
+          fmt = Path('/tmp/repair_matrix_fmt.py').read_text().splitlines()
+          for tag, i1, i2, _j1, _j2 in difflib.SequenceMatcher(a=orig, b=fmt).get_opcodes():
+              if tag != 'equal' and i1 < hi and i2 >= lo - 1:
+                  raise SystemExit(1)
+          PY
+
+      - name: Repair matrix format diff lines 81-160
+        run: |
+          cp tests/test_m2h2_repair_matrix.py /tmp/repair_matrix_orig.py
+          cp tests/test_m2h2_repair_matrix.py /tmp/repair_matrix_fmt.py
+          python -m ruff format --config pyproject.toml /tmp/repair_matrix_fmt.py
+          python - <<'PY'
+          import difflib
+          from pathlib import Path
+          lo, hi = 81, 160
+          orig = Path('/tmp/repair_matrix_orig.py').read_text().splitlines()
+          fmt = Path('/tmp/repair_matrix_fmt.py').read_text().splitlines()
+          for tag, i1, i2, _j1, _j2 in difflib.SequenceMatcher(a=orig, b=fmt).get_opcodes():
+              if tag != 'equal' and i1 < hi and i2 >= lo - 1:
+                  raise SystemExit(1)
+          PY
+
+      - name: Repair matrix format diff lines 161-240
+        run: |
+          cp tests/test_m2h2_repair_matrix.py /tmp/repair_matrix_orig.py
+          cp tests/test_m2h2_repair_matrix.py /tmp/repair_matrix_fmt.py
+          python -m ruff format --config pyproject.toml /tmp/repair_matrix_fmt.py
+          python - <<'PY'
+          import difflib
+          from pathlib import Path
+          lo, hi = 161, 240
+          orig = Path('/tmp/repair_matrix_orig.py').read_text().splitlines()
+          fmt = Path('/tmp/repair_matrix_fmt.py').read_text().splitlines()
+          for tag, i1, i2, _j1, _j2 in difflib.SequenceMatcher(a=orig, b=fmt).get_opcodes():
+              if tag != 'equal' and i1 < hi and i2 >= lo - 1:
+                  raise SystemExit(1)
+          PY
+
+      - name: Repair matrix format diff lines 241-320
+        run: |
+          cp tests/test_m2h2_repair_matrix.py /tmp/repair_matrix_orig.py
+          cp tests/test_m2h2_repair_matrix.py /tmp/repair_matrix_fmt.py
+          python -m ruff format --config pyproject.toml /tmp/repair_matrix_fmt.py
+          python - <<'PY'
+          import difflib
+          from pathlib import Path
+          lo, hi = 241, 320
+          orig = Path('/tmp/repair_matrix_orig.py').read_text().splitlines()
+          fmt = Path('/tmp/repair_matrix_fmt.py').read_text().splitlines()
+          for tag, i1, i2, _j1, _j2 in difflib.SequenceMatcher(a=orig, b=fmt).get_opcodes():
+              if tag != 'equal' and i1 < hi and i2 >= lo - 1:
+                  raise SystemExit(1)
+          PY
+
+      - name: Repair matrix format diff lines 321-460
+        run: |
+          cp tests/test_m2h2_repair_matrix.py /tmp/repair_matrix_orig.py
+          cp tests/test_m2h2_repair_matrix.py /tmp/repair_matrix_fmt.py
+          python -m ruff format --config pyproject.toml /tmp/repair_matrix_fmt.py
+          python - <<'PY'
+          import difflib
+          from pathlib import Path
+          lo, hi = 321, 460
+          orig = Path('/tmp/repair_matrix_orig.py').read_text().splitlines()
+          fmt = Path('/tmp/repair_matrix_fmt.py').read_text().splitlines()
+          for tag, i1, i2, _j1, _j2 in difflib.SequenceMatcher(a=orig, b=fmt).get_opcodes():
+              if tag != 'equal' and i1 < hi and i2 >= lo - 1:
+                  raise SystemExit(1)
+          PY
 
       - name: Ruff format check test_m2h2_contracts
         run: python -m ruff format --check tests/test_m2h2_contracts.py
