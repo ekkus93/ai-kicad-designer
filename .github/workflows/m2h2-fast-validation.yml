@@ -35,6 +35,18 @@ jobs:
       - name: Git diff check
         run: git diff --check
 
+      - name: Scoped trailing-whitespace check
+        run: |
+          if git grep -nI -E '[[:blank:]]$' -- \
+            src/ai_kicad \
+            tests \
+            tools \
+            .github/workflows/m2h2-fast-validation.yml \
+            docs/M2H2_FINALIZATION_TODO_2026-09-27.md \
+            fixtures/m2h2/STATUS.md; then
+            exit 1
+          fi
+
   locked-runner-validation:
     name: pytest / format on locked runner
     runs-on: self-hosted
