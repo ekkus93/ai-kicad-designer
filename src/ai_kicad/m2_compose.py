@@ -15,6 +15,7 @@ from .m2_geometry import (
     Reservation,
     canonical_conductor_tree,
     prove_conductor_graph,
+    prove_gateway_witnesses,
     prove_no_cross_net_contacts,
     prove_reservation_allocation,
 )
@@ -695,6 +696,26 @@ def _assemble_candidate(design: dict, resolved: dict, plan, packing: Packing, re
     missing_nets = set(presentation_by_net) - {tree.net for tree in canonical_trees}
     if missing_nets:
         raise InputError(f"CONDUCTOR_NET_MISSING: {sorted(missing_nets)}")
+    tree_by_net = {tree.net: tree for tree in canonical_trees}
+    gateway_proofs = []
+    for item in packing.fragments:
+        for gateway in item.gateways:
+            tree = tree_by_net.get(gateway.net)
+            if tree is None:
+                raise TypedConflict(
+                    ConflictKind.GATEWAY_WITNESS,
+                    f"GATEWAY_NET_MISSING: {gateway.id}:{gateway.net}",
+                    net=gateway.net,
+                    owners=(item.fragment.block.id,),
+                    repair_classes=("gateway_access", "distribution_placement"),
+                )
+            proved = prove_gateway_witnesses(
+                tree,
+                gateway,
+                {terminal: draft.point(*terminal) for terminal in gateway.terminals},
+                require_escape=False,
+            )
+            gateway_proofs.append((gateway, proved))
     prove_no_cross_net_contacts(conductors)
     terminal_inventory = {item.terminal for item in plan.terminals if item.net}
     proved_terminals = {
@@ -870,6 +891,21 @@ def _assemble_candidate(design: dict, resolved: dict, plan, packing: Packing, re
                 for proof in net_proofs
             ],
             "pre_emission_terminal_inventory_count": len(terminal_inventory),
+            "pre_emission_gateway_witness_count": len(gateway_proofs),
+            "pre_emission_gateway_witnesses": [
+                {
+                    "id": gateway.id,
+                    "net": gateway.net,
+                    "point": list(gateway.point),
+                    "anchor": list(gateway.anchor),
+                    "terminals": [
+                        {"id": list(terminal), "point": list(draft.point(*terminal))}
+                        for terminal in proved
+                    ],
+                    "proved": True,
+                }
+                for gateway, proved in gateway_proofs
+            ],
             "pre_emission_local_span_count": len(plan.local_spans),
         }
     )
@@ -1390,19 +1426,7 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
         ],
         "terminal_inventory_count": scene.metrics["pre_emission_terminal_inventory_count"],
         "net_graph_witnesses": scene.metrics["pre_emission_net_witnesses"],
-        "gateway_witnesses": [
-            {
-                "id": gateway.id,
-                "net": gateway.net,
-                "point": list(gateway.point),
-                "terminals": [
-                    {"id": list(terminal), "point": list(draft.point(*terminal))}
-                    for terminal in gateway.terminals
-                ],
-            }
-            for item in packing.fragments
-            for gateway in item.gateways
-        ],
+        "gateway_witnesses": scene.metrics["pre_emission_gateway_witnesses"],
         "placement_witnesses": scene.metrics["pre_emission_placement_proofs"],
         "local_span_obligation_count": scene.metrics["pre_emission_local_span_count"],
         "canonical_lengths_nm": {tree.net: tree.length for tree in canonical_trees},

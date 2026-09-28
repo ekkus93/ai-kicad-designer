@@ -613,8 +613,17 @@ def prove_gateway_witnesses(
     tree: CanonicalTree,
     gateway: Gateway,
     actual_pins: dict[tuple[str, str], Point],
+    *,
+    require_escape: bool = True,
 ) -> tuple[tuple[str, str], ...]:
-    """Prove every declared witness through preserved conductor geometry."""
+    """Prove every declared terminal reaches the gateway through conductor geometry.
+
+    Local fragment validation also proves the authored escape polyline from its
+    construction anchor.  A final canonical tree may legitimately prune a
+    redundant anchor-side spur while retaining exact physical-pin-to-gateway
+    connectivity, so final-scene certification can disable only that local
+    construction check.
+    """
     if gateway.net != tree.net or not gateway.terminals:
         raise TypedConflict(
             ConflictKind.GATEWAY_WITNESS,
@@ -622,7 +631,7 @@ def prove_gateway_witnesses(
             net=gateway.net,
             owners=(gateway.island,),
         )
-    if not conductor_reachable(tree, gateway.anchor, gateway.point):
+    if require_escape and not conductor_reachable(tree, gateway.anchor, gateway.point):
         raise TypedConflict(
             ConflictKind.GATEWAY_WITNESS,
             f"GATEWAY_ESCAPE_DETACHED: {gateway.id}",

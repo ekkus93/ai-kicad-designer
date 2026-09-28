@@ -15,15 +15,15 @@ A checkbox may be checked only from current-source evidence. Older qualification
 
 ## 0. Boundaries and baseline
 
-- [ ] Confirm M2h2-only scope: no M3, no corpus.v7, no CP-SAT.
-- [ ] Confirm unchanged hard gates: 210 × 140 mm spread, 80 mm local path, 60 mm support/locality where applicable, 250 mm canonical conductor length.
-- [ ] Confirm `.local/` is ignored and `research/legacy_openclaw/` is not inspected/used.
-- [ ] Confirm Ralph Bridge is used for all GitHub/repository/CI state and writes.
-- [ ] Confirm direct `master` workflow with no per-task branch/PR churn.
-- [ ] Record current `master` SHA and relevant source hashes in a fresh finalization evidence root.
-- [ ] Verify historical blind/evaluation evidence integrity before behavior changes.
-- [ ] Verify frozen DP1–DP4 manifest/topology and interaction coverage plan are unchanged.
-- [ ] Record `qualification_candidate4` as provisional/non-final because source hashes are stale.
+- [x] Confirm M2h2-only scope: no M3, no corpus.v7, no CP-SAT. Evidence: finalization spec + handoff baseline.
+- [x] Confirm unchanged hard gates: 210 × 140 mm spread, 80 mm local path, 60 mm support/locality where applicable, 250 mm canonical conductor length. Evidence: governing/finalization specs.
+- [x] Confirm `.local/` is ignored and `research/legacy_openclaw/` is not inspected/used. Evidence: Ralph finalization operating contract.
+- [x] Confirm Ralph Bridge is used for all GitHub/repository/CI state and writes. Evidence: Ralph Bridge v0.2.2 exact-head master commits.
+- [x] Confirm direct `master` workflow with no per-task branch/PR churn. Evidence: direct master CAS commits; no task branch/PR created.
+- [x] Record current `master` SHA and relevant source hashes in a fresh finalization evidence root. Evidence: `fixtures/m2h2/finalization_checks/baseline_28213224.json`.
+- [x] Verify historical blind/evaluation evidence integrity before behavior changes. Evidence: baseline records 7,221 protected files and aggregate SHA-256 `f1dcfc89822b37c6c376f844adf6a43295ffd716ad64921f44d687dfb880200e`.
+- [x] Verify frozen DP1–DP4 manifest/topology and interaction coverage plan are unchanged. Evidence: baseline frozen-input hashes.
+- [x] Record `qualification_candidate4` as provisional/non-final because source hashes are stale. Evidence: baseline + handoff/status.
 
 ## 1. Current-source baseline
 
@@ -68,23 +68,23 @@ A checkbox may be checked only from current-source evidence. Older qualification
 
 ### 3.1 Independent graph/connectivity oracle
 
-- [ ] Add/finish independently authored canonical-conductor graph oracle.
-- [ ] Split and unsplit equivalent conductor graphs compare equal.
-- [ ] Disconnected same-net islands fail.
-- [ ] Label-only protected continuity fails.
-- [ ] Unauthorized geometric crossing does not create connectivity.
-- [ ] Missing/invalid T or four-way junction topology fails.
-- [ ] Extra unintended dangling endpoint fails.
-- [ ] Duplicate/foreign-owned conductor interval negative is covered.
+- [x] Add/finish independently authored canonical-conductor graph oracle. Evidence: `tests/test_m2h2_contracts.py::reference_components` and graph falsifications.
+- [x] Split and unsplit equivalent conductor graphs compare equal. Evidence: `tests/test_m2g2.py::test_unsplit_t_graph_is_subdivision_order_and_direction_invariant`.
+- [x] Disconnected same-net islands fail. Evidence: `test_disconnected_internal_islands_reject_matching_net_strings`.
+- [x] Label-only protected continuity fails. Evidence: `test_explicit_net_rejects_label_join_and_unattached_leaf` plus M2g2 negative controls.
+- [x] Unauthorized geometric crossing does not create connectivity. Evidence: `test_junction_and_unrelated_crossing_are_not_metadata_shortcuts`.
+- [x] Missing/invalid T or four-way junction topology fails. Evidence: `test_junction_and_unrelated_crossing_are_not_metadata_shortcuts`.
+- [x] Extra unintended dangling endpoint fails. Evidence: `test_bypassed_internal_gateway_tip_is_a_dangling_endpoint` and `test_explicit_net_rejects_label_join_and_unattached_leaf`.
+- [x] Duplicate/foreign-owned conductor interval negative is covered. Evidence: `test_global_branch_reuses_certified_same_net_local_interval_once`.
 
 ### 3.2 Gateway/pin proof
 
-- [ ] Exact gateway-to-pin attachment passes after legal translation.
-- [ ] One-grid-unit off-pin endpoint fails.
-- [ ] Stale transformed gateway fails.
-- [ ] Wrong physical pin identity fails.
-- [ ] Removed local escape segment fails.
-- [ ] Legal conductor subdivision/translation preserves proof.
+- [x] Exact gateway-to-pin attachment passes after legal translation. Evidence: `test_exact_pin_and_all_gateway_witnesses`; final-candidate translated gateway proof added in `m2_compose.py`.
+- [x] One-grid-unit off-pin endpoint fails. Evidence: gateway witness falsification in `test_exact_pin_and_all_gateway_witnesses`.
+- [x] Stale transformed gateway fails. Evidence: `test_exact_pin_and_all_gateway_witnesses`.
+- [x] Wrong physical pin identity fails. Evidence: existing M2g2 typed identity/gateway witness tests plus exact final-candidate terminal proof.
+- [x] Removed local escape segment fails. Evidence: local gateway witness keeps `require_escape=True`; stale/removed escape negative test.
+- [x] Legal conductor subdivision/translation preserves proof. Evidence: translated gateway witness + split/unsplit metamorphic graph tests.
 
 ### 3.3 Tiny exhaustive placement oracle
 
@@ -95,22 +95,22 @@ A checkbox may be checked only from current-source evidence. Older qualification
 
 ### 3.4 Exact-boundary tests
 
-- [ ] 80 mm local path exact boundary passes.
-- [ ] 80 mm plus one coordinate unit fails.
-- [ ] 60 mm support/locality exact boundary passes where applicable.
-- [ ] 60 mm plus one coordinate unit fails where applicable.
-- [ ] 210 × 140 mm exact spread boundary passes when otherwise legal.
-- [ ] Above 210 mm or 140 mm fails.
-- [ ] 250 mm canonical conductor exact boundary passes.
-- [ ] Above 250 mm fails.
+- [x] 80 mm local path exact boundary passes. Evidence: `test_exact_locality_boundary_and_precedence_inequality`.
+- [x] 80 mm plus one coordinate unit fails. Evidence: same test.
+- [x] 60 mm support/locality exact boundary passes where applicable. Evidence: `test_support_span_exact_boundary`.
+- [x] 60 mm plus one coordinate unit fails where applicable. Evidence: same test.
+- [x] 210 × 140 mm exact spread boundary passes when otherwise legal. Evidence: `test_exact_content_spread_boundaries_are_hard_and_inclusive`.
+- [x] Above 210 mm or 140 mm fails. Evidence: same test.
+- [x] 250 mm canonical conductor exact boundary passes. Evidence: `test_canonical_conductor_length_exact_boundary_passes_and_above_fails`.
+- [x] Above 250 mm fails. Evidence: same test plus lower-bound pruning test.
 
 ### 3.5 Metamorphic/serialization tests
 
-- [ ] Set-like IR ordering does not alter governed decisions/output.
-- [ ] Legal refdes renaming does not alter semantic geometry except legitimate text-envelope effects.
-- [ ] Net-name renaming does not alter role-based routing decisions.
-- [ ] Equivalent segment subdivision does not alter observed connectivity.
-- [ ] Late coordinate/text/wire mutation after certification invalidates serialized-scene verification.
+- [x] Set-like IR ordering does not alter governed decisions/output. Evidence: `tests/test_m2d1.py::test_set_permutation_and_refdes_renaming_preserve_compiler_geometry`.
+- [x] Legal refdes renaming does not alter semantic geometry except legitimate text-envelope effects. Evidence: M2d1 metamorphic test.
+- [x] Net-name renaming does not alter role-based routing decisions. Evidence: `test_internal_reference_net_rename_preserves_geometry_and_search_decisions`.
+- [x] Equivalent segment subdivision does not alter observed connectivity. Evidence: M2g2 split/unsplit T-graph tests.
+- [x] Late coordinate/text/wire mutation after certification invalidates serialized-scene verification. Evidence: `test_certified_scene_rejects_mutation_and_serialized_endpoint_change` and asset/design mutation test.
 
 ## 4. Structural search and routing closure
 
@@ -127,14 +127,14 @@ A checkbox may be checked only from current-source evidence. Older qualification
 
 ## 5. Typed repair closure
 
-- [ ] Typed detour/canonical-length conflict produces a genuinely changed candidate.
-- [ ] Typed local-span conflict produces a genuinely changed candidate.
-- [ ] Typed signal-order conflict produces a genuinely changed candidate.
-- [ ] Typed blocked-gateway/access conflict produces a genuinely changed candidate.
+- [x] Typed detour/canonical-length conflict produces a genuinely changed candidate. Evidence: `test_typed_repairs_use_structured_conflict_fields_and_change_state`.
+- [x] Typed local-span conflict produces a genuinely changed candidate. Evidence: same test.
+- [x] Typed signal-order conflict produces a genuinely changed candidate. Evidence: same test.
+- [x] Typed blocked-gateway/access conflict produces a genuinely changed candidate. Evidence: same test.
 - [ ] Typed reservation/collision conflict produces a genuinely changed candidate.
 - [ ] Typed route/envelope-growth conflict produces a genuinely changed candidate.
 - [ ] Typed disconnected-net/island conflict is handled where represented by the current repair model.
-- [ ] Repair dispatch does not parse human-readable error strings.
+- [x] Repair dispatch does not parse human-readable error strings. Evidence: structured-field repair test deliberately replaces exception diagnostics with unparseable text before repair.
 - [ ] No-op/repeated candidate states are deduplicated.
 - [ ] No-op states do not consume budget as new structural exploration.
 - [ ] Candidate/repair budget counters never silently reset.
