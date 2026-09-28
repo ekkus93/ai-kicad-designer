@@ -40,56 +40,36 @@ jobs:
           python -m ruff format --check \
             $(find src/ai_kicad -name '*.py' ! -path 'src/ai_kicad/m2_compose.py' | sort)
 
-      - name: Repair matrix format diff lines 321-330
-        env:
-          RANGE_LO: '321'
-          RANGE_HI: '330'
-        run: python .github/scripts/check_repair_matrix_format_range.py
+      - name: Ruff format check test_m2h2_repair_matrix
+        run: python -m ruff format --check tests/test_m2h2_repair_matrix.py
 
-      - name: Repair matrix format diff lines 331-360
+      - name: Contracts format diff lines 1-200
         env:
-          RANGE_LO: '331'
-          RANGE_HI: '360'
-        run: python .github/scripts/check_repair_matrix_format_range.py
+          FORMAT_PATH: tests/test_m2h2_contracts.py
+          RANGE_LO: '1'
+          RANGE_HI: '200'
+        run: python .github/scripts/check_format_range.py
 
-      - name: Repair matrix format diff lines 361-365
+      - name: Contracts format diff lines 201-400
         env:
-          RANGE_LO: '361'
-          RANGE_HI: '365'
-        run: python .github/scripts/check_repair_matrix_format_range.py
-
-      - name: Repair matrix format diff lines 366-370
-        env:
-          RANGE_LO: '366'
-          RANGE_HI: '370'
-        run: python .github/scripts/check_repair_matrix_format_range.py
-
-      - name: Repair matrix format diff lines 371-375
-        env:
-          RANGE_LO: '371'
-          RANGE_HI: '375'
-        run: python .github/scripts/check_repair_matrix_format_range.py
-
-      - name: Repair matrix format diff lines 376-380
-        env:
-          RANGE_LO: '376'
-          RANGE_HI: '380'
-        run: python .github/scripts/check_repair_matrix_format_range.py
-
-      - name: Repair matrix format diff lines 381-400
-        env:
-          RANGE_LO: '381'
+          FORMAT_PATH: tests/test_m2h2_contracts.py
+          RANGE_LO: '201'
           RANGE_HI: '400'
-        run: python .github/scripts/check_repair_matrix_format_range.py
+        run: python .github/scripts/check_format_range.py
 
-      - name: Repair matrix format diff lines 401-460
+      - name: Contracts format diff lines 401-600
         env:
+          FORMAT_PATH: tests/test_m2h2_contracts.py
           RANGE_LO: '401'
-          RANGE_HI: '460'
-        run: python .github/scripts/check_repair_matrix_format_range.py
+          RANGE_HI: '600'
+        run: python .github/scripts/check_format_range.py
 
-      - name: Ruff format check test_m2h2_contracts
-        run: python -m ruff format --check tests/test_m2h2_contracts.py
+      - name: Contracts format diff lines 601-900
+        env:
+          FORMAT_PATH: tests/test_m2h2_contracts.py
+          RANGE_LO: '601'
+          RANGE_HI: '900'
+        run: python .github/scripts/check_format_range.py
 
       - name: Ruff format check key M2 tests
         run: |
