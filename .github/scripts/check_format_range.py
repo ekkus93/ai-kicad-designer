@@ -32,4 +32,15 @@ for tag, original_start, original_end, _formatted_start, _formatted_end in diffl
     b=formatted_lines,
 ).get_opcodes():
     if tag != "equal" and original_start < hi and original_end >= lo - 1:
-        raise SystemExit(1)
+        diff = "\n".join(
+            difflib.unified_diff(
+                original_lines,
+                formatted_lines,
+                fromfile=str(source),
+                tofile=f"ruff-format:{source}",
+                lineterm="",
+            )
+        )
+        raise AssertionError(
+            f"Ruff formatting changed {source} original lines {lo}-{hi}.\n{diff}"
+        )
