@@ -765,12 +765,8 @@ def test_internal_reference_net_rename_preserves_geometry_and_search_decisions()
         original_evidence["candidate_selection"]["selected_seed"]
         == renamed_evidence["candidate_selection"]["selected_seed"]
     )
-    assert [
-        (item["strategy"], item["segments"])
-        for item in original_evidence["routes"]
-    ] == [
-        (item["strategy"], item["segments"])
-        for item in renamed_evidence["routes"]
+    assert [(item["strategy"], item["segments"]) for item in original_evidence["routes"]] == [
+        (item["strategy"], item["segments"]) for item in renamed_evidence["routes"]
     ]
 
 
