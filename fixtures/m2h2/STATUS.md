@@ -30,9 +30,12 @@ only, not final real-tool qualification.
 
 A fast GitHub Actions workflow now exists at
 `.github/workflows/m2h2-fast-validation.yml` to produce exact-head pytest,
-Ruff lint, Ruff format, and `git diff --check` evidence. This creates a runnable
-baseline-validation path only; no baseline checkbox is complete until a current
-exact-head run passes.
+Ruff lint, Ruff format, and `git diff --check` evidence. The hosted static job in
+run `36446081901` passed Ruff lint, `git diff --check`, and scoped
+trailing-whitespace checks for exact head
+`8142282643233c758b52576be8cfa1113d7351fc`. The locked self-hosted job for
+pytest and Ruff format remains queued, so pytest, format, V6-3, DP2, interaction,
+and final qualification evidence are not complete.
 
 At the current source state, fresh one-run builds in `development_checks/`
 passed locked KiCad 10.0.6, independent electrical observation, zero ERC, and
@@ -75,8 +78,9 @@ or generation alone.
 
 ## Remaining completion work
 
-1. Run the current-source fast-validation workflow and reconcile pytest, Ruff,
-   format, and diff-check baseline evidence only after an exact-head pass.
+1. Complete the current-source fast-validation workflow by getting the locked
+   self-hosted pytest and Ruff-format job to run, then reconcile those baseline
+   checks only after exact-head evidence exists.
 2. Reconfirm V6-3 and DP2 at the final source state with locked KiCad 10.0.6 and
    unchanged gates.
 3. Validate every I1–I6 cell and selected triple against actual electrical,

@@ -28,9 +28,9 @@ A checkbox may be checked only from current-source evidence. Older qualification
 ## 1. Current-source baseline
 
 - [ ] Run current fast complete pytest baseline.
-- [ ] Run scoped Ruff lint.
+- [x] Run scoped Ruff lint. Evidence: GitHub Actions `M2h2 Fast Validation` run `36446081901`, job `static lint / diff-check` (`109008620059`), exact head `8142282643233c758b52576be8cfa1113d7351fc`, step `Ruff lint`.
 - [ ] Run scoped Ruff format check.
-- [ ] Run `git diff --check` / applicable whitespace checks.
+- [x] Run `git diff --check` / applicable whitespace checks. Evidence: GitHub Actions `M2h2 Fast Validation` run `36446081901`, job `static lint / diff-check` (`109008620059`), exact head `8142282643233c758b52576be8cfa1113d7351fc`, steps `Git diff check` and `Scoped trailing-whitespace check`.
 - [ ] Confirm fresh V6-3 one-run real-tool regression:
   - [ ] locked KiCad 10.0.6;
   - [ ] independent electrical observation;
