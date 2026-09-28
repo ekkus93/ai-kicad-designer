@@ -17,8 +17,10 @@ specified by the remediation document.
 Current-source unit coverage now includes the structural route lower-bound role
 matrix and the remaining typed repair categories represented by the current
 repair model: reservation, collision, route/envelope growth, net connectivity,
-and dangling endpoint/island conflicts. This is contract evidence only, not
-final real-tool qualification.
+and dangling endpoint/island conflicts. Additional structural-routing evidence
+covers global-route channel capacity rejection and meaningful structural-diversity
+reporting in composition evidence. This is contract evidence only, not final
+real-tool qualification.
 
 At the current source state, fresh one-run builds in `development_checks/`
 passed locked KiCad 10.0.6, independent electrical observation, zero ERC, and

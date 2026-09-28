@@ -10,8 +10,8 @@ from ai_kicad.m2_conflicts import ConflictKind, TypedConflict
 from ai_kicad.m2_fragments import FragmentVariant, PortAnchor, fragment_variants
 from ai_kicad.m2a import PITCH, ROOT
 from ai_kicad.m2b import assets, validate
-from ai_kicad.m2_compose import _reservation_growth_repack
-from ai_kicad.m2_geometry import Gateway
+from ai_kicad.m2_compose import _reservation_growth_repack, compose_with_evidence
+from ai_kicad.m2_geometry import Gateway, GeometryItem, Reservation, prove_reservation_allocation
 from ai_kicad.m2_pack import _place, pack_fragment_candidates
 from ai_kicad.m2_route import RouteLengthBoundConflict, route_between_fragments
 from ai_kicad.m2_semantics import (
@@ -173,3 +173,46 @@ def test_typed_growth_repairs_use_conflict_fields_for_remaining_categories(
     assert tuple((item.fragment.id, item.delta) for item in repaired.fragments) != tuple(
         (item.fragment.id, item.delta) for item in seed.fragments
     )
+
+
+def test_route_corridor_capacity_is_checked_before_candidate_acceptance() -> None:
+    first = GeometryItem("route.RAIL.0", "wire", "tree.RAIL", (0, 0, 10, 0), ("RAIL",))
+    duplicate = GeometryItem("route.RAIL.1", "wire", "tree.RAIL", (0, 0, 10, 0), ("RAIL",))
+    corridor = Reservation(
+        "route.RAIL.0",
+        "channel",
+        "tree.RAIL",
+        "global_route",
+        (0, -1, 10, 1),
+        "RAIL",
+        1,
+    )
+
+    assert prove_reservation_allocation((first,), (corridor,)) == (
+        ("tree.RAIL", "route.RAIL.0", "route.RAIL.0"),
+    )
+    with pytest.raises(TypedConflict) as caught:
+        prove_reservation_allocation((first, duplicate), (corridor,))
+    assert caught.value.category == ConflictKind.RESERVATION
+    assert caught.value.actual == 2
+    assert caught.value.limit == 1
+
+
+def test_composition_evidence_reports_structural_diversity_not_raw_attempt_count() -> None:
+    resolved = assets()
+    design = validate(
+        json.loads((ROOT / "fixtures/m2h2/interaction/i3/a0_interleaved.json").read_text()),
+        resolved,
+    )
+    _scene, evidence = compose_with_evidence(design, resolved)
+
+    search = evidence["structural_search"]
+    assert search["seed_count"] >= search["attempted_structure_count"]
+    assert search["proved_structure_count"] >= 2
+    assert all(seed["structure"] and seed["placement_class"] for seed in search["seeds"])
+
+    selection = evidence["candidate_selection"]
+    assert selection["proved_candidate_count"] >= 2
+    assert selection["proved_structure_count"] >= 2
+    assert all(candidate["structure"] for candidate in selection["proved_candidates"])
+    assert any(attempt["result"] == "pass" for attempt in evidence["layout_attempts"])
