@@ -86,8 +86,10 @@ def _role_bound_plan(
             ),
         ),
     )
-    placed = (_place(fragment(source, source_port, True), 20 * PITCH, 30 * PITCH),
-              _place(fragment(sink, target_port, False), 50 * PITCH, 30 * PITCH))
+    placed = (
+        _place(fragment(source, source_port, True), 20 * PITCH, 30 * PITCH),
+        _place(fragment(sink, target_port, False), 50 * PITCH, 30 * PITCH),
+    )
     return plan, placed
 
 
