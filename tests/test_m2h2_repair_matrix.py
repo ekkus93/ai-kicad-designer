@@ -261,12 +261,7 @@ def test_failure_exit_preserves_candidate_decisions_and_exact_failure_witness(
         _load_interaction("fixtures/m2h2/interaction/i2/internal_2.json"),
         resolved,
     )
-    conflict = compose_module.ConductorLengthConflict(
-        "VREF",
-        250_000_001,
-        0,
-        250_000_001,
-    )
+    conflict = compose_module.ConductorLengthConflict("VREF", 250_000_001, 0, 250_000_001)
 
     def fail_candidate(*_args, **_kwargs):
         raise conflict
@@ -276,11 +271,7 @@ def test_failure_exit_preserves_candidate_decisions_and_exact_failure_witness(
         compose_module.compose_with_evidence(design, resolved)
 
     evidence = caught.value.evidence
-    rejected = [
-        item
-        for item in evidence["layout_attempts"]
-        if item["result"] == "rejected"
-    ]
+    rejected = [item for item in evidence["layout_attempts"] if item["result"] == "rejected"]
     assert rejected
     assert evidence["candidate_decisions"]
     assert all(decision["placements"] for decision in evidence["candidate_decisions"])
