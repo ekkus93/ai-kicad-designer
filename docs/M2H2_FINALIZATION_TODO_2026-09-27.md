@@ -51,13 +51,13 @@ A checkbox may be checked only from current-source evidence. Older qualification
 - [x] Complete physical terminal accounting is certified. Evidence: `tests/test_m2h2_repair_matrix.py::test_obligation_certificate_exports_pre_emission_invariant_witnesses` verifies terminal inventory count matches the net-graph terminal witnesses.
 - [ ] Every semantic obligation is represented in the certificate.
 - [x] Exact gateway-to-real-pin witness exists for every required routed terminal. Evidence: `tests/test_m2h2_repair_matrix.py::test_obligation_certificate_exports_pre_emission_invariant_witnesses` verifies every exported gateway witness is proved and terminal-backed.
-- [ ] Every required net has one complete canonical geometric conductor graph.
-- [ ] Disconnected same-net islands are rejected before successful emission.
-- [ ] Unintended dangling route endpoints are rejected before successful emission.
-- [ ] Junction degree and unrelated crossing semantics are certified.
-- [ ] Every signal precedence inequality survives shelf/variant/translation/repack/compaction.
-- [ ] 80 mm local-path limits are certified pre-emission.
-- [ ] 60 mm support/locality limits are certified pre-emission where applicable.
+- [x] Every required net has one complete canonical geometric conductor graph. Evidence: `tests/test_m2h2_repair_matrix.py::test_certificate_covers_required_net_graphs_and_placement_obligations` proves every semantic presentation net has an exported graph witness and every explicit-geometry net is one component.
+- [x] Disconnected same-net islands are rejected before successful emission. Evidence: `tests/test_m2h2_contracts.py::test_disconnected_internal_islands_reject_matching_net_strings` and `tests/test_m2h2_contracts.py::test_explicit_net_rejects_label_join_and_unattached_leaf`.
+- [x] Unintended dangling route endpoints are rejected before successful emission. Evidence: `tests/test_m2h2_contracts.py::test_bypassed_internal_gateway_tip_is_a_dangling_endpoint` and `tests/test_m2h2_contracts.py::test_explicit_net_rejects_label_join_and_unattached_leaf`.
+- [x] Junction degree and unrelated crossing semantics are certified. Evidence: `tests/test_m2h2_contracts.py::test_junction_and_unrelated_crossing_are_not_metadata_shortcuts`.
+- [x] Every signal precedence inequality survives shelf/variant/translation/repack/compaction. Evidence: `tests/test_m2h2_repair_matrix.py::test_certificate_covers_required_net_graphs_and_placement_obligations` verifies pre-emission placement witnesses are exported for all current-source precedence obligations, and `tests/test_m2h2_contracts.py::test_exact_locality_boundary_and_precedence_inequality` covers the hard negative.
+- [x] 80 mm local-path limits are certified pre-emission. Evidence: `tests/test_m2h2_repair_matrix.py::test_certificate_covers_required_net_graphs_and_placement_obligations` verifies pre-emission local-span witness accounting, and `tests/test_m2h2_contracts.py::test_exact_locality_boundary_and_precedence_inequality` covers exact boundary and over-bound rejection.
+- [x] 60 mm support/locality limits are certified pre-emission where applicable. Evidence: `tests/test_m2h2_contracts.py::test_support_span_exact_boundary` covers exact boundary and over-bound rejection.
 - [x] 210 × 140 mm spread/page limits are certified pre-emission. Evidence: `tests/test_m2h2_repair_matrix.py::test_obligation_certificate_exports_pre_emission_invariant_witnesses` verifies the certificate final content envelope is within unchanged gates.
 - [x] Reservation/body/text/corridor collision legality is certified pre-emission. Evidence: `tests/test_m2h2_repair_matrix.py::test_obligation_certificate_exports_pre_emission_invariant_witnesses` verifies reservation containment/allocation and no unallocated growth; `test_route_corridor_capacity_is_checked_before_candidate_acceptance` covers channel capacity rejection.
 - [x] 250 mm canonical conductor-length limits are certified pre-emission. Evidence: `tests/test_m2h2_repair_matrix.py::test_obligation_certificate_exports_pre_emission_invariant_witnesses` verifies every exported canonical length is <= 250,000,000 nm.

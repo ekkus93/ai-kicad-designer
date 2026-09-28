@@ -258,6 +258,33 @@ def test_obligation_certificate_exports_pre_emission_invariant_witnesses() -> No
     assert certificate["candidate_input_policy_sha256"] == scene.certificate_input_digest
 
 
+def test_certificate_covers_required_net_graphs_and_placement_obligations() -> None:
+    resolved = assets()
+    design = validate(
+        json.loads((ROOT / "fixtures/m2h2/interaction/i1/d2_b1.json").read_text()),
+        resolved,
+    )
+    plan = semantic_plan(design, resolved)
+    _scene, evidence = compose_with_evidence(design, resolved)
+    certificate = evidence["obligation_certificate"]
+
+    presentation_by_net = {item.id: item for item in plan.presentation_nets}
+    graph_by_net = {item["net"]: item for item in certificate["net_graph_witnesses"]}
+    assert set(graph_by_net) == set(presentation_by_net)
+    for net, presentation in presentation_by_net.items():
+        proof = graph_by_net[net]
+        if presentation.explicit_geometry_required:
+            assert proof["component_count"] == 1
+        assert proof["canonical_length_nm"] <= 250_000_000
+
+    assert certificate["local_span_obligation_count"] == len(plan.local_spans)
+    assert len(certificate["placement_witnesses"]) == len(plan.precedence) + len(
+        plan.local_spans
+    )
+    assert certificate["placement_witnesses"]
+    assert all(len(witness) == 3 for witness in certificate["placement_witnesses"])
+
+
 def test_failed_certificate_prevents_successful_schematic_emission(tmp_path) -> None:
     resolved = assets()
     design = validate(

@@ -21,10 +21,10 @@ and dangling endpoint/island conflicts. Additional structural-routing evidence
 covers global-route channel capacity rejection and meaningful structural-diversity
 reporting in composition evidence. The obligation certificate is now covered by
 a focused current-source witness export audit for unique ownership, terminal
-inventory, gateway witnesses, page spread, reservation/collision legality,
-canonical conductor lengths, certified-scene digests, and stale-certificate
-emission rejection. This is contract evidence only, not final real-tool
-qualification.
+inventory, complete required net-graph witnesses, gateway witnesses, placement
+witnesses, page spread, reservation/collision legality, canonical conductor
+lengths, certified-scene digests, and stale-certificate emission rejection. This
+is contract evidence only, not final real-tool qualification.
 
 At the current source state, fresh one-run builds in `development_checks/`
 passed locked KiCad 10.0.6, independent electrical observation, zero ERC, and
@@ -67,12 +67,11 @@ or generation alone.
 
 ## Remaining completion work
 
-1. Complete the spec's full generic falsification matrix, including independent
-   graph and tiny exhaustive placement oracles, reservation and serialization
-   mutations, and metamorphic tests.
-2. Audit the obligation certificate, corridor allocation, routing bounds,
-   structural search ledger, and repair decisions against every requirement in
-   the specification. Fix any missing invariant before acceptance.
+1. Complete the remaining generic contract gaps, especially semantic-obligation
+   representation in the certificate and best-rejected/failure-witness evidence
+   on failure exits.
+2. Reconfirm V6-3 and DP2 at the final source state with locked KiCad 10.0.6 and
+   unchanged gates.
 3. Validate every I1–I6 cell and selected triple against actual electrical,
    routing, path, layout, band-class, and real-tool invariants at the final source
    state. Update the frozen coverage ledger with evidence links and genuine
