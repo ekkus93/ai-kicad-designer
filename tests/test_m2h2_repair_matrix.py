@@ -61,7 +61,11 @@ def _role_bound_plan(
     source = BlockPlan("source", "rc", (), frozenset(), (source_port,))
     sink = BlockPlan("sink", "rc", (), frozenset(), (target_port,))
 
-    def fragment(block: BlockPlan, port: SemanticPort, long_wire: bool) -> FragmentVariant:
+    def fragment(
+        block: BlockPlan,
+        port: SemanticPort,
+        long_wire: bool,
+    ) -> FragmentVariant:
         gateway = Gateway(
             port.id,
             net,
@@ -185,7 +189,11 @@ def test_typed_growth_repairs_use_conflict_fields_for_remaining_categories(
         offending_geometry=(
             (gateway.point[0], gateway.point[1], gateway.point[0], gateway.point[1]),
         ),
-        repair_classes=("reservation_growth", "gateway_access", "distribution_placement"),
+        repair_classes=(
+            "reservation_growth",
+            "gateway_access",
+            "distribution_placement",
+        ),
     )
     conflict.gateways = (gateway.id,)
 
@@ -258,7 +266,12 @@ def test_failure_exit_preserves_candidate_decisions_and_exact_failure_witness(
         _load_interaction("fixtures/m2h2/interaction/i2/internal_2.json"),
         resolved,
     )
-    conflict = compose_module.ConductorLengthConflict("VREF", 250_000_001, 0, 250_000_001)
+    conflict = compose_module.ConductorLengthConflict(
+        "VREF",
+        250_000_001,
+        0,
+        250_000_001,
+    )
 
     def fail_candidate(*_args, **_kwargs):
         raise conflict
@@ -268,7 +281,11 @@ def test_failure_exit_preserves_candidate_decisions_and_exact_failure_witness(
         compose_module.compose_with_evidence(design, resolved)
 
     evidence = caught.value.evidence
-    rejected = [item for item in evidence["layout_attempts"] if item["result"] == "rejected"]
+    rejected = [
+        item
+        for item in evidence["layout_attempts"]
+        if item["result"] == "rejected"
+    ]
     assert rejected
     assert evidence["candidate_decisions"]
     assert all(decision["placements"] for decision in evidence["candidate_decisions"])
@@ -318,7 +335,10 @@ def test_obligation_certificate_exports_pre_emission_invariant_witnesses() -> No
     assert certificate["no_cross_net_contacts"] is True
     assert certificate["no_unallocated_growth"] is True
     assert certificate["scene_geometry_sha256"] == scene.certificate_digest
-    assert certificate["candidate_input_policy_sha256"] == scene.certificate_input_digest
+    assert (
+        certificate["candidate_input_policy_sha256"]
+        == scene.certificate_input_digest
+    )
 
 
 def test_certificate_covers_required_net_graphs_and_placement_obligations() -> None:
