@@ -11,7 +11,12 @@ from ai_kicad.m2_fragments import FragmentVariant, PortAnchor, fragment_variants
 from ai_kicad.m2a import PITCH, ROOT
 from ai_kicad.m2b import assets, validate
 from ai_kicad.m2_compose import _reservation_growth_repack, compose_with_evidence
-from ai_kicad.m2_geometry import Gateway, GeometryItem, Reservation, prove_reservation_allocation
+from ai_kicad.m2_geometry import (
+    Gateway,
+    GeometryItem,
+    Reservation,
+    prove_reservation_allocation,
+)
 from ai_kicad.m2_pack import _place, pack_fragment_candidates
 from ai_kicad.m2_route import RouteLengthBoundConflict, route_between_fragments
 from ai_kicad.m2_semantics import (
@@ -216,3 +221,37 @@ def test_composition_evidence_reports_structural_diversity_not_raw_attempt_count
     assert selection["proved_structure_count"] >= 2
     assert all(candidate["structure"] for candidate in selection["proved_candidates"])
     assert any(attempt["result"] == "pass" for attempt in evidence["layout_attempts"])
+
+
+def test_obligation_certificate_exports_pre_emission_invariant_witnesses() -> None:
+    resolved = assets()
+    design = validate(
+        json.loads((ROOT / "fixtures/m2h2/interaction/i2/internal_2.json").read_text()),
+        resolved,
+    )
+    scene, evidence = compose_with_evidence(design, resolved)
+    certificate = evidence["obligation_certificate"]
+
+    owner_keys = [tuple(item["occurrence"]) for item in certificate["geometry_owners"]]
+    assert len(owner_keys) == len(set(owner_keys)) == len(evidence["owners"])
+
+    terminal_components = {
+        tuple(entry[0])
+        for proof in certificate["net_graph_witnesses"]
+        for entry in proof["terminal_components"]
+    }
+    assert certificate["terminal_inventory_count"] == len(terminal_components)
+    assert all(proof["component_count"] >= 1 for proof in certificate["net_graph_witnesses"])
+    assert all(witness["proved"] and witness["terminals"] for witness in certificate["gateway_witnesses"])
+
+    left, top, right, bottom = certificate["final_content_envelope_nm"]
+    assert right - left <= 210_000_000
+    assert bottom - top <= 140_000_000
+    assert all(length <= 250_000_000 for length in certificate["canonical_lengths_nm"].values())
+    assert certificate["reservation_containment_pass"] is True
+    assert certificate["reservation_allocation_count"] > 0
+    assert certificate["no_unintended_dangling_endpoints"] is True
+    assert certificate["no_cross_net_contacts"] is True
+    assert certificate["no_unallocated_growth"] is True
+    assert certificate["scene_geometry_sha256"] == scene.certificate_digest
+    assert certificate["candidate_input_policy_sha256"] == scene.certificate_input_digest

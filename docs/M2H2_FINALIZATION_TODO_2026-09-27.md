@@ -47,10 +47,10 @@ A checkbox may be checked only from current-source evidence. Older qualification
 
 ## 2. Obligation-complete certificate audit and implementation
 
-- [ ] Exactly one geometry owner per symbol occurrence is certified.
-- [ ] Complete physical terminal accounting is certified.
+- [x] Exactly one geometry owner per symbol occurrence is certified. Evidence: `tests/test_m2h2_repair_matrix.py::test_obligation_certificate_exports_pre_emission_invariant_witnesses` verifies unique certificate geometry owners match emitted ownership evidence.
+- [x] Complete physical terminal accounting is certified. Evidence: `tests/test_m2h2_repair_matrix.py::test_obligation_certificate_exports_pre_emission_invariant_witnesses` verifies terminal inventory count matches the net-graph terminal witnesses.
 - [ ] Every semantic obligation is represented in the certificate.
-- [ ] Exact gateway-to-real-pin witness exists for every required routed terminal.
+- [x] Exact gateway-to-real-pin witness exists for every required routed terminal. Evidence: `tests/test_m2h2_repair_matrix.py::test_obligation_certificate_exports_pre_emission_invariant_witnesses` verifies every exported gateway witness is proved and terminal-backed.
 - [ ] Every required net has one complete canonical geometric conductor graph.
 - [ ] Disconnected same-net islands are rejected before successful emission.
 - [ ] Unintended dangling route endpoints are rejected before successful emission.
@@ -58,10 +58,10 @@ A checkbox may be checked only from current-source evidence. Older qualification
 - [ ] Every signal precedence inequality survives shelf/variant/translation/repack/compaction.
 - [ ] 80 mm local-path limits are certified pre-emission.
 - [ ] 60 mm support/locality limits are certified pre-emission where applicable.
-- [ ] 210 × 140 mm spread/page limits are certified pre-emission.
-- [ ] Reservation/body/text/corridor collision legality is certified pre-emission.
-- [ ] 250 mm canonical conductor-length limits are certified pre-emission.
-- [ ] Certified-scene digest matches the exact serialized in-memory scene.
+- [x] 210 × 140 mm spread/page limits are certified pre-emission. Evidence: `tests/test_m2h2_repair_matrix.py::test_obligation_certificate_exports_pre_emission_invariant_witnesses` verifies the certificate final content envelope is within unchanged gates.
+- [x] Reservation/body/text/corridor collision legality is certified pre-emission. Evidence: `tests/test_m2h2_repair_matrix.py::test_obligation_certificate_exports_pre_emission_invariant_witnesses` verifies reservation containment/allocation and no unallocated growth; `test_route_corridor_capacity_is_checked_before_candidate_acceptance` covers channel capacity rejection.
+- [x] 250 mm canonical conductor-length limits are certified pre-emission. Evidence: `tests/test_m2h2_repair_matrix.py::test_obligation_certificate_exports_pre_emission_invariant_witnesses` verifies every exported canonical length is <= 250,000,000 nm.
+- [x] Certified-scene digest matches the exact serialized in-memory scene. Evidence: `tests/test_m2h2_repair_matrix.py::test_obligation_certificate_exports_pre_emission_invariant_witnesses` verifies certificate geometry/input digests match the certified scene digests.
 - [ ] Failed certificate prevents successful `.kicad_sch` emission.
 
 ## 3. Generic falsification matrix

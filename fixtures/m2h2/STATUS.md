@@ -19,8 +19,11 @@ matrix and the remaining typed repair categories represented by the current
 repair model: reservation, collision, route/envelope growth, net connectivity,
 and dangling endpoint/island conflicts. Additional structural-routing evidence
 covers global-route channel capacity rejection and meaningful structural-diversity
-reporting in composition evidence. This is contract evidence only, not final
-real-tool qualification.
+reporting in composition evidence. The obligation certificate is now covered by
+a focused current-source witness export audit for unique ownership, terminal
+inventory, gateway witnesses, page spread, reservation/collision legality,
+canonical conductor lengths, and certified-scene digests. This is contract
+evidence only, not final real-tool qualification.
 
 At the current source state, fresh one-run builds in `development_checks/`
 passed locked KiCad 10.0.6, independent electrical observation, zero ERC, and
