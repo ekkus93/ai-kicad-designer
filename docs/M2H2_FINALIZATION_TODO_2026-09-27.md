@@ -28,9 +28,9 @@ A checkbox may be checked only from current-source evidence. Older qualification
 ## 1. Current-source baseline
 
 - [ ] Run current fast complete pytest baseline.
-- [x] Run scoped Ruff lint. Evidence: GitHub Actions `M2h2 Fast Validation` run `36446081901`, job `static lint / diff-check` (`109008620059`), exact head `8142282643233c758b52576be8cfa1113d7351fc`, step `Ruff lint`.
-- [ ] Run scoped Ruff format check.
-- [x] Run `git diff --check` / applicable whitespace checks. Evidence: GitHub Actions `M2h2 Fast Validation` run `36446081901`, job `static lint / diff-check` (`109008620059`), exact head `8142282643233c758b52576be8cfa1113d7351fc`, steps `Git diff check` and `Scoped trailing-whitespace check`.
+- [x] Run scoped Ruff lint. Evidence: GitHub Actions `M2h2 Fast Validation` run `36478515556`, job `static lint / format / diff-check` (`109118128135`), exact head `8ac13a665aef36bfb4241289be7a1d34fc4c568b`, step `Ruff lint`.
+- [x] Run scoped Ruff format check. Evidence: GitHub Actions `M2h2 Fast Validation` run `36478515556`, job `static lint / format / diff-check` (`109118128135`), exact head `8ac13a665aef36bfb4241289be7a1d34fc4c568b`, steps `Ruff format check m2_compose`, `Ruff format check src remainder`, `Ruff format check test_m2h2_repair_matrix`, `Contracts format diff lines 1-200` through `801-900`, `Ruff format check key M2 tests`, `Ruff format check remaining tests`, and `Ruff format check tools`.
+- [x] Run `git diff --check` / applicable whitespace checks. Evidence: GitHub Actions `M2h2 Fast Validation` run `36478515556`, job `static lint / format / diff-check` (`109118128135`), exact head `8ac13a665aef36bfb4241289be7a1d34fc4c568b`, steps `Git diff check` and `Scoped trailing-whitespace check`.
 - [ ] Confirm fresh V6-3 one-run real-tool regression:
   - [ ] locked KiCad 10.0.6;
   - [ ] independent electrical observation;
