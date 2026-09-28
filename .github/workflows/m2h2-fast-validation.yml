@@ -32,8 +32,14 @@ jobs:
       - name: Ruff lint
         run: python -m ruff check src/ai_kicad tests tools
 
-      - name: Ruff format check
-        run: python -m ruff format --check src/ai_kicad tests tools
+      - name: Ruff format check src
+        run: python -m ruff format --check src/ai_kicad
+
+      - name: Ruff format check tests
+        run: python -m ruff format --check tests
+
+      - name: Ruff format check tools
+        run: python -m ruff format --check tools
 
       - name: Pytest
         run: python -m pytest -q
