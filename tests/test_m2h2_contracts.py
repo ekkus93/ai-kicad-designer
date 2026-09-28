@@ -793,9 +793,8 @@ def test_typed_repairs_use_structured_conflict_fields_and_change_state() -> None
         passive_design, resolved, passive_plan, passive_seed, order_conflict
     )
     assert order_decision["kind"] == "precedence_violation"
-    assert (
-        tuple((item.fragment.id, item.delta) for item in order_repaired.fragments)
-        != tuple((item.fragment.id, item.delta) for item in passive_seed.fragments)
+    assert tuple((item.fragment.id, item.delta) for item in order_repaired.fragments) != tuple(
+        (item.fragment.id, item.delta) for item in passive_seed.fragments
     )
 
     span = passive_plan.local_spans[0]
@@ -820,9 +819,8 @@ def test_typed_repairs_use_structured_conflict_fields_and_change_state() -> None
         passive_design, resolved, passive_plan, passive_seed, span_conflict
     )
     assert span_decision["kind"] == "local_span_violation"
-    assert (
-        tuple((item.fragment.id, item.delta) for item in span_repaired.fragments)
-        != tuple((item.fragment.id, item.delta) for item in passive_seed.fragments)
+    assert tuple((item.fragment.id, item.delta) for item in span_repaired.fragments) != tuple(
+        (item.fragment.id, item.delta) for item in passive_seed.fragments
     )
 
     reference_path = ROOT / "fixtures/m2h2/interaction/i2/internal_2.json"
@@ -846,9 +844,8 @@ def test_typed_repairs_use_structured_conflict_fields_and_change_state() -> None
     )
     assert growth_decision["net"] == reference_net
     assert growth_decision["growth_nm"] == PITCH
-    assert (
-        tuple((item.fragment.id, item.delta) for item in grown.fragments)
-        != tuple((item.fragment.id, item.delta) for item in reference_seed.fragments)
+    assert tuple((item.fragment.id, item.delta) for item in grown.fragments) != tuple(
+        (item.fragment.id, item.delta) for item in reference_seed.fragments
     )
 
     detour = ConductorLengthConflict(reference_net, 250_000_001, 100_000_000, 150_000_001)
@@ -858,7 +855,6 @@ def test_typed_repairs_use_structured_conflict_fields_and_change_state() -> None
     )
     assert substitution["net"] == reference_net
     assert substitution["from"] != substitution["to"]
-    assert (
-        tuple((item.fragment.id, item.delta) for item in substituted.fragments)
-        != tuple((item.fragment.id, item.delta) for item in reference_seed.fragments)
+    assert tuple((item.fragment.id, item.delta) for item in substituted.fragments) != tuple(
+        (item.fragment.id, item.delta) for item in reference_seed.fragments
     )
