@@ -7,6 +7,7 @@ import heapq
 from itertools import pairwise
 
 from .ir import InputError
+from .m2_conflicts import ConflictKind, TypedConflict
 from .m2a import PITCH
 from .m2_fragments import Point
 from .m2_geometry import (
@@ -24,6 +25,7 @@ from .m2_semantics import SemanticEdge, SemanticPlan
 MAX_TRACKS_PER_SIDE = 8
 MAX_TAPS_PER_ATTACHMENT = 32
 MAX_ROUTE_STATES_PER_TAP = 4_096
+MAX_CANONICAL_LENGTH = 250_000_000
 
 
 def _floor_grid(value: int) -> int:
@@ -44,6 +46,41 @@ class RouteTree:
     segment_provenance: tuple[tuple[str, ...], ...] = ()
     tap_tests: int = 0
     state_expansions: int = 0
+    strategy: str = "producer_centered"
+    plan_tests: int = 1
+    planned_corridors: tuple[Reservation, ...] = ()
+
+
+class RouteBlockedConflict(InputError):
+    """A terminal-backed island whose legal gateway could not reach the tree."""
+
+    kind = "blocked_gateway"
+
+    def __init__(self, net: str, gateways: tuple[str, ...], taps: int, states: int):
+        self.category = ConflictKind.BLOCKED_GATEWAY
+        self.net = net
+        self.gateways = gateways
+        self.taps = taps
+        self.states = states
+        super().__init__(
+            f"ROUTE_BLOCKED: net={net} gateways={','.join(gateways)} taps={taps} states={states}"
+        )
+
+
+class RouteLengthBoundConflict(TypedConflict):
+    """A fixed partial conductor union already exceeds the unchanged net gate."""
+
+    def __init__(self, net: str, lower_bound: int):
+        super().__init__(
+            ConflictKind.CANONICAL_LENGTH,
+            f"ROUTE_LENGTH_LOWER_BOUND: net={net} lower_bound={lower_bound} "
+            f"limit={MAX_CANONICAL_LENGTH}",
+            net=net,
+            actual=lower_bound,
+            limit=MAX_CANONICAL_LENGTH,
+            lower_bound=lower_bound,
+            repair_classes=("distribution_placement", "gateway_access"),
+        )
 
 
 def _gateway(item: PlacedFragment, net: str, output: bool) -> Gateway:
@@ -392,7 +429,10 @@ def _connect(
             segments = _path_segments(compact)
             bends = max(0, len(segments) - 1)
             length = sum(abs(a[0] - b[0]) + abs(a[1] - b[1]) for a, b in segments)
-            candidates.append((bends, length, compact))
+            # A distributive net is charged for conductor union, not for the
+            # visual simplicity of its first branch.  Choosing bends first
+            # can consume the entire net budget before later taps are added.
+            candidates.append((length, bends, compact))
     if candidates:
         points = min(candidates, key=lambda value: (value[0], value[1], value[2]))[2]
         return _path_segments(points), 0
@@ -420,6 +460,103 @@ def _route_class(edges: list[SemanticEdge]) -> int:
     return 1
 
 
+def _distribution_initial_trees(
+    net: str,
+    owner: str,
+    seed: Gateway,
+    gateways: tuple[Gateway, ...],
+    obstacles: tuple[Reservation, ...],
+    previous: tuple[tuple[str, Point, Point], ...],
+    route_bounds: tuple[int, int, int, int],
+) -> tuple[tuple[str, tuple[ConductorSegment, ...], tuple[Point, Point] | None, int], ...]:
+    """Enumerate distinct bounded trunk geometries before branch attachment."""
+    seed_external = _advance(seed.point, seed.escape_direction, PITCH)
+    seed_segment = ConductorSegment(seed.point, seed_external, net, owner, (seed.id, "seed"))
+    result = [("producer_centered", (seed_segment,), None, 0)]
+    external = tuple(
+        _advance(gateway.point, gateway.escape_direction, PITCH) for gateway in gateways
+    )
+    left = min(point[0] for point in external)
+    right = max(point[0] for point in external)
+    top = min(point[1] for point in external)
+    bottom = max(point[1] for point in external)
+    above = sorted(
+        {top - PITCH}
+        | {
+            _floor_grid(obstacle.rect[1] - PITCH)
+            for obstacle in obstacles
+            if obstacle.rect[1] <= top
+        },
+        reverse=True,
+    )[:2]
+    below = sorted(
+        {bottom + PITCH}
+        | {
+            _ceil_grid(obstacle.rect[3] + PITCH)
+            for obstacle in obstacles
+            if obstacle.rect[3] >= bottom
+        }
+    )[:2]
+    sides = sorted(
+        (
+            {left - PITCH}
+            | {
+                _floor_grid(obstacle.rect[0] - PITCH)
+                for obstacle in obstacles
+                if obstacle.rect[0] <= left
+            }
+        )
+        | (
+            {right + PITCH}
+            | {
+                _ceil_grid(obstacle.rect[2] + PITCH)
+                for obstacle in obstacles
+                if obstacle.rect[2] >= right
+            }
+        ),
+        key=lambda x: (min(abs(x - left), abs(x - right)), x),
+    )[:2]
+    candidates = (
+        [("horizontal_above", (left, y), (right, y), (seed_external[0], y)) for y in above]
+        + [("horizontal_below", (left, y), (right, y), (seed_external[0], y)) for y in below]
+        + [("vertical_side", (x, top), (x, bottom), (x, seed_external[1])) for x in sides]
+    )
+    for strategy, first, second, projection in candidates:
+        if first == second or not _path_legal(
+            (first, second),
+            obstacles,
+            previous,
+            net=net,
+            owner=owner,
+            allowed_contacts=frozenset(),
+            route_bounds=route_bounds,
+        ):
+            continue
+        branch, expansions = _connect(
+            seed_external,
+            projection,
+            obstacles,
+            previous,
+            net=net,
+            owner=owner,
+            allowed_contacts=frozenset({seed_external, projection}),
+            route_bounds=route_bounds,
+        )
+        if branch is None:
+            continue
+        conductors = (
+            seed_segment,
+            ConductorSegment(first, second, net, owner, (strategy, "trunk")),
+            *(
+                ConductorSegment(a, b, net, owner, (strategy, "seed_branch"))
+                for a, b in branch
+                if a != b
+            ),
+        )
+        result.append((strategy, conductors, (first, second), expansions))
+    return tuple(result[:8])
+
+
 def route_between_fragments(
     plan: SemanticPlan,
     placed: tuple[PlacedFragment, ...],
@@ -437,6 +574,9 @@ def route_between_fragments(
     for net in plan.presentation_nets:
         if net.explicit_geometry_required and len(net.fragments) > 1:
             grouped.setdefault(net.id, [])
+    distribution_nets = {
+        item.id for item in plan.presentation_nets if item.explicit_geometry_required
+    }
 
     def net_gateways(net: str) -> tuple[Gateway, ...]:
         return tuple(gateway for item in placed for gateway in item.gateways if gateway.net == net)
@@ -446,34 +586,36 @@ def route_between_fragments(
         endpoints = tuple((by_id[edge.source], True) for edge in edges) + tuple(
             (by_id[edge.target], False) for edge in edges
         )
-        selected = (
-            tuple(_gateway(fragment, net, output) for fragment, output in endpoints)
-            if endpoints
-            else net_gateways(net)
-        )
+        selected_by_id = {
+            gateway.id: gateway
+            for gateway in (_gateway(fragment, net, output) for fragment, output in endpoints)
+        }
+        if net in distribution_nets or not endpoints:
+            selected_by_id.update((gateway.id, gateway) for gateway in net_gateways(net))
+        selected = tuple(selected_by_id.values())
+        if not selected:
+            raise TypedConflict(
+                ConflictKind.GATEWAY_WITNESS,
+                f"ROUTE_REQUIRED_GATEWAY_MISSING: {net}",
+                net=net,
+            )
         legal_directions = min(len(gateway.approach_directions) for gateway in selected)
         fanout = len({gateway.id for gateway in selected})
         return _route_class(edges), legal_directions, -fanout, net
 
     ordered_groups = sorted(grouped.items(), key=group_order)
     producer_fragments = {net.id: set(net.producer_fragments) for net in plan.presentation_nets}
+    presentation_by_net = {net.id: net for net in plan.presentation_nets}
     gateway_fragment = {
         gateway.id: item.fragment.block.id for item in placed for gateway in item.gateways
     }
-    active_gateway_ids = {
-        gateway.id
-        for net, edges in ordered_groups
-        for edge in edges
-        for gateway in (
-            tuple(
-                _gateway(item, net, output)
-                for edge in edges
-                for item, output in ((by_id[edge.source], True), (by_id[edge.target], False))
-            )
-            if edges
-            else net_gateways(net)
-        )
-    }
+    active_gateway_ids = set()
+    for net, edges in ordered_groups:
+        for edge in edges:
+            active_gateway_ids.add(_gateway(by_id[edge.source], net, True).id)
+            active_gateway_ids.add(_gateway(by_id[edge.target], net, False).id)
+        if net in distribution_nets or not edges:
+            active_gateway_ids.update(gateway.id for gateway in net_gateways(net))
     scene_reservations = tuple(
         reservation for item in placed for reservation in item.reservations
     ) + tuple(
@@ -503,7 +645,9 @@ def route_between_fragments(
                 and reservation.clearance_class
                 in {"body", "text", "label", "pin", "wire", "protected"}
                 and not (
-                    reservation.clearance_class == "label" and reservation.permitted_net == net
+                    reservation.clearance_class
+                    in ({"label", "wire", "protected"} if net in distribution_nets else {"label"})
+                    and reservation.permitted_net == net
                 )
             )
             or (reservation.occupancy == "channel" and reservation.permitted_net not in {None, net})
@@ -517,8 +661,18 @@ def route_between_fragments(
             target = _gateway(by_id[edge.target], net, False)
             gateways[source.id] = source
             gateways[target.id] = target
-        if not ordered:
+        if net in distribution_nets or not ordered:
             gateways.update((gateway.id, gateway) for gateway in net_gateways(net))
+        if net in distribution_nets:
+            required = set(presentation_by_net[net].fragments)
+            exposed = {gateway_fragment[gateway.id] for gateway in gateways.values()}
+            if missing := required - exposed:
+                raise TypedConflict(
+                    ConflictKind.GATEWAY_WITNESS,
+                    f"ROUTE_REQUIRED_GATEWAY_MISSING: {net}:{sorted(missing)}",
+                    net=net,
+                    owners=tuple(sorted(missing)),
+                )
         role_by_id = {port.port.id: port.port.role for item in placed for port in item.ports}
         sources = sorted(
             (
@@ -551,136 +705,254 @@ def route_between_fragments(
             allowed_contacts=frozenset({seed.point}),
             route_bounds=route_bounds,
         ):
-            raise InputError(
-                f"ROUTE_BLOCKED: net={net} gateway={seed.id} illegal_seed_escape "
-                f"retry={retry_index}"
+            raise RouteBlockedConflict(net, (seed.id,), 0, 0)
+        local_conductors = tuple(
+            ConductorSegment(
+                (first[0] + item.delta[0], first[1] + item.delta[1]),
+                (second[0] + item.delta[0], second[1] + item.delta[1]),
+                net,
+                item.fragment.block.id,
             )
-        conductors = [ConductorSegment(seed.point, seed_external, net, owner, (seed.id, "seed"))]
-        connected = {seed.id}
-        tap_tests = state_expansions = 0
-        while len(connected) != len(gateways):
-            base_tree = canonical_conductor_tree(conductors)
-            attachment_candidates = []
-            blocked_targets = []
-            for target in sorted(
-                (gateway for gateway in gateways.values() if gateway.id not in connected),
-                key=lambda gateway: (len(gateway.approach_directions), gateway.id),
-            ):
-                target_external = _advance(target.point, target.escape_direction, PITCH)
-                if not _path_legal(
-                    (target.point, target_external),
-                    _escape_obstacles(obstacles, target),
-                    tuple(previous),
-                    net=net,
-                    owner=owner,
-                    allowed_contacts=frozenset({target.point}),
-                    route_bounds=route_bounds,
-                ):
-                    blocked_targets.append(target.id)
-                    continue
-                taps = {point for segment in conductors for point in (segment.start, segment.end)}
-                for segment in conductors:
-                    projection = (
-                        (segment.start[0], target_external[1])
-                        if segment.start[0] == segment.end[0]
-                        else (target_external[0], segment.start[1])
-                    )
-                    if point_on_segment(projection, segment.start, segment.end):
-                        taps.add(projection)
-                occupied_gateway_points = {
-                    gateway.point
-                    for gateway in gateways.values()
-                    if gateway.id in connected and gateway.id != seed.id
-                }
-                taps.difference_update(occupied_gateway_points)
-                ordered_taps = sorted(
-                    taps,
-                    key=lambda point: (
-                        abs(point[0] - target_external[0]) + abs(point[1] - target_external[1]),
-                        point[0],
-                        point[1],
-                    ),
-                )[:MAX_TAPS_PER_ATTACHMENT]
-                target_choices = []
-                for tap in ordered_taps:
-                    tap_tests += 1
-                    route, expansions = _connect(
-                        target_external,
-                        tap,
-                        obstacles,
-                        tuple(previous),
-                        net=net,
-                        owner=owner,
-                        allowed_contacts=frozenset({tap, target.point}),
-                        route_bounds=route_bounds,
-                    )
-                    state_expansions += expansions
-                    if route is not None:
-                        trial_tree = canonical_conductor_tree(
-                            (
-                                *conductors,
-                                ConductorSegment(
-                                    target.point,
-                                    target_external,
-                                    net,
-                                    owner,
-                                    (target.id, "escape"),
-                                ),
-                                *(
-                                    ConductorSegment(first, second, net, owner)
-                                    for first, second in route
-                                    if first != second
-                                ),
+            for item in placed
+            for (first, second), wire_net in zip(
+                item.fragment.wires, item.fragment.wire_nets, strict=True
+            )
+            if wire_net == net
+        )
+        plans = (
+            _distribution_initial_trees(
+                net,
+                owner,
+                seed,
+                tuple(gateways.values()),
+                obstacles,
+                tuple(previous),
+                route_bounds,
+            )
+            if net in distribution_nets and len(gateways) >= 3
+            else (
+                (
+                    "producer_centered",
+                    (ConductorSegment(seed.point, seed_external, net, owner, (seed.id, "seed")),),
+                    None,
+                    0,
+                ),
+            )
+        )
+        candidates = []
+        blocked_plans = []
+        length_prunes: list[int] = []
+        aggregate_taps = aggregate_states = 0
+        for strategy, initial, trunk, initial_expansions in plans:
+            conductors = list(initial)
+            fixed_length = canonical_conductor_tree((*local_conductors, *conductors)).length
+            if fixed_length > MAX_CANONICAL_LENGTH:
+                length_prunes.append(fixed_length)
+                continue
+            connected = {seed.id}
+            tap_tests = 0
+            state_expansions = initial_expansions
+            try:
+                while len(connected) != len(gateways):
+                    base_tree = canonical_conductor_tree((*local_conductors, *conductors))
+                    attachment_candidates = []
+                    blocked_targets = []
+                    inaccessible_targets = []
+                    target_length_prunes = []
+                    for target in sorted(
+                        (gateway for gateway in gateways.values() if gateway.id not in connected),
+                        key=lambda gateway: (len(gateway.approach_directions), gateway.id),
+                    ):
+                        target_external = _advance(target.point, target.escape_direction, PITCH)
+                        if not _path_legal(
+                            (target.point, target_external),
+                            _escape_obstacles(obstacles, target),
+                            tuple(previous),
+                            net=net,
+                            owner=owner,
+                            allowed_contacts=frozenset({target.point}),
+                            route_bounds=route_bounds,
+                        ):
+                            blocked_targets.append(target.id)
+                            inaccessible_targets.append(target.id)
+                            continue
+                        taps = {
+                            point
+                            for segment in conductors
+                            for point in (segment.start, segment.end)
+                        }
+                        for segment in conductors:
+                            projection = (
+                                (segment.start[0], target_external[1])
+                                if segment.start[0] == segment.end[0]
+                                else (target_external[0], segment.start[1])
                             )
-                        )
-                        bends = max(0, trial_tree.bends - base_tree.bends)
-                        length = trial_tree.length - base_tree.length
-                        target_choices.append(
-                            (
-                                length,
-                                bends,
-                                target.id,
-                                tap[0],
-                                tap[1],
-                                target,
+                            if point_on_segment(projection, segment.start, segment.end):
+                                taps.add(projection)
+                        occupied_gateway_points = {
+                            gateway.point
+                            for gateway in gateways.values()
+                            if gateway.id in connected
+                        }
+                        taps.difference_update(occupied_gateway_points)
+                        ordered_taps = sorted(
+                            taps,
+                            key=lambda point: (
+                                abs(point[0] - target_external[0])
+                                + abs(point[1] - target_external[1]),
+                                point[0],
+                                point[1],
+                            ),
+                        )[:MAX_TAPS_PER_ATTACHMENT]
+                        target_choices = []
+                        target_had_length_prune = False
+                        for tap in ordered_taps:
+                            tap_tests += 1
+                            route, expansions = _connect(
                                 target_external,
                                 tap,
-                                route,
+                                obstacles,
+                                tuple(previous),
+                                net=net,
+                                owner=owner,
+                                allowed_contacts=frozenset({tap, target.point}),
+                                route_bounds=route_bounds,
                             )
+                            state_expansions += expansions
+                            if route is not None:
+                                trial_tree = canonical_conductor_tree(
+                                    (
+                                        *local_conductors,
+                                        *conductors,
+                                        ConductorSegment(
+                                            target.point,
+                                            target_external,
+                                            net,
+                                            owner,
+                                            (target.id, "escape"),
+                                        ),
+                                        *(
+                                            ConductorSegment(first, second, net, owner)
+                                            for first, second in route
+                                            if first != second
+                                        ),
+                                    )
+                                )
+                                bends = max(0, trial_tree.bends - base_tree.bends)
+                                length = trial_tree.length - base_tree.length
+                                if trial_tree.length > MAX_CANONICAL_LENGTH:
+                                    target_length_prunes.append(trial_tree.length)
+                                    target_had_length_prune = True
+                                    continue
+                                target_choices.append(
+                                    (
+                                        length,
+                                        bends,
+                                        target.id,
+                                        tap[0],
+                                        tap[1],
+                                        target,
+                                        target_external,
+                                        tap,
+                                        route,
+                                    )
+                                )
+                        if not target_choices:
+                            blocked_targets.append(target.id)
+                            if not target_had_length_prune:
+                                inaccessible_targets.append(target.id)
+                        else:
+                            target_choices.sort(key=lambda item: item[:5] + (item[8],))
+                            attachment_candidates.append(
+                                target_choices[min(retry_index, len(target_choices) - 1)]
+                            )
+                    if not attachment_candidates:
+                        if target_length_prunes and not inaccessible_targets:
+                            raise RouteLengthBoundConflict(net, min(target_length_prunes))
+                        raise RouteBlockedConflict(
+                            net, tuple(sorted(blocked_targets)), tap_tests, state_expansions
                         )
-                if not target_choices:
-                    blocked_targets.append(target.id)
-                else:
-                    target_choices.sort(key=lambda item: item[:5] + (item[8],))
-                    attachment_candidates.append(
-                        target_choices[min(retry_index, len(target_choices) - 1)]
+                    attachment_candidates.sort(key=lambda item: item[:5] + (item[8],))
+                    _, _, _, _, _, target, target_external, tap, route = attachment_candidates[
+                        min(retry_index, len(attachment_candidates) - 1)
+                    ]
+                    conductors.append(
+                        ConductorSegment(
+                            target.point,
+                            target_external,
+                            net,
+                            owner,
+                            (target.id, "escape"),
+                        )
                     )
-            if not attachment_candidates:
-                raise InputError(
-                    f"ROUTE_BLOCKED: net={net} gateways={','.join(blocked_targets)} "
-                    f"taps={tap_tests} "
-                    f"states={state_expansions} retry={retry_index}"
+                    conductors.extend(
+                        ConductorSegment(first, second, net, owner, (target.id, f"tap.{tap}"))
+                        for first, second in route
+                        if first != second
+                    )
+                    connected.add(target.id)
+            except RouteBlockedConflict as conflict:
+                aggregate_taps += conflict.taps
+                aggregate_states += conflict.states
+                blocked_plans.append(conflict)
+                continue
+            except RouteLengthBoundConflict as conflict:
+                aggregate_taps += tap_tests
+                aggregate_states += state_expansions
+                length_prunes.append(conflict.lower_bound)
+                continue
+            aggregate_taps += tap_tests
+            aggregate_states += state_expansions
+            tree = canonical_conductor_tree(conductors)
+            complete = canonical_conductor_tree((*local_conductors, *conductors))
+            if trunk is None:
+                worst_to_trunk = 0
+            else:
+                first, second = trunk
+                worst_to_trunk = max(
+                    min(
+                        abs(gateway.point[0] - first[0]) + abs(gateway.point[1] - first[1]),
+                        abs(gateway.point[0] - second[0]) + abs(gateway.point[1] - second[1]),
+                    )
+                    for gateway in gateways.values()
                 )
-            attachment_candidates.sort(key=lambda item: item[:5] + (item[8],))
-            _, _, _, _, _, target, target_external, tap, route = attachment_candidates[
-                min(retry_index, len(attachment_candidates) - 1)
-            ]
-            conductors.append(
-                ConductorSegment(
-                    target.point,
-                    target_external,
-                    net,
-                    owner,
-                    (target.id, "escape"),
+            candidates.append(
+                (
+                    complete.length,
+                    worst_to_trunk,
+                    complete.bends,
+                    tuple((segment.start, segment.end) for segment in tree.segments),
+                    strategy,
+                    tree,
                 )
             )
-            conductors.extend(
-                ConductorSegment(first, second, net, owner, (target.id, f"tap.{tap}"))
-                for first, second in route
-                if first != second
+        if not candidates:
+            if length_prunes and not blocked_plans:
+                raise RouteLengthBoundConflict(net, min(length_prunes))
+            if blocked_plans:
+                blocked = max(blocked_plans, key=lambda item: (len(item.gateways), item.gateways))
+                raise RouteBlockedConflict(net, blocked.gateways, aggregate_taps, aggregate_states)
+            raise RouteBlockedConflict(
+                net, tuple(sorted(gateways)), aggregate_taps, aggregate_states
             )
-            connected.add(target.id)
-        tree = canonical_conductor_tree(conductors)
+        _, _, _, _, strategy, tree = min(candidates)
+        planned_corridors = tuple(
+            Reservation(
+                f"route.{net}.{index}",
+                "channel",
+                owner,
+                "global_route",
+                (
+                    min(segment.start[0], segment.end[0]) - 250_000,
+                    min(segment.start[1], segment.end[1]) - 250_000,
+                    max(segment.start[0], segment.end[0]) + 250_000,
+                    max(segment.start[1], segment.end[1]) + 250_000,
+                ),
+                net,
+                1,
+            )
+            for index, segment in enumerate(tree.segments)
+        )
         previous.extend((net, segment.start, segment.end) for segment in tree.segments)
         result.append(
             RouteTree(
@@ -690,8 +962,11 @@ def route_between_fragments(
                 tree.junctions,
                 owner,
                 tuple(segment.provenance for segment in tree.segments),
-                tap_tests,
-                state_expansions,
+                aggregate_taps,
+                aggregate_states,
+                strategy,
+                len(plans),
+                planned_corridors,
             )
         )
     return tuple(result)

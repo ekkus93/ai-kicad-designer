@@ -1,0 +1,214 @@
+{
+  "profile": "m2b.1",
+  "id": "m2h2_i2_internal_2",
+  "name": "M2h2I2Internal2",
+  "components": [
+    {
+      "id": "input",
+      "refdes": "J1",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Signal input"
+    },
+    {
+      "id": "positive",
+      "refdes": "J2",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Positive rail"
+    },
+    {
+      "id": "negative",
+      "refdes": "J3",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Negative rail"
+    },
+    {
+      "id": "divider_0_upper",
+      "refdes": "R1",
+      "asset": "Device:R",
+      "value": "10k"
+    },
+    {
+      "id": "divider_0_lower",
+      "refdes": "R2",
+      "asset": "Device:R",
+      "value": "10k"
+    },
+    {
+      "id": "consumer_1_r",
+      "refdes": "R3",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "consumer_1_c",
+      "refdes": "C1",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "output_1",
+      "refdes": "J4",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Output 1"
+    },
+    {
+      "id": "consumer_2_r",
+      "refdes": "R4",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "consumer_2_c",
+      "refdes": "C2",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "output_2",
+      "refdes": "J5",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Output 2"
+    }
+  ],
+  "nets": [
+    {
+      "id": "INPUT",
+      "members": [
+        [
+          "input",
+          "1"
+        ],
+        [
+          "consumer_1_r",
+          "1"
+        ],
+        [
+          "consumer_2_r",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "VPLUS",
+      "members": [
+        [
+          "positive",
+          "1"
+        ],
+        [
+          "divider_0_upper",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "VMINUS",
+      "members": [
+        [
+          "negative",
+          "1"
+        ],
+        [
+          "divider_0_lower",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "BIAS",
+      "members": [
+        [
+          "divider_0_upper",
+          "2"
+        ],
+        [
+          "divider_0_lower",
+          "1"
+        ],
+        [
+          "consumer_1_c",
+          "2"
+        ],
+        [
+          "consumer_2_c",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "OUTPUT_1",
+      "members": [
+        [
+          "consumer_1_r",
+          "2"
+        ],
+        [
+          "consumer_1_c",
+          "1"
+        ],
+        [
+          "output_1",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "OUTPUT_2",
+      "members": [
+        [
+          "consumer_2_r",
+          "2"
+        ],
+        [
+          "consumer_2_c",
+          "1"
+        ],
+        [
+          "output_2",
+          "1"
+        ]
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "divider_0",
+      "kind": "reference_divider",
+      "upper": "divider_0_upper",
+      "lower": "divider_0_lower",
+      "positive": "VPLUS",
+      "local": "BIAS",
+      "negative": "VMINUS"
+    },
+    {
+      "id": "consumer_1.series",
+      "kind": "series",
+      "component": "consumer_1_r",
+      "input": "INPUT",
+      "output": "OUTPUT_1"
+    },
+    {
+      "id": "consumer_1.shunt",
+      "kind": "shunt",
+      "component": "consumer_1_c",
+      "node": "OUTPUT_1",
+      "reference": "BIAS"
+    },
+    {
+      "id": "consumer_2.series",
+      "kind": "series",
+      "component": "consumer_2_r",
+      "input": "INPUT",
+      "output": "OUTPUT_2"
+    },
+    {
+      "id": "consumer_2.shunt",
+      "kind": "shunt",
+      "component": "consumer_2_c",
+      "node": "OUTPUT_2",
+      "reference": "BIAS"
+    }
+  ],
+  "no_connects": [],
+  "power_assertions": []
+}

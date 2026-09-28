@@ -18,6 +18,8 @@ from .m2_geometry import (
     canonical_conductor_tree,
     content_envelope,
     prove_gateway_witnesses,
+    prove_no_cross_net_contacts,
+    segment_is_admissible,
 )
 from .m2a import Asset, PITCH, Pin
 from .m2b import Draft, choose_text_slots, orientation_for_flow, _turn
@@ -382,6 +384,34 @@ def _finish(
     del draft.wires[emitted_wire_count:]
     del draft.wire_nets[emitted_wire_count:]
     occupied = _occupied_geometry(design, resolved, draft, block)
+    body_keepouts = tuple(
+        Reservation(f"body.{item.id}", "exclusive", item.owner, "body", item.rect)
+        for item in occupied
+        if item.kind == "body"
+    )
+    for gateway in gateways:
+        if not (
+            block.kind == "package_power"
+            and "compact" in variant_suffix
+            and gateway.id.endswith(".reference")
+        ):
+            continue
+        direction = {
+            "left": (-PITCH, 0),
+            "right": (PITCH, 0),
+            "up": (0, -PITCH),
+            "down": (0, PITCH),
+        }[gateway.escape_direction]
+        outside = (gateway.point[0] + direction[0], gateway.point[1] + direction[1])
+        if not segment_is_admissible(
+            gateway.point,
+            outside,
+            body_keepouts,
+            (),
+            net=gateway.net,
+            owner=f"gateway.{gateway.id}",
+        ):
+            raise InputError(f"FRAGMENT_GATEWAY_BODY_BLOCKED: {gateway.id}")
     content = content_envelope(occupied)
     obstacles = tuple(
         _body_rect(design, resolved, draft, key)
@@ -452,6 +482,7 @@ def _finish(
             zip(draft.wire_nets, draft.wires, strict=True)
         )
     )
+    prove_no_cross_net_contacts(local_segments)
     for net in sorted(set(draft.wire_nets)):
         tree = canonical_conductor_tree(
             (segment for segment in local_segments if segment.net == net),
@@ -682,6 +713,7 @@ def _package_fragment(
     block: BlockPlan,
     *,
     reference_side: str = "down",
+    compact: bool = False,
 ) -> FragmentVariant:
     rail = next(
         r
@@ -702,17 +734,38 @@ def _package_fragment(
     cap_neg = next(r for r in supports if r["return"] == rail["negative"])
     d.add(
         cap_pos["component"],
-        px - 11 * PITCH,
+        px - (10 if compact else 11) * PITCH,
         py,
-        angle=180 if reference_side == "up" else 0,
+        angle=180 if reference_side == "up" and not compact else 0,
     )
-    d.add(cap_neg["component"], px + 11 * PITCH, py)
+    d.add(
+        cap_neg["component"],
+        px + 11 * PITCH,
+        py,
+        angle=180 if reference_side == "up" and compact else 0,
+    )
     cp1, cp2 = d.point(cap_pos["component"], "1"), d.point(cap_pos["component"], "2")
     cn1, cn2 = d.point(cap_neg["component"], "1"), d.point(cap_neg["component"], "2")
     pos_end = (pos[0], cp1[1])
     neg_end = (neg[0], cn2[1])
-    if reference_side == "up":
-        positive_side_x = cp1[0] - 5 * PITCH
+    if reference_side == "up" and compact:
+        # Put both support reference pins below their bodies.  Rails can then
+        # reach the opposite pins from outside the reference interval.
+        d.route(rail["positive"], pos, (pos[0], cp1[1]), cp1)
+        pos_end = (pos[0], pos[1] - 3 * PITCH)
+        d.route(rail["positive"], pos, pos_end)
+        negative_side_x = cn1[0] + 5 * PITCH
+        d.route(
+            rail["negative"],
+            neg,
+            (negative_side_x, neg[1]),
+            (negative_side_x, cn2[1]),
+            cn2,
+        )
+        neg_end = (negative_side_x, neg[1] + 3 * PITCH)
+        d.route(rail["negative"], (negative_side_x, neg[1]), neg_end)
+    elif reference_side == "up":
+        positive_side_x = cn1[0] + 5 * PITCH
         d.route(
             rail["positive"],
             pos,
@@ -723,7 +776,8 @@ def _package_fragment(
         pos_end = (positive_side_x, cp2[1] - 2 * PITCH)
     else:
         d.route(rail["positive"], pos, pos_end, cp1)
-    d.route(rail["negative"], neg, neg_end, cn2)
+    if not (reference_side == "up" and compact):
+        d.route(rail["negative"], neg, neg_end, cn2)
     ref1, ref2 = cp2, cn1
     # Both decoupler returns belong to the same physical reference island.
     # The right-hand capacitor's upper pin needs a side approach so the wire
@@ -750,9 +804,13 @@ def _package_fragment(
     ]
     if dividers:
         divider = dividers[0]
-        dx = px - 34 * PITCH
-        d.add(divider["upper"], dx, py - 13 * PITCH)
-        d.add(divider["lower"], dx, py + 13 * PITCH)
+        # Keep the divider beside the support capacitor when measured text,
+        # body and protected conductors permit it.  The shorter local
+        # reference interval leaves a useful budget for global distribution.
+        dx = px - (19 if compact else 34) * PITCH
+        divider_offset = 8 if compact else 13
+        d.add(divider["upper"], dx, py - divider_offset * PITCH)
+        d.add(divider["lower"], dx, py + divider_offset * PITCH)
         ut, ub = d.point(divider["upper"], "1"), d.point(divider["upper"], "2")
         lt, lb = d.point(divider["lower"], "1"), d.point(divider["lower"], "2")
         local = (dx, cp2[1])
@@ -771,10 +829,63 @@ def _package_fragment(
         "negative": (neg_end, "down"),
         "reference": (
             ref1,
-            "left" if dividers else ("up" if reference_side == "up" else "down"),
+            "left"
+            if dividers or (reference_side == "up" and compact)
+            else ("up" if reference_side == "up" else "down"),
         ),
     }
-    return _finish(design, resolved, block, d, anchors)
+    return _finish(
+        design,
+        resolved,
+        block,
+        d,
+        anchors,
+        variant_suffix=("compact_" if compact else "expanded_") + reference_side,
+    )
+
+
+def _reference_divider_fragment(
+    design: dict,
+    resolved: dict[str, Asset],
+    block: BlockPlan,
+    *,
+    compact: bool = False,
+) -> FragmentVariant:
+    """Local two-resistor reference producer with an exposed output island."""
+    divider = next(
+        relation
+        for relation in design["relationships"]
+        if relation["kind"] == "reference_divider" and relation["id"] in block.relationships
+    )
+    draft = _new_draft(design, resolved)
+    x, upper_y = 35 * PITCH, 25 * PITCH
+    lower_y = upper_y + (14 if compact else 18) * PITCH
+    draft.add(divider["upper"], x, upper_y)
+    draft.add(divider["lower"], x, lower_y)
+    upper_positive = draft.point(divider["upper"], "1")
+    upper_reference = draft.point(divider["upper"], "2")
+    lower_reference = draft.point(divider["lower"], "1")
+    lower_negative = draft.point(divider["lower"], "2")
+    if upper_reference[0] != lower_reference[0]:
+        raise InputError(f"FRAGMENT_DIVIDER_PIN_ALIGNMENT: {block.id}")
+    reference_anchor = (
+        upper_reference[0],
+        (upper_reference[1] + lower_reference[1]) // (2 * PITCH) * PITCH,
+    )
+    draft.route(divider["local"], upper_reference, lower_reference)
+    draft.junctions.append(reference_anchor)
+    return _finish(
+        design,
+        resolved,
+        block,
+        draft,
+        {
+            "positive": (upper_positive, "up"),
+            "negative": (lower_negative, "down"),
+            "reference": (reference_anchor, "left"),
+        },
+        variant_suffix="compact" if compact else "expanded",
+    )
 
 
 def _power_stage_fragment(
@@ -1148,6 +1259,21 @@ def fragment_variants(
                 )
             except InputError:
                 pass
+            for side in ("up", "down"):
+                try:
+                    bases.append(
+                        _package_fragment(
+                            design, resolved, block, reference_side=side, compact=True
+                        )
+                    )
+                except InputError:
+                    pass
+        elif block.kind == "reference_divider":
+            bases = [_reference_divider_fragment(design, resolved, block)]
+            try:
+                bases.append(_reference_divider_fragment(design, resolved, block, compact=True))
+            except InputError:
+                pass
         elif block.kind == "power_stage":
             bases = [_power_stage_fragment(design, resolved, block)]
         elif block.kind == "timer":
@@ -1194,6 +1320,8 @@ def fragment_variants(
         def structural_name(index: int) -> str:
             if block.kind in {"timer", "rc", "led_branch"}:
                 return "compact" if index else "expanded"
+            if block.kind == "package_power":
+                return "compact" if ".compact_" in bases[index].id else "expanded"
             return "above" if index else "below"
 
         result[block.id] = tuple(

@@ -1,0 +1,214 @@
+{
+  "schema_version": "m2h2.interaction-expected.1",
+  "frozen_before_real_layout": true,
+  "factor_cell": "I1:serial_depth=2|branch_degree=2",
+  "partitions": {
+    "INPUT": [
+      [
+        "input",
+        "1"
+      ],
+      [
+        "prefix_1_r",
+        "1"
+      ]
+    ],
+    "RETURN": [
+      [
+        "branch_1_c",
+        "2"
+      ],
+      [
+        "branch_2_c",
+        "2"
+      ],
+      [
+        "prefix_1_c",
+        "2"
+      ],
+      [
+        "return",
+        "1"
+      ]
+    ],
+    "MID_1": [
+      [
+        "branch_1_r",
+        "1"
+      ],
+      [
+        "branch_2_r",
+        "1"
+      ],
+      [
+        "prefix_1_c",
+        "1"
+      ],
+      [
+        "prefix_1_r",
+        "2"
+      ]
+    ],
+    "OUTPUT_1": [
+      [
+        "branch_1_c",
+        "1"
+      ],
+      [
+        "branch_1_r",
+        "2"
+      ],
+      [
+        "output_1",
+        "1"
+      ]
+    ],
+    "OUTPUT_2": [
+      [
+        "branch_2_c",
+        "1"
+      ],
+      [
+        "branch_2_r",
+        "2"
+      ],
+      [
+        "output_2",
+        "1"
+      ]
+    ]
+  },
+  "terminal_inventory": [
+    [
+      "branch_1_c",
+      "1"
+    ],
+    [
+      "branch_1_c",
+      "2"
+    ],
+    [
+      "branch_1_r",
+      "1"
+    ],
+    [
+      "branch_1_r",
+      "2"
+    ],
+    [
+      "branch_2_c",
+      "1"
+    ],
+    [
+      "branch_2_c",
+      "2"
+    ],
+    [
+      "branch_2_r",
+      "1"
+    ],
+    [
+      "branch_2_r",
+      "2"
+    ],
+    [
+      "input",
+      "1"
+    ],
+    [
+      "output_1",
+      "1"
+    ],
+    [
+      "output_2",
+      "1"
+    ],
+    [
+      "prefix_1_c",
+      "1"
+    ],
+    [
+      "prefix_1_c",
+      "2"
+    ],
+    [
+      "prefix_1_r",
+      "1"
+    ],
+    [
+      "prefix_1_r",
+      "2"
+    ],
+    [
+      "return",
+      "1"
+    ]
+  ],
+  "path_obligations": [
+    {
+      "id": "prefix_1.shunt_path",
+      "from": [
+        "prefix_1_r",
+        "2"
+      ],
+      "to": [
+        "prefix_1_c",
+        "1"
+      ],
+      "kind": "local_rc",
+      "maximum_span_nm": 80000000
+    },
+    {
+      "id": "branch_1.shunt_path",
+      "from": [
+        "branch_1_r",
+        "2"
+      ],
+      "to": [
+        "branch_1_c",
+        "1"
+      ],
+      "kind": "local_rc",
+      "maximum_span_nm": 80000000
+    },
+    {
+      "id": "branch_2.shunt_path",
+      "from": [
+        "branch_2_r",
+        "2"
+      ],
+      "to": [
+        "branch_2_c",
+        "1"
+      ],
+      "kind": "local_rc",
+      "maximum_span_nm": 80000000
+    }
+  ],
+  "precedence": [
+    {
+      "source": [
+        "prefix_1_r",
+        "2"
+      ],
+      "target": [
+        "branch_1_r",
+        "1"
+      ],
+      "strict_x": true,
+      "net": "MID_1"
+    },
+    {
+      "source": [
+        "prefix_1_r",
+        "2"
+      ],
+      "target": [
+        "branch_2_r",
+        "1"
+      ],
+      "strict_x": true,
+      "net": "MID_1"
+    }
+  ]
+}

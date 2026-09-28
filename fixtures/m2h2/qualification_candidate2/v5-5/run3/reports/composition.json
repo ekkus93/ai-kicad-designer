@@ -1,0 +1,7202 @@
+{
+  "schema_version": "m2g2.composition.1",
+  "blocks": [
+    {
+      "id": "interface.output",
+      "kind": "interface",
+      "relationships": [],
+      "occurrences": [
+        [
+          "output",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "interface.output.pin1",
+          "net": "FILTERED",
+          "role": "passive",
+          "terminals": [
+            [
+              "output",
+              "1"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "interface.output2",
+      "kind": "interface",
+      "relationships": [],
+      "occurrences": [
+        [
+          "output2",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "interface.output2.pin1",
+          "net": "OUT2",
+          "role": "passive",
+          "terminals": [
+            [
+              "output2",
+              "1"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "interface.return",
+      "kind": "interface",
+      "relationships": [],
+      "occurrences": [
+        [
+          "return",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "interface.return.pin1",
+          "net": "REF",
+          "role": "passive",
+          "terminals": [
+            [
+              "return",
+              "1"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "interface.source",
+      "kind": "interface",
+      "relationships": [],
+      "occurrences": [
+        [
+          "source",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "interface.source.pin1",
+          "net": "VCC",
+          "role": "passive",
+          "terminals": [
+            [
+              "source",
+              "1"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "passive.indicator2.series",
+      "kind": "led_branch",
+      "relationships": [
+        "indicator2.polarity",
+        "indicator2.series"
+      ],
+      "occurrences": [
+        [
+          "indicator_led2",
+          1
+        ],
+        [
+          "indicator_r2",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "passive.indicator2.series.input",
+          "net": "OUT2",
+          "role": "signal_in",
+          "terminals": [
+            [
+              "indicator_r2",
+              "1"
+            ]
+          ]
+        },
+        {
+          "id": "passive.indicator2.series.output",
+          "net": "LEDMID2",
+          "role": "signal_out",
+          "terminals": [
+            [
+              "indicator_r2",
+              "2"
+            ]
+          ]
+        },
+        {
+          "id": "passive.indicator2.series.reference",
+          "net": "REF",
+          "role": "reference",
+          "terminals": [
+            [
+              "indicator_led2",
+              "1"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "passive.output.filter.series",
+      "kind": "rc",
+      "relationships": [
+        "output.filter.series",
+        "output.filter.shunt"
+      ],
+      "occurrences": [
+        [
+          "filter_c",
+          1
+        ],
+        [
+          "filter_r",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "passive.output.filter.series.input",
+          "net": "OUT",
+          "role": "signal_in",
+          "terminals": [
+            [
+              "filter_r",
+              "1"
+            ]
+          ]
+        },
+        {
+          "id": "passive.output.filter.series.output",
+          "net": "FILTERED",
+          "role": "signal_out",
+          "terminals": [
+            [
+              "filter_r",
+              "2"
+            ]
+          ]
+        },
+        {
+          "id": "passive.output.filter.series.reference",
+          "net": "REF",
+          "role": "reference",
+          "terminals": [
+            [
+              "filter_c",
+              "2"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "timer.timer",
+      "kind": "timer",
+      "relationships": [
+        "control.bypass",
+        "timer.function",
+        "timing.network"
+      ],
+      "occurrences": [
+        [
+          "charge",
+          1
+        ],
+        [
+          "control_bypass",
+          1
+        ],
+        [
+          "discharge",
+          1
+        ],
+        [
+          "timer",
+          1
+        ],
+        [
+          "timing_cap",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "timer.timer.supply",
+          "net": "VCC",
+          "role": "power_in",
+          "terminals": [
+            [
+              "timer",
+              "8"
+            ]
+          ]
+        },
+        {
+          "id": "timer.timer.output",
+          "net": "OUT",
+          "role": "signal_out",
+          "terminals": [
+            [
+              "timer",
+              "3"
+            ]
+          ]
+        },
+        {
+          "id": "timer.timer.reference",
+          "net": "REF",
+          "role": "reference",
+          "terminals": [
+            [
+              "timer",
+              "1"
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "id": "timer.timer2",
+      "kind": "timer",
+      "relationships": [
+        "control2.bypass",
+        "timer2.function",
+        "timing2.network"
+      ],
+      "occurrences": [
+        [
+          "charge2",
+          1
+        ],
+        [
+          "control_bypass2",
+          1
+        ],
+        [
+          "discharge2",
+          1
+        ],
+        [
+          "timer2",
+          1
+        ],
+        [
+          "timing_cap2",
+          1
+        ]
+      ],
+      "function": null,
+      "unused": false,
+      "ports": [
+        {
+          "id": "timer.timer2.supply",
+          "net": "VCC",
+          "role": "power_in",
+          "terminals": [
+            [
+              "timer2",
+              "8"
+            ]
+          ]
+        },
+        {
+          "id": "timer.timer2.output",
+          "net": "OUT2",
+          "role": "signal_out",
+          "terminals": [
+            [
+              "timer2",
+              "3"
+            ]
+          ]
+        },
+        {
+          "id": "timer.timer2.reference",
+          "net": "REF",
+          "role": "reference",
+          "terminals": [
+            [
+              "timer2",
+              "1"
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "owners": [
+    {
+      "occurrence": [
+        "charge",
+        1
+      ],
+      "fragment": "timer.timer"
+    },
+    {
+      "occurrence": [
+        "charge2",
+        1
+      ],
+      "fragment": "timer.timer2"
+    },
+    {
+      "occurrence": [
+        "control_bypass",
+        1
+      ],
+      "fragment": "timer.timer"
+    },
+    {
+      "occurrence": [
+        "control_bypass2",
+        1
+      ],
+      "fragment": "timer.timer2"
+    },
+    {
+      "occurrence": [
+        "discharge",
+        1
+      ],
+      "fragment": "timer.timer"
+    },
+    {
+      "occurrence": [
+        "discharge2",
+        1
+      ],
+      "fragment": "timer.timer2"
+    },
+    {
+      "occurrence": [
+        "filter_c",
+        1
+      ],
+      "fragment": "passive.output.filter.series"
+    },
+    {
+      "occurrence": [
+        "filter_r",
+        1
+      ],
+      "fragment": "passive.output.filter.series"
+    },
+    {
+      "occurrence": [
+        "indicator_led2",
+        1
+      ],
+      "fragment": "passive.indicator2.series"
+    },
+    {
+      "occurrence": [
+        "indicator_r2",
+        1
+      ],
+      "fragment": "passive.indicator2.series"
+    },
+    {
+      "occurrence": [
+        "output",
+        1
+      ],
+      "fragment": "interface.output"
+    },
+    {
+      "occurrence": [
+        "output2",
+        1
+      ],
+      "fragment": "interface.output2"
+    },
+    {
+      "occurrence": [
+        "return",
+        1
+      ],
+      "fragment": "interface.return"
+    },
+    {
+      "occurrence": [
+        "source",
+        1
+      ],
+      "fragment": "interface.source"
+    },
+    {
+      "occurrence": [
+        "timer",
+        1
+      ],
+      "fragment": "timer.timer"
+    },
+    {
+      "occurrence": [
+        "timer2",
+        1
+      ],
+      "fragment": "timer.timer2"
+    },
+    {
+      "occurrence": [
+        "timing_cap",
+        1
+      ],
+      "fragment": "timer.timer"
+    },
+    {
+      "occurrence": [
+        "timing_cap2",
+        1
+      ],
+      "fragment": "timer.timer2"
+    }
+  ],
+  "edges": [
+    {
+      "kind": "branch",
+      "source": "timer.timer",
+      "target": "passive.output.filter.series",
+      "net": "OUT",
+      "origins": []
+    },
+    {
+      "kind": "branch",
+      "source": "timer.timer2",
+      "target": "passive.indicator2.series",
+      "net": "OUT2",
+      "origins": []
+    },
+    {
+      "kind": "reference",
+      "source": "passive.indicator2.series",
+      "target": "passive.output.filter.series",
+      "net": "REF",
+      "origins": []
+    },
+    {
+      "kind": "reference",
+      "source": "timer.timer",
+      "target": "timer.timer2",
+      "net": "REF",
+      "origins": []
+    },
+    {
+      "kind": "reference",
+      "source": "timer.timer2",
+      "target": "passive.indicator2.series",
+      "net": "REF",
+      "origins": []
+    },
+    {
+      "kind": "support",
+      "source": "timer.timer",
+      "target": "timer.timer",
+      "net": "CONT",
+      "origins": [
+        "control.bypass"
+      ]
+    },
+    {
+      "kind": "support",
+      "source": "timer.timer2",
+      "target": "timer.timer2",
+      "net": "CONT2",
+      "origins": [
+        "control2.bypass"
+      ]
+    }
+  ],
+  "signal_order": [
+    "timer.timer",
+    "timer.timer2",
+    "passive.indicator2.series",
+    "passive.output.filter.series"
+  ],
+  "variants": [
+    {
+      "fragment": "interface.output",
+      "variant": "interface.output.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [],
+      "local_envelope": [
+        1520000,
+        7620000,
+        22860000,
+        22860000
+      ],
+      "content_envelope": [
+        2790000,
+        9310000,
+        20580000,
+        21590000
+      ],
+      "packing_envelope": [
+        1520000,
+        7620000,
+        22860000,
+        22860000
+      ],
+      "placed_envelope": [
+        122170000,
+        88900000,
+        143510000,
+        104140000
+      ],
+      "translation": [
+        120650000,
+        81280000
+      ],
+      "protected_wire_count": 1,
+      "obstacle_count": 1,
+      "reservation_count": 9,
+      "gateways": [
+        {
+          "id": "interface.output.pin1",
+          "net": "FILTERED",
+          "terminals": [
+            [
+              "output",
+              "1"
+            ]
+          ],
+          "anchor": [
+            128270000,
+            101600000
+          ],
+          "escape_direction": "left",
+          "escape_polyline": [
+            [
+              128270000,
+              101600000
+            ],
+            [
+              127000000,
+              101600000
+            ]
+          ]
+        }
+      ],
+      "protected_paths": [
+        "interface.output.local"
+      ]
+    },
+    {
+      "fragment": "interface.output2",
+      "variant": "interface.output2.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [],
+      "local_envelope": [
+        3300000,
+        7620000,
+        22860000,
+        22860000
+      ],
+      "content_envelope": [
+        4570000,
+        9310000,
+        20580000,
+        21590000
+      ],
+      "packing_envelope": [
+        3300000,
+        7620000,
+        22860000,
+        22860000
+      ],
+      "placed_envelope": [
+        122680000,
+        104140000,
+        142240000,
+        119380000
+      ],
+      "translation": [
+        119380000,
+        96520000
+      ],
+      "protected_wire_count": 1,
+      "obstacle_count": 1,
+      "reservation_count": 9,
+      "gateways": [
+        {
+          "id": "interface.output2.pin1",
+          "net": "OUT2",
+          "terminals": [
+            [
+              "output2",
+              "1"
+            ]
+          ],
+          "anchor": [
+            127000000,
+            116840000
+          ],
+          "escape_direction": "left",
+          "escape_polyline": [
+            [
+              127000000,
+              116840000
+            ],
+            [
+              125730000,
+              116840000
+            ]
+          ]
+        }
+      ],
+      "protected_paths": [
+        "interface.output2.local"
+      ]
+    },
+    {
+      "fragment": "interface.return",
+      "variant": "interface.return.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [],
+      "local_envelope": [
+        3745000,
+        7620000,
+        20320000,
+        22860000
+      ],
+      "content_envelope": [
+        5015000,
+        9310000,
+        17910000,
+        21590000
+      ],
+      "packing_envelope": [
+        3745000,
+        7620000,
+        20320000,
+        22860000
+      ],
+      "placed_envelope": [
+        121855000,
+        119380000,
+        138430000,
+        134620000
+      ],
+      "translation": [
+        118110000,
+        111760000
+      ],
+      "protected_wire_count": 1,
+      "obstacle_count": 1,
+      "reservation_count": 9,
+      "gateways": [
+        {
+          "id": "interface.return.pin1",
+          "net": "REF",
+          "terminals": [
+            [
+              "return",
+              "1"
+            ]
+          ],
+          "anchor": [
+            125730000,
+            132080000
+          ],
+          "escape_direction": "left",
+          "escape_polyline": [
+            [
+              125730000,
+              132080000
+            ],
+            [
+              124460000,
+              132080000
+            ]
+          ]
+        }
+      ],
+      "protected_paths": [
+        "interface.return.local"
+      ]
+    },
+    {
+      "fragment": "interface.source",
+      "variant": "interface.source.v0",
+      "rule": "m2e1.local.v1",
+      "origins": [],
+      "local_envelope": [
+        3745000,
+        7620000,
+        20320000,
+        22860000
+      ],
+      "content_envelope": [
+        5015000,
+        9310000,
+        17910000,
+        21590000
+      ],
+      "packing_envelope": [
+        3745000,
+        7620000,
+        20320000,
+        22860000
+      ],
+      "placed_envelope": [
+        121855000,
+        134620000,
+        138430000,
+        149860000
+      ],
+      "translation": [
+        118110000,
+        127000000
+      ],
+      "protected_wire_count": 1,
+      "obstacle_count": 1,
+      "reservation_count": 9,
+      "gateways": [
+        {
+          "id": "interface.source.pin1",
+          "net": "VCC",
+          "terminals": [
+            [
+              "source",
+              "1"
+            ]
+          ],
+          "anchor": [
+            125730000,
+            147320000
+          ],
+          "escape_direction": "left",
+          "escape_polyline": [
+            [
+              125730000,
+              147320000
+            ],
+            [
+              124460000,
+              147320000
+            ]
+          ]
+        }
+      ],
+      "protected_paths": [
+        "interface.source.local"
+      ]
+    },
+    {
+      "fragment": "passive.indicator2.series",
+      "variant": "passive.indicator2.series.v1",
+      "rule": "m2g2.local-aspect.led_branch.compact.v1",
+      "origins": [
+        "indicator2.polarity",
+        "indicator2.series"
+      ],
+      "local_envelope": [
+        21015000,
+        2960000,
+        44450000,
+        38950000
+      ],
+      "content_envelope": [
+        22285000,
+        4230000,
+        41975000,
+        37680000
+      ],
+      "packing_envelope": [
+        21015000,
+        2960000,
+        44450000,
+        38950000
+      ],
+      "placed_envelope": [
+        97215000,
+        89320000,
+        120650000,
+        125310000
+      ],
+      "translation": [
+        76200000,
+        86360000
+      ],
+      "protected_wire_count": 2,
+      "obstacle_count": 2,
+      "reservation_count": 23,
+      "gateways": [
+        {
+          "id": "passive.indicator2.series.input",
+          "net": "OUT2",
+          "terminals": [
+            [
+              "indicator_r2",
+              "1"
+            ]
+          ],
+          "anchor": [
+            101600000,
+            95250000
+          ],
+          "escape_direction": "up",
+          "escape_polyline": [
+            [
+              101600000,
+              95250000
+            ],
+            [
+              101600000,
+              91440000
+            ]
+          ]
+        },
+        {
+          "id": "passive.indicator2.series.output",
+          "net": "LEDMID2",
+          "terminals": [
+            [
+              "indicator_r2",
+              "2"
+            ]
+          ],
+          "anchor": [
+            101600000,
+            111760000
+          ],
+          "escape_direction": "down",
+          "escape_polyline": [
+            [
+              101600000,
+              111760000
+            ],
+            [
+              101600000,
+              115570000
+            ]
+          ]
+        },
+        {
+          "id": "passive.indicator2.series.reference",
+          "net": "REF",
+          "terminals": [
+            [
+              "indicator_led2",
+              "1"
+            ]
+          ],
+          "anchor": [
+            101600000,
+            119380000
+          ],
+          "escape_direction": "down",
+          "escape_polyline": [
+            [
+              101600000,
+              119380000
+            ],
+            [
+              101600000,
+              123190000
+            ]
+          ]
+        }
+      ],
+      "protected_paths": [
+        "passive.indicator2.series.local"
+      ]
+    },
+    {
+      "fragment": "passive.output.filter.series",
+      "variant": "passive.output.filter.series.v1",
+      "rule": "m2g2.local-aspect.rc.compact.v1",
+      "origins": [
+        "output.filter.series",
+        "output.filter.shunt"
+      ],
+      "local_envelope": [
+        12700000,
+        6350000,
+        53340000,
+        45300000
+      ],
+      "content_envelope": [
+        13970000,
+        8040000,
+        51310000,
+        44030000
+      ],
+      "packing_envelope": [
+        12700000,
+        6350000,
+        53340000,
+        45300000
+      ],
+      "placed_envelope": [
+        95250000,
+        29210000,
+        135890000,
+        68160000
+      ],
+      "translation": [
+        82550000,
+        22860000
+      ],
+      "protected_wire_count": 6,
+      "obstacle_count": 2,
+      "reservation_count": 31,
+      "gateways": [
+        {
+          "id": "passive.output.filter.series.input",
+          "net": "OUT",
+          "terminals": [
+            [
+              "filter_r",
+              "1"
+            ]
+          ],
+          "anchor": [
+            100330000,
+            41910000
+          ],
+          "escape_direction": "left",
+          "escape_polyline": [
+            [
+              100330000,
+              41910000
+            ],
+            [
+              96520000,
+              41910000
+            ]
+          ]
+        },
+        {
+          "id": "passive.output.filter.series.output",
+          "net": "FILTERED",
+          "terminals": [
+            [
+              "filter_r",
+              "2"
+            ]
+          ],
+          "anchor": [
+            125730000,
+            41910000
+          ],
+          "escape_direction": "right",
+          "escape_polyline": [
+            [
+              125730000,
+              41910000
+            ],
+            [
+              129540000,
+              41910000
+            ]
+          ]
+        },
+        {
+          "id": "passive.output.filter.series.reference",
+          "net": "REF",
+          "terminals": [
+            [
+              "filter_c",
+              "2"
+            ]
+          ],
+          "anchor": [
+            121920000,
+            62230000
+          ],
+          "escape_direction": "down",
+          "escape_polyline": [
+            [
+              121920000,
+              62230000
+            ],
+            [
+              121920000,
+              66040000
+            ]
+          ]
+        }
+      ],
+      "protected_paths": [
+        "passive.output.filter.series.local"
+      ]
+    },
+    {
+      "fragment": "timer.timer",
+      "variant": "timer.timer.v1",
+      "rule": "m2g2.local-aspect.timer.compact.v1",
+      "origins": [
+        "control.bypass",
+        "timer.function",
+        "timing.network"
+      ],
+      "local_envelope": [
+        15240000,
+        17780000,
+        85090000,
+        75780000
+      ],
+      "content_envelope": [
+        17018000,
+        19470000,
+        82615000,
+        74510000
+      ],
+      "packing_envelope": [
+        15240000,
+        17780000,
+        85090000,
+        75780000
+      ],
+      "placed_envelope": [
+        25400000,
+        29210000,
+        95250000,
+        87210000
+      ],
+      "translation": [
+        10160000,
+        11430000
+      ],
+      "protected_wire_count": 15,
+      "obstacle_count": 5,
+      "reservation_count": 75,
+      "gateways": [
+        {
+          "id": "timer.timer.supply",
+          "net": "VCC",
+          "terminals": [
+            [
+              "timer",
+              "8"
+            ]
+          ],
+          "anchor": [
+            66040000,
+            49530000
+          ],
+          "escape_direction": "right",
+          "escape_polyline": [
+            [
+              66040000,
+              49530000
+            ],
+            [
+              69850000,
+              49530000
+            ]
+          ]
+        },
+        {
+          "id": "timer.timer.output",
+          "net": "OUT",
+          "terminals": [
+            [
+              "timer",
+              "3"
+            ]
+          ],
+          "anchor": [
+            88900000,
+            59690000
+          ],
+          "escape_direction": "right",
+          "escape_polyline": [
+            [
+              88900000,
+              59690000
+            ],
+            [
+              92710000,
+              59690000
+            ]
+          ]
+        },
+        {
+          "id": "timer.timer.reference",
+          "net": "REF",
+          "terminals": [
+            [
+              "timer",
+              "1"
+            ]
+          ],
+          "anchor": [
+            63500000,
+            69850000
+          ],
+          "escape_direction": "right",
+          "escape_polyline": [
+            [
+              63500000,
+              69850000
+            ],
+            [
+              67310000,
+              69850000
+            ]
+          ]
+        }
+      ],
+      "protected_paths": [
+        "timer.timer.local"
+      ]
+    },
+    {
+      "fragment": "timer.timer2",
+      "variant": "timer.timer2.v1",
+      "rule": "m2g2.local-aspect.timer.compact.v1",
+      "origins": [
+        "control2.bypass",
+        "timer2.function",
+        "timing2.network"
+      ],
+      "local_envelope": [
+        15240000,
+        17780000,
+        85600000,
+        75780000
+      ],
+      "content_envelope": [
+        17018000,
+        19470000,
+        84330000,
+        74510000
+      ],
+      "packing_envelope": [
+        15240000,
+        17780000,
+        85600000,
+        75780000
+      ],
+      "placed_envelope": [
+        25400000,
+        88900000,
+        95760000,
+        146900000
+      ],
+      "translation": [
+        10160000,
+        71120000
+      ],
+      "protected_wire_count": 15,
+      "obstacle_count": 5,
+      "reservation_count": 76,
+      "gateways": [
+        {
+          "id": "timer.timer2.supply",
+          "net": "VCC",
+          "terminals": [
+            [
+              "timer2",
+              "8"
+            ]
+          ],
+          "anchor": [
+            66040000,
+            109220000
+          ],
+          "escape_direction": "right",
+          "escape_polyline": [
+            [
+              66040000,
+              109220000
+            ],
+            [
+              69850000,
+              109220000
+            ]
+          ]
+        },
+        {
+          "id": "timer.timer2.output",
+          "net": "OUT2",
+          "terminals": [
+            [
+              "timer2",
+              "3"
+            ]
+          ],
+          "anchor": [
+            88900000,
+            119380000
+          ],
+          "escape_direction": "right",
+          "escape_polyline": [
+            [
+              88900000,
+              119380000
+            ],
+            [
+              92710000,
+              119380000
+            ]
+          ]
+        },
+        {
+          "id": "timer.timer2.reference",
+          "net": "REF",
+          "terminals": [
+            [
+              "timer2",
+              "1"
+            ]
+          ],
+          "anchor": [
+            63500000,
+            129540000
+          ],
+          "escape_direction": "right",
+          "escape_polyline": [
+            [
+              63500000,
+              129540000
+            ],
+            [
+              67310000,
+              129540000
+            ]
+          ]
+        }
+      ],
+      "protected_paths": [
+        "timer.timer2.local"
+      ]
+    }
+  ],
+  "packing_attempts": [
+    "candidate-1:side-affinity:placed-envelope-spread-overflow:133350000x150710000:content-bound=129292000x147750000:limit=210000000x140000000",
+    "candidate-2:open-interface-band:placed-envelope-spread-overflow:190500000x150710000:content-bound=186312000x147750000:limit=210000000x140000000",
+    "candidate-3:side-affinity:pass:measured=114052000x117690000"
+  ],
+  "routes": [
+    {
+      "net": "OUT",
+      "edge_count": 1,
+      "segments": [
+        [
+          [
+            92710000,
+            59690000
+          ],
+          [
+            93980000,
+            59690000
+          ]
+        ],
+        [
+          [
+            93980000,
+            59690000
+          ],
+          [
+            95250000,
+            59690000
+          ]
+        ],
+        [
+          [
+            95250000,
+            41910000
+          ],
+          [
+            95250000,
+            59690000
+          ]
+        ],
+        [
+          [
+            95250000,
+            41910000
+          ],
+          [
+            96520000,
+            41910000
+          ]
+        ]
+      ],
+      "junctions": [],
+      "owner": "tree.OUT",
+      "segment_provenance": [
+        [
+          "seed",
+          "timer.timer.output"
+        ],
+        [
+          "passive.output.filter.series.input",
+          "tap.(93980000, 59690000)"
+        ],
+        [
+          "passive.output.filter.series.input",
+          "tap.(93980000, 59690000)"
+        ],
+        [
+          "escape",
+          "passive.output.filter.series.input"
+        ]
+      ],
+      "tap_tests": 1,
+      "state_expansions": 0,
+      "strategy": "producer_centered",
+      "plan_tests": 1
+    },
+    {
+      "net": "OUT2",
+      "edge_count": 1,
+      "segments": [
+        [
+          [
+            92710000,
+            119380000
+          ],
+          [
+            93980000,
+            119380000
+          ]
+        ],
+        [
+          [
+            93980000,
+            119380000
+          ],
+          [
+            95250000,
+            119380000
+          ]
+        ],
+        [
+          [
+            95250000,
+            90170000
+          ],
+          [
+            95250000,
+            119380000
+          ]
+        ],
+        [
+          [
+            95250000,
+            90170000
+          ],
+          [
+            101600000,
+            90170000
+          ]
+        ],
+        [
+          [
+            101600000,
+            90170000
+          ],
+          [
+            101600000,
+            91440000
+          ]
+        ]
+      ],
+      "junctions": [],
+      "owner": "tree.OUT2",
+      "segment_provenance": [
+        [
+          "seed",
+          "timer.timer2.output"
+        ],
+        [
+          "passive.indicator2.series.input",
+          "tap.(93980000, 119380000)"
+        ],
+        [
+          "passive.indicator2.series.input",
+          "tap.(93980000, 119380000)"
+        ],
+        [
+          "passive.indicator2.series.input",
+          "tap.(93980000, 119380000)"
+        ],
+        [
+          "escape",
+          "passive.indicator2.series.input"
+        ]
+      ],
+      "tap_tests": 1,
+      "state_expansions": 0,
+      "strategy": "producer_centered",
+      "plan_tests": 1
+    }
+  ],
+  "canonical_trees": [
+    {
+      "net": "CONT",
+      "segments": [
+        [
+          [
+            63500000,
+            39370000
+          ],
+          [
+            63500000,
+            49530000
+          ]
+        ],
+        [
+          [
+            63500000,
+            39370000
+          ],
+          [
+            81280000,
+            39370000
+          ]
+        ],
+        [
+          [
+            81280000,
+            39370000
+          ],
+          [
+            81280000,
+            45720000
+          ]
+        ]
+      ],
+      "junctions": [],
+      "length_nm": 34290000,
+      "bends": 2,
+      "provenance": [
+        [
+          "timer.timer.wire.12"
+        ],
+        [
+          "timer.timer.wire.13"
+        ],
+        [
+          "timer.timer.wire.14"
+        ]
+      ]
+    },
+    {
+      "net": "CONT2",
+      "segments": [
+        [
+          [
+            63500000,
+            99060000
+          ],
+          [
+            63500000,
+            109220000
+          ]
+        ],
+        [
+          [
+            63500000,
+            99060000
+          ],
+          [
+            81280000,
+            99060000
+          ]
+        ],
+        [
+          [
+            81280000,
+            99060000
+          ],
+          [
+            81280000,
+            105410000
+          ]
+        ]
+      ],
+      "junctions": [],
+      "length_nm": 34290000,
+      "bends": 2,
+      "provenance": [
+        [
+          "timer.timer2.wire.12"
+        ],
+        [
+          "timer.timer2.wire.13"
+        ],
+        [
+          "timer.timer2.wire.14"
+        ]
+      ]
+    },
+    {
+      "net": "DISCH",
+      "segments": [
+        [
+          [
+            29210000,
+            45720000
+          ],
+          [
+            29210000,
+            50800000
+          ]
+        ],
+        [
+          [
+            29210000,
+            50800000
+          ],
+          [
+            29210000,
+            55880000
+          ]
+        ],
+        [
+          [
+            29210000,
+            50800000
+          ],
+          [
+            43180000,
+            50800000
+          ]
+        ],
+        [
+          [
+            43180000,
+            50800000
+          ],
+          [
+            43180000,
+            57150000
+          ]
+        ],
+        [
+          [
+            43180000,
+            57150000
+          ],
+          [
+            53340000,
+            57150000
+          ]
+        ]
+      ],
+      "junctions": [
+        [
+          29210000,
+          50800000
+        ]
+      ],
+      "length_nm": 40640000,
+      "bends": 2,
+      "provenance": [
+        [
+          "timer.timer.wire.0"
+        ],
+        [
+          "timer.timer.wire.1"
+        ],
+        [
+          "timer.timer.wire.2"
+        ],
+        [
+          "timer.timer.wire.3"
+        ],
+        [
+          "timer.timer.wire.4"
+        ]
+      ]
+    },
+    {
+      "net": "DISCH2",
+      "segments": [
+        [
+          [
+            29210000,
+            105410000
+          ],
+          [
+            29210000,
+            110490000
+          ]
+        ],
+        [
+          [
+            29210000,
+            110490000
+          ],
+          [
+            29210000,
+            115570000
+          ]
+        ],
+        [
+          [
+            29210000,
+            110490000
+          ],
+          [
+            43180000,
+            110490000
+          ]
+        ],
+        [
+          [
+            43180000,
+            110490000
+          ],
+          [
+            43180000,
+            116840000
+          ]
+        ],
+        [
+          [
+            43180000,
+            116840000
+          ],
+          [
+            53340000,
+            116840000
+          ]
+        ]
+      ],
+      "junctions": [
+        [
+          29210000,
+          110490000
+        ]
+      ],
+      "length_nm": 40640000,
+      "bends": 2,
+      "provenance": [
+        [
+          "timer.timer2.wire.0"
+        ],
+        [
+          "timer.timer2.wire.1"
+        ],
+        [
+          "timer.timer2.wire.2"
+        ],
+        [
+          "timer.timer2.wire.3"
+        ],
+        [
+          "timer.timer2.wire.4"
+        ]
+      ]
+    },
+    {
+      "net": "FILTERED",
+      "segments": [
+        [
+          [
+            116840000,
+            41910000
+          ],
+          [
+            121920000,
+            41910000
+          ]
+        ],
+        [
+          [
+            121920000,
+            41910000
+          ],
+          [
+            121920000,
+            52070000
+          ]
+        ],
+        [
+          [
+            121920000,
+            41910000
+          ],
+          [
+            125730000,
+            41910000
+          ]
+        ],
+        [
+          [
+            125730000,
+            41910000
+          ],
+          [
+            129540000,
+            41910000
+          ]
+        ],
+        [
+          [
+            127000000,
+            101600000
+          ],
+          [
+            128270000,
+            101600000
+          ]
+        ],
+        [
+          [
+            128270000,
+            101600000
+          ],
+          [
+            130810000,
+            101600000
+          ]
+        ]
+      ],
+      "junctions": [
+        [
+          121920000,
+          41910000
+        ]
+      ],
+      "length_nm": 26670000,
+      "bends": 0,
+      "provenance": [
+        [
+          "passive.output.filter.series.wire.1",
+          "passive.output.filter.series.wire.2"
+        ],
+        [
+          "passive.output.filter.series.wire.3"
+        ],
+        [
+          "passive.output.filter.series.wire.1",
+          "passive.output.filter.series.wire.4"
+        ],
+        [
+          "passive.output.filter.series.wire.7"
+        ],
+        [
+          "interface.output.wire.1"
+        ],
+        [
+          "interface.output.wire.0"
+        ]
+      ]
+    },
+    {
+      "net": "LEDMID2",
+      "segments": [
+        [
+          [
+            101600000,
+            107950000
+          ],
+          [
+            101600000,
+            111760000
+          ]
+        ],
+        [
+          [
+            101600000,
+            111760000
+          ],
+          [
+            101600000,
+            115570000
+          ]
+        ]
+      ],
+      "junctions": [],
+      "length_nm": 7620000,
+      "bends": 0,
+      "provenance": [
+        [
+          "passive.indicator2.series.wire.0"
+        ],
+        [
+          "passive.indicator2.series.wire.3"
+        ]
+      ]
+    },
+    {
+      "net": "OUT",
+      "segments": [
+        [
+          [
+            73660000,
+            59690000
+          ],
+          [
+            88900000,
+            59690000
+          ]
+        ],
+        [
+          [
+            88900000,
+            59690000
+          ],
+          [
+            92710000,
+            59690000
+          ]
+        ],
+        [
+          [
+            92710000,
+            59690000
+          ],
+          [
+            93980000,
+            59690000
+          ]
+        ],
+        [
+          [
+            93980000,
+            59690000
+          ],
+          [
+            95250000,
+            59690000
+          ]
+        ],
+        [
+          [
+            95250000,
+            41910000
+          ],
+          [
+            95250000,
+            59690000
+          ]
+        ],
+        [
+          [
+            95250000,
+            41910000
+          ],
+          [
+            96520000,
+            41910000
+          ]
+        ],
+        [
+          [
+            96520000,
+            41910000
+          ],
+          [
+            100330000,
+            41910000
+          ]
+        ],
+        [
+          [
+            100330000,
+            41910000
+          ],
+          [
+            109220000,
+            41910000
+          ]
+        ]
+      ],
+      "junctions": [],
+      "length_nm": 53340000,
+      "bends": 2,
+      "provenance": [
+        [
+          "timer.timer.wire.11"
+        ],
+        [
+          "timer.timer.wire.16"
+        ],
+        [
+          "seed",
+          "timer.timer.output"
+        ],
+        [
+          "passive.output.filter.series.input",
+          "tap.(93980000, 59690000)"
+        ],
+        [
+          "passive.output.filter.series.input",
+          "tap.(93980000, 59690000)"
+        ],
+        [
+          "escape",
+          "passive.output.filter.series.input"
+        ],
+        [
+          "passive.output.filter.series.wire.6"
+        ],
+        [
+          "passive.output.filter.series.wire.0"
+        ]
+      ]
+    },
+    {
+      "net": "OUT2",
+      "segments": [
+        [
+          [
+            73660000,
+            119380000
+          ],
+          [
+            88900000,
+            119380000
+          ]
+        ],
+        [
+          [
+            88900000,
+            119380000
+          ],
+          [
+            92710000,
+            119380000
+          ]
+        ],
+        [
+          [
+            92710000,
+            119380000
+          ],
+          [
+            93980000,
+            119380000
+          ]
+        ],
+        [
+          [
+            93980000,
+            119380000
+          ],
+          [
+            95250000,
+            119380000
+          ]
+        ],
+        [
+          [
+            95250000,
+            90170000
+          ],
+          [
+            95250000,
+            119380000
+          ]
+        ],
+        [
+          [
+            95250000,
+            90170000
+          ],
+          [
+            101600000,
+            90170000
+          ]
+        ],
+        [
+          [
+            101600000,
+            90170000
+          ],
+          [
+            101600000,
+            91440000
+          ]
+        ],
+        [
+          [
+            101600000,
+            91440000
+          ],
+          [
+            101600000,
+            95250000
+          ]
+        ],
+        [
+          [
+            101600000,
+            95250000
+          ],
+          [
+            101600000,
+            100330000
+          ]
+        ],
+        [
+          [
+            125730000,
+            116840000
+          ],
+          [
+            127000000,
+            116840000
+          ]
+        ],
+        [
+          [
+            127000000,
+            116840000
+          ],
+          [
+            129540000,
+            116840000
+          ]
+        ]
+      ],
+      "junctions": [],
+      "length_nm": 71120000,
+      "bends": 3,
+      "provenance": [
+        [
+          "timer.timer2.wire.11"
+        ],
+        [
+          "timer.timer2.wire.16"
+        ],
+        [
+          "seed",
+          "timer.timer2.output"
+        ],
+        [
+          "passive.indicator2.series.input",
+          "tap.(93980000, 119380000)"
+        ],
+        [
+          "passive.indicator2.series.input",
+          "tap.(93980000, 119380000)"
+        ],
+        [
+          "passive.indicator2.series.input",
+          "tap.(93980000, 119380000)"
+        ],
+        [
+          "escape",
+          "passive.indicator2.series.input"
+        ],
+        [
+          "passive.indicator2.series.wire.2"
+        ],
+        [
+          "passive.indicator2.series.wire.1"
+        ],
+        [
+          "interface.output2.wire.1"
+        ],
+        [
+          "interface.output2.wire.0"
+        ]
+      ]
+    },
+    {
+      "net": "REF",
+      "segments": [
+        [
+          [
+            63500000,
+            69850000
+          ],
+          [
+            67310000,
+            69850000
+          ]
+        ],
+        [
+          [
+            63500000,
+            129540000
+          ],
+          [
+            67310000,
+            129540000
+          ]
+        ],
+        [
+          [
+            101600000,
+            119380000
+          ],
+          [
+            101600000,
+            123190000
+          ]
+        ],
+        [
+          [
+            121920000,
+            59690000
+          ],
+          [
+            121920000,
+            62230000
+          ]
+        ],
+        [
+          [
+            121920000,
+            62230000
+          ],
+          [
+            121920000,
+            66040000
+          ]
+        ],
+        [
+          [
+            124460000,
+            132080000
+          ],
+          [
+            125730000,
+            132080000
+          ]
+        ],
+        [
+          [
+            125730000,
+            132080000
+          ],
+          [
+            128270000,
+            132080000
+          ]
+        ]
+      ],
+      "junctions": [],
+      "length_nm": 21590000,
+      "bends": 0,
+      "provenance": [
+        [
+          "timer.timer.wire.17"
+        ],
+        [
+          "timer.timer2.wire.17"
+        ],
+        [
+          "passive.indicator2.series.wire.4"
+        ],
+        [
+          "passive.output.filter.series.wire.5"
+        ],
+        [
+          "passive.output.filter.series.wire.8"
+        ],
+        [
+          "interface.return.wire.1"
+        ],
+        [
+          "interface.return.wire.0"
+        ]
+      ]
+    },
+    {
+      "net": "TIMING",
+      "segments": [
+        [
+          [
+            29210000,
+            63500000
+          ],
+          [
+            29210000,
+            72390000
+          ]
+        ],
+        [
+          [
+            29210000,
+            72390000
+          ],
+          [
+            29210000,
+            77470000
+          ]
+        ],
+        [
+          [
+            29210000,
+            72390000
+          ],
+          [
+            44450000,
+            72390000
+          ]
+        ],
+        [
+          [
+            44450000,
+            62230000
+          ],
+          [
+            44450000,
+            64770000
+          ]
+        ],
+        [
+          [
+            44450000,
+            62230000
+          ],
+          [
+            53340000,
+            62230000
+          ]
+        ],
+        [
+          [
+            44450000,
+            64770000
+          ],
+          [
+            44450000,
+            72390000
+          ]
+        ],
+        [
+          [
+            44450000,
+            64770000
+          ],
+          [
+            53340000,
+            64770000
+          ]
+        ]
+      ],
+      "junctions": [
+        [
+          29210000,
+          72390000
+        ],
+        [
+          44450000,
+          64770000
+        ]
+      ],
+      "length_nm": 57150000,
+      "bends": 2,
+      "provenance": [
+        [
+          "timer.timer.wire.5"
+        ],
+        [
+          "timer.timer.wire.6"
+        ],
+        [
+          "timer.timer.wire.7"
+        ],
+        [
+          "timer.timer.wire.8"
+        ],
+        [
+          "timer.timer.wire.9"
+        ],
+        [
+          "timer.timer.wire.8"
+        ],
+        [
+          "timer.timer.wire.10"
+        ]
+      ]
+    },
+    {
+      "net": "TIMING2",
+      "segments": [
+        [
+          [
+            29210000,
+            123190000
+          ],
+          [
+            29210000,
+            132080000
+          ]
+        ],
+        [
+          [
+            29210000,
+            132080000
+          ],
+          [
+            29210000,
+            137160000
+          ]
+        ],
+        [
+          [
+            29210000,
+            132080000
+          ],
+          [
+            44450000,
+            132080000
+          ]
+        ],
+        [
+          [
+            44450000,
+            121920000
+          ],
+          [
+            44450000,
+            124460000
+          ]
+        ],
+        [
+          [
+            44450000,
+            121920000
+          ],
+          [
+            53340000,
+            121920000
+          ]
+        ],
+        [
+          [
+            44450000,
+            124460000
+          ],
+          [
+            44450000,
+            132080000
+          ]
+        ],
+        [
+          [
+            44450000,
+            124460000
+          ],
+          [
+            53340000,
+            124460000
+          ]
+        ]
+      ],
+      "junctions": [
+        [
+          29210000,
+          132080000
+        ],
+        [
+          44450000,
+          124460000
+        ]
+      ],
+      "length_nm": 57150000,
+      "bends": 2,
+      "provenance": [
+        [
+          "timer.timer2.wire.5"
+        ],
+        [
+          "timer.timer2.wire.6"
+        ],
+        [
+          "timer.timer2.wire.7"
+        ],
+        [
+          "timer.timer2.wire.8"
+        ],
+        [
+          "timer.timer2.wire.9"
+        ],
+        [
+          "timer.timer2.wire.8"
+        ],
+        [
+          "timer.timer2.wire.10"
+        ]
+      ]
+    },
+    {
+      "net": "VCC",
+      "segments": [
+        [
+          [
+            66040000,
+            49530000
+          ],
+          [
+            69850000,
+            49530000
+          ]
+        ],
+        [
+          [
+            66040000,
+            109220000
+          ],
+          [
+            69850000,
+            109220000
+          ]
+        ],
+        [
+          [
+            124460000,
+            147320000
+          ],
+          [
+            125730000,
+            147320000
+          ]
+        ],
+        [
+          [
+            125730000,
+            147320000
+          ],
+          [
+            128270000,
+            147320000
+          ]
+        ]
+      ],
+      "junctions": [],
+      "length_nm": 11430000,
+      "bends": 0,
+      "provenance": [
+        [
+          "timer.timer.wire.15"
+        ],
+        [
+          "timer.timer2.wire.15"
+        ],
+        [
+          "interface.source.wire.1"
+        ],
+        [
+          "interface.source.wire.0"
+        ]
+      ]
+    }
+  ],
+  "reservations": [
+    {
+      "id": "reservation.('output', 1).body",
+      "owner": "interface.output",
+      "class": "body",
+      "occupancy": "exclusive",
+      "rect": [
+        133350000,
+        99060000,
+        138430000,
+        104140000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('output', 1).reference",
+      "owner": "interface.output",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        132080000,
+        88900000,
+        139700000,
+        93980000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('output', 1).value",
+      "owner": "interface.output",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        128270000,
+        91440000,
+        143510000,
+        96520000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('output', 1).pin.1",
+      "owner": "interface.output",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        129540000,
+        100330000,
+        132080000,
+        102870000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.0",
+      "owner": "interface.output",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        128020000,
+        101350000,
+        131060000,
+        101850000
+      ],
+      "net": "FILTERED",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.1",
+      "owner": "interface.output",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        126750000,
+        101350000,
+        128520000,
+        101850000
+      ],
+      "net": "FILTERED",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.0",
+      "owner": "interface.output",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        122170000,
+        99480000,
+        131830000,
+        103720000
+      ],
+      "net": "FILTERED",
+      "capacity": 0
+    },
+    {
+      "id": "gateway.interface.output.pin1",
+      "owner": "interface.output",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        125730000,
+        100330000,
+        128270000,
+        102870000
+      ],
+      "net": "FILTERED",
+      "capacity": 1
+    },
+    {
+      "id": "protected.0",
+      "owner": "interface.output",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        127770000,
+        101100000,
+        131310000,
+        102100000
+      ],
+      "net": "FILTERED",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('output2', 1).body",
+      "owner": "interface.output2",
+      "class": "body",
+      "occupancy": "exclusive",
+      "rect": [
+        132080000,
+        114300000,
+        137160000,
+        119380000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('output2', 1).reference",
+      "owner": "interface.output2",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        130810000,
+        104140000,
+        138430000,
+        109220000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('output2', 1).value",
+      "owner": "interface.output2",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        127000000,
+        106680000,
+        142240000,
+        111760000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('output2', 1).pin.1",
+      "owner": "interface.output2",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        128270000,
+        115570000,
+        130810000,
+        118110000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.0",
+      "owner": "interface.output2",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        126750000,
+        116590000,
+        129790000,
+        117090000
+      ],
+      "net": "OUT2",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.1",
+      "owner": "interface.output2",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        125480000,
+        116590000,
+        127250000,
+        117090000
+      ],
+      "net": "OUT2",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.0",
+      "owner": "interface.output2",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        122680000,
+        114720000,
+        128780000,
+        118960000
+      ],
+      "net": "OUT2",
+      "capacity": 0
+    },
+    {
+      "id": "gateway.interface.output2.pin1",
+      "owner": "interface.output2",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        124460000,
+        115570000,
+        127000000,
+        118110000
+      ],
+      "net": "OUT2",
+      "capacity": 1
+    },
+    {
+      "id": "protected.0",
+      "owner": "interface.output2",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        126500000,
+        116340000,
+        130040000,
+        117340000
+      ],
+      "net": "OUT2",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('return', 1).body",
+      "owner": "interface.return",
+      "class": "body",
+      "occupancy": "exclusive",
+      "rect": [
+        130810000,
+        129540000,
+        135890000,
+        134620000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('return', 1).reference",
+      "owner": "interface.return",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        129540000,
+        119380000,
+        137160000,
+        124460000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('return', 1).value",
+      "owner": "interface.return",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        128270000,
+        121920000,
+        138430000,
+        127000000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('return', 1).pin.1",
+      "owner": "interface.return",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        127000000,
+        130810000,
+        129540000,
+        133350000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.0",
+      "owner": "interface.return",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        125480000,
+        131830000,
+        128520000,
+        132330000
+      ],
+      "net": "REF",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.1",
+      "owner": "interface.return",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        124210000,
+        131830000,
+        125980000,
+        132330000
+      ],
+      "net": "REF",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.0",
+      "owner": "interface.return",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        121855000,
+        129960000,
+        127065000,
+        134200000
+      ],
+      "net": "REF",
+      "capacity": 0
+    },
+    {
+      "id": "gateway.interface.return.pin1",
+      "owner": "interface.return",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        123190000,
+        130810000,
+        125730000,
+        133350000
+      ],
+      "net": "REF",
+      "capacity": 1
+    },
+    {
+      "id": "protected.0",
+      "owner": "interface.return",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        125230000,
+        131580000,
+        128770000,
+        132580000
+      ],
+      "net": "REF",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('source', 1).body",
+      "owner": "interface.source",
+      "class": "body",
+      "occupancy": "exclusive",
+      "rect": [
+        130810000,
+        144780000,
+        135890000,
+        149860000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('source', 1).reference",
+      "owner": "interface.source",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        129540000,
+        134620000,
+        137160000,
+        139700000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('source', 1).value",
+      "owner": "interface.source",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        128270000,
+        137160000,
+        138430000,
+        142240000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('source', 1).pin.1",
+      "owner": "interface.source",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        127000000,
+        146050000,
+        129540000,
+        148590000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.0",
+      "owner": "interface.source",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        125480000,
+        147070000,
+        128520000,
+        147570000
+      ],
+      "net": "VCC",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.1",
+      "owner": "interface.source",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        124210000,
+        147070000,
+        125980000,
+        147570000
+      ],
+      "net": "VCC",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.0",
+      "owner": "interface.source",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        121855000,
+        145200000,
+        127065000,
+        149440000
+      ],
+      "net": "VCC",
+      "capacity": 0
+    },
+    {
+      "id": "gateway.interface.source.pin1",
+      "owner": "interface.source",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        123190000,
+        146050000,
+        125730000,
+        148590000
+      ],
+      "net": "VCC",
+      "capacity": 1
+    },
+    {
+      "id": "protected.0",
+      "owner": "interface.source",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        125230000,
+        146820000,
+        128770000,
+        147820000
+      ],
+      "net": "VCC",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('indicator_led2', 1).body",
+      "owner": "passive.indicator2.series",
+      "class": "body",
+      "occupancy": "exclusive",
+      "rect": [
+        99060000,
+        113030000,
+        105156000,
+        121412000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('indicator_led2', 1).reference",
+      "owner": "passive.indicator2.series",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        113030000,
+        102870000,
+        120650000,
+        107950000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('indicator_led2', 1).value",
+      "owner": "passive.indicator2.series",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        113030000,
+        105410000,
+        120650000,
+        110490000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('indicator_led2', 1).pin.1",
+      "owner": "passive.indicator2.series",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        100330000,
+        118110000,
+        102870000,
+        120650000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('indicator_led2', 1).pin.2",
+      "owner": "passive.indicator2.series",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        100330000,
+        110490000,
+        102870000,
+        113030000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('indicator_r2', 1).body",
+      "owner": "passive.indicator2.series",
+      "class": "body",
+      "occupancy": "exclusive",
+      "rect": [
+        99314000,
+        100330000,
+        103886000,
+        107950000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('indicator_r2', 1).reference",
+      "owner": "passive.indicator2.series",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        107950000,
+        99060000,
+        115570000,
+        104140000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('indicator_r2', 1).value",
+      "owner": "passive.indicator2.series",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        109220000,
+        101600000,
+        114300000,
+        106680000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('indicator_r2', 1).pin.1",
+      "owner": "passive.indicator2.series",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        100330000,
+        99060000,
+        102870000,
+        101600000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('indicator_r2', 1).pin.2",
+      "owner": "passive.indicator2.series",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        100330000,
+        106680000,
+        102870000,
+        109220000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.0",
+      "owner": "passive.indicator2.series",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        101350000,
+        107700000,
+        101850000,
+        112010000
+      ],
+      "net": "LEDMID2",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.1",
+      "owner": "passive.indicator2.series",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        101350000,
+        95000000,
+        101850000,
+        100580000
+      ],
+      "net": "OUT2",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.2",
+      "owner": "passive.indicator2.series",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        101350000,
+        91190000,
+        101850000,
+        95500000
+      ],
+      "net": "OUT2",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.3",
+      "owner": "passive.indicator2.series",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        101350000,
+        111510000,
+        101850000,
+        115820000
+      ],
+      "net": "LEDMID2",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.4",
+      "owner": "passive.indicator2.series",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        101350000,
+        119130000,
+        101850000,
+        123440000
+      ],
+      "net": "REF",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.0",
+      "owner": "passive.indicator2.series",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        98550000,
+        89320000,
+        104650000,
+        93560000
+      ],
+      "net": "OUT2",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.1",
+      "owner": "passive.indicator2.series",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        97215000,
+        113450000,
+        105985000,
+        117690000
+      ],
+      "net": "LEDMID2",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.2",
+      "owner": "passive.indicator2.series",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        98995000,
+        121070000,
+        104205000,
+        125310000
+      ],
+      "net": "REF",
+      "capacity": 0
+    },
+    {
+      "id": "gateway.passive.indicator2.series.input",
+      "owner": "passive.indicator2.series",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        100330000,
+        90170000,
+        102870000,
+        92710000
+      ],
+      "net": "OUT2",
+      "capacity": 1
+    },
+    {
+      "id": "gateway.passive.indicator2.series.output",
+      "owner": "passive.indicator2.series",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        100330000,
+        114300000,
+        102870000,
+        116840000
+      ],
+      "net": "LEDMID2",
+      "capacity": 1
+    },
+    {
+      "id": "gateway.passive.indicator2.series.reference",
+      "owner": "passive.indicator2.series",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        100330000,
+        121920000,
+        102870000,
+        124460000
+      ],
+      "net": "REF",
+      "capacity": 1
+    },
+    {
+      "id": "protected.0",
+      "owner": "passive.indicator2.series",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        101100000,
+        107450000,
+        102100000,
+        112260000
+      ],
+      "net": "LEDMID2",
+      "capacity": 0
+    },
+    {
+      "id": "protected.1",
+      "owner": "passive.indicator2.series",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        101100000,
+        94750000,
+        102100000,
+        100830000
+      ],
+      "net": "OUT2",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('filter_c', 1).body",
+      "owner": "passive.output.filter.series",
+      "class": "body",
+      "occupancy": "exclusive",
+      "rect": [
+        118618000,
+        53848000,
+        125222000,
+        57912000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('filter_c', 1).reference",
+      "owner": "passive.output.filter.series",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        128270000,
+        50800000,
+        135890000,
+        55880000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('filter_c', 1).value",
+      "owner": "passive.output.filter.series",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        128270000,
+        53340000,
+        135890000,
+        58420000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('filter_c', 1).pin.1",
+      "owner": "passive.output.filter.series",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        120650000,
+        50800000,
+        123190000,
+        53340000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('filter_c', 1).pin.2",
+      "owner": "passive.output.filter.series",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        120650000,
+        58420000,
+        123190000,
+        60960000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('filter_r', 1).body",
+      "owner": "passive.output.filter.series",
+      "class": "body",
+      "occupancy": "exclusive",
+      "rect": [
+        109220000,
+        39624000,
+        116840000,
+        44196000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('filter_r', 1).reference",
+      "owner": "passive.output.filter.series",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        109220000,
+        29210000,
+        116840000,
+        34290000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('filter_r', 1).value",
+      "owner": "passive.output.filter.series",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        110490000,
+        31750000,
+        115570000,
+        36830000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('filter_r', 1).pin.1",
+      "owner": "passive.output.filter.series",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        107950000,
+        40640000,
+        110490000,
+        43180000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('filter_r', 1).pin.2",
+      "owner": "passive.output.filter.series",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        115570000,
+        40640000,
+        118110000,
+        43180000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.0",
+      "owner": "passive.output.filter.series",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        100080000,
+        41660000,
+        109470000,
+        42160000
+      ],
+      "net": "OUT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.1",
+      "owner": "passive.output.filter.series",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        116590000,
+        41660000,
+        125980000,
+        42160000
+      ],
+      "net": "FILTERED",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.2",
+      "owner": "passive.output.filter.series",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        116590000,
+        41660000,
+        122170000,
+        42160000
+      ],
+      "net": "FILTERED",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.3",
+      "owner": "passive.output.filter.series",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        121670000,
+        41660000,
+        122170000,
+        52320000
+      ],
+      "net": "FILTERED",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.4",
+      "owner": "passive.output.filter.series",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        121670000,
+        41660000,
+        125980000,
+        42160000
+      ],
+      "net": "FILTERED",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.5",
+      "owner": "passive.output.filter.series",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        121670000,
+        59440000,
+        122170000,
+        62480000
+      ],
+      "net": "REF",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.6",
+      "owner": "passive.output.filter.series",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        96270000,
+        41660000,
+        100580000,
+        42160000
+      ],
+      "net": "OUT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.7",
+      "owner": "passive.output.filter.series",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        125480000,
+        41660000,
+        129790000,
+        42160000
+      ],
+      "net": "FILTERED",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.8",
+      "owner": "passive.output.filter.series",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        121670000,
+        61980000,
+        122170000,
+        66290000
+      ],
+      "net": "REF",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.0",
+      "owner": "passive.output.filter.series",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        124710000,
+        39790000,
+        134370000,
+        44030000
+      ],
+      "net": "FILTERED",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.1",
+      "owner": "passive.output.filter.series",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        119315000,
+        63920000,
+        124525000,
+        68160000
+      ],
+      "net": "REF",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.junction.0",
+      "owner": "passive.output.filter.series",
+      "class": "junction",
+      "occupancy": "exclusive",
+      "rect": [
+        121920000,
+        41910000,
+        121920000,
+        41910000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "gateway.passive.output.filter.series.input",
+      "owner": "passive.output.filter.series",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        95250000,
+        40640000,
+        97790000,
+        43180000
+      ],
+      "net": "OUT",
+      "capacity": 1
+    },
+    {
+      "id": "gateway.passive.output.filter.series.output",
+      "owner": "passive.output.filter.series",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        128270000,
+        40640000,
+        130810000,
+        43180000
+      ],
+      "net": "FILTERED",
+      "capacity": 1
+    },
+    {
+      "id": "gateway.passive.output.filter.series.reference",
+      "owner": "passive.output.filter.series",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        120650000,
+        64770000,
+        123190000,
+        67310000
+      ],
+      "net": "REF",
+      "capacity": 1
+    },
+    {
+      "id": "protected.0",
+      "owner": "passive.output.filter.series",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        99830000,
+        41410000,
+        109720000,
+        42410000
+      ],
+      "net": "OUT",
+      "capacity": 0
+    },
+    {
+      "id": "protected.1",
+      "owner": "passive.output.filter.series",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        116340000,
+        41410000,
+        126230000,
+        42410000
+      ],
+      "net": "FILTERED",
+      "capacity": 0
+    },
+    {
+      "id": "protected.2",
+      "owner": "passive.output.filter.series",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        116340000,
+        41410000,
+        122420000,
+        42410000
+      ],
+      "net": "FILTERED",
+      "capacity": 0
+    },
+    {
+      "id": "protected.3",
+      "owner": "passive.output.filter.series",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        121420000,
+        41410000,
+        122420000,
+        52570000
+      ],
+      "net": "FILTERED",
+      "capacity": 0
+    },
+    {
+      "id": "protected.4",
+      "owner": "passive.output.filter.series",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        121420000,
+        41410000,
+        126230000,
+        42410000
+      ],
+      "net": "FILTERED",
+      "capacity": 0
+    },
+    {
+      "id": "protected.5",
+      "owner": "passive.output.filter.series",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        121420000,
+        59190000,
+        122420000,
+        62730000
+      ],
+      "net": "REF",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('charge', 1).body",
+      "owner": "timer.timer",
+      "class": "body",
+      "occupancy": "exclusive",
+      "rect": [
+        26924000,
+        38100000,
+        31496000,
+        45720000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('charge', 1).reference",
+      "owner": "timer.timer",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        25400000,
+        29210000,
+        33020000,
+        34290000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('charge', 1).value",
+      "owner": "timer.timer",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        25400000,
+        31750000,
+        33020000,
+        36830000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('charge', 1).pin.1",
+      "owner": "timer.timer",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        27940000,
+        36830000,
+        30480000,
+        39370000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('charge', 1).pin.2",
+      "owner": "timer.timer",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        27940000,
+        44450000,
+        30480000,
+        46990000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('control_bypass', 1).body",
+      "owner": "timer.timer",
+      "class": "body",
+      "occupancy": "exclusive",
+      "rect": [
+        77978000,
+        47498000,
+        84582000,
+        51562000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('control_bypass', 1).reference",
+      "owner": "timer.timer",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        87630000,
+        44450000,
+        95250000,
+        49530000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('control_bypass', 1).value",
+      "owner": "timer.timer",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        87630000,
+        46990000,
+        95250000,
+        52070000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('control_bypass', 1).pin.1",
+      "owner": "timer.timer",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        80010000,
+        44450000,
+        82550000,
+        46990000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('control_bypass', 1).pin.2",
+      "owner": "timer.timer",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        80010000,
+        52070000,
+        82550000,
+        54610000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('discharge', 1).body",
+      "owner": "timer.timer",
+      "class": "body",
+      "occupancy": "exclusive",
+      "rect": [
+        26924000,
+        55880000,
+        31496000,
+        63500000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('discharge', 1).reference",
+      "owner": "timer.timer",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        35560000,
+        54610000,
+        43180000,
+        59690000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('discharge', 1).value",
+      "owner": "timer.timer",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        35560000,
+        57150000,
+        43180000,
+        62230000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('discharge', 1).pin.1",
+      "owner": "timer.timer",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        27940000,
+        54610000,
+        30480000,
+        57150000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('discharge', 1).pin.2",
+      "owner": "timer.timer",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        27940000,
+        62230000,
+        30480000,
+        64770000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timer', 1).body",
+      "owner": "timer.timer",
+      "class": "body",
+      "occupancy": "exclusive",
+      "rect": [
+        54610000,
+        50800000,
+        72390000,
+        68580000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timer', 1).reference",
+      "owner": "timer.timer",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        74930000,
+        46990000,
+        82550000,
+        52070000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timer', 1).value",
+      "owner": "timer.timer",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        73660000,
+        49530000,
+        83820000,
+        54610000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timer', 1).pin.1",
+      "owner": "timer.timer",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        62230000,
+        68580000,
+        64770000,
+        71120000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timer', 1).pin.8",
+      "owner": "timer.timer",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        64770000,
+        48260000,
+        67310000,
+        50800000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timer', 1).pin.2",
+      "owner": "timer.timer",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        52070000,
+        63500000,
+        54610000,
+        66040000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timer', 1).pin.3",
+      "owner": "timer.timer",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        72390000,
+        58420000,
+        74930000,
+        60960000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timer', 1).pin.4",
+      "owner": "timer.timer",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        52070000,
+        53340000,
+        54610000,
+        55880000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timer', 1).pin.5",
+      "owner": "timer.timer",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        62230000,
+        48260000,
+        64770000,
+        50800000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timer', 1).pin.6",
+      "owner": "timer.timer",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        52070000,
+        60960000,
+        54610000,
+        63500000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timer', 1).pin.7",
+      "owner": "timer.timer",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        52070000,
+        55880000,
+        54610000,
+        58420000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timing_cap', 1).body",
+      "owner": "timer.timer",
+      "class": "body",
+      "occupancy": "exclusive",
+      "rect": [
+        25908000,
+        79248000,
+        32512000,
+        83312000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timing_cap', 1).reference",
+      "owner": "timer.timer",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        35560000,
+        76200000,
+        43180000,
+        81280000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timing_cap', 1).value",
+      "owner": "timer.timer",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        35560000,
+        78740000,
+        43180000,
+        83820000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timing_cap', 1).pin.1",
+      "owner": "timer.timer",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        27940000,
+        76200000,
+        30480000,
+        78740000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timing_cap', 1).pin.2",
+      "owner": "timer.timer",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        27940000,
+        83820000,
+        30480000,
+        86360000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.0",
+      "owner": "timer.timer",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        28960000,
+        45470000,
+        29460000,
+        51050000
+      ],
+      "net": "DISCH",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.1",
+      "owner": "timer.timer",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        28960000,
+        50550000,
+        29460000,
+        56130000
+      ],
+      "net": "DISCH",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.2",
+      "owner": "timer.timer",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        28960000,
+        50550000,
+        43430000,
+        51050000
+      ],
+      "net": "DISCH",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.3",
+      "owner": "timer.timer",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        42930000,
+        50550000,
+        43430000,
+        57400000
+      ],
+      "net": "DISCH",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.4",
+      "owner": "timer.timer",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        42930000,
+        56900000,
+        53590000,
+        57400000
+      ],
+      "net": "DISCH",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.5",
+      "owner": "timer.timer",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        28960000,
+        63250000,
+        29460000,
+        72640000
+      ],
+      "net": "TIMING",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.6",
+      "owner": "timer.timer",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        28960000,
+        72140000,
+        29460000,
+        77720000
+      ],
+      "net": "TIMING",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.7",
+      "owner": "timer.timer",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        28960000,
+        72140000,
+        44700000,
+        72640000
+      ],
+      "net": "TIMING",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.8",
+      "owner": "timer.timer",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        44200000,
+        61980000,
+        44700000,
+        72640000
+      ],
+      "net": "TIMING",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.9",
+      "owner": "timer.timer",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        44200000,
+        61980000,
+        53590000,
+        62480000
+      ],
+      "net": "TIMING",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.10",
+      "owner": "timer.timer",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        44200000,
+        64520000,
+        53590000,
+        65020000
+      ],
+      "net": "TIMING",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.11",
+      "owner": "timer.timer",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        73410000,
+        59440000,
+        89150000,
+        59940000
+      ],
+      "net": "OUT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.12",
+      "owner": "timer.timer",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        63250000,
+        39120000,
+        63750000,
+        49780000
+      ],
+      "net": "CONT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.13",
+      "owner": "timer.timer",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        63250000,
+        39120000,
+        81530000,
+        39620000
+      ],
+      "net": "CONT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.14",
+      "owner": "timer.timer",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        81030000,
+        39120000,
+        81530000,
+        45970000
+      ],
+      "net": "CONT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.15",
+      "owner": "timer.timer",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        65790000,
+        49280000,
+        70100000,
+        49780000
+      ],
+      "net": "VCC",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.16",
+      "owner": "timer.timer",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        88650000,
+        59440000,
+        92960000,
+        59940000
+      ],
+      "net": "OUT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.17",
+      "owner": "timer.timer",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        63250000,
+        69600000,
+        67560000,
+        70100000
+      ],
+      "net": "REF",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.0",
+      "owner": "timer.timer",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        26605000,
+        35980000,
+        31815000,
+        40220000
+      ],
+      "net": "VCC",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.1",
+      "owner": "timer.timer",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        63435000,
+        47410000,
+        68645000,
+        51650000
+      ],
+      "net": "VCC",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.2",
+      "owner": "timer.timer",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        50735000,
+        52490000,
+        55945000,
+        56730000
+      ],
+      "net": "VCC",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.3",
+      "owner": "timer.timer",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        26605000,
+        82970000,
+        31815000,
+        87210000
+      ],
+      "net": "REF",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.4",
+      "owner": "timer.timer",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        78675000,
+        51220000,
+        83885000,
+        55460000
+      ],
+      "net": "REF",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.5",
+      "owner": "timer.timer",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        67245000,
+        47410000,
+        72455000,
+        51650000
+      ],
+      "net": "VCC",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.6",
+      "owner": "timer.timer",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        64705000,
+        67730000,
+        69915000,
+        71970000
+      ],
+      "net": "REF",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.junction.0",
+      "owner": "timer.timer",
+      "class": "junction",
+      "occupancy": "exclusive",
+      "rect": [
+        44450000,
+        64770000,
+        44450000,
+        64770000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "gateway.timer.timer.supply",
+      "owner": "timer.timer",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        68580000,
+        48260000,
+        71120000,
+        50800000
+      ],
+      "net": "VCC",
+      "capacity": 1
+    },
+    {
+      "id": "gateway.timer.timer.output",
+      "owner": "timer.timer",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        91440000,
+        58420000,
+        93980000,
+        60960000
+      ],
+      "net": "OUT",
+      "capacity": 1
+    },
+    {
+      "id": "gateway.timer.timer.reference",
+      "owner": "timer.timer",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        66040000,
+        68580000,
+        68580000,
+        71120000
+      ],
+      "net": "REF",
+      "capacity": 1
+    },
+    {
+      "id": "protected.0",
+      "owner": "timer.timer",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        28710000,
+        45220000,
+        29710000,
+        51300000
+      ],
+      "net": "DISCH",
+      "capacity": 0
+    },
+    {
+      "id": "protected.1",
+      "owner": "timer.timer",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        28710000,
+        50300000,
+        29710000,
+        56380000
+      ],
+      "net": "DISCH",
+      "capacity": 0
+    },
+    {
+      "id": "protected.2",
+      "owner": "timer.timer",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        28710000,
+        50300000,
+        43680000,
+        51300000
+      ],
+      "net": "DISCH",
+      "capacity": 0
+    },
+    {
+      "id": "protected.3",
+      "owner": "timer.timer",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        42680000,
+        50300000,
+        43680000,
+        57650000
+      ],
+      "net": "DISCH",
+      "capacity": 0
+    },
+    {
+      "id": "protected.4",
+      "owner": "timer.timer",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        42680000,
+        56650000,
+        53840000,
+        57650000
+      ],
+      "net": "DISCH",
+      "capacity": 0
+    },
+    {
+      "id": "protected.5",
+      "owner": "timer.timer",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        28710000,
+        63000000,
+        29710000,
+        72890000
+      ],
+      "net": "TIMING",
+      "capacity": 0
+    },
+    {
+      "id": "protected.6",
+      "owner": "timer.timer",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        28710000,
+        71890000,
+        29710000,
+        77970000
+      ],
+      "net": "TIMING",
+      "capacity": 0
+    },
+    {
+      "id": "protected.7",
+      "owner": "timer.timer",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        28710000,
+        71890000,
+        44950000,
+        72890000
+      ],
+      "net": "TIMING",
+      "capacity": 0
+    },
+    {
+      "id": "protected.8",
+      "owner": "timer.timer",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        43950000,
+        61730000,
+        44950000,
+        72890000
+      ],
+      "net": "TIMING",
+      "capacity": 0
+    },
+    {
+      "id": "protected.9",
+      "owner": "timer.timer",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        43950000,
+        61730000,
+        53840000,
+        62730000
+      ],
+      "net": "TIMING",
+      "capacity": 0
+    },
+    {
+      "id": "protected.10",
+      "owner": "timer.timer",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        43950000,
+        64270000,
+        53840000,
+        65270000
+      ],
+      "net": "TIMING",
+      "capacity": 0
+    },
+    {
+      "id": "protected.11",
+      "owner": "timer.timer",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        73160000,
+        59190000,
+        89400000,
+        60190000
+      ],
+      "net": "OUT",
+      "capacity": 0
+    },
+    {
+      "id": "protected.12",
+      "owner": "timer.timer",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        63000000,
+        38870000,
+        64000000,
+        50030000
+      ],
+      "net": "CONT",
+      "capacity": 0
+    },
+    {
+      "id": "protected.13",
+      "owner": "timer.timer",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        63000000,
+        38870000,
+        81780000,
+        39870000
+      ],
+      "net": "CONT",
+      "capacity": 0
+    },
+    {
+      "id": "protected.14",
+      "owner": "timer.timer",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        80780000,
+        38870000,
+        81780000,
+        46220000
+      ],
+      "net": "CONT",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('charge2', 1).body",
+      "owner": "timer.timer2",
+      "class": "body",
+      "occupancy": "exclusive",
+      "rect": [
+        26924000,
+        97790000,
+        31496000,
+        105410000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('charge2', 1).reference",
+      "owner": "timer.timer2",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        25400000,
+        88900000,
+        33020000,
+        93980000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('charge2', 1).value",
+      "owner": "timer.timer2",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        25400000,
+        91440000,
+        33020000,
+        96520000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('charge2', 1).pin.1",
+      "owner": "timer.timer2",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        27940000,
+        96520000,
+        30480000,
+        99060000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('charge2', 1).pin.2",
+      "owner": "timer.timer2",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        27940000,
+        104140000,
+        30480000,
+        106680000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('control_bypass2', 1).body",
+      "owner": "timer.timer2",
+      "class": "body",
+      "occupancy": "exclusive",
+      "rect": [
+        77978000,
+        107188000,
+        84582000,
+        111252000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('control_bypass2', 1).reference",
+      "owner": "timer.timer2",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        87630000,
+        104140000,
+        95250000,
+        109220000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('control_bypass2', 1).value",
+      "owner": "timer.timer2",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        87630000,
+        106680000,
+        95250000,
+        111760000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('control_bypass2', 1).pin.1",
+      "owner": "timer.timer2",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        80010000,
+        104140000,
+        82550000,
+        106680000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('control_bypass2', 1).pin.2",
+      "owner": "timer.timer2",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        80010000,
+        111760000,
+        82550000,
+        114300000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('discharge2', 1).body",
+      "owner": "timer.timer2",
+      "class": "body",
+      "occupancy": "exclusive",
+      "rect": [
+        26924000,
+        115570000,
+        31496000,
+        123190000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('discharge2', 1).reference",
+      "owner": "timer.timer2",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        35560000,
+        114300000,
+        43180000,
+        119380000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('discharge2', 1).value",
+      "owner": "timer.timer2",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        35560000,
+        116840000,
+        43180000,
+        121920000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('discharge2', 1).pin.1",
+      "owner": "timer.timer2",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        27940000,
+        114300000,
+        30480000,
+        116840000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('discharge2', 1).pin.2",
+      "owner": "timer.timer2",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        27940000,
+        121920000,
+        30480000,
+        124460000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timer2', 1).body",
+      "owner": "timer.timer2",
+      "class": "body",
+      "occupancy": "exclusive",
+      "rect": [
+        54610000,
+        110490000,
+        72390000,
+        128270000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timer2', 1).reference",
+      "owner": "timer.timer2",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        74930000,
+        106680000,
+        82550000,
+        111760000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timer2', 1).value",
+      "owner": "timer.timer2",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        73660000,
+        109220000,
+        83820000,
+        114300000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timer2', 1).pin.1",
+      "owner": "timer.timer2",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        62230000,
+        128270000,
+        64770000,
+        130810000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timer2', 1).pin.8",
+      "owner": "timer.timer2",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        64770000,
+        107950000,
+        67310000,
+        110490000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timer2', 1).pin.2",
+      "owner": "timer.timer2",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        52070000,
+        123190000,
+        54610000,
+        125730000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timer2', 1).pin.3",
+      "owner": "timer.timer2",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        72390000,
+        118110000,
+        74930000,
+        120650000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timer2', 1).pin.4",
+      "owner": "timer.timer2",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        52070000,
+        113030000,
+        54610000,
+        115570000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timer2', 1).pin.5",
+      "owner": "timer.timer2",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        62230000,
+        107950000,
+        64770000,
+        110490000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timer2', 1).pin.6",
+      "owner": "timer.timer2",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        52070000,
+        120650000,
+        54610000,
+        123190000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timer2', 1).pin.7",
+      "owner": "timer.timer2",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        52070000,
+        115570000,
+        54610000,
+        118110000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timing_cap2', 1).body",
+      "owner": "timer.timer2",
+      "class": "body",
+      "occupancy": "exclusive",
+      "rect": [
+        25908000,
+        138938000,
+        32512000,
+        143002000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timing_cap2', 1).reference",
+      "owner": "timer.timer2",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        35560000,
+        135890000,
+        43180000,
+        140970000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timing_cap2', 1).value",
+      "owner": "timer.timer2",
+      "class": "text",
+      "occupancy": "exclusive",
+      "rect": [
+        35560000,
+        138430000,
+        43180000,
+        143510000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timing_cap2', 1).pin.1",
+      "owner": "timer.timer2",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        27940000,
+        135890000,
+        30480000,
+        138430000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.('timing_cap2', 1).pin.2",
+      "owner": "timer.timer2",
+      "class": "pin",
+      "occupancy": "exclusive",
+      "rect": [
+        27940000,
+        143510000,
+        30480000,
+        146050000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.0",
+      "owner": "timer.timer2",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        28960000,
+        105160000,
+        29460000,
+        110740000
+      ],
+      "net": "DISCH2",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.1",
+      "owner": "timer.timer2",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        28960000,
+        110240000,
+        29460000,
+        115820000
+      ],
+      "net": "DISCH2",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.2",
+      "owner": "timer.timer2",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        28960000,
+        110240000,
+        43430000,
+        110740000
+      ],
+      "net": "DISCH2",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.3",
+      "owner": "timer.timer2",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        42930000,
+        110240000,
+        43430000,
+        117090000
+      ],
+      "net": "DISCH2",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.4",
+      "owner": "timer.timer2",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        42930000,
+        116590000,
+        53590000,
+        117090000
+      ],
+      "net": "DISCH2",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.5",
+      "owner": "timer.timer2",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        28960000,
+        122940000,
+        29460000,
+        132330000
+      ],
+      "net": "TIMING2",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.6",
+      "owner": "timer.timer2",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        28960000,
+        131830000,
+        29460000,
+        137410000
+      ],
+      "net": "TIMING2",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.7",
+      "owner": "timer.timer2",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        28960000,
+        131830000,
+        44700000,
+        132330000
+      ],
+      "net": "TIMING2",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.8",
+      "owner": "timer.timer2",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        44200000,
+        121670000,
+        44700000,
+        132330000
+      ],
+      "net": "TIMING2",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.9",
+      "owner": "timer.timer2",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        44200000,
+        121670000,
+        53590000,
+        122170000
+      ],
+      "net": "TIMING2",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.10",
+      "owner": "timer.timer2",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        44200000,
+        124210000,
+        53590000,
+        124710000
+      ],
+      "net": "TIMING2",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.11",
+      "owner": "timer.timer2",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        73410000,
+        119130000,
+        89150000,
+        119630000
+      ],
+      "net": "OUT2",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.12",
+      "owner": "timer.timer2",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        63250000,
+        98810000,
+        63750000,
+        109470000
+      ],
+      "net": "CONT2",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.13",
+      "owner": "timer.timer2",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        63250000,
+        98810000,
+        81530000,
+        99310000
+      ],
+      "net": "CONT2",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.14",
+      "owner": "timer.timer2",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        81030000,
+        98810000,
+        81530000,
+        105660000
+      ],
+      "net": "CONT2",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.15",
+      "owner": "timer.timer2",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        65790000,
+        108970000,
+        70100000,
+        109470000
+      ],
+      "net": "VCC",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.16",
+      "owner": "timer.timer2",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        88650000,
+        119130000,
+        92960000,
+        119630000
+      ],
+      "net": "OUT2",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.wire.17",
+      "owner": "timer.timer2",
+      "class": "wire",
+      "occupancy": "exclusive",
+      "rect": [
+        63250000,
+        129290000,
+        67560000,
+        129790000
+      ],
+      "net": "REF",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.0",
+      "owner": "timer.timer2",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        26605000,
+        95670000,
+        31815000,
+        99910000
+      ],
+      "net": "VCC",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.1",
+      "owner": "timer.timer2",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        63435000,
+        107100000,
+        68645000,
+        111340000
+      ],
+      "net": "VCC",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.2",
+      "owner": "timer.timer2",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        50735000,
+        112180000,
+        55945000,
+        116420000
+      ],
+      "net": "VCC",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.3",
+      "owner": "timer.timer2",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        26605000,
+        142660000,
+        31815000,
+        146900000
+      ],
+      "net": "REF",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.4",
+      "owner": "timer.timer2",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        78675000,
+        110910000,
+        83885000,
+        115150000
+      ],
+      "net": "REF",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.5",
+      "owner": "timer.timer2",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        67245000,
+        107100000,
+        72455000,
+        111340000
+      ],
+      "net": "VCC",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.6",
+      "owner": "timer.timer2",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        89660000,
+        117260000,
+        95760000,
+        121500000
+      ],
+      "net": "OUT2",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.label.7",
+      "owner": "timer.timer2",
+      "class": "label",
+      "occupancy": "exclusive",
+      "rect": [
+        64705000,
+        127420000,
+        69915000,
+        131660000
+      ],
+      "net": "REF",
+      "capacity": 0
+    },
+    {
+      "id": "reservation.junction.0",
+      "owner": "timer.timer2",
+      "class": "junction",
+      "occupancy": "exclusive",
+      "rect": [
+        44450000,
+        124460000,
+        44450000,
+        124460000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "gateway.timer.timer2.supply",
+      "owner": "timer.timer2",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        68580000,
+        107950000,
+        71120000,
+        110490000
+      ],
+      "net": "VCC",
+      "capacity": 1
+    },
+    {
+      "id": "gateway.timer.timer2.output",
+      "owner": "timer.timer2",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        91440000,
+        118110000,
+        93980000,
+        120650000
+      ],
+      "net": "OUT2",
+      "capacity": 1
+    },
+    {
+      "id": "gateway.timer.timer2.reference",
+      "owner": "timer.timer2",
+      "class": "escape",
+      "occupancy": "channel",
+      "rect": [
+        66040000,
+        128270000,
+        68580000,
+        130810000
+      ],
+      "net": "REF",
+      "capacity": 1
+    },
+    {
+      "id": "protected.0",
+      "owner": "timer.timer2",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        28710000,
+        104910000,
+        29710000,
+        110990000
+      ],
+      "net": "DISCH2",
+      "capacity": 0
+    },
+    {
+      "id": "protected.1",
+      "owner": "timer.timer2",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        28710000,
+        109990000,
+        29710000,
+        116070000
+      ],
+      "net": "DISCH2",
+      "capacity": 0
+    },
+    {
+      "id": "protected.2",
+      "owner": "timer.timer2",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        28710000,
+        109990000,
+        43680000,
+        110990000
+      ],
+      "net": "DISCH2",
+      "capacity": 0
+    },
+    {
+      "id": "protected.3",
+      "owner": "timer.timer2",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        42680000,
+        109990000,
+        43680000,
+        117340000
+      ],
+      "net": "DISCH2",
+      "capacity": 0
+    },
+    {
+      "id": "protected.4",
+      "owner": "timer.timer2",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        42680000,
+        116340000,
+        53840000,
+        117340000
+      ],
+      "net": "DISCH2",
+      "capacity": 0
+    },
+    {
+      "id": "protected.5",
+      "owner": "timer.timer2",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        28710000,
+        122690000,
+        29710000,
+        132580000
+      ],
+      "net": "TIMING2",
+      "capacity": 0
+    },
+    {
+      "id": "protected.6",
+      "owner": "timer.timer2",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        28710000,
+        131580000,
+        29710000,
+        137660000
+      ],
+      "net": "TIMING2",
+      "capacity": 0
+    },
+    {
+      "id": "protected.7",
+      "owner": "timer.timer2",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        28710000,
+        131580000,
+        44950000,
+        132580000
+      ],
+      "net": "TIMING2",
+      "capacity": 0
+    },
+    {
+      "id": "protected.8",
+      "owner": "timer.timer2",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        43950000,
+        121420000,
+        44950000,
+        132580000
+      ],
+      "net": "TIMING2",
+      "capacity": 0
+    },
+    {
+      "id": "protected.9",
+      "owner": "timer.timer2",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        43950000,
+        121420000,
+        53840000,
+        122420000
+      ],
+      "net": "TIMING2",
+      "capacity": 0
+    },
+    {
+      "id": "protected.10",
+      "owner": "timer.timer2",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        43950000,
+        123960000,
+        53840000,
+        124960000
+      ],
+      "net": "TIMING2",
+      "capacity": 0
+    },
+    {
+      "id": "protected.11",
+      "owner": "timer.timer2",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        73160000,
+        118880000,
+        89400000,
+        119880000
+      ],
+      "net": "OUT2",
+      "capacity": 0
+    },
+    {
+      "id": "protected.12",
+      "owner": "timer.timer2",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        63000000,
+        98560000,
+        64000000,
+        109720000
+      ],
+      "net": "CONT2",
+      "capacity": 0
+    },
+    {
+      "id": "protected.13",
+      "owner": "timer.timer2",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        63000000,
+        98560000,
+        81780000,
+        99560000
+      ],
+      "net": "CONT2",
+      "capacity": 0
+    },
+    {
+      "id": "protected.14",
+      "owner": "timer.timer2",
+      "class": "protected",
+      "occupancy": "exclusive",
+      "rect": [
+        80780000,
+        98560000,
+        81780000,
+        105910000
+      ],
+      "net": "CONT2",
+      "capacity": 0
+    },
+    {
+      "id": "route.OUT.0",
+      "owner": "tree.OUT",
+      "class": "global_route",
+      "occupancy": "channel",
+      "rect": [
+        92460000,
+        59440000,
+        94230000,
+        59940000
+      ],
+      "net": "OUT",
+      "capacity": 1
+    },
+    {
+      "id": "route.OUT.1",
+      "owner": "tree.OUT",
+      "class": "global_route",
+      "occupancy": "channel",
+      "rect": [
+        93730000,
+        59440000,
+        95500000,
+        59940000
+      ],
+      "net": "OUT",
+      "capacity": 1
+    },
+    {
+      "id": "route.OUT.2",
+      "owner": "tree.OUT",
+      "class": "global_route",
+      "occupancy": "channel",
+      "rect": [
+        95000000,
+        41660000,
+        95500000,
+        59940000
+      ],
+      "net": "OUT",
+      "capacity": 1
+    },
+    {
+      "id": "route.OUT.3",
+      "owner": "tree.OUT",
+      "class": "global_route",
+      "occupancy": "channel",
+      "rect": [
+        95000000,
+        41660000,
+        96770000,
+        42160000
+      ],
+      "net": "OUT",
+      "capacity": 1
+    },
+    {
+      "id": "route.OUT2.0",
+      "owner": "tree.OUT2",
+      "class": "global_route",
+      "occupancy": "channel",
+      "rect": [
+        92460000,
+        119130000,
+        94230000,
+        119630000
+      ],
+      "net": "OUT2",
+      "capacity": 1
+    },
+    {
+      "id": "route.OUT2.1",
+      "owner": "tree.OUT2",
+      "class": "global_route",
+      "occupancy": "channel",
+      "rect": [
+        93730000,
+        119130000,
+        95500000,
+        119630000
+      ],
+      "net": "OUT2",
+      "capacity": 1
+    },
+    {
+      "id": "route.OUT2.2",
+      "owner": "tree.OUT2",
+      "class": "global_route",
+      "occupancy": "channel",
+      "rect": [
+        95000000,
+        89920000,
+        95500000,
+        119630000
+      ],
+      "net": "OUT2",
+      "capacity": 1
+    },
+    {
+      "id": "route.OUT2.3",
+      "owner": "tree.OUT2",
+      "class": "global_route",
+      "occupancy": "channel",
+      "rect": [
+        95000000,
+        89920000,
+        101850000,
+        90420000
+      ],
+      "net": "OUT2",
+      "capacity": 1
+    },
+    {
+      "id": "route.OUT2.4",
+      "owner": "tree.OUT2",
+      "class": "global_route",
+      "occupancy": "channel",
+      "rect": [
+        101350000,
+        89920000,
+        101850000,
+        91690000
+      ],
+      "net": "OUT2",
+      "capacity": 1
+    },
+    {
+      "id": "source_property.flag.return.0",
+      "owner": "flag.return",
+      "class": "source_property",
+      "occupancy": "exclusive",
+      "rect": [
+        29210000,
+        85090000,
+        29210000,
+        85090000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "source_property.flag.return.2540000",
+      "owner": "flag.return",
+      "class": "source_property",
+      "occupancy": "exclusive",
+      "rect": [
+        29210000,
+        87630000,
+        29210000,
+        87630000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "source.flag.return",
+      "owner": "flag.return",
+      "class": "source_glyph",
+      "occupancy": "exclusive",
+      "rect": [
+        27940000,
+        83820000,
+        30480000,
+        86360000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "source_property.flag.supply.0",
+      "owner": "flag.supply",
+      "class": "source_property",
+      "occupancy": "exclusive",
+      "rect": [
+        29210000,
+        38100000,
+        29210000,
+        38100000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "source_property.flag.supply.2540000",
+      "owner": "flag.supply",
+      "class": "source_property",
+      "occupancy": "exclusive",
+      "rect": [
+        29210000,
+        40640000,
+        29210000,
+        40640000
+      ],
+      "net": null,
+      "capacity": 0
+    },
+    {
+      "id": "source.flag.supply",
+      "owner": "flag.supply",
+      "class": "source_glyph",
+      "occupancy": "exclusive",
+      "rect": [
+        27940000,
+        36830000,
+        30480000,
+        39370000
+      ],
+      "net": null,
+      "capacity": 0
+    }
+  ],
+  "layout_attempts": [
+    {
+      "seed": 0,
+      "round": 0,
+      "operation": "initial",
+      "result": "pass",
+      "repair_state_changed": false,
+      "reservation_growth": null,
+      "substitution": null
+    }
+  ],
+  "budgets": {
+    "seed_limit": 8,
+    "repair_rounds_per_seed": 3,
+    "complete_attempt_limit": 32,
+    "complete_attempts_used": 1
+  },
+  "obligation_certificate": {
+    "schema_version": "m2h2.obligation-certificate.1",
+    "scene_geometry_sha256": "6692a5673d070c5ca5f1b6295ba0d1949911485ccd89af77917a6f2624ed49e3",
+    "geometry_owners": [
+      {
+        "occurrence": [
+          "charge",
+          1
+        ],
+        "fragment": "timer.timer"
+      },
+      {
+        "occurrence": [
+          "charge2",
+          1
+        ],
+        "fragment": "timer.timer2"
+      },
+      {
+        "occurrence": [
+          "control_bypass",
+          1
+        ],
+        "fragment": "timer.timer"
+      },
+      {
+        "occurrence": [
+          "control_bypass2",
+          1
+        ],
+        "fragment": "timer.timer2"
+      },
+      {
+        "occurrence": [
+          "discharge",
+          1
+        ],
+        "fragment": "timer.timer"
+      },
+      {
+        "occurrence": [
+          "discharge2",
+          1
+        ],
+        "fragment": "timer.timer2"
+      },
+      {
+        "occurrence": [
+          "filter_c",
+          1
+        ],
+        "fragment": "passive.output.filter.series"
+      },
+      {
+        "occurrence": [
+          "filter_r",
+          1
+        ],
+        "fragment": "passive.output.filter.series"
+      },
+      {
+        "occurrence": [
+          "indicator_led2",
+          1
+        ],
+        "fragment": "passive.indicator2.series"
+      },
+      {
+        "occurrence": [
+          "indicator_r2",
+          1
+        ],
+        "fragment": "passive.indicator2.series"
+      },
+      {
+        "occurrence": [
+          "output",
+          1
+        ],
+        "fragment": "interface.output"
+      },
+      {
+        "occurrence": [
+          "output2",
+          1
+        ],
+        "fragment": "interface.output2"
+      },
+      {
+        "occurrence": [
+          "return",
+          1
+        ],
+        "fragment": "interface.return"
+      },
+      {
+        "occurrence": [
+          "source",
+          1
+        ],
+        "fragment": "interface.source"
+      },
+      {
+        "occurrence": [
+          "timer",
+          1
+        ],
+        "fragment": "timer.timer"
+      },
+      {
+        "occurrence": [
+          "timer2",
+          1
+        ],
+        "fragment": "timer.timer2"
+      },
+      {
+        "occurrence": [
+          "timing_cap",
+          1
+        ],
+        "fragment": "timer.timer"
+      },
+      {
+        "occurrence": [
+          "timing_cap2",
+          1
+        ],
+        "fragment": "timer.timer2"
+      }
+    ],
+    "terminal_inventory_count": 44,
+    "net_graph_witnesses": [
+      {
+        "net": "CONT",
+        "component_count": 1,
+        "terminal_components": [
+          [
+            [
+              "control_bypass",
+              "1"
+            ],
+            0
+          ],
+          [
+            [
+              "timer",
+              "5"
+            ],
+            0
+          ]
+        ],
+        "label_components": [],
+        "canonical_length_nm": 34290000
+      },
+      {
+        "net": "CONT2",
+        "component_count": 1,
+        "terminal_components": [
+          [
+            [
+              "control_bypass2",
+              "1"
+            ],
+            0
+          ],
+          [
+            [
+              "timer2",
+              "5"
+            ],
+            0
+          ]
+        ],
+        "label_components": [],
+        "canonical_length_nm": 34290000
+      },
+      {
+        "net": "DISCH",
+        "component_count": 1,
+        "terminal_components": [
+          [
+            [
+              "charge",
+              "2"
+            ],
+            0
+          ],
+          [
+            [
+              "discharge",
+              "1"
+            ],
+            0
+          ],
+          [
+            [
+              "timer",
+              "7"
+            ],
+            0
+          ]
+        ],
+        "label_components": [],
+        "canonical_length_nm": 40640000
+      },
+      {
+        "net": "DISCH2",
+        "component_count": 1,
+        "terminal_components": [
+          [
+            [
+              "charge2",
+              "2"
+            ],
+            0
+          ],
+          [
+            [
+              "discharge2",
+              "1"
+            ],
+            0
+          ],
+          [
+            [
+              "timer2",
+              "7"
+            ],
+            0
+          ]
+        ],
+        "label_components": [],
+        "canonical_length_nm": 40640000
+      },
+      {
+        "net": "FILTERED",
+        "component_count": 2,
+        "terminal_components": [
+          [
+            [
+              "filter_c",
+              "1"
+            ],
+            0
+          ],
+          [
+            [
+              "filter_r",
+              "2"
+            ],
+            0
+          ],
+          [
+            [
+              "output",
+              "1"
+            ],
+            1
+          ]
+        ],
+        "label_components": [
+          [
+            [
+              127000000,
+              101600000
+            ],
+            1
+          ],
+          [
+            [
+              129540000,
+              41910000
+            ],
+            0
+          ]
+        ],
+        "canonical_length_nm": 26670000
+      },
+      {
+        "net": "LEDMID2",
+        "component_count": 1,
+        "terminal_components": [
+          [
+            [
+              "indicator_led2",
+              "2"
+            ],
+            0
+          ],
+          [
+            [
+              "indicator_r2",
+              "2"
+            ],
+            0
+          ]
+        ],
+        "label_components": [
+          [
+            [
+              101600000,
+              115570000
+            ],
+            0
+          ]
+        ],
+        "canonical_length_nm": 7620000
+      },
+      {
+        "net": "OUT",
+        "component_count": 1,
+        "terminal_components": [
+          [
+            [
+              "filter_r",
+              "1"
+            ],
+            0
+          ],
+          [
+            [
+              "timer",
+              "3"
+            ],
+            0
+          ]
+        ],
+        "label_components": [],
+        "canonical_length_nm": 53340000
+      },
+      {
+        "net": "OUT2",
+        "component_count": 2,
+        "terminal_components": [
+          [
+            [
+              "indicator_r2",
+              "1"
+            ],
+            0
+          ],
+          [
+            [
+              "output2",
+              "1"
+            ],
+            1
+          ],
+          [
+            [
+              "timer2",
+              "3"
+            ],
+            0
+          ]
+        ],
+        "label_components": [
+          [
+            [
+              92710000,
+              119380000
+            ],
+            0
+          ],
+          [
+            [
+              101600000,
+              91440000
+            ],
+            0
+          ],
+          [
+            [
+              125730000,
+              116840000
+            ],
+            1
+          ]
+        ],
+        "canonical_length_nm": 71120000
+      },
+      {
+        "net": "REF",
+        "component_count": 5,
+        "terminal_components": [
+          [
+            [
+              "control_bypass",
+              "2"
+            ],
+            -1
+          ],
+          [
+            [
+              "control_bypass2",
+              "2"
+            ],
+            -1
+          ],
+          [
+            [
+              "filter_c",
+              "2"
+            ],
+            3
+          ],
+          [
+            [
+              "indicator_led2",
+              "1"
+            ],
+            2
+          ],
+          [
+            [
+              "return",
+              "1"
+            ],
+            4
+          ],
+          [
+            [
+              "timer",
+              "1"
+            ],
+            0
+          ],
+          [
+            [
+              "timer2",
+              "1"
+            ],
+            1
+          ],
+          [
+            [
+              "timing_cap",
+              "2"
+            ],
+            -1
+          ],
+          [
+            [
+              "timing_cap2",
+              "2"
+            ],
+            -1
+          ]
+        ],
+        "label_components": [
+          [
+            [
+              29210000,
+              85090000
+            ],
+            -1
+          ],
+          [
+            [
+              29210000,
+              144780000
+            ],
+            -1
+          ],
+          [
+            [
+              67310000,
+              69850000
+            ],
+            0
+          ],
+          [
+            [
+              67310000,
+              129540000
+            ],
+            1
+          ],
+          [
+            [
+              81280000,
+              53340000
+            ],
+            -1
+          ],
+          [
+            [
+              81280000,
+              113030000
+            ],
+            -1
+          ],
+          [
+            [
+              101600000,
+              123190000
+            ],
+            2
+          ],
+          [
+            [
+              121920000,
+              66040000
+            ],
+            3
+          ],
+          [
+            [
+              124460000,
+              132080000
+            ],
+            4
+          ]
+        ],
+        "canonical_length_nm": 21590000
+      },
+      {
+        "net": "TIMING",
+        "component_count": 1,
+        "terminal_components": [
+          [
+            [
+              "discharge",
+              "2"
+            ],
+            0
+          ],
+          [
+            [
+              "timer",
+              "2"
+            ],
+            0
+          ],
+          [
+            [
+              "timer",
+              "6"
+            ],
+            0
+          ],
+          [
+            [
+              "timing_cap",
+              "1"
+            ],
+            0
+          ]
+        ],
+        "label_components": [],
+        "canonical_length_nm": 57150000
+      },
+      {
+        "net": "TIMING2",
+        "component_count": 1,
+        "terminal_components": [
+          [
+            [
+              "discharge2",
+              "2"
+            ],
+            0
+          ],
+          [
+            [
+              "timer2",
+              "2"
+            ],
+            0
+          ],
+          [
+            [
+              "timer2",
+              "6"
+            ],
+            0
+          ],
+          [
+            [
+              "timing_cap2",
+              "1"
+            ],
+            0
+          ]
+        ],
+        "label_components": [],
+        "canonical_length_nm": 57150000
+      },
+      {
+        "net": "VCC",
+        "component_count": 3,
+        "terminal_components": [
+          [
+            [
+              "charge",
+              "1"
+            ],
+            -1
+          ],
+          [
+            [
+              "charge2",
+              "1"
+            ],
+            -1
+          ],
+          [
+            [
+              "source",
+              "1"
+            ],
+            2
+          ],
+          [
+            [
+              "timer",
+              "4"
+            ],
+            -1
+          ],
+          [
+            [
+              "timer",
+              "8"
+            ],
+            0
+          ],
+          [
+            [
+              "timer2",
+              "4"
+            ],
+            -1
+          ],
+          [
+            [
+              "timer2",
+              "8"
+            ],
+            1
+          ]
+        ],
+        "label_components": [
+          [
+            [
+              29210000,
+              38100000
+            ],
+            -1
+          ],
+          [
+            [
+              29210000,
+              97790000
+            ],
+            -1
+          ],
+          [
+            [
+              53340000,
+              54610000
+            ],
+            -1
+          ],
+          [
+            [
+              53340000,
+              114300000
+            ],
+            -1
+          ],
+          [
+            [
+              66040000,
+              49530000
+            ],
+            0
+          ],
+          [
+            [
+              66040000,
+              109220000
+            ],
+            1
+          ],
+          [
+            [
+              69850000,
+              49530000
+            ],
+            0
+          ],
+          [
+            [
+              69850000,
+              109220000
+            ],
+            1
+          ],
+          [
+            [
+              124460000,
+              147320000
+            ],
+            2
+          ]
+        ],
+        "canonical_length_nm": 11430000
+      }
+    ],
+    "gateway_witnesses": [
+      {
+        "id": "interface.output.pin1",
+        "net": "FILTERED",
+        "point": [
+          127000000,
+          101600000
+        ],
+        "terminals": [
+          {
+            "id": [
+              "output",
+              "1"
+            ],
+            "point": [
+              130810000,
+              101600000
+            ]
+          }
+        ]
+      },
+      {
+        "id": "interface.output2.pin1",
+        "net": "OUT2",
+        "point": [
+          125730000,
+          116840000
+        ],
+        "terminals": [
+          {
+            "id": [
+              "output2",
+              "1"
+            ],
+            "point": [
+              129540000,
+              116840000
+            ]
+          }
+        ]
+      },
+      {
+        "id": "interface.return.pin1",
+        "net": "REF",
+        "point": [
+          124460000,
+          132080000
+        ],
+        "terminals": [
+          {
+            "id": [
+              "return",
+              "1"
+            ],
+            "point": [
+              128270000,
+              132080000
+            ]
+          }
+        ]
+      },
+      {
+        "id": "interface.source.pin1",
+        "net": "VCC",
+        "point": [
+          124460000,
+          147320000
+        ],
+        "terminals": [
+          {
+            "id": [
+              "source",
+              "1"
+            ],
+            "point": [
+              128270000,
+              147320000
+            ]
+          }
+        ]
+      },
+      {
+        "id": "passive.indicator2.series.input",
+        "net": "OUT2",
+        "point": [
+          101600000,
+          91440000
+        ],
+        "terminals": [
+          {
+            "id": [
+              "indicator_r2",
+              "1"
+            ],
+            "point": [
+              101600000,
+              100330000
+            ]
+          }
+        ]
+      },
+      {
+        "id": "passive.indicator2.series.output",
+        "net": "LEDMID2",
+        "point": [
+          101600000,
+          115570000
+        ],
+        "terminals": [
+          {
+            "id": [
+              "indicator_r2",
+              "2"
+            ],
+            "point": [
+              101600000,
+              107950000
+            ]
+          }
+        ]
+      },
+      {
+        "id": "passive.indicator2.series.reference",
+        "net": "REF",
+        "point": [
+          101600000,
+          123190000
+        ],
+        "terminals": [
+          {
+            "id": [
+              "indicator_led2",
+              "1"
+            ],
+            "point": [
+              101600000,
+              119380000
+            ]
+          }
+        ]
+      },
+      {
+        "id": "passive.output.filter.series.input",
+        "net": "OUT",
+        "point": [
+          96520000,
+          41910000
+        ],
+        "terminals": [
+          {
+            "id": [
+              "filter_r",
+              "1"
+            ],
+            "point": [
+              109220000,
+              41910000
+            ]
+          }
+        ]
+      },
+      {
+        "id": "passive.output.filter.series.output",
+        "net": "FILTERED",
+        "point": [
+          129540000,
+          41910000
+        ],
+        "terminals": [
+          {
+            "id": [
+              "filter_r",
+              "2"
+            ],
+            "point": [
+              116840000,
+              41910000
+            ]
+          }
+        ]
+      },
+      {
+        "id": "passive.output.filter.series.reference",
+        "net": "REF",
+        "point": [
+          121920000,
+          66040000
+        ],
+        "terminals": [
+          {
+            "id": [
+              "filter_c",
+              "2"
+            ],
+            "point": [
+              121920000,
+              59690000
+            ]
+          }
+        ]
+      },
+      {
+        "id": "timer.timer.supply",
+        "net": "VCC",
+        "point": [
+          69850000,
+          49530000
+        ],
+        "terminals": [
+          {
+            "id": [
+              "timer",
+              "8"
+            ],
+            "point": [
+              66040000,
+              49530000
+            ]
+          }
+        ]
+      },
+      {
+        "id": "timer.timer.output",
+        "net": "OUT",
+        "point": [
+          92710000,
+          59690000
+        ],
+        "terminals": [
+          {
+            "id": [
+              "timer",
+              "3"
+            ],
+            "point": [
+              73660000,
+              59690000
+            ]
+          }
+        ]
+      },
+      {
+        "id": "timer.timer.reference",
+        "net": "REF",
+        "point": [
+          67310000,
+          69850000
+        ],
+        "terminals": [
+          {
+            "id": [
+              "timer",
+              "1"
+            ],
+            "point": [
+              63500000,
+              69850000
+            ]
+          }
+        ]
+      },
+      {
+        "id": "timer.timer2.supply",
+        "net": "VCC",
+        "point": [
+          69850000,
+          109220000
+        ],
+        "terminals": [
+          {
+            "id": [
+              "timer2",
+              "8"
+            ],
+            "point": [
+              66040000,
+              109220000
+            ]
+          }
+        ]
+      },
+      {
+        "id": "timer.timer2.output",
+        "net": "OUT2",
+        "point": [
+          92710000,
+          119380000
+        ],
+        "terminals": [
+          {
+            "id": [
+              "timer2",
+              "3"
+            ],
+            "point": [
+              73660000,
+              119380000
+            ]
+          }
+        ]
+      },
+      {
+        "id": "timer.timer2.reference",
+        "net": "REF",
+        "point": [
+          67310000,
+          129540000
+        ],
+        "terminals": [
+          {
+            "id": [
+              "timer2",
+              "1"
+            ],
+            "point": [
+              63500000,
+              129540000
+            ]
+          }
+        ]
+      }
+    ],
+    "placement_witnesses": [
+      [
+        "precedence.timer.timer.output.passive.output.filter.series.input",
+        35560000,
+        1
+      ],
+      [
+        "precedence.timer.timer2.output.passive.indicator2.series.input",
+        27940000,
+        1
+      ],
+      [
+        "span.control.bypass",
+        21590000,
+        60000000
+      ],
+      [
+        "span.control2.bypass",
+        21590000,
+        60000000
+      ],
+      [
+        "span.precedence.timer.timer.output.passive.output.filter.series.input",
+        53340000,
+        80000000
+      ],
+      [
+        "span.precedence.timer.timer2.output.passive.indicator2.series.input",
+        46990000,
+        80000000
+      ]
+    ],
+    "local_span_obligation_count": 4,
+    "canonical_lengths_nm": {
+      "CONT": 34290000,
+      "CONT2": 34290000,
+      "DISCH": 40640000,
+      "DISCH2": 40640000,
+      "FILTERED": 26670000,
+      "LEDMID2": 7620000,
+      "OUT": 53340000,
+      "OUT2": 71120000,
+      "REF": 21590000,
+      "TIMING": 57150000,
+      "TIMING2": 57150000,
+      "VCC": 11430000
+    },
+    "final_content_envelope_nm": [
+      27178000,
+      30900000,
+      141230000,
+      148590000
+    ],
+    "reservation_containment_pass": true,
+    "no_unintended_dangling_endpoints": true,
+    "no_cross_net_contacts": true,
+    "no_unallocated_growth": true,
+    "serialized_scene_verified": "pass"
+  }
+}

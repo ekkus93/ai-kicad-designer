@@ -544,7 +544,10 @@ def test_bounded_failure_reports_search_and_proven_infeasibility(monkeypatch):
         compose_with_evidence(design, assets())
     assert len(caught.value.attempts) <= 32
     assert "LAYOUT_BUDGET_EXHAUSTED" in str(caught.value)
-    assert any(item["result"] == "repeat_state_skipped" for item in caught.value.attempts)
+    assert any(item["result"] == "not_applicable" for item in caught.value.attempts)
+    assert caught.value.evidence["budgets"]["complete_attempts_used"] == sum(
+        item["result"] == "rejected" for item in caught.value.attempts
+    )
     assert (
         CANDIDATE_BUDGET,
         MAX_TRACKS_PER_SIDE,

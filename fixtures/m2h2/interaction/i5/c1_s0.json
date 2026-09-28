@@ -1,0 +1,64 @@
+{
+  "profile": "m2b.1",
+  "id": "m2h2_i5_c1_s0",
+  "name": "M2h2I5C1S0",
+  "components": [
+    {
+      "id": "positive",
+      "refdes": "J1",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Positive supply"
+    },
+    {
+      "id": "load_1_r",
+      "refdes": "R1",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "passive_output_1",
+      "refdes": "J2",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Passive output 1"
+    }
+  ],
+  "nets": [
+    {
+      "id": "VPLUS",
+      "members": [
+        [
+          "positive",
+          "1"
+        ],
+        [
+          "load_1_r",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "PASSIVE_1_OUT",
+      "members": [
+        [
+          "load_1_r",
+          "2"
+        ],
+        [
+          "passive_output_1",
+          "1"
+        ]
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "load_1.series",
+      "kind": "series",
+      "component": "load_1_r",
+      "input": "VPLUS",
+      "output": "PASSIVE_1_OUT"
+    }
+  ],
+  "no_connects": [],
+  "power_assertions": []
+}

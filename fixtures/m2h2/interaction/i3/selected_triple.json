@@ -1,0 +1,673 @@
+{
+  "profile": "m2b.1",
+  "id": "m2h2_i3_selected_triple",
+  "name": "M2h2I3SelectedTriple",
+  "components": [
+    {
+      "id": "positive",
+      "refdes": "J1",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Positive supply"
+    },
+    {
+      "id": "negative",
+      "refdes": "J2",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Negative return"
+    },
+    {
+      "id": "reference",
+      "refdes": "J3",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "External reference"
+    },
+    {
+      "id": "output_a",
+      "refdes": "J4",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Amplified timing channel A"
+    },
+    {
+      "id": "output_b",
+      "refdes": "J5",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Filtered timing channel B"
+    },
+    {
+      "id": "timer_a",
+      "refdes": "U1",
+      "asset": "Timer:NE555D",
+      "value": "NE555D"
+    },
+    {
+      "id": "timer_a_charge",
+      "refdes": "R1",
+      "asset": "Device:R",
+      "value": "10k"
+    },
+    {
+      "id": "timer_a_discharge",
+      "refdes": "R2",
+      "asset": "Device:R",
+      "value": "47k"
+    },
+    {
+      "id": "timer_a_timing_cap",
+      "refdes": "C1",
+      "asset": "Device:C",
+      "value": "10u"
+    },
+    {
+      "id": "timer_a_control_bypass",
+      "refdes": "C2",
+      "asset": "Device:C",
+      "value": "10n"
+    },
+    {
+      "id": "timer_b",
+      "refdes": "U2",
+      "asset": "Timer:NE555D",
+      "value": "NE555D"
+    },
+    {
+      "id": "timer_b_charge",
+      "refdes": "R3",
+      "asset": "Device:R",
+      "value": "10k"
+    },
+    {
+      "id": "timer_b_discharge",
+      "refdes": "R4",
+      "asset": "Device:R",
+      "value": "47k"
+    },
+    {
+      "id": "timer_b_timing_cap",
+      "refdes": "C3",
+      "asset": "Device:C",
+      "value": "10u"
+    },
+    {
+      "id": "timer_b_control_bypass",
+      "refdes": "C4",
+      "asset": "Device:C",
+      "value": "10n"
+    },
+    {
+      "id": "filter_a_r",
+      "refdes": "R5",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "filter_a_c",
+      "refdes": "C7",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "filter_b_r",
+      "refdes": "R6",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "filter_b_c",
+      "refdes": "C8",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "stage",
+      "refdes": "U3",
+      "asset": "Amplifier_Operational:NE5532",
+      "value": "NE5532",
+      "functions": [
+        {
+          "id": "a",
+          "role": "buffer",
+          "unit": 1,
+          "pins": {
+            "out": "1",
+            "minus": "2",
+            "plus": "3"
+          }
+        },
+        {
+          "id": "b",
+          "role": "parked_buffer",
+          "unit": 2,
+          "pins": {
+            "out": "7",
+            "minus": "6",
+            "plus": "5"
+          }
+        },
+        {
+          "id": "power",
+          "role": "supply",
+          "unit": 3,
+          "pins": {
+            "negative": "4",
+            "positive": "8"
+          }
+        }
+      ]
+    },
+    {
+      "id": "stage_cpos",
+      "refdes": "C5",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "stage_cneg",
+      "refdes": "C6",
+      "asset": "Device:C",
+      "value": "100n"
+    }
+  ],
+  "nets": [
+    {
+      "id": "VPLUS",
+      "members": [
+        [
+          "positive",
+          "1"
+        ],
+        [
+          "timer_a",
+          "8"
+        ],
+        [
+          "timer_a",
+          "4"
+        ],
+        [
+          "timer_a_charge",
+          "1"
+        ],
+        [
+          "timer_b",
+          "8"
+        ],
+        [
+          "timer_b",
+          "4"
+        ],
+        [
+          "timer_b_charge",
+          "1"
+        ],
+        [
+          "stage",
+          "8"
+        ],
+        [
+          "stage_cpos",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "VMINUS",
+      "members": [
+        [
+          "negative",
+          "1"
+        ],
+        [
+          "timer_a",
+          "1"
+        ],
+        [
+          "timer_a_timing_cap",
+          "2"
+        ],
+        [
+          "timer_a_control_bypass",
+          "2"
+        ],
+        [
+          "timer_b",
+          "1"
+        ],
+        [
+          "timer_b_timing_cap",
+          "2"
+        ],
+        [
+          "timer_b_control_bypass",
+          "2"
+        ],
+        [
+          "filter_a_c",
+          "2"
+        ],
+        [
+          "filter_b_c",
+          "2"
+        ],
+        [
+          "stage",
+          "4"
+        ],
+        [
+          "stage_cneg",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "VREF",
+      "members": [
+        [
+          "reference",
+          "1"
+        ],
+        [
+          "stage",
+          "5"
+        ],
+        [
+          "stage_cpos",
+          "2"
+        ],
+        [
+          "stage_cneg",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "LONG_OUTPUT_CHANNEL_A",
+      "members": [
+        [
+          "output_a",
+          "1"
+        ],
+        [
+          "stage",
+          "1"
+        ],
+        [
+          "stage",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_A_DISCH",
+      "members": [
+        [
+          "timer_a",
+          "7"
+        ],
+        [
+          "timer_a_charge",
+          "2"
+        ],
+        [
+          "timer_a_discharge",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_A_TIMING",
+      "members": [
+        [
+          "timer_a",
+          "2"
+        ],
+        [
+          "timer_a",
+          "6"
+        ],
+        [
+          "timer_a_discharge",
+          "2"
+        ],
+        [
+          "timer_a_timing_cap",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_A_CONT",
+      "members": [
+        [
+          "timer_a",
+          "5"
+        ],
+        [
+          "timer_a_control_bypass",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_A_OUT",
+      "members": [
+        [
+          "timer_a",
+          "3"
+        ],
+        [
+          "filter_a_r",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_B_DISCH",
+      "members": [
+        [
+          "timer_b",
+          "7"
+        ],
+        [
+          "timer_b_charge",
+          "2"
+        ],
+        [
+          "timer_b_discharge",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_B_TIMING",
+      "members": [
+        [
+          "timer_b",
+          "2"
+        ],
+        [
+          "timer_b",
+          "6"
+        ],
+        [
+          "timer_b_discharge",
+          "2"
+        ],
+        [
+          "timer_b_timing_cap",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_B_CONT",
+      "members": [
+        [
+          "timer_b",
+          "5"
+        ],
+        [
+          "timer_b_control_bypass",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_B_OUT",
+      "members": [
+        [
+          "timer_b",
+          "3"
+        ],
+        [
+          "filter_b_r",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "FILTERED_A",
+      "members": [
+        [
+          "filter_a_r",
+          "2"
+        ],
+        [
+          "filter_a_c",
+          "1"
+        ],
+        [
+          "stage",
+          "3"
+        ]
+      ]
+    },
+    {
+      "id": "OUTPUT_B",
+      "members": [
+        [
+          "filter_b_r",
+          "2"
+        ],
+        [
+          "filter_b_c",
+          "1"
+        ],
+        [
+          "output_b",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "STAGE_PARK",
+      "members": [
+        [
+          "stage",
+          "7"
+        ],
+        [
+          "stage",
+          "6"
+        ]
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "timer_a.function",
+      "kind": "timer",
+      "component": "timer_a",
+      "supply": "VPLUS",
+      "reference": "VMINUS",
+      "output": "TIMER_A_OUT",
+      "timing": "TIMER_A_TIMING",
+      "discharge": "TIMER_A_DISCH",
+      "control": "TIMER_A_CONT",
+      "pins": {
+        "supply": "8",
+        "reference": "1",
+        "output": "3",
+        "trigger": "2",
+        "threshold": "6",
+        "discharge": "7",
+        "control": "5",
+        "reset": "4"
+      }
+    },
+    {
+      "id": "timer_a.ladder",
+      "kind": "timing_ladder",
+      "upper": "timer_a_charge",
+      "lower": "timer_a_discharge",
+      "capacitor": "timer_a_timing_cap",
+      "supply": "VPLUS",
+      "discharge": "TIMER_A_DISCH",
+      "timing": "TIMER_A_TIMING",
+      "reference": "VMINUS"
+    },
+    {
+      "id": "timer_a.control",
+      "kind": "decoupling",
+      "component": "timer_a_control_bypass",
+      "consumer": [
+        "timer_a",
+        "5"
+      ],
+      "supply": "TIMER_A_CONT",
+      "return": "VMINUS"
+    },
+    {
+      "id": "timer_b.function",
+      "kind": "timer",
+      "component": "timer_b",
+      "supply": "VPLUS",
+      "reference": "VMINUS",
+      "output": "TIMER_B_OUT",
+      "timing": "TIMER_B_TIMING",
+      "discharge": "TIMER_B_DISCH",
+      "control": "TIMER_B_CONT",
+      "pins": {
+        "supply": "8",
+        "reference": "1",
+        "output": "3",
+        "trigger": "2",
+        "threshold": "6",
+        "discharge": "7",
+        "control": "5",
+        "reset": "4"
+      }
+    },
+    {
+      "id": "timer_b.ladder",
+      "kind": "timing_ladder",
+      "upper": "timer_b_charge",
+      "lower": "timer_b_discharge",
+      "capacitor": "timer_b_timing_cap",
+      "supply": "VPLUS",
+      "discharge": "TIMER_B_DISCH",
+      "timing": "TIMER_B_TIMING",
+      "reference": "VMINUS"
+    },
+    {
+      "id": "timer_b.control",
+      "kind": "decoupling",
+      "component": "timer_b_control_bypass",
+      "consumer": [
+        "timer_b",
+        "5"
+      ],
+      "supply": "TIMER_B_CONT",
+      "return": "VMINUS"
+    },
+    {
+      "id": "filter_a.series",
+      "kind": "series",
+      "component": "filter_a_r",
+      "input": "TIMER_A_OUT",
+      "output": "FILTERED_A"
+    },
+    {
+      "id": "filter_a.shunt",
+      "kind": "shunt",
+      "component": "filter_a_c",
+      "node": "FILTERED_A",
+      "reference": "VMINUS"
+    },
+    {
+      "id": "filter_b.series",
+      "kind": "series",
+      "component": "filter_b_r",
+      "input": "TIMER_B_OUT",
+      "output": "OUTPUT_B"
+    },
+    {
+      "id": "filter_b.shunt",
+      "kind": "shunt",
+      "component": "filter_b_c",
+      "node": "OUTPUT_B",
+      "reference": "VMINUS"
+    },
+    {
+      "id": "stage.loop",
+      "kind": "feedback",
+      "component": "stage",
+      "function": "a",
+      "source": "1",
+      "sense": "2",
+      "net": "LONG_OUTPUT_CHANNEL_A",
+      "polarity": "negative"
+    },
+    {
+      "id": "stage.stage",
+      "kind": "amplifier",
+      "component": "stage",
+      "function": "a",
+      "input": "FILTERED_A",
+      "output": "LONG_OUTPUT_CHANNEL_A",
+      "reference": "VREF"
+    },
+    {
+      "id": "stage.park",
+      "kind": "amplifier",
+      "component": "stage",
+      "function": "b",
+      "input": "VREF",
+      "output": "STAGE_PARK",
+      "unused": true
+    },
+    {
+      "id": "stage.park_loop",
+      "kind": "feedback",
+      "component": "stage",
+      "function": "b",
+      "source": "7",
+      "sense": "6",
+      "net": "STAGE_PARK",
+      "polarity": "negative"
+    },
+    {
+      "id": "stage.rails",
+      "kind": "power_rails",
+      "component": "stage",
+      "unit": 3,
+      "positive": "VPLUS",
+      "negative": "VMINUS",
+      "reference": "VREF"
+    },
+    {
+      "id": "stage.cpos",
+      "kind": "decoupling",
+      "component": "stage_cpos",
+      "consumer": [
+        "stage",
+        "8"
+      ],
+      "supply": "VPLUS",
+      "return": "VREF"
+    },
+    {
+      "id": "stage.cneg",
+      "kind": "decoupling",
+      "component": "stage_cneg",
+      "consumer": [
+        "stage",
+        "4"
+      ],
+      "supply": "VREF",
+      "return": "VMINUS"
+    }
+  ],
+  "no_connects": [],
+  "power_assertions": [
+    {
+      "id": "flag.1",
+      "refdes": "#FLG01",
+      "net": "VPLUS"
+    },
+    {
+      "id": "flag.2",
+      "refdes": "#FLG02",
+      "net": "VMINUS"
+    }
+  ]
+}

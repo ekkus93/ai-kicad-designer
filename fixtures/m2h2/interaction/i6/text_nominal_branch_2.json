@@ -1,0 +1,183 @@
+{
+  "profile": "m2b.1",
+  "id": "m2h2_i6_text_nominal_branch_2",
+  "name": "M2h2I6TextNominalBranch2",
+  "components": [
+    {
+      "id": "input",
+      "refdes": "J1",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Signal input"
+    },
+    {
+      "id": "return",
+      "refdes": "J2",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Common return"
+    },
+    {
+      "id": "root_r",
+      "refdes": "R1",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "root_c",
+      "refdes": "C1",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "branch_1_r",
+      "refdes": "R2",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "branch_1_c",
+      "refdes": "C2",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "output_1",
+      "refdes": "J3",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Output 1"
+    },
+    {
+      "id": "branch_2_r",
+      "refdes": "R3",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "output_2",
+      "refdes": "J4",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Output 2"
+    }
+  ],
+  "nets": [
+    {
+      "id": "INPUT",
+      "members": [
+        [
+          "input",
+          "1"
+        ],
+        [
+          "root_r",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "RETURN",
+      "members": [
+        [
+          "return",
+          "1"
+        ],
+        [
+          "root_c",
+          "2"
+        ],
+        [
+          "branch_1_c",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "FORK",
+      "members": [
+        [
+          "root_r",
+          "2"
+        ],
+        [
+          "root_c",
+          "1"
+        ],
+        [
+          "branch_1_r",
+          "1"
+        ],
+        [
+          "branch_2_r",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "OUTPUT_1",
+      "members": [
+        [
+          "branch_1_r",
+          "2"
+        ],
+        [
+          "branch_1_c",
+          "1"
+        ],
+        [
+          "output_1",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "OUTPUT_2",
+      "members": [
+        [
+          "branch_2_r",
+          "2"
+        ],
+        [
+          "output_2",
+          "1"
+        ]
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "root.series",
+      "kind": "series",
+      "component": "root_r",
+      "input": "INPUT",
+      "output": "FORK"
+    },
+    {
+      "id": "root.shunt",
+      "kind": "shunt",
+      "component": "root_c",
+      "node": "FORK",
+      "reference": "RETURN"
+    },
+    {
+      "id": "branch_1.series",
+      "kind": "series",
+      "component": "branch_1_r",
+      "input": "FORK",
+      "output": "OUTPUT_1"
+    },
+    {
+      "id": "branch_1.shunt",
+      "kind": "shunt",
+      "component": "branch_1_c",
+      "node": "OUTPUT_1",
+      "reference": "RETURN"
+    },
+    {
+      "id": "branch_2.series",
+      "kind": "series",
+      "component": "branch_2_r",
+      "input": "FORK",
+      "output": "OUTPUT_2"
+    }
+  ],
+  "no_connects": [],
+  "power_assertions": []
+}

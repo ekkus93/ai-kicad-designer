@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from typing import Iterable, Literal
 
 from .ir import InputError
+from .m2_conflicts import ConflictKind, TypedConflict
 
 
 Point = tuple[int, int]
@@ -78,6 +79,54 @@ class Reservation:
             max(0, rect[2] - self.rect[2]),
             max(0, rect[3] - self.rect[3]),
         )
+
+
+def prove_reservation_allocation(
+    occupied: Iterable[GeometryItem], reservations: Iterable[Reservation]
+) -> tuple[tuple[str, str, str], ...]:
+    """Assign each occupied item to a compatible owner/net reservation."""
+    available = tuple(reservations)
+    assigned: dict[str, int] = defaultdict(int)
+    witnesses = []
+    for item in occupied:
+        net = item.provenance[0] if item.kind in {"wire", "label"} else None
+        choices = [
+            reservation
+            for reservation in available
+            if reservation.owner == item.owner
+            and reservation.contains(item.rect)
+            and reservation.permitted_net == net
+            and (
+                reservation.clearance_class == item.kind
+                or (item.kind == "wire" and reservation.clearance_class == "global_route")
+            )
+        ]
+        if not choices:
+            raise TypedConflict(
+                ConflictKind.RESERVATION,
+                f"RESERVATION_ALLOCATION_MISSING: {item.owner}:{item.id}:{net}",
+                owners=(item.owner,),
+                offending_geometry=(item.rect,),
+            )
+        reservation = min(
+            choices,
+            key=lambda value: (
+                (value.rect[2] - value.rect[0]) * (value.rect[3] - value.rect[1]),
+                value.id,
+            ),
+        )
+        assigned[reservation.id] += 1
+        if reservation.occupancy == "channel" and assigned[reservation.id] > reservation.capacity:
+            raise TypedConflict(
+                ConflictKind.RESERVATION,
+                f"RESERVATION_CAPACITY_EXCEEDED: {reservation.id}",
+                owners=(item.owner,),
+                offending_geometry=(item.rect,),
+                actual=assigned[reservation.id],
+                limit=reservation.capacity,
+            )
+        witnesses.append((item.owner, item.id, reservation.id))
+    return tuple(witnesses)
 
 
 @dataclass(frozen=True)
@@ -247,7 +296,14 @@ def prove_conductor_graph(
             # presentation choice for externally scoped nets.
             index = -1
         if index is None:
-            raise InputError(f"CONDUCTOR_TERMINAL_DETACHED: {tree.net}:{terminal}:{point}")
+            raise TypedConflict(
+                ConflictKind.NET_CONNECTIVITY,
+                f"CONDUCTOR_TERMINAL_DETACHED: {tree.net}:{terminal}:{point}",
+                net=tree.net,
+                owners=(terminal[0],),
+                offending_geometry=(point,),
+                repair_classes=("gateway_access", "distribution_placement"),
+            )
         terminal_components.append((terminal, index))
     label_components = []
     for point in sorted(label_points):
@@ -255,16 +311,34 @@ def prove_conductor_graph(
         if index is None and allow_labeled_islands and point in terminals.values():
             index = -1
         if index is None:
-            raise InputError(f"CONDUCTOR_LABEL_DETACHED: {tree.net}:{point}")
+            raise TypedConflict(
+                ConflictKind.NET_CONNECTIVITY,
+                f"CONDUCTOR_LABEL_DETACHED: {tree.net}:{point}",
+                net=tree.net,
+                offending_geometry=(point,),
+                repair_classes=("distribution_placement",),
+            )
         label_components.append((point, index))
     missing_junctions = set(tree.junctions) - set(declared_junctions)
     if missing_junctions:
-        raise InputError(f"CONDUCTOR_JUNCTION_MISSING: {tree.net}:{sorted(missing_junctions)}")
+        raise TypedConflict(
+            ConflictKind.JUNCTION,
+            f"CONDUCTOR_JUNCTION_MISSING: {tree.net}:{sorted(missing_junctions)}",
+            net=tree.net,
+            offending_geometry=tuple(sorted(missing_junctions)),
+        )
     if len(components) > 1 and not (
         allow_labeled_islands
         and set(range(len(components))) <= {index for _, index in label_components}
     ):
-        raise InputError(f"CONDUCTOR_ISLANDS_DISCONNECTED: {tree.net}:{len(components)}")
+        raise TypedConflict(
+            ConflictKind.NET_CONNECTIVITY,
+            f"CONDUCTOR_ISLANDS_DISCONNECTED: {tree.net}:{len(components)}",
+            net=tree.net,
+            actual=len(components),
+            limit=1,
+            repair_classes=("distribution_placement", "gateway_access"),
+        )
     permitted_ends = set(terminals.values()) | label_points | set(intentional_ends)
     dangling = sorted(
         point
@@ -272,7 +346,13 @@ def prove_conductor_graph(
         if degree == 1 and point not in permitted_ends
     )
     if dangling:
-        raise InputError(f"CONDUCTOR_ENDPOINT_DANGLING: {tree.net}:{dangling}")
+        raise TypedConflict(
+            ConflictKind.DANGLING_ENDPOINT,
+            f"CONDUCTOR_ENDPOINT_DANGLING: {tree.net}:{dangling}",
+            net=tree.net,
+            offending_geometry=tuple(dangling),
+            repair_classes=("distribution_placement", "gateway_access"),
+        )
     return ConductorProof(
         tree.net, components, tuple(terminal_components), tuple(label_components), tree.length
     )
@@ -316,6 +396,33 @@ def _intersection(first: ConductorSegment, second: ConductorSegment) -> Point | 
         and point_on_segment(point, second.start, second.end)
         else None
     )
+
+
+def prove_no_cross_net_contacts(segments: Iterable[ConductorSegment]) -> None:
+    """Reject exact physical contacts between different local net conductors."""
+    values = tuple(segments)
+    for index, first in enumerate(values):
+        for second in values[index + 1 :]:
+            if first.net == second.net:
+                continue
+            crossing = _intersection(first, second)
+            collinear_contact = (
+                first.start[0] == first.end[0] == second.start[0] == second.end[0]
+                or first.start[1] == first.end[1] == second.start[1] == second.end[1]
+            ) and any(
+                point_on_segment(point, first.start, first.end)
+                and point_on_segment(point, second.start, second.end)
+                for point in (first.start, first.end, second.start, second.end)
+            )
+            if crossing is not None or collinear_contact:
+                raise TypedConflict(
+                    ConflictKind.COLLISION,
+                    f"FRAGMENT_NET_CROSSING: {first.owner}:{first.net} "
+                    f"{first.start}->{first.end}:{second.net} "
+                    f"{second.start}->{second.end}",
+                    owners=(first.owner, second.owner),
+                    offending_geometry=(first.start, first.end, second.start, second.end),
+                )
 
 
 def canonical_conductor_tree(
@@ -376,12 +483,21 @@ def canonical_conductor_tree(
     normalized = []
     for (first, second), sources in sorted(atoms.items()):
         owners = {source.owner for source in sources}
-        if len(owners) != 1:
-            raise InputError(f"CONDUCTOR_OWNER_CONFLICT: {first}->{second}:{sorted(owners)}")
+        # A global branch may deliberately reuse an already certified local
+        # interval of the same net.  Keep the local owner, which retains the
+        # motif's protected geometry, and charge the conductor only once.
+        local_owners = owners - {f"tree.{raw[0].net}"}
+        if len(local_owners) > 1 or (len(owners) > 1 and not local_owners):
+            raise TypedConflict(
+                ConflictKind.OWNERSHIP,
+                f"CONDUCTOR_OWNER_CONFLICT: {first}->{second}:{sorted(owners)}",
+                net=raw[0].net,
+                owners=tuple(sorted(owners)),
+                offending_geometry=(first, second),
+            )
+        owner = next(iter(local_owners or owners))
         provenance = tuple(sorted({item for source in sources for item in source.provenance}))
-        normalized.append(
-            ConductorSegment(first, second, raw[0].net, next(iter(owners)), provenance)
-        )
+        normalized.append(ConductorSegment(first, second, raw[0].net, owner, provenance))
 
     rays: dict[Point, set[Direction]] = defaultdict(set)
     adjacency: dict[Point, set[Point]] = defaultdict(set)
@@ -500,13 +616,32 @@ def prove_gateway_witnesses(
 ) -> tuple[tuple[str, str], ...]:
     """Prove every declared witness through preserved conductor geometry."""
     if gateway.net != tree.net or not gateway.terminals:
-        raise InputError(f"GATEWAY_GRAPH_IDENTITY: {gateway.id}")
+        raise TypedConflict(
+            ConflictKind.GATEWAY_WITNESS,
+            f"GATEWAY_GRAPH_IDENTITY: {gateway.id}",
+            net=gateway.net,
+            owners=(gateway.island,),
+        )
     if not conductor_reachable(tree, gateway.anchor, gateway.point):
-        raise InputError(f"GATEWAY_ESCAPE_DETACHED: {gateway.id}")
+        raise TypedConflict(
+            ConflictKind.GATEWAY_WITNESS,
+            f"GATEWAY_ESCAPE_DETACHED: {gateway.id}",
+            net=gateway.net,
+            owners=(gateway.island,),
+            offending_geometry=(gateway.anchor, gateway.point),
+            repair_classes=("gateway_access",),
+        )
     for terminal in gateway.terminals:
         point = actual_pins.get(terminal)
         if point is None or not conductor_reachable(tree, point, gateway.point):
-            raise InputError(f"GATEWAY_PIN_DETACHED: {gateway.id}:{terminal}:{point}")
+            raise TypedConflict(
+                ConflictKind.GATEWAY_WITNESS,
+                f"GATEWAY_PIN_DETACHED: {gateway.id}:{terminal}:{point}",
+                net=gateway.net,
+                owners=(gateway.island,),
+                offending_geometry=(point,),
+                repair_classes=("gateway_access",),
+            )
     return gateway.terminals
 
 

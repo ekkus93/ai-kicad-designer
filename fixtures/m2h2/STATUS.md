@@ -1,51 +1,77 @@
-# M2h2 development status — BLOCKED
+# M2h2 development status — INCOMPLETE
 
-This is partial development evidence, not a qualified M2h2 result. The four
-fixed probes, two required long-field derivatives, expected terminal inventories,
-electrical partitions and path obligations were frozen before layout tuning in
-`development/`. The deterministic I1–I6 interaction covering set is frozen there
-too. Its covered-cell list remains empty: none of the planned cells has passed
-its complete invariants. Historical fixture and document integrity hashes still
-match the frozen record.
+The governing requirements are in `docs/M2_GENERALIZATION_REMEDIATION_SPEC.md`.
+Development probes and their expectations remain frozen in `development/`.
+Historical blind evidence is unchanged. Do not interpret the evidence below as
+final qualification of the current worktree.
 
-The implementation derives terminal-backed signal precedence independently of
-branch edge kind, checks placed terminal inequalities and selected local spans
-before routing, checks every local gateway witness, enumerates whole-net wire
-components, and requires explicit routing of internally generated references
-without connector edges. It preserves composition attempts and available metrics
-when a later real build fails. A typed producer is now selected for internally
-generated reference routing, and the bounded seed order includes more variant
-assignments. These contracts remain partial: the immutable obligation-complete
-certificate, serialized-scene boundary, full typed repair model, distributive
-trunk alternatives, structural coverage ledger, and full generic test matrix are
-still missing.
+## Current implementation and checks
 
-## Preserved one-run development builds
+The worktree implements generic internal-reference producer selection and
+gateway distribution, alternative conductor trees with canonical-union length
+pruning, bounded structural placement alternatives, typed conflicts and repairs,
+reservation allocation witnesses, net/component proofs, and a serialized-scene
+digest. These mechanisms still need the full falsification and qualification
+specified by the remediation document.
 
-| Case | Preserved evidence | Result at time of build |
-|---|---|---|
-| V6-1 | `qualification/v6_1/run2` | Real KiCad/independent observer pass |
-| V6-2 | `qualification/v6_2/run1` | Real KiCad/independent observer pass |
-| V6-3 | `qualification/v6_3/run1.failed` | Failure preserved; still fails current composition on VREF >250 mm |
-| V6-4 | `qualification/v6_4/run2` | Real KiCad/independent observer pass |
-| V6-5 | `qualification/v6_5/run2` | Real KiCad/independent observer pass |
-| V6-6 | `qualification/v6_6/run2` | Real KiCad/independent observer pass |
-| V6-7 | `qualification/v6_7/run2` | Real KiCad/independent observer pass |
-| V6-8 | `qualification/v6_8/run2` | Real KiCad/independent observer pass |
-| DP1, DP1 long fields | `qualification/dp1*/run1` | Real KiCad/independent observer pass |
-| DP2 | not_evaluated | Current composition cannot attach a package reference gateway |
-| DP3, DP3 long fields | `qualification/dp3*/run1` | Real KiCad/independent observer pass |
-| DP4 | `qualification/dp4/run1` | Real KiCad/independent observer pass |
+At the current source state, fresh one-run builds in `development_checks/`
+passed locked KiCad 10.0.6, independent electrical observation, zero ERC, and
+serialized-scene verification:
 
-Those passing builds predate the latest source edits and do not qualify the
-current worktree. Failed attempt directories were retained. The current
-composition reproduces V6-3's hard VREF length failure and DP2's blocked VREF
-gateway even after producer selection and variant-beam changes.
+| Case | Evidence | Canonical VREF | Graph |
+|---|---|---:|---|
+| V6-3 | `v6-3_final_handoff_run1/` | 234.95 mm | one component |
+| DP2 | `dp2_final_handoff_run1/` | 247.65 mm | one component, nine terminals |
 
-The full historical/new pytest suite passed at 178 tests before the final beam
-ordering edit; the affected M2g2/M2f2/M2h2 tests then passed at 42 tests. Ruff
-lint and format checks pass on changed Python files. No 42-case M2g2 five-run
-qualification, all-positive five-run repeat, complete interaction execution,
-full render inspection, or human blind gate has been performed. The locked real
-KiCad version for preserved builds is 10.0.6. No corpus.v7, M3 work, or CP-SAT
-was introduced.
+Both are under the unchanged 250 mm gate. DP2 has no external VREF connector;
+the shared internally produced reference reaches both packages, parked units,
+and passive/support consumers. The route report records a `producer_centered`
+strategy for both cases. These are single builds, not final five-build evidence.
+
+The full pytest suite passed **195 tests** after the latest routing change.
+Ruff lint, Ruff format, `git diff --check`, and scoped trailing-whitespace checks
+pass after formatting. Historical protection audit passed for 7,221 tracked files
+with matching HEAD/worktree digests. The active-module literal anti-overfitting
+scan passed and found no CP-SAT dependency or implementation.
+
+## Provisional qualification evidence
+
+`qualification_candidate4/results.json` records 56/56 positives across five
+clean real KiCad builds each, plus the invalid V3-8 negative. It includes all 42
+prior positives, V6-1–V6-8, DP1–DP4, and the DP1/DP3 long-field derivatives.
+Its compiler source hashes differ from the current worktree for `m2_compose`,
+`m2_geometry`, `m2_pack`, and `m2_route`; it cannot qualify the current source.
+
+The preserved interaction results include five-build passes for I1's nine pair
+cells plus its powered selected triple, I2's nine cells, I3's thirteen electrical
+cases, I4's nine cells, I5's nine cells, and I6's 21 cells. I3's default
+placement matches only six of twelve planned band classes. Six further
+five-build real KiCad structural alternatives under `interaction_alternatives/`
+demonstrate additional band classes, but those runs also predate later source
+changes. `development/interaction_coverage.json` remains at zero formally
+covered cells because actual final class and all invariants have not yet been
+recorded for every cell. Planned cells must never be marked covered by parsing
+or generation alone.
+
+## Remaining completion work
+
+1. Complete the spec's full generic falsification matrix, including independent
+   graph and tiny exhaustive placement oracles, typed repair transitions,
+   reservation and serialization mutations, and metamorphic tests.
+2. Audit the obligation certificate, corridor allocation, routing bounds,
+   structural search ledger, and repair decisions against every requirement in
+   the specification. Fix any missing invariant before acceptance.
+3. Validate every I1–I6 cell and selected triple against actual electrical,
+   routing, path, layout, band-class, and real-tool invariants at the final source
+   state. Update the frozen coverage ledger with evidence links and genuine
+   semantic impossibility witnesses only where applicable.
+4. After source stabilization, run a new five-clean-build qualification for all
+   56 positives and required interaction/stress cases using locked KiCad 10.0.6.
+   Confirm deterministic project bytes, net partitions, ERC, variant and route
+   decisions, obligation proofs, layout metrics, and normalized SVG geometry.
+5. Inspect the new rendered sheets, report worst metrics and structural/variant
+   coverage, rerun complete pytest/lint/format/whitespace/historical audits, and
+   perform a structural anti-overfitting review. Record agent inspection as such;
+   human approval is not available from this worktree.
+
+No corpus.v7, M3 work, gate change, or CP-SAT was introduced. M2h2 is not PASS.

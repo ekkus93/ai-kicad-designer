@@ -1,0 +1,221 @@
+{
+  "profile": "m2b.1",
+  "id": "m2h2_i5_c1_s3plus",
+  "name": "M2h2I5C1S3Plus",
+  "components": [
+    {
+      "id": "positive",
+      "refdes": "J1",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Positive supply"
+    },
+    {
+      "id": "negative",
+      "refdes": "J2",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Negative return"
+    },
+    {
+      "id": "timer_1",
+      "refdes": "U1",
+      "asset": "Timer:NE555D",
+      "value": "NE555D"
+    },
+    {
+      "id": "timer_1_charge",
+      "refdes": "R1",
+      "asset": "Device:R",
+      "value": "10k"
+    },
+    {
+      "id": "timer_1_discharge",
+      "refdes": "R2",
+      "asset": "Device:R",
+      "value": "47k"
+    },
+    {
+      "id": "timer_1_timing_cap",
+      "refdes": "C1",
+      "asset": "Device:C",
+      "value": "10u"
+    },
+    {
+      "id": "timer_1_control_bypass",
+      "refdes": "C2",
+      "asset": "Device:C",
+      "value": "10n"
+    },
+    {
+      "id": "timer_output_1",
+      "refdes": "J3",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Timer output 1"
+    }
+  ],
+  "nets": [
+    {
+      "id": "VPLUS",
+      "members": [
+        [
+          "positive",
+          "1"
+        ],
+        [
+          "timer_1",
+          "8"
+        ],
+        [
+          "timer_1",
+          "4"
+        ],
+        [
+          "timer_1_charge",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "VMINUS",
+      "members": [
+        [
+          "negative",
+          "1"
+        ],
+        [
+          "timer_1",
+          "1"
+        ],
+        [
+          "timer_1_timing_cap",
+          "2"
+        ],
+        [
+          "timer_1_control_bypass",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_1_DISCH",
+      "members": [
+        [
+          "timer_1",
+          "7"
+        ],
+        [
+          "timer_1_charge",
+          "2"
+        ],
+        [
+          "timer_1_discharge",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_1_TIMING",
+      "members": [
+        [
+          "timer_1",
+          "2"
+        ],
+        [
+          "timer_1",
+          "6"
+        ],
+        [
+          "timer_1_discharge",
+          "2"
+        ],
+        [
+          "timer_1_timing_cap",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_1_CONT",
+      "members": [
+        [
+          "timer_1",
+          "5"
+        ],
+        [
+          "timer_1_control_bypass",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "TIMER_1_OUT",
+      "members": [
+        [
+          "timer_1",
+          "3"
+        ],
+        [
+          "timer_output_1",
+          "1"
+        ]
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "timer_1.function",
+      "kind": "timer",
+      "component": "timer_1",
+      "supply": "VPLUS",
+      "reference": "VMINUS",
+      "output": "TIMER_1_OUT",
+      "timing": "TIMER_1_TIMING",
+      "discharge": "TIMER_1_DISCH",
+      "control": "TIMER_1_CONT",
+      "pins": {
+        "supply": "8",
+        "reference": "1",
+        "output": "3",
+        "trigger": "2",
+        "threshold": "6",
+        "discharge": "7",
+        "control": "5",
+        "reset": "4"
+      }
+    },
+    {
+      "id": "timer_1.ladder",
+      "kind": "timing_ladder",
+      "upper": "timer_1_charge",
+      "lower": "timer_1_discharge",
+      "capacitor": "timer_1_timing_cap",
+      "supply": "VPLUS",
+      "discharge": "TIMER_1_DISCH",
+      "timing": "TIMER_1_TIMING",
+      "reference": "VMINUS"
+    },
+    {
+      "id": "timer_1.control",
+      "kind": "decoupling",
+      "component": "timer_1_control_bypass",
+      "consumer": [
+        "timer_1",
+        "5"
+      ],
+      "supply": "TIMER_1_CONT",
+      "return": "VMINUS"
+    }
+  ],
+  "no_connects": [],
+  "power_assertions": [
+    {
+      "id": "flag.1",
+      "refdes": "#FLG01",
+      "net": "VPLUS"
+    },
+    {
+      "id": "flag.2",
+      "refdes": "#FLG02",
+      "net": "VMINUS"
+    }
+  ]
+}

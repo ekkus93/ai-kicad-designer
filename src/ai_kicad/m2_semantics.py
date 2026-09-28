@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 from .ir import InputError
+from .m2_conflicts import ConflictKind
 from .m2a import Asset
 
 
@@ -131,6 +132,9 @@ class PlacementConflict(InputError):
         limit: int,
     ) -> None:
         self.kind = kind
+        self.category = (
+            ConflictKind.PRECEDENCE if kind == "precedence_violation" else ConflictKind.LOCAL_SPAN
+        )
         self.obligation = obligation
         self.source_fragment = source_fragment
         self.target_fragment = target_fragment
@@ -443,6 +447,40 @@ def semantic_plan(design: dict, resolved: dict[str, Asset]) -> SemanticPlan:
                 ports,
             )
         )
+
+    # A generated reference may feed passive or other standalone consumers
+    # without a package power unit.  Give every remaining divider its own
+    # terminal-backed producer fragment instead of requiring package ownership.
+    for divider in sorted(
+        (r for r in design["relationships"] if r["kind"] == "reference_divider"),
+        key=lambda r: r["id"],
+    ):
+        upper, lower = divider["upper"], divider["lower"]
+        if upper in claimed_components and lower in claimed_components:
+            continue
+        if upper in claimed_components or lower in claimed_components:
+            raise InputError(f"SEMANTIC_DIVIDER_PARTIAL_OWNER: {divider['id']}")
+        fid = f"reference.{divider['id']}"
+        blocks.append(
+            BlockPlan(
+                fid,
+                "reference_divider",
+                (divider["id"],),
+                frozenset({(upper, 1), (lower, 1)}),
+                (
+                    _port(fid, "positive", divider["positive"], "power_in", [(upper, "1")]),
+                    _port(fid, "negative", divider["negative"], "power_in", [(lower, "2")]),
+                    _port(
+                        fid,
+                        "reference",
+                        divider["local"],
+                        "reference",
+                        [(upper, "2"), (lower, "1")],
+                    ),
+                ),
+            )
+        )
+        claimed_components.update((upper, lower))
 
     for stage in sorted(
         (r for r in design["relationships"] if r["kind"] == "power_stage"),

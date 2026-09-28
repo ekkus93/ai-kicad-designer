@@ -1,0 +1,159 @@
+{
+  "schema_version": "m2h2.interaction-expected.1",
+  "frozen_before_real_layout": true,
+  "factor_cell": "I4:parallel_breadth=1|protected_paths=mixed",
+  "partitions": {
+    "INPUT": [
+      [
+        "input",
+        "1"
+      ],
+      [
+        "root_r",
+        "1"
+      ]
+    ],
+    "RETURN": [
+      [
+        "branch_1_c",
+        "2"
+      ],
+      [
+        "return",
+        "1"
+      ],
+      [
+        "root_c",
+        "2"
+      ]
+    ],
+    "FORK": [
+      [
+        "branch_1_r",
+        "1"
+      ],
+      [
+        "root_c",
+        "1"
+      ],
+      [
+        "root_r",
+        "2"
+      ]
+    ],
+    "OUTPUT_1": [
+      [
+        "branch_1_c",
+        "1"
+      ],
+      [
+        "branch_1_r",
+        "2"
+      ],
+      [
+        "output_1",
+        "1"
+      ]
+    ]
+  },
+  "terminal_inventory": [
+    [
+      "branch_1_c",
+      "1"
+    ],
+    [
+      "branch_1_c",
+      "2"
+    ],
+    [
+      "branch_1_r",
+      "1"
+    ],
+    [
+      "branch_1_r",
+      "2"
+    ],
+    [
+      "input",
+      "1"
+    ],
+    [
+      "output_1",
+      "1"
+    ],
+    [
+      "return",
+      "1"
+    ],
+    [
+      "root_c",
+      "1"
+    ],
+    [
+      "root_c",
+      "2"
+    ],
+    [
+      "root_r",
+      "1"
+    ],
+    [
+      "root_r",
+      "2"
+    ]
+  ],
+  "path_obligations": [
+    {
+      "id": "root.shunt_path",
+      "from": [
+        "root_r",
+        "2"
+      ],
+      "to": [
+        "root_c",
+        "1"
+      ],
+      "kind": "local_rc",
+      "maximum_span_nm": 80000000
+    },
+    {
+      "id": "branch_1.shunt_path",
+      "from": [
+        "branch_1_r",
+        "2"
+      ],
+      "to": [
+        "branch_1_c",
+        "1"
+      ],
+      "kind": "local_rc",
+      "maximum_span_nm": 80000000
+    },
+    {
+      "id": "root.branch_1.cross",
+      "from": [
+        "root_r",
+        "2"
+      ],
+      "to": [
+        "branch_1_r",
+        "1"
+      ],
+      "kind": "cross_fragment",
+      "maximum_span_nm": 80000000
+    }
+  ],
+  "precedence": [
+    {
+      "source": [
+        "root_r",
+        "2"
+      ],
+      "target": [
+        "branch_1_r",
+        "1"
+      ],
+      "strict_x": true
+    }
+  ]
+}

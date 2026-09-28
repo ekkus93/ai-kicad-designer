@@ -7,8 +7,8 @@ from dataclasses import dataclass, replace
 from .ir import InputError
 from .m2a import PITCH
 from .m2_fragments import FragmentVariant, Point, PortAnchor, Rect
-from .m2_geometry import Gateway, Reservation
-from .m2_semantics import SemanticPlan
+from .m2_geometry import ConductorSegment, Gateway, Reservation, canonical_conductor_tree
+from .m2_semantics import PlacementConflict, SemanticPlan, check_placement_constraints
 
 
 LEFT = 18 * PITCH
@@ -712,6 +712,627 @@ def _pack_shelves(
     return placed, content_width_bound, content_height_bound
 
 
+def _distribution_column_candidate(
+    plan: SemanticPlan,
+    variants: dict[str, tuple[FragmentVariant, ...]],
+    packings: list[Packing],
+) -> Packing | None:
+    """Build a compact vertical tree band from measured producer/consumer cells.
+
+    This is an alternative complete seed.  All coordinates come from measured
+    envelopes and the presentation net inventory; its routes still undergo the
+    ordinary placement, conductor, reservation and observer proofs.
+    """
+    demands = sorted(
+        (
+            net
+            for net in plan.presentation_nets
+            if net.role == "distributive"
+            and net.internally_generated
+            and net.explicit_geometry_required
+            and len(net.producer_fragments) == 1
+            and len(net.fragments) >= 3
+        ),
+        key=lambda net: (-len(net.fragments), net.id),
+    )
+    if not demands or not packings:
+        return None
+    net = demands[0]
+    producer_id = net.producer_fragments[0]
+    consumers = tuple(fragment_id for fragment_id in net.fragments if fragment_id != producer_id)
+    if len(consumers) < 2:
+        return None
+
+    def local_length(choice: FragmentVariant) -> int:
+        segments = (
+            ConductorSegment(first, second, net.id, choice.block.id)
+            for (first, second), wire_net in zip(choice.wires, choice.wire_nets, strict=True)
+            if wire_net == net.id
+        )
+        return canonical_conductor_tree(segments).length
+
+    def approach(choice: FragmentVariant) -> tuple[str, ...]:
+        return tuple(
+            gateway.escape_direction for gateway in choice.gateways if gateway.net == net.id
+        )
+
+    def area(choice: FragmentVariant) -> int:
+        return (choice.envelope[2] - choice.envelope[0]) * (choice.envelope[3] - choice.envelope[1])
+
+    # Divide consumers by measured width.  Narrow consumers share a trunk
+    # column; the remaining wider cells occupy the adjacent band.  This is a
+    # structural placement class for arbitrary consumer counts.
+    baseline = min(
+        packings,
+        key=lambda packing: (
+            sum(
+                local_length(item.fragment)
+                for item in packing.fragments
+                if item.fragment.block.id in net.fragments
+            ),
+            tuple(item.fragment.id for item in packing.fragments),
+        ),
+    )
+    base = {item.fragment.block.id: item for item in baseline.fragments}
+    if any(fragment_id not in base for fragment_id in net.fragments):
+        return None
+    ranked_consumers = sorted(
+        consumers,
+        key=lambda fragment_id: (
+            base[fragment_id].envelope[2] - base[fragment_id].envelope[0],
+            fragment_id,
+        ),
+    )
+    narrow = ranked_consumers[: max(1, (len(consumers) + 1) // 2)]
+    side = ranked_consumers[len(narrow) :]
+    wide = side[-1]
+    side_remainder = side[:-1]
+    chosen = {key: item.fragment for key, item in base.items()}
+    for fragment_id in (producer_id, *side_remainder):
+        left_facing = [choice for choice in variants[fragment_id] if "left" in approach(choice)]
+        if not left_facing:
+            return None
+        chosen[fragment_id] = min(
+            left_facing,
+            key=lambda choice: (
+                local_length(choice),
+                area(choice) if fragment_id != producer_id else 0,
+                choice.id,
+            ),
+        )
+    wide_choices = [choice for choice in variants[wide] if "left" in approach(choice)]
+    if not wide_choices:
+        return None
+    chosen[wide] = min(
+        wide_choices,
+        key=lambda choice: (
+            choice.envelope[3] - choice.envelope[1],
+            choice.id,
+        ),
+    )
+    for fragment_id in narrow:
+        chosen[fragment_id] = min(
+            variants[fragment_id], key=lambda choice: (local_length(choice), choice.id)
+        )
+
+    unrelated = [
+        item
+        for item in baseline.fragments
+        if item.fragment.block.id not in net.fragments and item.fragment.block.kind != "interface"
+    ]
+    anchor = (
+        max(
+            unrelated,
+            key=lambda item: (
+                (item.envelope[2] - item.envelope[0]) * (item.envelope[3] - item.envelope[1]),
+                item.fragment.block.id,
+            ),
+        )
+        if unrelated
+        else None
+    )
+    interfaces = [item for item in baseline.fragments if item.fragment.block.kind == "interface"]
+    placed = dict(base)
+    placed[wide] = _place(
+        chosen[wide],
+        (anchor.envelope[2] + PITCH if anchor else LEFT + PITCH),
+        (anchor.envelope[1] + PITCH if anchor else TOP + PITCH),
+    )
+    placed[producer_id] = _place(
+        chosen[producer_id],
+        placed[wide].envelope[2] + PITCH,
+        max((item.envelope[3] for item in interfaces), default=TOP + PITCH),
+    )
+    # The consumer whose physical package also owns the wide function is the
+    # first local tap below the producer.  This is a package affinity, not an
+    # assumption about component names or the reference net spelling.
+    wide_occurrences = {occurrence[0] for occurrence in chosen[wide].block.occurrences}
+    ordered_narrow = sorted(
+        narrow,
+        key=lambda fragment_id: (
+            not bool(
+                wide_occurrences
+                & {occurrence[0] for occurrence in chosen[fragment_id].block.occurrences}
+            ),
+            fragment_id,
+        ),
+    )
+    prior = placed[producer_id]
+    for fragment_id in ordered_narrow:
+        placed[fragment_id] = _place(
+            chosen[fragment_id],
+            placed[producer_id].envelope[0],
+            prior.envelope[3] + (PITCH if prior is placed[producer_id] else 0),
+        )
+        prior = placed[fragment_id]
+    side_y = placed[wide].envelope[3] + PITCH
+    for fragment_id in side_remainder:
+        width = chosen[fragment_id].envelope[2] - chosen[fragment_id].envelope[0]
+        placed[fragment_id] = _place(
+            chosen[fragment_id],
+            placed[producer_id].envelope[0] - width - PITCH,
+            side_y,
+        )
+        side_y = placed[fragment_id].envelope[3] + PITCH
+    items = tuple(sorted(placed.values(), key=lambda item: item.fragment.block.id))
+    if any(
+        item.envelope[0] < LEFT
+        or item.envelope[1] < TOP
+        or item.envelope[2] > RIGHT
+        or item.envelope[3] > BOTTOM
+        for item in items
+    ):
+        return None
+    if (
+        max(item.content_envelope[2] for item in items)
+        - min(item.content_envelope[0] for item in items)
+        > MAX_CONTENT_WIDTH
+        or max(item.content_envelope[3] for item in items)
+        - min(item.content_envelope[1] for item in items)
+        > MAX_CONTENT_HEIGHT
+    ):
+        return None
+    if any(
+        max(first.envelope[0], second.envelope[0]) < min(first.envelope[2], second.envelope[2])
+        and max(first.envelope[1], second.envelope[1]) < min(first.envelope[3], second.envelope[3])
+        for index, first in enumerate(items)
+        for second in items[index + 1 :]
+    ):
+        return None
+    return Packing(items, baseline.attempts + (f"distribution-column:{net.id}",))
+
+
+def _measured_repack(
+    plan: SemanticPlan,
+    baseline: Packing,
+    target: PlacedFragment,
+    left: int,
+    top: int,
+    label: str,
+) -> Packing | None:
+    """Certify a changed measured placement before spending a route attempt."""
+    moved = _place(target.fragment, left, top)
+    if moved.delta == target.delta:
+        return None
+    items = tuple(moved if item is target else item for item in baseline.fragments)
+    if any(
+        item.envelope[0] < LEFT
+        or item.envelope[1] < TOP
+        or item.envelope[2] > RIGHT
+        or item.envelope[3] > BOTTOM
+        for item in items
+    ):
+        return None
+    if (
+        max(item.content_envelope[2] for item in items)
+        - min(item.content_envelope[0] for item in items)
+        > MAX_CONTENT_WIDTH
+        or max(item.content_envelope[3] for item in items)
+        - min(item.content_envelope[1] for item in items)
+        > MAX_CONTENT_HEIGHT
+    ):
+        return None
+    if any(
+        max(first.envelope[0], second.envelope[0]) < min(first.envelope[2], second.envelope[2])
+        and max(first.envelope[1], second.envelope[1]) < min(first.envelope[3], second.envelope[3])
+        for index, first in enumerate(items)
+        for second in items[index + 1 :]
+    ):
+        return None
+    placed = {item.fragment.block.id: item for item in items}
+    terminal = {item.terminal: item for item in plan.terminals}
+
+    def point(component: str, pin: str) -> Point:
+        obligation = terminal[(component, pin)]
+        item = placed[obligation.owner]
+        origin = item.fragment.positions[obligation.occurrence]
+        angle = item.fragment.angles.get(obligation.occurrence, 0)
+        x, y = obligation.pin_x, -obligation.pin_y
+        dx, dy = {0: (x, y), 90: (y, -x), 180: (-x, -y), 270: (-y, x)}[angle]
+        return origin[0] + item.delta[0] + dx, origin[1] + item.delta[1] + dy
+
+    try:
+        check_placement_constraints(plan, point)
+    except PlacementConflict:
+        return None
+    return Packing(
+        tuple(sorted(items, key=lambda item: item.fragment.block.id)), baseline.attempts + (label,)
+    )
+
+
+def _structural_repack_candidates(plan: SemanticPlan, baseline: Packing) -> tuple[Packing, ...]:
+    """Try functional row compaction and precedence-bound band staggering."""
+    items = baseline.fragments
+    by_id = {item.fragment.block.id: item for item in items}
+    proposals = []
+    functional = [item for item in items if item.fragment.block.function is not None]
+    for target in functional:
+        if target.fragment.block.unused:
+            continue
+        for row_top in sorted({item.envelope[1] for item in functional}):
+            if row_top == target.envelope[1]:
+                continue
+            row = [item for item in items if item is not target and item.envelope[1] == row_top]
+            if row:
+                candidate = _measured_repack(
+                    plan,
+                    baseline,
+                    target,
+                    max(item.envelope[2] for item in row) + PITCH,
+                    row_top,
+                    "functional-row-compaction",
+                )
+                if candidate is not None:
+                    proposals.append(candidate)
+    for obligation in plan.precedence:
+        source = by_id.get(obligation.source_fragment)
+        target = by_id.get(obligation.target_fragment)
+        if source is None or target is None or source is target:
+            continue
+        target_height = target.envelope[3] - target.envelope[1]
+        candidate = _measured_repack(
+            plan,
+            baseline,
+            target,
+            target.envelope[0],
+            source.envelope[3] - target_height // 4,
+            "precedence-staggered-band",
+        )
+        if candidate is not None:
+            proposals.append(candidate)
+    return tuple(proposals)
+
+
+def _band_count(packing: Packing) -> int:
+    tops = sorted(
+        {item.envelope[1] for item in packing.fragments if item.fragment.block.kind != "interface"}
+    )
+    bands = []
+    for top in tops:
+        if not bands or top - bands[-1] > PITCH:
+            bands.append(top)
+    return len(bands)
+
+
+def _partial_beam_candidates(
+    plan: SemanticPlan,
+    variants: dict[str, tuple[FragmentVariant, ...]],
+) -> tuple[Packing, ...]:
+    """Grow measured fragments through four bounded placement classes.
+
+    This fallback keeps independent tall cores separable, so a successor and
+    package cell may backfill beside either core instead of inheriting a rigid
+    full-chain shelf rectangle.  Every retained partial state satisfies all
+    obligations whose terminals have already been placed.
+    """
+    blocks = {block.id: block for block in plan.blocks}
+    predecessors: dict[str, set[str]] = {key: set() for key in variants}
+    for obligation in plan.precedence:
+        if obligation.source_fragment != obligation.target_fragment:
+            predecessors[obligation.target_fragment].add(obligation.source_fragment)
+    priority = {
+        "timer": 0,
+        "power_stage": 0,
+        "rc": 1,
+        "series": 1,
+        "led_branch": 1,
+        "buffer": 2,
+        "noninverting_amplifier": 2,
+        "inverting_amplifier": 2,
+        "sallen_key": 2,
+        "package_power": 3,
+        "reference_divider": 3,
+        "unused_amplifier": 4,
+        "interface": 5,
+    }
+    pending = set(variants)
+    order = []
+    while pending:
+        ready = [key for key in pending if predecessors[key] <= set(order)]
+        if not ready:
+            return ()
+        key = min(
+            ready,
+            key=lambda candidate: (
+                priority.get(blocks[candidate].kind, 4),
+                -max(
+                    (choice.envelope[2] - choice.envelope[0])
+                    * (choice.envelope[3] - choice.envelope[1])
+                    for choice in variants[candidate]
+                ),
+                candidate,
+            ),
+        )
+        order.append(key)
+        pending.remove(key)
+
+    terminal = {item.terminal: item for item in plan.terminals}
+
+    def point(state: dict[str, PlacedFragment], key: tuple[str, str]) -> Point:
+        item = terminal[key]
+        placed = state[item.owner]
+        origin = placed.fragment.positions[item.occurrence]
+        angle = placed.fragment.angles.get(item.occurrence, 0)
+        px, py = item.pin_x, -item.pin_y
+        dx, dy = {
+            0: (px, py),
+            90: (py, -px),
+            180: (-px, -py),
+            270: (-py, px),
+        }[angle]
+        return origin[0] + placed.delta[0] + dx, origin[1] + placed.delta[1] + dy
+
+    def partial_legal(state: dict[str, PlacedFragment]) -> bool:
+        for obligation in plan.precedence:
+            if {obligation.source_fragment, obligation.target_fragment} <= state.keys():
+                first = point(state, obligation.source_terminal)
+                second = point(state, obligation.target_terminal)
+                if second[0] - first[0] < obligation.minimum_x_separation:
+                    return False
+        for obligation in plan.local_spans:
+            owners = {terminal[obligation.first].owner, terminal[obligation.second].owner}
+            if owners <= state.keys():
+                first, second = point(state, obligation.first), point(state, obligation.second)
+                span = abs(first[0] - second[0]) + (
+                    abs(first[1] - second[1]) if obligation.metric == "manhattan" else 0
+                )
+                if span > obligation.maximum:
+                    return False
+        return True
+
+    def fits(state: dict[str, PlacedFragment], item: PlacedFragment) -> bool:
+        if (
+            item.envelope[0] < LEFT
+            or item.envelope[1] < TOP
+            or item.envelope[2] > RIGHT
+            or item.envelope[3] > BOTTOM
+        ):
+            return False
+        if any(
+            max(item.envelope[0], other.envelope[0]) < min(item.envelope[2], other.envelope[2])
+            and max(item.envelope[1], other.envelope[1]) < min(item.envelope[3], other.envelope[3])
+            for other in state.values()
+        ):
+            return False
+        all_items = (*state.values(), item)
+        if (
+            max(value.content_envelope[2] for value in all_items)
+            - min(value.content_envelope[0] for value in all_items)
+            > MAX_CONTENT_WIDTH
+            or max(value.content_envelope[3] for value in all_items)
+            - min(value.content_envelope[1] for value in all_items)
+            > MAX_CONTENT_HEIGHT
+        ):
+            return False
+        return partial_legal({**state, item.fragment.block.id: item})
+
+    def access_penalty(state: dict[str, PlacedFragment]) -> int:
+        penalty = 0
+        for obligation in plan.precedence:
+            if not {obligation.source_fragment, obligation.target_fragment} <= state.keys():
+                continue
+            source = state[obligation.source_fragment]
+            target = state[obligation.target_fragment]
+            source_roles = {port.port.id: port.port.role for port in source.ports}
+            target_roles = {port.port.id: port.port.role for port in target.ports}
+            source_gateways = [
+                gateway
+                for gateway in source.gateways
+                if gateway.net == obligation.net
+                and source_roles[gateway.id] in {"signal_out", "power_out"}
+            ]
+            target_gateways = [
+                gateway
+                for gateway in target.gateways
+                if gateway.net == obligation.net
+                and target_roles[gateway.id] in {"signal_in", "power_in"}
+            ]
+            if not source_gateways or not target_gateways:
+                continue
+            first, second = source_gateways[0], target_gateways[0]
+            if first.point[0] < second.point[0]:
+                penalty += first.escape_direction == "left"
+                penalty += second.escape_direction == "right"
+            elif first.point[0] > second.point[0]:
+                penalty += first.escape_direction == "right"
+                penalty += second.escape_direction == "left"
+        return penalty
+
+    interface_width = max(
+        (
+            min(choice.envelope[2] - choice.envelope[0] for choice in variants[key])
+            for key in variants
+            if blocks[key].kind == "interface"
+        ),
+        default=0,
+    )
+    core_left = LEFT + interface_width + 2 * PITCH
+    beam: list[tuple[dict[str, PlacedFragment], tuple[str, ...]]] = [({}, ())]
+    for key in order:
+        extensions = []
+        choices = sorted(
+            variants[key],
+            key=lambda choice: (
+                choice.envelope[3] - choice.envelope[1],
+                (choice.envelope[2] - choice.envelope[0])
+                * (choice.envelope[3] - choice.envelope[1]),
+                choice.id,
+            ),
+        )[:8]
+        for state, decisions in beam:
+            related = [
+                item
+                for item in state.values()
+                if {occurrence[0] for occurrence in item.fragment.block.occurrences}
+                & {occurrence[0] for occurrence in blocks[key].occurrences}
+            ]
+            parents = [state[parent] for parent in sorted(predecessors[key]) if parent in state]
+            for choice in choices:
+                width = choice.envelope[2] - choice.envelope[0]
+                height = choice.envelope[3] - choice.envelope[1]
+                proposals: list[tuple[str, list[Point]]] = []
+                proposals.append(
+                    (
+                        "aligned",
+                        [(parent.envelope[2] + PITCH, parent.envelope[1]) for parent in parents],
+                    )
+                )
+                noninterfaces = [
+                    item for item in state.values() if item.fragment.block.kind != "interface"
+                ]
+                proposals.append(
+                    (
+                        "lower_band",
+                        [
+                            (
+                                core_left if blocks[key].kind != "interface" else LEFT + PITCH,
+                                max((item.envelope[3] for item in noninterfaces), default=TOP)
+                                + PITCH,
+                            ),
+                            (core_left, TOP + 2 * PITCH),
+                        ],
+                    )
+                )
+                proposals.append(
+                    (
+                        "affinity",
+                        [(item.envelope[0], item.envelope[3] + PITCH) for item in related]
+                        + [
+                            (item.envelope[0], item.envelope[1] - height - PITCH)
+                            for item in related
+                        ],
+                    )
+                )
+                xs = {core_left, LEFT + PITCH} | {
+                    coordinate
+                    for item in state.values()
+                    for coordinate in (item.envelope[0], item.envelope[2] + PITCH)
+                }
+                ys = {TOP + 2 * PITCH} | {
+                    coordinate
+                    for item in state.values()
+                    for coordinate in (item.envelope[1], item.envelope[3] + PITCH)
+                }
+                proposals.append(
+                    (
+                        "backfill",
+                        sorted(
+                            ((x, y) for x in xs for y in ys),
+                            key=lambda value: (
+                                max(value[0] + width, value[1] + height),
+                                value[1],
+                                value[0],
+                            ),
+                        ),
+                    )
+                )
+                for class_name, origins in proposals:
+                    for left, top in origins:
+                        item = _place(choice, left, top)
+                        if fits(state, item):
+                            extended = {**state, key: item}
+                            new_decisions = (*decisions, f"{key}:{class_name}:{choice.id}")
+                            box = (
+                                max(part.content_envelope[2] for part in extended.values())
+                                - min(part.content_envelope[0] for part in extended.values()),
+                                max(part.content_envelope[3] for part in extended.values())
+                                - min(part.content_envelope[1] for part in extended.values()),
+                            )
+                            score = (
+                                access_penalty(extended),
+                                max(box[0] / MAX_CONTENT_WIDTH, box[1] / MAX_CONTENT_HEIGHT),
+                                box[0] * box[1],
+                                box[0],
+                                tuple(new_decisions),
+                            )
+                            extensions.append((score, extended, new_decisions))
+                            break
+        if not extensions:
+            return ()
+        deduplicated = {}
+        for score, state, decisions in sorted(extensions, key=lambda item: item[0]):
+            signature = tuple(
+                (block_id, placed.fragment.id, placed.delta)
+                for block_id, placed in sorted(state.items())
+            )
+            deduplicated.setdefault(signature, (score, state, decisions))
+        ranked = list(deduplicated.values())
+        diverse = []
+        covered_structures = set()
+        for candidate in ranked:
+            _, state, _ = candidate
+            cells = tuple(
+                (key, item)
+                for key, item in sorted(state.items())
+                if item.fragment.block.kind != "interface"
+            )
+            structure = tuple(
+                (
+                    first_key,
+                    second_key,
+                    "same_band"
+                    if max(first.envelope[1], second.envelope[1])
+                    < min(first.envelope[3], second.envelope[3])
+                    else (
+                        "first_above" if first.envelope[3] <= second.envelope[1] else "second_above"
+                    ),
+                    "first_left"
+                    if first.envelope[2] <= second.envelope[0]
+                    else (
+                        "second_left" if second.envelope[2] <= first.envelope[0] else "x_overlap"
+                    ),
+                )
+                for index, (first_key, first) in enumerate(cells)
+                for second_key, second in cells[index + 1 :]
+            )
+            if structure in covered_structures:
+                continue
+            covered_structures.add(structure)
+            diverse.append(candidate)
+            if len(diverse) == CANDIDATE_BUDGET:
+                break
+        if len(diverse) < CANDIDATE_BUDGET:
+            diverse_ids = {id(item) for item in diverse}
+            diverse.extend(item for item in ranked if id(item) not in diverse_ids)
+        beam = [(state, decisions) for _, state, decisions in diverse[:CANDIDATE_BUDGET]]
+    complete = []
+    for state, decisions in beam:
+        items = tuple(sorted(state.values(), key=lambda item: item.fragment.block.id))
+        width = max(item.content_envelope[2] for item in items) - min(
+            item.content_envelope[0] for item in items
+        )
+        height = max(item.content_envelope[3] for item in items) - min(
+            item.content_envelope[1] for item in items
+        )
+        complete.append(
+            Packing(
+                items,
+                ("partial-beam", *decisions, f"partial-beam:pass:measured={width}x{height}"),
+            )
+        )
+    return tuple(complete)
+
+
 def pack_fragment_candidates(
     plan: SemanticPlan, variants: dict[str, tuple[FragmentVariant, ...]]
 ) -> tuple[Packing, ...]:
@@ -1026,10 +1647,59 @@ def pack_fragment_candidates(
             )
         )
         if len(successful) == CANDIDATE_BUDGET:
-            return tuple(successful)
+            break
 
     if successful:
-        return tuple(successful)
+        extras = []
+        distribution = _distribution_column_candidate(plan, variants, successful)
+        if distribution is not None and all(
+            tuple((item.fragment.id, item.delta) for item in distribution.fragments)
+            != tuple((item.fragment.id, item.delta) for item in candidate.fragments)
+            for candidate in successful
+        ):
+            extras.append(distribution)
+        structural = _structural_repack_candidates(plan, successful[0])
+        for label in ("functional-row-compaction", "precedence-staggered-band"):
+            candidate = next((item for item in structural if item.attempts[-1] == label), None)
+            if candidate is not None:
+                extras.append(candidate)
+        # Shelf success alone does not prove structural coverage.  A shared
+        # internally generated net with several physical islands can need an
+        # interleaved partial placement to meet its whole-net length bound.
+        distribution_demand = any(
+            net.internally_generated and net.explicit_geometry_required and len(net.fragments) >= 4
+            for net in plan.presentation_nets
+        )
+        noninterface_count = sum(
+            item.fragment.block.kind != "interface" for item in successful[0].fragments
+        )
+        needs_band_alternative = (
+            noninterface_count >= 2
+            and len({_band_count(item) for item in (*successful[:4], *extras)}) == 1
+        )
+        if distribution_demand or needs_band_alternative:
+            partial = _partial_beam_candidates(plan, variants)
+            if partial:
+                baseline_bands = _band_count(successful[0])
+                diverse = next(
+                    (item for item in partial if _band_count(item) != baseline_bands), partial[0]
+                )
+                extras.append(diverse)
+        ordered = [successful[0], *extras, *successful[1:]]
+        seen = set()
+        deduped = []
+        for item in ordered:
+            identity = tuple((placed.fragment.id, placed.delta) for placed in item.fragments)
+            if identity not in seen:
+                seen.add(identity)
+                deduped.append(item)
+            if len(deduped) == CANDIDATE_BUDGET:
+                break
+        return tuple(deduped)
+
+    partial = _partial_beam_candidates(plan, variants)
+    if partial:
+        return partial
 
     raise InputError(
         f"PACK_BUDGET_EXHAUSTED: candidates={len(attempts)}/{CANDIDATE_BUDGET} "

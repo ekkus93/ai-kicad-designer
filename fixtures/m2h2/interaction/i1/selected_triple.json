@@ -1,0 +1,425 @@
+{
+  "profile": "m2b.1",
+  "id": "m2h2_i1_selected_triple",
+  "name": "M2h2I1SelectedTriple",
+  "components": [
+    {
+      "id": "input",
+      "refdes": "J1",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Signal input"
+    },
+    {
+      "id": "return",
+      "refdes": "J2",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Common return"
+    },
+    {
+      "id": "output",
+      "refdes": "J3",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Buffered output"
+    },
+    {
+      "id": "branch_output",
+      "refdes": "J4",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Passive branch"
+    },
+    {
+      "id": "positive",
+      "refdes": "J5",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Positive supply"
+    },
+    {
+      "id": "negative",
+      "refdes": "J6",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Negative supply"
+    },
+    {
+      "id": "reference",
+      "refdes": "J7",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "External reference"
+    },
+    {
+      "id": "root_r",
+      "refdes": "R1",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "root_c",
+      "refdes": "C1",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "intermediate_r",
+      "refdes": "R2",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "intermediate_c",
+      "refdes": "C2",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "sibling_r",
+      "refdes": "R3",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "sibling_c",
+      "refdes": "C3",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "stage",
+      "refdes": "U1",
+      "asset": "Amplifier_Operational:NE5532",
+      "value": "NE5532",
+      "functions": [
+        {
+          "id": "a",
+          "role": "buffer",
+          "unit": 1,
+          "pins": {
+            "out": "1",
+            "minus": "2",
+            "plus": "3"
+          }
+        },
+        {
+          "id": "b",
+          "role": "parked_buffer",
+          "unit": 2,
+          "pins": {
+            "out": "7",
+            "minus": "6",
+            "plus": "5"
+          }
+        },
+        {
+          "id": "power",
+          "role": "supply",
+          "unit": 3,
+          "pins": {
+            "negative": "4",
+            "positive": "8"
+          }
+        }
+      ]
+    },
+    {
+      "id": "stage_cpos",
+      "refdes": "C4",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "stage_cneg",
+      "refdes": "C5",
+      "asset": "Device:C",
+      "value": "100n"
+    }
+  ],
+  "nets": [
+    {
+      "id": "INPUT",
+      "members": [
+        [
+          "input",
+          "1"
+        ],
+        [
+          "root_r",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "RETURN",
+      "members": [
+        [
+          "return",
+          "1"
+        ],
+        [
+          "root_c",
+          "2"
+        ],
+        [
+          "intermediate_c",
+          "2"
+        ],
+        [
+          "sibling_c",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "OUT",
+      "members": [
+        [
+          "output",
+          "1"
+        ],
+        [
+          "stage",
+          "1"
+        ],
+        [
+          "stage",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "VPLUS",
+      "members": [
+        [
+          "positive",
+          "1"
+        ],
+        [
+          "stage",
+          "8"
+        ],
+        [
+          "stage_cpos",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "VMINUS",
+      "members": [
+        [
+          "negative",
+          "1"
+        ],
+        [
+          "stage",
+          "4"
+        ],
+        [
+          "stage_cneg",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "VREF",
+      "members": [
+        [
+          "reference",
+          "1"
+        ],
+        [
+          "stage",
+          "5"
+        ],
+        [
+          "stage_cpos",
+          "2"
+        ],
+        [
+          "stage_cneg",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "MID",
+      "members": [
+        [
+          "root_r",
+          "2"
+        ],
+        [
+          "root_c",
+          "1"
+        ],
+        [
+          "intermediate_r",
+          "1"
+        ],
+        [
+          "sibling_r",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "FILTERED",
+      "members": [
+        [
+          "intermediate_r",
+          "2"
+        ],
+        [
+          "intermediate_c",
+          "1"
+        ],
+        [
+          "stage",
+          "3"
+        ]
+      ]
+    },
+    {
+      "id": "BRANCH_OUT",
+      "members": [
+        [
+          "sibling_r",
+          "2"
+        ],
+        [
+          "sibling_c",
+          "1"
+        ],
+        [
+          "branch_output",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "STAGE_PARK",
+      "members": [
+        [
+          "stage",
+          "7"
+        ],
+        [
+          "stage",
+          "6"
+        ]
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "root.series",
+      "kind": "series",
+      "component": "root_r",
+      "input": "INPUT",
+      "output": "MID"
+    },
+    {
+      "id": "root.shunt",
+      "kind": "shunt",
+      "component": "root_c",
+      "node": "MID",
+      "reference": "RETURN"
+    },
+    {
+      "id": "intermediate.series",
+      "kind": "series",
+      "component": "intermediate_r",
+      "input": "MID",
+      "output": "FILTERED"
+    },
+    {
+      "id": "intermediate.shunt",
+      "kind": "shunt",
+      "component": "intermediate_c",
+      "node": "FILTERED",
+      "reference": "RETURN"
+    },
+    {
+      "id": "sibling.series",
+      "kind": "series",
+      "component": "sibling_r",
+      "input": "MID",
+      "output": "BRANCH_OUT"
+    },
+    {
+      "id": "sibling.shunt",
+      "kind": "shunt",
+      "component": "sibling_c",
+      "node": "BRANCH_OUT",
+      "reference": "RETURN"
+    },
+    {
+      "id": "stage.loop",
+      "kind": "feedback",
+      "component": "stage",
+      "function": "a",
+      "source": "1",
+      "sense": "2",
+      "net": "OUT",
+      "polarity": "negative"
+    },
+    {
+      "id": "stage.stage",
+      "kind": "amplifier",
+      "component": "stage",
+      "function": "a",
+      "input": "FILTERED",
+      "output": "OUT",
+      "reference": "VREF"
+    },
+    {
+      "id": "stage.park",
+      "kind": "amplifier",
+      "component": "stage",
+      "function": "b",
+      "input": "VREF",
+      "output": "STAGE_PARK",
+      "unused": true
+    },
+    {
+      "id": "stage.park_loop",
+      "kind": "feedback",
+      "component": "stage",
+      "function": "b",
+      "source": "7",
+      "sense": "6",
+      "net": "STAGE_PARK",
+      "polarity": "negative"
+    },
+    {
+      "id": "stage.rails",
+      "kind": "power_rails",
+      "component": "stage",
+      "unit": 3,
+      "positive": "VPLUS",
+      "negative": "VMINUS",
+      "reference": "VREF"
+    },
+    {
+      "id": "stage.cpos",
+      "kind": "decoupling",
+      "component": "stage_cpos",
+      "consumer": [
+        "stage",
+        "8"
+      ],
+      "supply": "VPLUS",
+      "return": "VREF"
+    },
+    {
+      "id": "stage.cneg",
+      "kind": "decoupling",
+      "component": "stage_cneg",
+      "consumer": [
+        "stage",
+        "4"
+      ],
+      "supply": "VREF",
+      "return": "VMINUS"
+    }
+  ],
+  "no_connects": [],
+  "power_assertions": []
+}

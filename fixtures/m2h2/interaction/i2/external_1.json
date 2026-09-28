@@ -1,0 +1,100 @@
+{
+  "profile": "m2b.1",
+  "id": "m2h2_i2_external_1",
+  "name": "M2h2I2External1",
+  "components": [
+    {
+      "id": "input",
+      "refdes": "J1",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Signal input"
+    },
+    {
+      "id": "bias",
+      "refdes": "J2",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "External bias"
+    },
+    {
+      "id": "consumer_1_r",
+      "refdes": "R1",
+      "asset": "Device:R",
+      "value": "1k"
+    },
+    {
+      "id": "consumer_1_c",
+      "refdes": "C1",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "output_1",
+      "refdes": "J3",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Output 1"
+    }
+  ],
+  "nets": [
+    {
+      "id": "INPUT",
+      "members": [
+        [
+          "input",
+          "1"
+        ],
+        [
+          "consumer_1_r",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "BIAS",
+      "members": [
+        [
+          "bias",
+          "1"
+        ],
+        [
+          "consumer_1_c",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "OUTPUT_1",
+      "members": [
+        [
+          "consumer_1_r",
+          "2"
+        ],
+        [
+          "consumer_1_c",
+          "1"
+        ],
+        [
+          "output_1",
+          "1"
+        ]
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "consumer_1.series",
+      "kind": "series",
+      "component": "consumer_1_r",
+      "input": "INPUT",
+      "output": "OUTPUT_1"
+    },
+    {
+      "id": "consumer_1.shunt",
+      "kind": "shunt",
+      "component": "consumer_1_c",
+      "node": "OUTPUT_1",
+      "reference": "BIAS"
+    }
+  ],
+  "no_connects": [],
+  "power_assertions": []
+}

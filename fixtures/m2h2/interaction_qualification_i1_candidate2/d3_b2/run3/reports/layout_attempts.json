@@ -1,0 +1,145 @@
+[
+  {
+    "seed": 0,
+    "round": 0,
+    "operation": "initial",
+    "result": "rejected",
+    "failure_class": "local_span_violation",
+    "conflict": "LOCAL_SPAN_VIOLATION: span.precedence.passive.prefix_2.series.output.passive.branch_2.series.input actual=87630000 limit=80000000 owners=passive.prefix_2.series,passive.branch_2.series",
+    "net": null,
+    "actual": 87630000,
+    "limit": 80000000,
+    "repair_state_changed": false,
+    "reservation_growth": null,
+    "substitution": null
+  },
+  {
+    "seed": 0,
+    "round": 1,
+    "operation": "route_retry",
+    "result": "not_applicable",
+    "failure_class": "local_span_violation"
+  },
+  {
+    "seed": 0,
+    "round": 2,
+    "operation": "structural_repair",
+    "result": "rejected",
+    "failure_class": "canonical_net_length",
+    "conflict": "ROUTE_LENGTH_LOWER_BOUND: net=MID_2 lower_bound=266700000 limit=250000000",
+    "net": "MID_2",
+    "actual": 266700000,
+    "limit": 250000000,
+    "repair_state_changed": true,
+    "reservation_growth": null,
+    "substitution": {
+      "kind": "local_span_violation",
+      "obligation": "span.precedence.passive.prefix_2.series.output.passive.branch_2.series.input",
+      "fragment": "passive.branch_2.series",
+      "from": [
+        99060000,
+        76200000
+      ],
+      "to": [
+        71120000,
+        76200000
+      ],
+      "changed_terminal_count": 12
+    }
+  },
+  {
+    "seed": 0,
+    "round": 3,
+    "operation": "bounded_repair",
+    "result": "rejected",
+    "failure_class": "local_span_violation",
+    "conflict": "LOCAL_SPAN_VIOLATION: span.precedence.passive.prefix_2.series.output.passive.branch_2.series.input actual=87630000 limit=80000000 owners=passive.prefix_2.series,passive.branch_2.series",
+    "net": null,
+    "actual": 87630000,
+    "limit": 80000000,
+    "repair_state_changed": true,
+    "reservation_growth": null,
+    "substitution": {
+      "block": "passive.branch_1.series",
+      "from": "passive.branch_1.series.v0",
+      "to": "passive.branch_1.series.v2",
+      "net": "MID_2"
+    }
+  },
+  {
+    "seed": 1,
+    "round": 0,
+    "operation": "initial",
+    "result": "rejected",
+    "failure_class": "local_span_violation",
+    "conflict": "LOCAL_SPAN_VIOLATION: span.precedence.passive.prefix_2.series.output.passive.branch_2.series.input actual=87630000 limit=80000000 owners=passive.prefix_2.series,passive.branch_2.series",
+    "net": null,
+    "actual": 87630000,
+    "limit": 80000000,
+    "repair_state_changed": false,
+    "reservation_growth": null,
+    "substitution": null
+  },
+  {
+    "seed": 1,
+    "round": 1,
+    "operation": "route_retry",
+    "result": "not_applicable",
+    "failure_class": "local_span_violation"
+  },
+  {
+    "seed": 1,
+    "round": 2,
+    "operation": "structural_repair",
+    "result": "rejected",
+    "failure_class": "canonical_net_length",
+    "conflict": "ROUTE_LENGTH_LOWER_BOUND: net=MID_2 lower_bound=266700000 limit=250000000",
+    "net": "MID_2",
+    "actual": 266700000,
+    "limit": 250000000,
+    "repair_state_changed": true,
+    "reservation_growth": null,
+    "substitution": {
+      "kind": "local_span_violation",
+      "obligation": "span.precedence.passive.prefix_2.series.output.passive.branch_2.series.input",
+      "fragment": "passive.branch_2.series",
+      "from": [
+        99060000,
+        76200000
+      ],
+      "to": [
+        71120000,
+        76200000
+      ],
+      "changed_terminal_count": 12
+    }
+  },
+  {
+    "seed": 1,
+    "round": 3,
+    "operation": "bounded_repair",
+    "result": "rejected",
+    "failure_class": "blocked_gateway",
+    "conflict": "ROUTE_BLOCKED: net=MID_2 gateways=passive.branch_1.series.input taps=5 states=4",
+    "net": "MID_2",
+    "actual": null,
+    "limit": null,
+    "repair_state_changed": true,
+    "reservation_growth": null,
+    "substitution": {
+      "block": "passive.branch_1.series",
+      "from": "passive.branch_1.series.v0",
+      "to": "passive.branch_1.series.v3",
+      "net": "MID_2"
+    }
+  },
+  {
+    "seed": 2,
+    "round": 0,
+    "operation": "initial",
+    "result": "pass",
+    "repair_state_changed": false,
+    "reservation_growth": null,
+    "substitution": null
+  }
+]

@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-import re
 
 from .ir import InputError
-from .m2a import PITCH, Scene
+from .m2_conflicts import ConflictKind, TypedConflict
+from .m2a import PITCH, Scene, certify_scene_geometry, certify_scene_inputs
 from .m2b import Draft, measure
 from .m2_fragments import fragment_variants
 from .m2_geometry import (
@@ -15,6 +15,8 @@ from .m2_geometry import (
     Reservation,
     canonical_conductor_tree,
     prove_conductor_graph,
+    prove_no_cross_net_contacts,
+    prove_reservation_allocation,
 )
 from .m2_pack import (
     BOTTOM,
@@ -27,7 +29,7 @@ from .m2_pack import (
     _place,
     pack_fragment_candidates,
 )
-from .m2_route import route_between_fragments
+from .m2_route import RouteBlockedConflict, _crosses, route_between_fragments
 from .m2_semantics import PlacementConflict, check_placement_constraints, semantic_plan
 
 
@@ -37,6 +39,7 @@ class ConductorLengthConflict(InputError):
     kind = "canonical_net_length"
 
     def __init__(self, net: str, actual: int, local: int, global_length: int):
+        self.category = ConflictKind.CANONICAL_LENGTH
         self.net = net
         self.actual = actual
         self.local = local
@@ -49,9 +52,14 @@ class ConductorLengthConflict(InputError):
 
 
 def _distribution_repack(
-    design, resolved, plan, packing: Packing, conflict: ConductorLengthConflict
+    design,
+    resolved,
+    plan,
+    packing: Packing,
+    conflict: ConductorLengthConflict | RouteBlockedConflict | TypedConflict,
+    steps_left: int = 3,
 ):
-    """Relocate a typed producer toward its consumer gateways within fixed bounds."""
+    """Move the blocked island or the outermost distribution island inward."""
     connected = [
         (item, gateway)
         for item in packing.fragments
@@ -60,37 +68,26 @@ def _distribution_repack(
     ]
     if len(connected) < 2:
         raise InputError(f"DISTRIBUTION_REPAIR_UNAVAILABLE: {conflict.net}")
-    roles = {port.id: port.role for block in plan.blocks for port in block.ports}
-    producers = [
-        (item, gateway) for item, gateway in connected if roles.get(gateway.id) == "power_out"
-    ]
-    if producers:
-        target = min(producers, key=lambda pair: pair[0].fragment.block.id)[0]
+    blocked = (
+        next(
+            (item for item, gateway in connected if gateway.id in conflict.gateways),
+            None,
+        )
+        if isinstance(conflict, RouteBlockedConflict)
+        else None
+    )
+    if blocked is not None:
+        target = blocked
     else:
-        # A reference divider is an authored producer even when the net has no
-        # directed power port. Otherwise use the most constrained island.
-        divider_ids = {
-            relation["id"]
-            for relation in design["relationships"]
-            if relation["kind"] == "reference_divider" and relation["local"] == conflict.net
-        }
-        authored = [
-            (item, gateway)
-            for item, gateway in connected
-            if divider_ids & set(item.fragment.block.relationships)
-        ]
-        if authored:
-            target = min(authored, key=lambda pair: pair[0].fragment.block.id)[0]
-        else:
-            center_x = sum(gateway.point[0] for _, gateway in connected) // len(connected)
-            center_y = sum(gateway.point[1] for _, gateway in connected) // len(connected)
-            target = max(
-                connected,
-                key=lambda pair: (
-                    abs(pair[1].point[0] - center_x) + abs(pair[1].point[1] - center_y),
-                    pair[0].fragment.block.id,
-                ),
-            )[0]
+        center_x = sum(gateway.point[0] for _, gateway in connected) // len(connected)
+        center_y = sum(gateway.point[1] for _, gateway in connected) // len(connected)
+        target = max(
+            connected,
+            key=lambda pair: (
+                abs(pair[1].point[0] - center_x) + abs(pair[1].point[1] - center_y),
+                pair[0].fragment.block.id,
+            ),
+        )[0]
     other = [item for item in packing.fragments if item is not target]
     gateway = next(gateway for item, gateway in connected if item is target)
     baseline_box = (
@@ -157,6 +154,23 @@ def _distribution_repack(
             )
             if box >= baseline_box:
                 continue
+            local_wires = [
+                (
+                    net,
+                    (first[0] + item.delta[0], first[1] + item.delta[1]),
+                    (second[0] + item.delta[0], second[1] + item.delta[1]),
+                )
+                for item in changed
+                for (first, second), net in zip(
+                    item.fragment.wires, item.fragment.wire_nets, strict=True
+                )
+            ]
+            if any(
+                first_net != second_net and _crosses(a, b, c, d)
+                for index, (first_net, a, b) in enumerate(local_wires)
+                for second_net, c, d in local_wires[index + 1 :]
+            ):
+                continue
             positions = {
                 key: (point[0] + item.delta[0], point[1] + item.delta[1])
                 for item in changed
@@ -172,7 +186,8 @@ def _distribution_repack(
     if not candidates:
         raise InputError(f"DISTRIBUTION_REPAIR_EXHAUSTED: {conflict.net}")
     box, _, _, changed, moved = min(candidates, key=lambda item: item[:3])
-    return Packing(changed, packing.attempts + (f"distribution:{conflict.net}",)), {
+    repaired = Packing(changed, packing.attempts + (f"distribution:{conflict.net}",))
+    decision = {
         "kind": conflict.kind,
         "net": conflict.net,
         "fragment": target.fragment.block.id,
@@ -181,6 +196,20 @@ def _distribution_repack(
         "gateway_bbox_before_nm": baseline_box,
         "gateway_bbox_after_nm": box,
     }
+    if steps_left > 1 and isinstance(conflict, ConductorLengthConflict):
+        try:
+            further, next_decision = _distribution_repack(
+                design, resolved, plan, repaired, conflict, steps_left - 1
+            )
+        except InputError:
+            pass
+        else:
+            return further, {
+                "kind": conflict.kind,
+                "net": conflict.net,
+                "moves": [decision, next_decision],
+            }
+    return repaired, decision
 
 
 def _structural_repack(design, resolved, plan, packing: Packing, conflict: PlacementConflict):
@@ -299,11 +328,14 @@ def _structural_repack(design, resolved, plan, packing: Packing, conflict: Place
     raise InputError(f"STRUCTURAL_REPAIR_EXHAUSTED: {conflict.obligation}")
 
 
-def _substitution_repack(plan, variants, packing: Packing, conflict: str, ordinal: int):
-    match = re.search(r"net=([^ ]+)", conflict)
-    if match is None:
-        return packing, None
-    net = match.group(1)
+def _substitution_repack(
+    plan,
+    variants,
+    packing: Packing,
+    conflict: ConductorLengthConflict | RouteBlockedConflict | TypedConflict,
+    ordinal: int,
+):
+    net = conflict.net
     current = {item.fragment.block.id: item.fragment for item in packing.fragments}
     incident = {
         block_id
@@ -311,6 +343,12 @@ def _substitution_repack(plan, variants, packing: Packing, conflict: str, ordina
         if edge.net == net
         for block_id in (edge.source, edge.target)
     }
+    incident.update(
+        fragment_id
+        for presentation in plan.presentation_nets
+        if presentation.id == net
+        for fragment_id in presentation.fragments
+    )
 
     def signature(variant):
         return tuple(
@@ -327,7 +365,7 @@ def _substitution_repack(plan, variants, packing: Packing, conflict: str, ordina
         if choice.id != current[block_id].id and signature(choice) != signature(current[block_id])
     ]
     if not options:
-        return packing, None
+        raise InputError(f"VARIANT_REPAIR_EXHAUSTED: {net}")
     block_id, choice = options[ordinal % len(options)]
     restricted = {
         key: ((choice,) if key == block_id else (current[key],)) for key in sorted(current)
@@ -341,17 +379,16 @@ def _substitution_repack(plan, variants, packing: Packing, conflict: str, ordina
     }
 
 
-def _reservation_growth_repack(plan, packing: Packing, conflict: str, ordinal: int):
+def _reservation_growth_repack(
+    plan, packing: Packing, conflict: RouteBlockedConflict, ordinal: int
+):
     """Apply the one bounded, witnessed reservation-growth repair.
 
     Route failures name the affected net.  Grow the first incident gateway's
     packing side by exactly one pitch and retain that extra channel reservation
     in the immutable replacement variant before repacking every fragment.
     """
-    match = re.search(r"net=([^ ]+)", conflict)
-    if match is None:
-        return packing, None
-    net = match.group(1)
+    net = conflict.net
     current = {item.fragment.block.id: item.fragment for item in packing.fragments}
     candidates = sorted(
         (block_id, gateway)
@@ -360,8 +397,9 @@ def _reservation_growth_repack(plan, packing: Packing, conflict: str, ordinal: i
         if gateway.net == net
     )
     if not candidates:
-        return packing, None
-    block_id, gateway = candidates[ordinal % len(candidates)]
+        raise InputError(f"RESERVATION_GROWTH_NO_GATEWAY: {net}")
+    blocked = [item for item in candidates if item[1].id in conflict.gateways]
+    block_id, gateway = (blocked or candidates)[ordinal % len(blocked or candidates)]
     fragment = current[block_id]
     left, top, right, bottom = fragment.envelope
     gl, gt, gr, gb = (
@@ -386,6 +424,8 @@ def _reservation_growth_repack(plan, packing: Packing, conflict: str, ordinal: i
     else:
         new_envelope = (left, top, right, max(bottom, gb + PITCH))
         channel_rect = (gl - PITCH, gt, gr + PITCH, gb + PITCH)
+    if new_envelope == fragment.envelope:
+        raise InputError(f"RESERVATION_GROWTH_NO_CHANGE: {gateway.id}")
     grown = replace(
         fragment,
         id=f"{fragment.id}.growth-{gateway.id.rsplit('.', 1)[-1]}",
@@ -415,7 +455,7 @@ def _reservation_growth_repack(plan, packing: Packing, conflict: str, ordinal: i
         "old_envelope": list(fragment.envelope),
         "new_envelope": list(new_envelope),
         "growth_nm": PITCH,
-        "witness": conflict,
+        "witness": str(conflict),
     }
 
 
@@ -488,7 +528,11 @@ def _assemble_candidate(design: dict, resolved: dict, plan, packing: Packing, re
         fragment, delta = placed.fragment, placed.delta
         for key, point in fragment.positions.items():
             if key in draft.positions:
-                raise InputError(f"COMPOSE_GEOMETRY_OWNER_CONFLICT: {key}")
+                raise TypedConflict(
+                    ConflictKind.OWNERSHIP,
+                    f"COMPOSE_GEOMETRY_OWNER_CONFLICT: {key}",
+                    owners=(key[0],),
+                )
             draft.positions[key] = _translate(point, delta)
         draft.angles.update(fragment.angles)
         draft.text_positions.update(
@@ -526,6 +570,7 @@ def _assemble_candidate(design: dict, resolved: dict, plan, packing: Packing, re
 
     route_trees = route_between_fragments(plan, packing.fragments, retry_index=retry)
     for tree in route_trees:
+        reservations.extend(tree.planned_corridors)
         conductors.extend(
             ConductorSegment(first, second, tree.net, tree.owner, provenance)
             for (first, second), provenance in zip(
@@ -533,23 +578,6 @@ def _assemble_candidate(design: dict, resolved: dict, plan, packing: Packing, re
             )
         )
         for index, (first, second) in enumerate(tree.segments):
-            rect = (
-                min(first[0], second[0]) - 250_000,
-                min(first[1], second[1]) - 250_000,
-                max(first[0], second[0]) + 250_000,
-                max(first[1], second[1]) + 250_000,
-            )
-            reservations.append(
-                Reservation(
-                    f"route.{tree.net}.{index}",
-                    "channel",
-                    tree.owner,
-                    "global_route",
-                    rect,
-                    tree.net,
-                    1,
-                )
-            )
             occupied.append(
                 GeometryItem(
                     f"route.{tree.net}.{index}",
@@ -561,33 +589,63 @@ def _assemble_candidate(design: dict, resolved: dict, plan, packing: Packing, re
                         max(first[0], second[0]),
                         max(first[1], second[1]),
                     ),
-                    tree.segment_provenance[index],
+                    (tree.net, *tree.segment_provenance[index]),
                 )
             )
 
     canonical_trees = []
+    pruned_route_leaves: dict[str, int] = {}
     for net in sorted({segment.net for segment in conductors}):
-        canonical_trees.append(
-            canonical_conductor_tree(
-                (segment for segment in conductors if segment.net == net),
-                junctions=(
-                    *draft.junctions,
-                    *(point for tree in route_trees for point in tree.junctions),
-                ),
-                pins=(
-                    draft.point(component["id"], pin.number)
-                    for component in design["components"]
-                    for unit, pins in resolved[component["asset"]].units.items()
-                    if (component["id"], unit) in draft.positions
-                    for pin in pins
-                    if any(
-                        net_item["id"] == net
-                        and [component["id"], pin.number] in net_item["members"]
-                        for net_item in design["nets"]
-                    )
-                ),
+        pins = tuple(
+            draft.point(component["id"], pin.number)
+            for component in design["components"]
+            for unit, unit_pins in resolved[component["asset"]].units.items()
+            if (component["id"], unit) in draft.positions
+            for pin in unit_pins
+            if any(
+                net_item["id"] == net and [component["id"], pin.number] in net_item["members"]
+                for net_item in design["nets"]
             )
         )
+        required_contacts = (
+            set(pins)
+            | {point for label_net, point in draft.labels if label_net == net}
+            | {
+                gateway.point
+                for item in packing.fragments
+                for gateway in item.gateways
+                if gateway.net == net
+            }
+        )
+        net_segments = tuple(segment for segment in conductors if segment.net == net)
+        removed = 0
+        while True:
+            tree = canonical_conductor_tree(
+                net_segments,
+                junctions=(
+                    *draft.junctions,
+                    *(point for route in route_trees for point in route.junctions),
+                ),
+                pins=pins,
+            )
+            redundant = {
+                segment
+                for segment in tree.segments
+                if any(
+                    tree.degree.get(point) == 1 and point not in required_contacts
+                    for point in (segment.start, segment.end)
+                )
+            }
+            if not redundant:
+                break
+            net_segments = tuple(segment for segment in tree.segments if segment not in redundant)
+            removed += len(redundant)
+            if not net_segments:
+                raise InputError(f"CONDUCTOR_NET_MISSING: {net}")
+        if removed:
+            pruned_route_leaves[net] = removed
+        canonical_trees.append(tree)
+    conductors = [segment for tree in canonical_trees for segment in tree.segments]
     assertion_points = {}
     for assertion in design["power_assertions"]:
         candidates = sorted(point for net, point in draft.labels if net == assertion["net"])
@@ -624,7 +682,7 @@ def _assemble_candidate(design: dict, resolved: dict, plan, packing: Packing, re
                         gateway.point
                         for item in packing.fragments
                         for gateway in item.gateways
-                        if gateway.net == tree.net
+                        if gateway.net == tree.net and not presentation.explicit_geometry_required
                     ),
                     *(
                         assertion_points[assertion["id"]]
@@ -637,6 +695,16 @@ def _assemble_candidate(design: dict, resolved: dict, plan, packing: Packing, re
     missing_nets = set(presentation_by_net) - {tree.net for tree in canonical_trees}
     if missing_nets:
         raise InputError(f"CONDUCTOR_NET_MISSING: {sorted(missing_nets)}")
+    prove_no_cross_net_contacts(conductors)
+    terminal_inventory = {item.terminal for item in plan.terminals if item.net}
+    proved_terminals = {
+        terminal for proof in net_proofs for terminal, _ in proof.terminal_components
+    }
+    if terminal_inventory != proved_terminals:
+        raise InputError(
+            f"COMPOSE_TERMINAL_INVENTORY: missing={sorted(terminal_inventory - proved_terminals)} "
+            f"extra={sorted(proved_terminals - terminal_inventory)}"
+        )
     excessive = [tree for tree in canonical_trees if tree.length > 250_000_000]
     if excessive:
         worst = max(excessive, key=lambda tree: (tree.length, tree.net))
@@ -663,9 +731,11 @@ def _assemble_candidate(design: dict, resolved: dict, plan, packing: Packing, re
     expected = set(plan.owners)
     actual = {key for key in draft.positions if key[0] in component_ids}
     if actual != expected:
-        raise InputError(
+        raise TypedConflict(
+            ConflictKind.OWNERSHIP,
             f"COMPOSE_OWNER_INCOMPLETE: missing={sorted(expected - actual)} "
-            f"extra={sorted(actual - expected)}"
+            f"extra={sorted(actual - expected)}",
+            owners=tuple(sorted({item[0] for item in expected ^ actual})),
         )
     for assertion in design["power_assertions"]:
         point = assertion_points[assertion["id"]]
@@ -711,15 +781,7 @@ def _assemble_candidate(design: dict, resolved: dict, plan, packing: Packing, re
             )
         )
 
-    if not all(
-        any(reservation.contains(item.rect) for reservation in reservations) for item in occupied
-    ):
-        missing = sorted(
-            item.id
-            for item in occupied
-            if not any(reservation.contains(item.rect) for reservation in reservations)
-        )
-        raise InputError(f"RESERVATION_GROWTH: uncovered={missing}")
+    allocation_witnesses = prove_reservation_allocation(occupied, reservations)
     final_rect = (
         min(item.rect[0] for item in occupied),
         min(item.rect[1] for item in occupied),
@@ -734,15 +796,41 @@ def _assemble_candidate(design: dict, resolved: dict, plan, packing: Packing, re
         or final_rect[2] > 276_680_000
         or final_rect[3] > 184_600_000
     ):
-        raise InputError(f"PAGE_CONTENT_OVERFLOW: final={final_rect}")
+        raise TypedConflict(
+            ConflictKind.PAGE_SPREAD,
+            f"PAGE_CONTENT_OVERFLOW: final={final_rect}",
+            offending_geometry=(final_rect,),
+        )
     final_width = final_rect[2] - final_rect[0]
     final_height = final_rect[3] - final_rect[1]
     if final_width > MAX_CONTENT_WIDTH or final_height > MAX_CONTENT_HEIGHT:
-        raise InputError(
+        raise TypedConflict(
+            ConflictKind.PAGE_SPREAD,
             f"SPREAD_OVERFLOW: actual={final_width}x{final_height} "
-            f"threshold={MAX_CONTENT_WIDTH}x{MAX_CONTENT_HEIGHT}"
+            f"threshold={MAX_CONTENT_WIDTH}x{MAX_CONTENT_HEIGHT}",
+            offending_geometry=(final_rect,),
+            actual=max(final_width, final_height),
+            limit=max(MAX_CONTENT_WIDTH, MAX_CONTENT_HEIGHT),
         )
     metrics = measure(design, resolved, draft)
+    invalid_metrics = {
+        key: metrics.get(key)
+        for key in (
+            "body_overlap_count",
+            "wire_through_body_count",
+            "wire_through_text_count",
+            "unrelated_wire_crossing_count",
+            "unrouted_pin_count",
+        )
+        if metrics.get(key) != 0
+    }
+    if invalid_metrics or not metrics.get("page_margin_pass"):
+        raise TypedConflict(
+            ConflictKind.COLLISION,
+            f"COMPOSE_GEOMETRY_CERTIFICATE_FAILED: collisions={invalid_metrics} "
+            f"page_margin={metrics.get('page_margin_pass')}",
+            owners=tuple(sorted(invalid_metrics)),
+        )
     metrics.update(
         {
             "semantic_block_count": len(plan.blocks),
@@ -752,6 +840,11 @@ def _assemble_candidate(design: dict, resolved: dict, plan, packing: Packing, re
             "final_content_width_mm": final_width / 1_000_000,
             "final_content_height_mm": final_height / 1_000_000,
             "reservation_containment_pass": True,
+            "reservation_allocation_count": len(allocation_witnesses),
+            "reservation_allocation_witnesses": [
+                {"owner": owner, "geometry": item, "reservation": reservation}
+                for owner, item, reservation in allocation_witnesses
+            ],
             "pre_emission_conductor_components": {
                 proof.net: len(proof.components) for proof in net_proofs
             },
@@ -759,10 +852,57 @@ def _assemble_candidate(design: dict, resolved: dict, plan, packing: Packing, re
                 proof.net: len(proof.terminal_components) for proof in net_proofs
             },
             "pre_emission_precedence_count": len(plan.precedence),
+            "pruned_route_leaves": pruned_route_leaves,
             "pre_emission_placement_proofs": [list(item) for item in placement_proofs],
+            "pre_emission_net_witnesses": [
+                {
+                    "net": proof.net,
+                    "component_count": len(proof.components),
+                    "terminal_components": [
+                        [list(terminal), component]
+                        for terminal, component in proof.terminal_components
+                    ],
+                    "label_components": [
+                        [list(point), component] for point, component in proof.label_components
+                    ],
+                    "canonical_length_nm": proof.length,
+                }
+                for proof in net_proofs
+            ],
+            "pre_emission_terminal_inventory_count": len(terminal_inventory),
+            "pre_emission_local_span_count": len(plan.local_spans),
         }
     )
     return draft, route_trees, canonical_trees, tuple(reservations), metrics
+
+
+def _structural_signature(packing: Packing) -> tuple[tuple, ...]:
+    """Normalize row and left-to-right decisions without absolute coordinates."""
+    items = tuple(item for item in packing.fragments if item.fragment.block.kind != "interface")
+    x_order = {
+        item.fragment.block.id: index
+        for index, item in enumerate(
+            sorted(
+                items,
+                key=lambda item: (item.envelope[0] + item.envelope[2], item.fragment.block.id),
+            )
+        )
+    }
+    band_tops = []
+    band_by_top = {}
+    for top in sorted({item.envelope[1] for item in items}):
+        if not band_tops or top - band_tops[-1] > PITCH:
+            band_tops.append(top)
+        band_by_top[top] = len(band_tops) - 1
+    return tuple(
+        (
+            item.fragment.block.kind,
+            x_order[item.fragment.block.id],
+            band_by_top[item.envelope[1]],
+            item.envelope[2] - item.envelope[0] > item.envelope[3] - item.envelope[1],
+        )
+        for item in sorted(items, key=lambda item: item.fragment.block.id)
+    )
 
 
 def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
@@ -771,112 +911,136 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
     variants = fragment_variants(design, resolved, plan)
     seeds = pack_fragment_candidates(plan, variants)
     attempts = []
-    selected = None
+    proved_candidates = []
+    proved_structures = set()
     last_error = None
+    complete_attempts = 0
+    state_digests: set[tuple] = set()
+    operations = ("initial", "route_retry", "structural_repair", "bounded_repair")
     for seed_index, packing in enumerate(seeds[:8]):
-        state_digests = set()
         working_packing = packing
-        last_conflict = None
-        for round_index in range(4):
+        last_conflict: InputError | None = None
+        for round_index, operation in enumerate(operations):
             substitution = None
             growth = None
-            if round_index == 1 and isinstance(last_conflict, PlacementConflict):
+            repair_changed = False
+            reroutable = isinstance(
+                last_conflict, (ConductorLengthConflict, RouteBlockedConflict)
+            ) or (
+                isinstance(last_conflict, TypedConflict)
+                and last_conflict.category
+                in {
+                    ConflictKind.NET_CONNECTIVITY,
+                    ConflictKind.DANGLING_ENDPOINT,
+                    ConflictKind.CANONICAL_LENGTH,
+                }
+                and last_conflict.net is not None
+            )
+            if round_index == 1 and not reroutable:
                 attempts.append(
                     {
                         "seed": seed_index,
                         "round": round_index,
-                        "operation": "route_retry",
-                        "result": "not_applicable_to_placement_conflict",
-                        "failure_class": last_conflict.kind,
-                        "conflict": str(last_conflict),
+                        "operation": operation,
+                        "result": "not_applicable",
+                        "failure_class": getattr(last_conflict, "kind", "proof_failure"),
                     }
                 )
                 continue
-            if round_index == 2 and last_error:
+            if round_index in {2, 3}:
+                before = tuple((item.fragment.id, item.delta) for item in working_packing.fragments)
                 try:
-                    if isinstance(last_conflict, PlacementConflict):
+                    if round_index == 2 and isinstance(last_conflict, PlacementConflict):
                         working_packing, substitution = _structural_repack(
                             design, resolved, plan, working_packing, last_conflict
                         )
-                    elif isinstance(last_conflict, ConductorLengthConflict):
+                    elif round_index == 2 and isinstance(
+                        last_conflict, (ConductorLengthConflict, RouteBlockedConflict)
+                    ):
                         working_packing, substitution = _distribution_repack(
                             design, resolved, plan, working_packing, last_conflict
                         )
-                    else:
-                        working_packing, substitution = _substitution_repack(
-                            plan, variants, working_packing, last_error, seed_index
+                    elif (
+                        round_index == 2
+                        and isinstance(last_conflict, TypedConflict)
+                        and last_conflict.net is not None
+                        and "distribution_placement" in last_conflict.repair_classes
+                    ):
+                        working_packing, substitution = _distribution_repack(
+                            design, resolved, plan, working_packing, last_conflict
                         )
+                    elif round_index == 3 and isinstance(last_conflict, RouteBlockedConflict):
+                        working_packing, growth = _reservation_growth_repack(
+                            plan, working_packing, last_conflict, seed_index
+                        )
+                    elif round_index == 3 and isinstance(last_conflict, ConductorLengthConflict):
+                        working_packing, substitution = _substitution_repack(
+                            plan, variants, working_packing, last_conflict, seed_index
+                        )
+                    elif (
+                        round_index == 3
+                        and isinstance(last_conflict, TypedConflict)
+                        and last_conflict.net is not None
+                        and "gateway_access" in last_conflict.repair_classes
+                    ):
+                        working_packing, substitution = _substitution_repack(
+                            plan, variants, working_packing, last_conflict, seed_index
+                        )
+                    else:
+                        attempts.append(
+                            {
+                                "seed": seed_index,
+                                "round": round_index,
+                                "operation": operation,
+                                "result": "not_applicable",
+                                "failure_class": getattr(last_conflict, "kind", "proof_failure"),
+                            }
+                        )
+                        continue
                 except InputError as exc:
-                    last_error = str(exc)
                     attempts.append(
                         {
                             "seed": seed_index,
                             "round": round_index,
-                            "operation": "variant_substitution",
-                            "result": "rejected",
-                            "failure_class": "page/spread",
-                            "conflict": last_error,
+                            "operation": operation,
+                            "result": "repair_rejected",
+                            "failure_class": getattr(last_conflict, "kind", "proof_failure"),
+                            "conflict": str(exc),
                         }
                     )
                     continue
-            if round_index == 3 and last_error:
-                if isinstance(last_conflict, (PlacementConflict, ConductorLengthConflict)):
+                after = tuple((item.fragment.id, item.delta) for item in working_packing.fragments)
+                if after == before:
                     attempts.append(
                         {
                             "seed": seed_index,
                             "round": round_index,
-                            "operation": "reservation_growth",
-                            "result": "not_applicable_to_placement_conflict",
-                            "failure_class": last_conflict.kind,
-                            "conflict": str(last_conflict),
+                            "operation": operation,
+                            "result": "noop_rejected",
                         }
                     )
                     continue
-                try:
-                    working_packing, growth = _reservation_growth_repack(
-                        plan, working_packing, last_error, seed_index
-                    )
-                except InputError as exc:
-                    last_error = str(exc)
-                    attempts.append(
-                        {
-                            "seed": seed_index,
-                            "round": round_index,
-                            "operation": "reservation_growth",
-                            "result": "rejected",
-                            "failure_class": "page/spread",
-                            "conflict": last_error,
-                            "reservation_growth": growth,
-                        }
-                    )
-                    continue
+                repair_changed = True
+            route_retry = 1 if round_index == 1 else 2 if round_index == 3 else 0
             digest = (
                 tuple((item.fragment.id, item.delta) for item in working_packing.fragments),
-                round_index if round_index in {1, 3} else 0,
+                route_retry,
             )
             if digest in state_digests:
                 attempts.append(
                     {
                         "seed": seed_index,
                         "round": round_index,
-                        "operation": (
-                            "route_retry",
-                            "route_retry",
-                            "variant_substitution",
-                            "reservation_growth",
-                        )[round_index],
+                        "operation": operation,
                         "result": "repeat_state_skipped",
                     }
                 )
                 continue
             state_digests.add(digest)
+            complete_attempts += 1
             try:
                 candidate = _assemble_candidate(
-                    design,
-                    resolved,
-                    plan,
-                    working_packing,
-                    retry=1 if round_index == 1 else 2 if round_index == 3 else 0,
+                    design, resolved, plan, working_packing, retry=route_retry
                 )
             except InputError as exc:
                 last_error = str(exc)
@@ -885,28 +1049,14 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
                     {
                         "seed": seed_index,
                         "round": round_index,
-                        "operation": (
-                            "initial",
-                            "route_retry",
-                            "variant_substitution",
-                            "reservation_growth",
-                        )[round_index],
+                        "operation": operation,
                         "result": "rejected",
-                        "failure_class": exc.kind
-                        if isinstance(exc, (PlacementConflict, ConductorLengthConflict))
-                        else (
-                            "connectivity/protection"
-                            if "ROUTE" in last_error or "CONDUCTOR" in last_error
-                            else "body/pin"
-                            if "body" in last_error or "pin" in last_error
-                            else "text"
-                            if "text" in last_error
-                            else "page/spread"
-                            if "OVERFLOW" in last_error
-                            else "other_quality"
-                        ),
+                        "failure_class": getattr(exc, "kind", "proof_failure"),
                         "conflict": last_error,
-                        "reservation_growth_pitch": 1 if round_index == 3 else 0,
+                        "net": getattr(exc, "net", None),
+                        "actual": getattr(exc, "actual", None),
+                        "limit": getattr(exc, "limit", None),
+                        "repair_state_changed": repair_changed,
                         "reservation_growth": growth,
                         "substitution": substitution,
                     }
@@ -916,23 +1066,33 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
                 {
                     "seed": seed_index,
                     "round": round_index,
-                    "operation": (
-                        "initial",
-                        "route_retry",
-                        "variant_substitution",
-                        "reservation_growth",
-                    )[round_index],
+                    "operation": operation,
                     "result": "pass",
-                    "reservation_growth_pitch": 1 if round_index == 3 else 0,
+                    "repair_state_changed": repair_changed,
                     "reservation_growth": growth,
                     "substitution": substitution,
                 }
             )
-            selected = (working_packing, *candidate)
+            canonical_trees = candidate[2]
+            candidate_metrics = candidate[-1]
+            score = (
+                sum(tree.length for tree in canonical_trees),
+                max((tree.length for tree in canonical_trees), default=0),
+                sum(tree.bends for tree in canonical_trees),
+                candidate_metrics["final_content_width_mm"]
+                * candidate_metrics["final_content_height_mm"],
+                seed_index,
+                round_index,
+            )
+            structure = _structural_signature(working_packing)
+            proved_candidates.append(
+                (score, structure, seed_index, round_index, working_packing, *candidate)
+            )
+            proved_structures.add(structure)
             break
-        if selected is not None:
+        if len(proved_structures) >= 2:
             break
-    if selected is None:
+    if not proved_candidates:
         failure_evidence = {
             "schema_version": "m2g2.composition-failure.1",
             "stage": "layout_schematic",
@@ -1015,29 +1175,100 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
                 "seed_limit": 8,
                 "repair_rounds_per_seed": 3,
                 "complete_attempt_limit": 32,
-                "complete_attempts_used": len(attempts),
+                "complete_attempts_used": complete_attempts,
             },
         }
         raise LayoutBudgetError(
-            f"LAYOUT_BUDGET_EXHAUSTED: attempts={len(attempts)}/32 last={last_error}",
+            f"LAYOUT_BUDGET_EXHAUSTED: attempts={complete_attempts}/32 last={last_error}",
             tuple(attempts),
             failure_evidence,
         )
-    packing, draft, route_trees, canonical_trees, reservations, metrics = selected
-    metrics["layout_attempt_count"] = len(attempts)
-    metrics["layout_repair_count"] = max(0, len(attempts) - 1)
-    scene = Scene(
-        draft.positions,
-        draft.wires,
-        draft.wire_nets,
-        draft.labels,
-        draft.junctions,
+    selected = min(proved_candidates, key=lambda item: item[0])
+    (
+        score,
+        structure,
+        selected_seed,
+        selected_round,
+        packing,
+        draft,
+        route_trees,
+        canonical_trees,
+        reservations,
         metrics,
-        draft.angles,
-        draft.text_positions,
+    ) = selected
+    metrics["layout_attempt_count"] = complete_attempts
+    metrics["layout_repair_count"] = sum(
+        bool(item.get("repair_state_changed")) for item in attempts
+    )
+    scene = certify_scene_geometry(
+        Scene(
+            draft.positions,
+            draft.wires,
+            draft.wire_nets,
+            draft.labels,
+            draft.junctions,
+            metrics,
+            draft.angles,
+            draft.text_positions,
+        )
+    )
+    scene = certify_scene_inputs(
+        scene,
+        design,
+        resolved,
+        {
+            "schema_version": "m2h2.policy.1",
+            "content_width_nm": MAX_CONTENT_WIDTH,
+            "content_height_nm": MAX_CONTENT_HEIGHT,
+            "canonical_conductor_length_nm": 250_000_000,
+            "candidate_budget": 8,
+            "repair_rounds_per_seed": 3,
+            "grid_pitch_nm": PITCH,
+        },
     )
     evidence = {
         "schema_version": "m2g2.composition.1",
+        "best_rejected_candidate": min(
+            (item for item in attempts if item["result"] == "rejected"),
+            key=lambda item: (
+                max(0, item["actual"] - item["limit"])
+                if isinstance(item.get("actual"), int) and isinstance(item.get("limit"), int)
+                else 10**18,
+                item["seed"],
+                item["round"],
+            ),
+            default=None,
+        ),
+        "structural_search": {
+            "seed_count": len(seeds),
+            "attempted_structure_count": len({_structural_signature(item) for item in seeds}),
+            "proved_structure_count": len(proved_structures),
+            "seeds": [
+                {
+                    "seed": index,
+                    "structure": [list(part) for part in _structural_signature(item)],
+                    "placement_class": item.attempts[-1] if item.attempts else "unspecified",
+                }
+                for index, item in enumerate(seeds)
+            ],
+        },
+        "candidate_selection": {
+            "rule": "proved_union_length_then_worst_length_bends_area",
+            "selected_seed": selected_seed,
+            "selected_round": selected_round,
+            "selected_score": list(score),
+            "proved_candidate_count": len(proved_candidates),
+            "proved_structure_count": len(proved_structures),
+            "proved_candidates": [
+                {
+                    "seed": item[2],
+                    "round": item[3],
+                    "score": list(item[0]),
+                    "structure": [list(value) for value in item[1]],
+                }
+                for item in proved_candidates
+            ],
+        },
         "blocks": [
             {
                 "id": block.id,
@@ -1113,6 +1344,8 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
                 "segment_provenance": [list(value) for value in tree.segment_provenance],
                 "tap_tests": tree.tap_tests,
                 "state_expansions": tree.state_expansions,
+                "strategy": tree.strategy,
+                "plan_tests": tree.plan_tests,
             }
             for tree in route_trees
         ],
@@ -1144,8 +1377,42 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
             "seed_limit": 8,
             "repair_rounds_per_seed": 3,
             "complete_attempt_limit": 32,
-            "complete_attempts_used": len(attempts),
+            "complete_attempts_used": complete_attempts,
         },
+    }
+    evidence["obligation_certificate"] = {
+        "schema_version": "m2h2.obligation-certificate.1",
+        "scene_geometry_sha256": scene.certificate_digest,
+        "candidate_input_policy_sha256": scene.certificate_input_digest,
+        "geometry_owners": [
+            {"occurrence": list(occurrence), "fragment": owner}
+            for occurrence, owner in sorted(plan.owners.items())
+        ],
+        "terminal_inventory_count": scene.metrics["pre_emission_terminal_inventory_count"],
+        "net_graph_witnesses": scene.metrics["pre_emission_net_witnesses"],
+        "gateway_witnesses": [
+            {
+                "id": gateway.id,
+                "net": gateway.net,
+                "point": list(gateway.point),
+                "terminals": [
+                    {"id": list(terminal), "point": list(draft.point(*terminal))}
+                    for terminal in gateway.terminals
+                ],
+            }
+            for item in packing.fragments
+            for gateway in item.gateways
+        ],
+        "placement_witnesses": scene.metrics["pre_emission_placement_proofs"],
+        "local_span_obligation_count": scene.metrics["pre_emission_local_span_count"],
+        "canonical_lengths_nm": {tree.net: tree.length for tree in canonical_trees},
+        "final_content_envelope_nm": list(scene.metrics["final_content_envelope"]),
+        "reservation_containment_pass": scene.metrics["reservation_containment_pass"],
+        "reservation_allocation_count": scene.metrics["reservation_allocation_count"],
+        "no_unintended_dangling_endpoints": True,
+        "no_cross_net_contacts": True,
+        "no_unallocated_growth": True,
+        "serialized_scene_verified": "pending_emission",
     }
     return scene, evidence
 

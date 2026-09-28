@@ -5,6 +5,7 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 import re
+from types import MappingProxyType
 import uuid
 import xml.etree.ElementTree as ET
 
@@ -367,6 +368,110 @@ class Scene:
     angles: dict[tuple[str, int], int] = field(default_factory=dict)
     text_positions: dict[tuple[str, int], tuple[int, int]] = field(default_factory=dict)
     text_angles: dict[tuple[str, int], int] = field(default_factory=dict)
+    certificate_digest: str | None = None
+    certificate_input_digest: str | None = None
+    certificate_policy: dict | None = None
+
+
+def scene_geometry_digest(scene: Scene) -> str:
+    """Hash every compiler-owned geometry value consumed by the emitter."""
+    payload = {
+        "positions": [[key[0], key[1], *point] for key, point in sorted(scene.positions.items())],
+        "wires": [
+            [list(first), list(second), net]
+            for (first, second), net in zip(scene.wires, scene.wire_nets, strict=True)
+        ],
+        "labels": [[net, *point] for net, point in scene.labels],
+        "junctions": [list(point) for point in scene.junctions],
+        "angles": [[key[0], key[1], angle] for key, angle in sorted(scene.angles.items())],
+        "text_positions": [
+            [key[0], key[1], *point] for key, point in sorted(scene.text_positions.items())
+        ],
+        "text_angles": [
+            [key[0], key[1], angle] for key, angle in sorted(scene.text_angles.items())
+        ],
+    }
+    return sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode())
+
+
+def certify_scene_geometry(scene: Scene) -> Scene:
+    """Freeze the exact geometry being certified before serialization."""
+    if set(scene.positions) != set(scene.text_positions):
+        raise InputError(
+            f"SCENE_TEXT_POSITION_INCOMPLETE: missing={sorted(set(scene.positions) - set(scene.text_positions))}"
+        )
+    frozen = Scene(
+        MappingProxyType(dict(scene.positions)),
+        tuple(scene.wires),
+        tuple(scene.wire_nets),
+        tuple(scene.labels),
+        tuple(scene.junctions),
+        dict(scene.metrics),
+        MappingProxyType(dict(scene.angles)),
+        MappingProxyType(dict(scene.text_positions)),
+        MappingProxyType(dict(scene.text_angles)),
+    )
+    frozen.certificate_digest = scene_geometry_digest(frozen)
+    return frozen
+
+
+def scene_input_digest(scene: Scene, design: dict, assets: dict[str, Asset], policy: dict) -> str:
+    """Bind emitted design, locked symbol geometry and gates to one scene."""
+    payload = {
+        "scene_geometry_sha256": scene_geometry_digest(scene),
+        "proof_metrics": scene.metrics,
+        "design": design,
+        "assets": {
+            key: {
+                "library_id": asset.library_id,
+                "definition": asset.definition,
+                "units": {
+                    str(unit): [
+                        [pin.number, pin.name, pin.electrical_type, pin.x, pin.y] for pin in pins
+                    ]
+                    for unit, pins in sorted(asset.units.items())
+                },
+                "bodies": {str(unit): body for unit, body in sorted(asset.bodies.items())},
+            }
+            for key, asset in sorted(assets.items())
+        },
+        "policy": policy,
+    }
+    return sha256(json.dumps(payload, sort_keys=True, separators=(",", ":")).encode())
+
+
+def certify_scene_inputs(
+    scene: Scene, design: dict, assets: dict[str, Asset], policy: dict
+) -> Scene:
+    if scene.certificate_digest is None:
+        raise InputError("SCENE_CERTIFICATE_MISSING")
+    _assert_scene_certificate(scene)
+    scene.certificate_policy = MappingProxyType(dict(policy))
+    scene.certificate_input_digest = scene_input_digest(
+        scene, design, assets, dict(scene.certificate_policy)
+    )
+    return scene
+
+
+def _assert_scene_certificate(
+    scene: Scene, design: dict | None = None, assets: dict[str, Asset] | None = None
+) -> None:
+    if (
+        scene.certificate_digest is not None
+        and scene_geometry_digest(scene) != scene.certificate_digest
+    ):
+        raise InputError("SCENE_CERTIFICATE_STALE: serialized geometry changed after proof")
+    if scene.certificate_input_digest is not None:
+        if scene.certificate_policy is None or design is None or assets is None:
+            if design is not None or assets is not None:
+                raise InputError("SCENE_CERTIFICATE_INPUTS_INCOMPLETE")
+        elif (
+            scene_input_digest(scene, design, assets, dict(scene.certificate_policy))
+            != scene.certificate_input_digest
+        ):
+            raise InputError(
+                "SCENE_CERTIFICATE_STALE: design, assets or policy changed after proof"
+            )
 
 
 def layout(design: dict, assets: dict[str, Asset]) -> Scene:
@@ -558,6 +663,7 @@ def check_layout(
 
 
 def emit(design: dict, assets: dict[str, Asset], scene: Scene, out: Path) -> Path:
+    _assert_scene_certificate(scene, design, assets)
     project = out / "project"
     project.mkdir(parents=True, exist_ok=True)
     root = _uid(design, "sheet", "root")
@@ -634,6 +740,77 @@ def emit(design: dict, assets: dict[str, Asset], scene: Scene, out: Path) -> Pat
         json.dumps({"meta": {"filename": f"{name}.kicad_pro", "version": 1}}, indent=2) + "\n"
     )
     return schematic
+
+
+def verify_serialized_scene(design: dict, scene: Scene, schematic: Path) -> None:
+    """Resolve emitted integer coordinates and compare them to the frozen scene."""
+    if scene.certificate_digest is None:
+        raise InputError("SCENE_CERTIFICATE_MISSING")
+    _assert_scene_certificate(scene)
+    tree = parse(schematic.read_text())
+    wires = []
+    for wire in children(tree, "wire"):
+        points = children(one(wire, "pts"), "xy")
+        if len(points) != 2:
+            raise InputError("SERIALIZED_SCENE_WIRE_POINTS")
+        wires.append(tuple((_nm(point[1]), _nm(point[2])) for point in points))
+    labels = [
+        (label[1], (_nm(one(label, "at")[1]), _nm(one(label, "at")[2])))
+        for label in children(tree, "label")
+    ]
+    junctions = [
+        (_nm(one(junction, "at")[1]), _nm(one(junction, "at")[2]))
+        for junction in children(tree, "junction")
+    ]
+    if tuple(wires) != tuple(scene.wires):
+        raise InputError("SERIALIZED_SCENE_WIRES_CHANGED")
+    if tuple(labels) != tuple(scene.labels):
+        raise InputError("SERIALIZED_SCENE_LABELS_CHANGED")
+    if tuple(junctions) != tuple(scene.junctions):
+        raise InputError("SERIALIZED_SCENE_JUNCTIONS_CHANGED")
+
+    references = {component["refdes"]: component["id"] for component in design["components"]}
+    references.update(
+        (assertion["refdes"], assertion["id"]) for assertion in design["power_assertions"]
+    )
+    serialized_positions = {}
+    serialized_angles = {}
+    serialized_text = {}
+    serialized_text_angles = {}
+    for symbol in children(tree, "symbol"):
+        properties = {item[1]: item for item in children(symbol, "property")}
+        reference = properties.get("Reference")
+        value = properties.get("Value")
+        if reference is None or value is None or reference[2] not in references:
+            raise InputError("SERIALIZED_SCENE_SYMBOL_IDENTITY")
+        unit = int(one(symbol, "unit")[1])
+        key = (references[reference[2]], unit)
+        if key in serialized_positions:
+            raise InputError(f"SERIALIZED_SCENE_SYMBOL_DUPLICATE: {key}")
+        at = one(symbol, "at")
+        serialized_positions[key] = (_nm(at[1]), _nm(at[2]))
+        serialized_angles[key] = int(at[3])
+        text_at = one(reference, "at")
+        value_at = one(value, "at")
+        text_point = (_nm(text_at[1]), _nm(text_at[2]))
+        if (_nm(value_at[1]), _nm(value_at[2])) != (
+            text_point[0],
+            text_point[1] + 2 * PITCH,
+        ):
+            raise InputError(f"SERIALIZED_SCENE_VALUE_POSITION: {key}")
+        if int(value_at[3]) != int(text_at[3]):
+            raise InputError(f"SERIALIZED_SCENE_VALUE_ANGLE: {key}")
+        serialized_text[key] = text_point
+        serialized_text_angles[key] = int(text_at[3])
+    if serialized_positions != dict(scene.positions):
+        raise InputError("SERIALIZED_SCENE_SYMBOL_POSITIONS_CHANGED")
+    if serialized_angles != {key: scene.angles.get(key, 0) for key in scene.positions}:
+        raise InputError("SERIALIZED_SCENE_SYMBOL_ANGLES_CHANGED")
+    if serialized_text != dict(scene.text_positions):
+        raise InputError("SERIALIZED_SCENE_TEXT_POSITIONS_CHANGED")
+    if serialized_text_angles != {key: scene.text_angles.get(key, 0) for key in scene.positions}:
+        raise InputError("SERIALIZED_SCENE_TEXT_ANGLES_CHANGED")
+    _assert_scene_certificate(scene)
 
 
 def observe(schematic: Path, xml_path: Path) -> dict:

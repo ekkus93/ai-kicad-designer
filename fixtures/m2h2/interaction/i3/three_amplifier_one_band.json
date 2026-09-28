@@ -1,0 +1,496 @@
+{
+  "profile": "m2b.1",
+  "id": "m2h2_i3_three_amplifier_one_band",
+  "name": "M2h2I3ThreeAmplifierOneBand",
+  "components": [
+    {
+      "id": "positive",
+      "refdes": "J1",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Positive rail"
+    },
+    {
+      "id": "negative",
+      "refdes": "J2",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Negative rail"
+    },
+    {
+      "id": "reference",
+      "refdes": "J3",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "External reference"
+    },
+    {
+      "id": "input_1",
+      "refdes": "J4",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Input 1"
+    },
+    {
+      "id": "output_1",
+      "refdes": "J5",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Output 1"
+    },
+    {
+      "id": "input_2",
+      "refdes": "J6",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Input 2"
+    },
+    {
+      "id": "output_2",
+      "refdes": "J7",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Output 2"
+    },
+    {
+      "id": "input_3",
+      "refdes": "J8",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Input 3"
+    },
+    {
+      "id": "output_3",
+      "refdes": "J9",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Output 3"
+    },
+    {
+      "id": "pair",
+      "refdes": "U1",
+      "asset": "Amplifier_Operational:NE5532",
+      "value": "NE5532",
+      "functions": [
+        {
+          "id": "a",
+          "role": "buffer",
+          "unit": 1,
+          "pins": {
+            "out": "1",
+            "minus": "2",
+            "plus": "3"
+          }
+        },
+        {
+          "id": "b",
+          "role": "buffer",
+          "unit": 2,
+          "pins": {
+            "out": "7",
+            "minus": "6",
+            "plus": "5"
+          }
+        },
+        {
+          "id": "power",
+          "role": "supply",
+          "unit": 3,
+          "pins": {
+            "negative": "4",
+            "positive": "8"
+          }
+        }
+      ]
+    },
+    {
+      "id": "pair_cpos",
+      "refdes": "C1",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "pair_cneg",
+      "refdes": "C2",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "single",
+      "refdes": "U2",
+      "asset": "Amplifier_Operational:NE5532",
+      "value": "NE5532",
+      "functions": [
+        {
+          "id": "a",
+          "role": "buffer",
+          "unit": 1,
+          "pins": {
+            "out": "1",
+            "minus": "2",
+            "plus": "3"
+          }
+        },
+        {
+          "id": "b",
+          "role": "parked_buffer",
+          "unit": 2,
+          "pins": {
+            "out": "7",
+            "minus": "6",
+            "plus": "5"
+          }
+        },
+        {
+          "id": "power",
+          "role": "supply",
+          "unit": 3,
+          "pins": {
+            "negative": "4",
+            "positive": "8"
+          }
+        }
+      ]
+    },
+    {
+      "id": "single_cpos",
+      "refdes": "C3",
+      "asset": "Device:C",
+      "value": "100n"
+    },
+    {
+      "id": "single_cneg",
+      "refdes": "C4",
+      "asset": "Device:C",
+      "value": "100n"
+    }
+  ],
+  "nets": [
+    {
+      "id": "VPLUS",
+      "members": [
+        [
+          "positive",
+          "1"
+        ],
+        [
+          "pair",
+          "8"
+        ],
+        [
+          "pair_cpos",
+          "1"
+        ],
+        [
+          "single",
+          "8"
+        ],
+        [
+          "single_cpos",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "VMINUS",
+      "members": [
+        [
+          "negative",
+          "1"
+        ],
+        [
+          "pair",
+          "4"
+        ],
+        [
+          "pair_cneg",
+          "2"
+        ],
+        [
+          "single",
+          "4"
+        ],
+        [
+          "single_cneg",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "VREF",
+      "members": [
+        [
+          "reference",
+          "1"
+        ],
+        [
+          "pair_cpos",
+          "2"
+        ],
+        [
+          "pair_cneg",
+          "1"
+        ],
+        [
+          "single",
+          "5"
+        ],
+        [
+          "single_cpos",
+          "2"
+        ],
+        [
+          "single_cneg",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "INPUT_1",
+      "members": [
+        [
+          "input_1",
+          "1"
+        ],
+        [
+          "pair",
+          "3"
+        ]
+      ]
+    },
+    {
+      "id": "OUTPUT_1",
+      "members": [
+        [
+          "output_1",
+          "1"
+        ],
+        [
+          "pair",
+          "1"
+        ],
+        [
+          "pair",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "INPUT_2",
+      "members": [
+        [
+          "input_2",
+          "1"
+        ],
+        [
+          "pair",
+          "5"
+        ]
+      ]
+    },
+    {
+      "id": "OUTPUT_2",
+      "members": [
+        [
+          "output_2",
+          "1"
+        ],
+        [
+          "pair",
+          "7"
+        ],
+        [
+          "pair",
+          "6"
+        ]
+      ]
+    },
+    {
+      "id": "INPUT_3",
+      "members": [
+        [
+          "input_3",
+          "1"
+        ],
+        [
+          "single",
+          "3"
+        ]
+      ]
+    },
+    {
+      "id": "OUTPUT_3",
+      "members": [
+        [
+          "output_3",
+          "1"
+        ],
+        [
+          "single",
+          "1"
+        ],
+        [
+          "single",
+          "2"
+        ]
+      ]
+    },
+    {
+      "id": "SINGLE_PARK",
+      "members": [
+        [
+          "single",
+          "7"
+        ],
+        [
+          "single",
+          "6"
+        ]
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "pair.a.stage",
+      "kind": "amplifier",
+      "component": "pair",
+      "function": "a",
+      "input": "INPUT_1",
+      "output": "OUTPUT_1",
+      "reference": "VREF"
+    },
+    {
+      "id": "pair.a.loop",
+      "kind": "feedback",
+      "component": "pair",
+      "function": "a",
+      "source": "1",
+      "sense": "2",
+      "net": "OUTPUT_1",
+      "polarity": "negative"
+    },
+    {
+      "id": "pair.b.stage",
+      "kind": "amplifier",
+      "component": "pair",
+      "function": "b",
+      "input": "INPUT_2",
+      "output": "OUTPUT_2",
+      "reference": "VREF"
+    },
+    {
+      "id": "pair.b.loop",
+      "kind": "feedback",
+      "component": "pair",
+      "function": "b",
+      "source": "7",
+      "sense": "6",
+      "net": "OUTPUT_2",
+      "polarity": "negative"
+    },
+    {
+      "id": "pair.rails",
+      "kind": "power_rails",
+      "component": "pair",
+      "unit": 3,
+      "positive": "VPLUS",
+      "negative": "VMINUS",
+      "reference": "VREF"
+    },
+    {
+      "id": "pair.cpos",
+      "kind": "decoupling",
+      "component": "pair_cpos",
+      "consumer": [
+        "pair",
+        "8"
+      ],
+      "supply": "VPLUS",
+      "return": "VREF"
+    },
+    {
+      "id": "pair.cneg",
+      "kind": "decoupling",
+      "component": "pair_cneg",
+      "consumer": [
+        "pair",
+        "4"
+      ],
+      "supply": "VREF",
+      "return": "VMINUS"
+    },
+    {
+      "id": "single.loop",
+      "kind": "feedback",
+      "component": "single",
+      "function": "a",
+      "source": "1",
+      "sense": "2",
+      "net": "OUTPUT_3",
+      "polarity": "negative"
+    },
+    {
+      "id": "single.stage",
+      "kind": "amplifier",
+      "component": "single",
+      "function": "a",
+      "input": "INPUT_3",
+      "output": "OUTPUT_3",
+      "reference": "VREF"
+    },
+    {
+      "id": "single.park",
+      "kind": "amplifier",
+      "component": "single",
+      "function": "b",
+      "input": "VREF",
+      "output": "SINGLE_PARK",
+      "unused": true
+    },
+    {
+      "id": "single.park_loop",
+      "kind": "feedback",
+      "component": "single",
+      "function": "b",
+      "source": "7",
+      "sense": "6",
+      "net": "SINGLE_PARK",
+      "polarity": "negative"
+    },
+    {
+      "id": "single.rails",
+      "kind": "power_rails",
+      "component": "single",
+      "unit": 3,
+      "positive": "VPLUS",
+      "negative": "VMINUS",
+      "reference": "VREF"
+    },
+    {
+      "id": "single.cpos",
+      "kind": "decoupling",
+      "component": "single_cpos",
+      "consumer": [
+        "single",
+        "8"
+      ],
+      "supply": "VPLUS",
+      "return": "VREF"
+    },
+    {
+      "id": "single.cneg",
+      "kind": "decoupling",
+      "component": "single_cneg",
+      "consumer": [
+        "single",
+        "4"
+      ],
+      "supply": "VREF",
+      "return": "VMINUS"
+    }
+  ],
+  "no_connects": [],
+  "power_assertions": [
+    {
+      "id": "flag.1",
+      "refdes": "#FLG01",
+      "net": "VPLUS"
+    },
+    {
+      "id": "flag.2",
+      "refdes": "#FLG02",
+      "net": "VMINUS"
+    }
+  ]
+}

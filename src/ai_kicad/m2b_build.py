@@ -6,7 +6,7 @@ import sys
 from .assets import sha256
 from .ir import InputError, load_json
 from .kicad import ToolFailure, run_headless, validate_toolchain
-from .m2a import ROOT, emit, observe
+from .m2a import ROOT, emit, observe, verify_serialized_scene
 from .m2b import assets, check_observed_layout, compare, validate
 from .m2_compose import LayoutBudgetError, compose_with_evidence
 
@@ -60,19 +60,21 @@ def build(args) -> int:
         design = validate(load_json(args.design), resolved)
         stages.append({"stage": "validate_resolve", "status": "ok"})
         launcher = validate_toolchain(args.toolchain_lock, ROOT / "requirements.lock")
-        scene, composition = compose_with_evidence(design, resolved)
-        stages.append({"stage": "layout_schematic", "status": "ok"})
-        (reports / "composition.json").write_text(json.dumps(composition, indent=2) + "\n")
-        (reports / "layout_attempts.json").write_text(
-            json.dumps(composition["layout_attempts"], indent=2) + "\n"
-        )
         owned_assets = {c["asset"] for c in design["components"]}
         emitted_assets = {
             key: asset
             for key, asset in resolved.items()
             if key not in ("Regulator_Linear:L7805", "Timer:NE555D") or key in owned_assets
         }
+        scene, composition = compose_with_evidence(design, emitted_assets)
+        stages.append({"stage": "layout_schematic", "status": "ok"})
+        (reports / "layout_attempts.json").write_text(
+            json.dumps(composition["layout_attempts"], indent=2) + "\n"
+        )
         schematic = emit(design, emitted_assets, scene, stage)
+        verify_serialized_scene(design, scene, schematic)
+        composition["obligation_certificate"]["serialized_scene_verified"] = "pass"
+        (reports / "composition.json").write_text(json.dumps(composition, indent=2) + "\n")
         local_libraries = {
             "Regulator_Linear": "L7805",
             "Timer": "NE555D",
@@ -163,6 +165,10 @@ def build(args) -> int:
         )
         if isinstance(exc, LayoutBudgetError) and exc.evidence:
             (reports / "composition.json").write_text(json.dumps(exc.evidence, indent=2) + "\n")
+        elif completed_composition is not None and not (reports / "composition.json").exists():
+            (reports / "composition.json").write_text(
+                json.dumps(completed_composition, indent=2) + "\n"
+            )
         (reports / "layout_attempts.json").write_text(json.dumps(attempts, indent=2) + "\n")
         completed = {item["stage"] for item in stages}
         (reports / "failure.json").write_text(

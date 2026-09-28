@@ -1,0 +1,318 @@
+{
+  "schema_version": "m2h2.interaction-expected.1",
+  "frozen_before_real_layout": true,
+  "factor_cell": "I3:active_cores=1|bands=interleaved",
+  "requested_band_structure": "interleaved",
+  "active_core_count": 1,
+  "partitions": {
+    "VPLUS": [
+      [
+        "auxiliary_r",
+        "1"
+      ],
+      [
+        "positive",
+        "1"
+      ],
+      [
+        "timer_1",
+        "4"
+      ],
+      [
+        "timer_1",
+        "8"
+      ],
+      [
+        "timer_1_charge",
+        "1"
+      ]
+    ],
+    "VMINUS": [
+      [
+        "auxiliary_c",
+        "2"
+      ],
+      [
+        "filter_1_c",
+        "2"
+      ],
+      [
+        "negative",
+        "1"
+      ],
+      [
+        "timer_1",
+        "1"
+      ],
+      [
+        "timer_1_control_bypass",
+        "2"
+      ],
+      [
+        "timer_1_timing_cap",
+        "2"
+      ]
+    ],
+    "TIMER_1_DISCH": [
+      [
+        "timer_1",
+        "7"
+      ],
+      [
+        "timer_1_charge",
+        "2"
+      ],
+      [
+        "timer_1_discharge",
+        "1"
+      ]
+    ],
+    "TIMER_1_TIMING": [
+      [
+        "timer_1",
+        "2"
+      ],
+      [
+        "timer_1",
+        "6"
+      ],
+      [
+        "timer_1_discharge",
+        "2"
+      ],
+      [
+        "timer_1_timing_cap",
+        "1"
+      ]
+    ],
+    "TIMER_1_CONT": [
+      [
+        "timer_1",
+        "5"
+      ],
+      [
+        "timer_1_control_bypass",
+        "1"
+      ]
+    ],
+    "RAW_1": [
+      [
+        "filter_1_r",
+        "1"
+      ],
+      [
+        "timer_1",
+        "3"
+      ]
+    ],
+    "FILTERED_1": [
+      [
+        "filter_1_c",
+        "1"
+      ],
+      [
+        "filter_1_r",
+        "2"
+      ],
+      [
+        "output_1",
+        "1"
+      ]
+    ],
+    "AUX_OUT": [
+      [
+        "aux_output",
+        "1"
+      ],
+      [
+        "auxiliary_c",
+        "1"
+      ],
+      [
+        "auxiliary_r",
+        "2"
+      ]
+    ]
+  },
+  "terminal_inventory": [
+    [
+      "aux_output",
+      "1"
+    ],
+    [
+      "auxiliary_c",
+      "1"
+    ],
+    [
+      "auxiliary_c",
+      "2"
+    ],
+    [
+      "auxiliary_r",
+      "1"
+    ],
+    [
+      "auxiliary_r",
+      "2"
+    ],
+    [
+      "filter_1_c",
+      "1"
+    ],
+    [
+      "filter_1_c",
+      "2"
+    ],
+    [
+      "filter_1_r",
+      "1"
+    ],
+    [
+      "filter_1_r",
+      "2"
+    ],
+    [
+      "negative",
+      "1"
+    ],
+    [
+      "output_1",
+      "1"
+    ],
+    [
+      "positive",
+      "1"
+    ],
+    [
+      "timer_1",
+      "1"
+    ],
+    [
+      "timer_1",
+      "2"
+    ],
+    [
+      "timer_1",
+      "3"
+    ],
+    [
+      "timer_1",
+      "4"
+    ],
+    [
+      "timer_1",
+      "5"
+    ],
+    [
+      "timer_1",
+      "6"
+    ],
+    [
+      "timer_1",
+      "7"
+    ],
+    [
+      "timer_1",
+      "8"
+    ],
+    [
+      "timer_1_charge",
+      "1"
+    ],
+    [
+      "timer_1_charge",
+      "2"
+    ],
+    [
+      "timer_1_control_bypass",
+      "1"
+    ],
+    [
+      "timer_1_control_bypass",
+      "2"
+    ],
+    [
+      "timer_1_discharge",
+      "1"
+    ],
+    [
+      "timer_1_discharge",
+      "2"
+    ],
+    [
+      "timer_1_timing_cap",
+      "1"
+    ],
+    [
+      "timer_1_timing_cap",
+      "2"
+    ]
+  ],
+  "path_obligations": [
+    {
+      "id": "timer_1.timing_path",
+      "from": [
+        "timer_1",
+        "7"
+      ],
+      "to": [
+        "timer_1",
+        "2"
+      ],
+      "kind": "timing_local",
+      "maximum_span_nm": 80000000
+    },
+    {
+      "id": "timer_1.control_path",
+      "from": [
+        "timer_1",
+        "5"
+      ],
+      "to": [
+        "timer_1_control_bypass",
+        "1"
+      ],
+      "kind": "support",
+      "maximum_span_nm": 60000000
+    },
+    {
+      "id": "filter_1.shunt_path",
+      "from": [
+        "filter_1_r",
+        "2"
+      ],
+      "to": [
+        "filter_1_c",
+        "1"
+      ],
+      "kind": "local_rc",
+      "maximum_span_nm": 80000000
+    },
+    {
+      "id": "auxiliary.shunt_path",
+      "from": [
+        "auxiliary_r",
+        "2"
+      ],
+      "to": [
+        "auxiliary_c",
+        "1"
+      ],
+      "kind": "local_rc",
+      "maximum_span_nm": 80000000
+    }
+  ],
+  "precedence": [
+    {
+      "source": [
+        "timer_1",
+        "3"
+      ],
+      "target": [
+        "filter_1_r",
+        "1"
+      ],
+      "strict_x": true
+    }
+  ]
+}
