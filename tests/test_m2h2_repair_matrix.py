@@ -199,7 +199,13 @@ def test_typed_growth_repairs_use_conflict_fields_for_remaining_categories(
 
 def test_route_corridor_capacity_is_checked_before_candidate_acceptance() -> None:
     first = GeometryItem("route.RAIL.0", "wire", "tree.RAIL", (0, 0, 10, 0), ("RAIL",))
-    duplicate = GeometryItem("route.RAIL.1", "wire", "tree.RAIL", (0, 0, 10, 0), ("RAIL",))
+    duplicate = GeometryItem(
+        "route.RAIL.1",
+        "wire",
+        "tree.RAIL",
+        (0, 0, 10, 0),
+        ("RAIL",),
+    )
     corridor = Reservation(
         "route.RAIL.0",
         "channel",
@@ -240,7 +246,9 @@ def test_composition_evidence_reports_structural_diversity_not_raw_attempt_count
     assert any(attempt["result"] == "pass" for attempt in evidence["layout_attempts"])
 
 
-def test_failure_exit_preserves_candidate_decisions_and_exact_failure_witness(monkeypatch) -> None:
+def test_failure_exit_preserves_candidate_decisions_and_exact_failure_witness(
+    monkeypatch,
+) -> None:
     resolved = assets()
     design = validate(
         json.loads((ROOT / "fixtures/m2h2/interaction/i2/internal_2.json").read_text()),
@@ -288,13 +296,21 @@ def test_obligation_certificate_exports_pre_emission_invariant_witnesses() -> No
         for entry in proof["terminal_components"]
     }
     assert certificate["terminal_inventory_count"] == len(terminal_components)
-    assert all(proof["component_count"] >= 1 for proof in certificate["net_graph_witnesses"])
-    assert all(witness["proved"] and witness["terminals"] for witness in certificate["gateway_witnesses"])
+    assert all(
+        proof["component_count"] >= 1 for proof in certificate["net_graph_witnesses"]
+    )
+    assert all(
+        witness["proved"] and witness["terminals"]
+        for witness in certificate["gateway_witnesses"]
+    )
 
     left, top, right, bottom = certificate["final_content_envelope_nm"]
     assert right - left <= 210_000_000
     assert bottom - top <= 140_000_000
-    assert all(length <= 250_000_000 for length in certificate["canonical_lengths_nm"].values())
+    assert all(
+        length <= 250_000_000
+        for length in certificate["canonical_lengths_nm"].values()
+    )
     assert certificate["reservation_containment_pass"] is True
     assert certificate["reservation_allocation_count"] > 0
     assert certificate["no_unintended_dangling_endpoints"] is True
@@ -345,10 +361,17 @@ def test_certificate_exports_complete_semantic_obligation_inventory() -> None:
         port.id for block in plan.blocks for port in block.ports
     }
     assert [
-        (item["kind"], item["source"], item["target"], item["net"], tuple(item["origins"]))
+        (
+            item["kind"],
+            item["source"],
+            item["target"],
+            item["net"],
+            tuple(item["origins"]),
+        )
         for item in obligations["edges"]
     ] == [
-        (edge.kind, edge.source, edge.target, edge.net, edge.origins) for edge in plan.edges
+        (edge.kind, edge.source, edge.target, edge.net, edge.origins)
+        for edge in plan.edges
     ]
     assert {item["id"] for item in obligations["constraints"]} == {
         item.id for item in plan.constraints
