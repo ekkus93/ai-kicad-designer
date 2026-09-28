@@ -14,6 +14,12 @@ reservation allocation witnesses, net/component proofs, and a serialized-scene
 digest. These mechanisms still need the full falsification and qualification
 specified by the remediation document.
 
+Current-source unit coverage now includes the structural route lower-bound role
+matrix and the remaining typed repair categories represented by the current
+repair model: reservation, collision, route/envelope growth, net connectivity,
+and dangling endpoint/island conflicts. This is contract evidence only, not
+final real-tool qualification.
+
 At the current source state, fresh one-run builds in `development_checks/`
 passed locked KiCad 10.0.6, independent electrical observation, zero ERC, and
 serialized-scene verification:
@@ -56,8 +62,8 @@ or generation alone.
 ## Remaining completion work
 
 1. Complete the spec's full generic falsification matrix, including independent
-   graph and tiny exhaustive placement oracles, typed repair transitions,
-   reservation and serialization mutations, and metamorphic tests.
+   graph and tiny exhaustive placement oracles, reservation and serialization
+   mutations, and metamorphic tests.
 2. Audit the obligation certificate, corridor allocation, routing bounds,
    structural search ledger, and repair decisions against every requirement in
    the specification. Fix any missing invariant before acceptance.

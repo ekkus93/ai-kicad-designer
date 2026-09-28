@@ -114,11 +114,11 @@ A checkbox may be checked only from current-source evidence. Older qualification
 
 ## 4. Structural search and routing closure
 
-- [ ] Conductor alternatives are genuinely different tree/topology structures.
-- [ ] Canonical lower bounds are sound for signal nets.
-- [ ] Canonical lower bounds are sound for power nets.
-- [ ] Canonical lower bounds are sound for reference/internal-reference nets.
-- [ ] Canonical lower bounds are sound for support/shared-control/distributive nets.
+- [x] Conductor alternatives are genuinely different tree/topology structures. Evidence: `tests/test_m2h2_contracts.py::test_distribution_enumerates_distinct_trunk_topologies` verifies four distinct producer-centered/perimeter/side trunk signatures.
+- [x] Canonical lower bounds are sound for signal nets. Evidence: `tests/test_m2h2_repair_matrix.py::test_canonical_length_lower_bound_applies_to_every_m2h2_route_role[signal-signal-signal_out-signal_in-signal]`.
+- [x] Canonical lower bounds are sound for power nets. Evidence: `tests/test_m2h2_repair_matrix.py::test_canonical_length_lower_bound_applies_to_every_m2h2_route_role[power-power-power_out-power_in-distributive]`.
+- [x] Canonical lower bounds are sound for reference/internal-reference nets. Evidence: `tests/test_m2h2_repair_matrix.py::test_canonical_length_lower_bound_applies_to_every_m2h2_route_role[reference-None-reference-reference-distributive]`.
+- [x] Canonical lower bounds are sound for support/shared-control/distributive nets. Evidence: `tests/test_m2h2_repair_matrix.py::test_canonical_length_lower_bound_applies_to_every_m2h2_route_role` covers branch, support, shared-control and distributive explicit-geometry cases.
 - [ ] Corridor/reservation capacity is checked before route acceptance.
 - [ ] Best rejected candidate and exact failure witness are preserved on every failure exit.
 - [ ] Evidence reports meaningful structural/variant diversity, not raw attempt count only.
@@ -131,9 +131,9 @@ A checkbox may be checked only from current-source evidence. Older qualification
 - [x] Typed local-span conflict produces a genuinely changed candidate. Evidence: same test.
 - [x] Typed signal-order conflict produces a genuinely changed candidate. Evidence: same test.
 - [x] Typed blocked-gateway/access conflict produces a genuinely changed candidate. Evidence: same test.
-- [ ] Typed reservation/collision conflict produces a genuinely changed candidate.
-- [ ] Typed route/envelope-growth conflict produces a genuinely changed candidate.
-- [ ] Typed disconnected-net/island conflict is handled where represented by the current repair model.
+- [x] Typed reservation/collision conflict produces a genuinely changed candidate. Evidence: `tests/test_m2h2_repair_matrix.py::test_typed_growth_repairs_use_conflict_fields_for_remaining_categories` covers `reservation_violation` and `collision_violation` typed conflicts without parsing diagnostics.
+- [x] Typed route/envelope-growth conflict produces a genuinely changed candidate. Evidence: `tests/test_m2h2_contracts.py::test_typed_repairs_use_structured_conflict_fields_and_change_state` and `tests/test_m2h2_repair_matrix.py::test_typed_growth_repairs_use_conflict_fields_for_remaining_categories` verify one-pitch envelope growth with changed candidate state.
+- [x] Typed disconnected-net/island conflict is handled where represented by the current repair model. Evidence: `tests/test_m2h2_repair_matrix.py::test_typed_growth_repairs_use_conflict_fields_for_remaining_categories` covers `net_connectivity` and `dangling_endpoint` typed conflicts using structured `net`/gateway fields.
 - [x] Repair dispatch does not parse human-readable error strings. Evidence: structured-field repair test deliberately replaces exception diagnostics with unparseable text before repair.
 - [x] No-op/repeated candidate states are deduplicated. Evidence: `compose_with_evidence` rejects unchanged repairs and globally records `(fragment variant, delta, route_retry)` state digests as `repeat_state_skipped`.
 - [x] No-op states do not consume budget as new structural exploration. Evidence: `complete_attempts` increments only after no-op/repeat-state rejection in `compose_with_evidence`.
