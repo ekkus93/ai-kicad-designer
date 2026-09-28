@@ -32,6 +32,12 @@ jobs:
       - name: Ruff lint
         run: python -m ruff check src/ai_kicad tests tools
 
+      - name: Pytest
+        run: python -m pytest -q
+
+      - name: Git diff check
+        run: git diff --check
+
       - name: Ruff format check m2_compose
         run: python -m ruff format --check src/ai_kicad/m2_compose.py
 
@@ -45,9 +51,3 @@ jobs:
 
       - name: Ruff format check tools
         run: python -m ruff format --check tools
-
-      - name: Pytest
-        run: python -m pytest -q
-
-      - name: Git diff check
-        run: git diff --check
