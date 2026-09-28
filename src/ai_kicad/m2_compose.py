@@ -1424,6 +1424,15 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
             {"occurrence": list(occurrence), "fragment": owner}
             for occurrence, owner in sorted(plan.owners.items())
         ],
+        "semantic_obligations": {
+            "ports": [{"id": port.id, "fragment": port.fragment, "net": port.net, "role": port.role, "terminals": [list(terminal) for terminal in port.terminals]} for block in plan.blocks for port in block.ports],
+            "edges": [{"kind": edge.kind, "source": edge.source, "target": edge.target, "net": edge.net, "origins": list(edge.origins)} for edge in plan.edges],
+            "constraints": [{"id": item.id, "kind": item.kind, "strength": item.strength, "anchors": list(item.anchors), "origins": list(item.origins), "parameters": [list(value) for value in item.parameters]} for item in plan.constraints],
+            "precedence": [{"id": item.id, "source_fragment": item.source_fragment, "target_fragment": item.target_fragment, "source_terminal": list(item.source_terminal), "target_terminal": list(item.target_terminal), "net": item.net, "origins": list(item.origins), "minimum_x_separation_nm": item.minimum_x_separation} for item in plan.precedence],
+            "terminals": [{"terminal": list(item.terminal), "occurrence": list(item.occurrence), "owner": item.owner, "asset": item.asset, "unit": item.unit, "pin_name": item.pin_name, "pin_xy_nm": [item.pin_x, item.pin_y], "net": item.net} for item in plan.terminals],
+            "presentation_nets": [{"id": item.id, "terminals": [list(terminal) for terminal in item.terminals], "fragments": list(item.fragments), "role": item.role, "internally_generated": item.internally_generated, "explicit_geometry_required": item.explicit_geometry_required, "producer_fragments": list(item.producer_fragments)} for item in plan.presentation_nets],
+            "local_spans": [{"id": item.id, "first": list(item.first), "second": list(item.second), "maximum_nm": item.maximum, "metric": item.metric, "subtype": item.subtype, "origins": list(item.origins)} for item in plan.local_spans],
+        },
         "terminal_inventory_count": scene.metrics["pre_emission_terminal_inventory_count"],
         "net_graph_witnesses": scene.metrics["pre_emission_net_witnesses"],
         "gateway_witnesses": scene.metrics["pre_emission_gateway_witnesses"],
