@@ -40,27 +40,39 @@ jobs:
           python -m ruff format --check \
             $(find src/ai_kicad -name '*.py' ! -path 'src/ai_kicad/m2_compose.py' | sort)
 
-      - name: Repair matrix format diff lines 161-180
+      - name: Repair matrix format diff lines 150-160
+        env:
+          RANGE_LO: '150'
+          RANGE_HI: '160'
+        run: python .github/scripts/check_repair_matrix_format_range.py
+
+      - name: Repair matrix format diff lines 161-165
         env:
           RANGE_LO: '161'
+          RANGE_HI: '165'
+        run: python .github/scripts/check_repair_matrix_format_range.py
+
+      - name: Repair matrix format diff lines 166-170
+        env:
+          RANGE_LO: '166'
+          RANGE_HI: '170'
+        run: python .github/scripts/check_repair_matrix_format_range.py
+
+      - name: Repair matrix format diff lines 171-175
+        env:
+          RANGE_LO: '171'
+          RANGE_HI: '175'
+        run: python .github/scripts/check_repair_matrix_format_range.py
+
+      - name: Repair matrix format diff lines 176-180
+        env:
+          RANGE_LO: '176'
           RANGE_HI: '180'
         run: python .github/scripts/check_repair_matrix_format_range.py
 
-      - name: Repair matrix format diff lines 181-200
+      - name: Repair matrix format diff lines 181-240
         env:
           RANGE_LO: '181'
-          RANGE_HI: '200'
-        run: python .github/scripts/check_repair_matrix_format_range.py
-
-      - name: Repair matrix format diff lines 201-220
-        env:
-          RANGE_LO: '201'
-          RANGE_HI: '220'
-        run: python .github/scripts/check_repair_matrix_format_range.py
-
-      - name: Repair matrix format diff lines 221-240
-        env:
-          RANGE_LO: '221'
           RANGE_HI: '240'
         run: python .github/scripts/check_repair_matrix_format_range.py
 
