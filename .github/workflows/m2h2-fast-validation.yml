@@ -12,8 +12,11 @@ permissions:
 jobs:
   fast-validation:
     name: pytest / ruff / diff-check
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    runs-on:
+      - self-hosted
+      - Linux
+      - X64
+    timeout-minutes: 60
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
