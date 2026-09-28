@@ -366,16 +366,13 @@ def test_certificate_exports_complete_semantic_obligation_inventory() -> None:
     assert exported_ports == expected_ports
 
     exported_edges = [
-        (
-            item["kind"],
-            item["source"],
-            item["target"],
-            item["net"],
-            tuple(item["origins"]),
-        )
+        (item["kind"], item["source"], item["target"], item["net"], tuple(item["origins"]))
         for item in obligations["edges"]
     ]
-    expected_edges = [(edge.kind, edge.source, edge.target, edge.net, edge.origins) for edge in plan.edges]
+    expected_edges = [
+        (edge.kind, edge.source, edge.target, edge.net, edge.origins)
+        for edge in plan.edges
+    ]
     assert exported_edges == expected_edges
 
     exported_constraints = {item["id"] for item in obligations["constraints"]}
