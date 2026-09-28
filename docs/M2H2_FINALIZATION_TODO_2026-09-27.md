@@ -256,7 +256,7 @@ A checkbox may be checked only from current-source evidence. Older qualification
 - [ ] Scoped Ruff lint passes.
 - [ ] Scoped Ruff format check passes.
 - [ ] `git diff --check` passes.
-- [ ] Scoped whitespace checks passes.
+- [ ] Scoped whitespace checks pass.
 - [ ] Applicable link checks pass.
 - [ ] Historical evidence hash audit passes.
 - [ ] Literal anti-overfitting scan passes.
