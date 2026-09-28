@@ -22,7 +22,7 @@ covers global-route channel capacity rejection, meaningful structural-diversity
 reporting in composition evidence, and failure-exit preservation of candidate
 decisions plus exact typed failure witnesses. The obligation certificate is now
 covered by a focused current-source witness export audit for unique ownership,
-terminal inventory, complete required net-graph witnesses, gateway witnesses,
+complete semantic-obligation inventory, terminal inventory, complete required net-graph witnesses, gateway witnesses,
 placement witnesses, page spread, reservation/collision legality, canonical
 conductor lengths, certified-scene digests, and stale-certificate emission
 rejection. This is contract evidence only, not final real-tool qualification.
@@ -68,19 +68,17 @@ or generation alone.
 
 ## Remaining completion work
 
-1. Complete the remaining generic contract gap: semantic-obligation
-   representation directly inside the obligation certificate.
-2. Reconfirm V6-3 and DP2 at the final source state with locked KiCad 10.0.6 and
+1. Reconfirm V6-3 and DP2 at the final source state with locked KiCad 10.0.6 and
    unchanged gates.
-3. Validate every I1–I6 cell and selected triple against actual electrical,
+2. Validate every I1–I6 cell and selected triple against actual electrical,
    routing, path, layout, band-class, and real-tool invariants at the final source
    state. Update the frozen coverage ledger with evidence links and genuine
    semantic impossibility witnesses only where applicable.
-4. After source stabilization, run a new five-clean-build qualification for all
+3. After source stabilization, run a new five-clean-build qualification for all
    56 positives and required interaction/stress cases using locked KiCad 10.0.6.
    Confirm deterministic project bytes, net partitions, ERC, variant and route
    decisions, obligation proofs, layout metrics, and normalized SVG geometry.
-5. Inspect the new rendered sheets, report worst metrics and structural/variant
+4. Inspect the new rendered sheets, report worst metrics and structural/variant
    coverage, rerun complete pytest/lint/format/whitespace/historical audits, and
    perform a structural anti-overfitting review. Record agent inspection as such;
    human approval is not available from this worktree.

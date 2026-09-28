@@ -316,6 +316,33 @@ def test_certificate_covers_required_net_graphs_and_placement_obligations() -> N
     assert all(len(witness) == 3 for witness in certificate["placement_witnesses"])
 
 
+def test_certificate_exports_complete_semantic_obligation_inventory() -> None:
+    resolved = assets()
+    design = validate(
+        json.loads((ROOT / "fixtures/m2h2/interaction/i1/d2_b1.json").read_text()),
+        resolved,
+    )
+    plan = semantic_plan(design, resolved)
+    _scene, evidence = compose_with_evidence(design, resolved)
+    obligations = evidence["obligation_certificate"]["semantic_obligations"]
+
+    assert {item["id"] for item in obligations["ports"]} == {
+        port.id for block in plan.blocks for port in block.ports
+    }
+    assert [
+        (item["kind"], item["source"], item["target"], item["net"], tuple(item["origins"]))
+        for item in obligations["edges"]
+    ] == [(edge.kind, edge.source, edge.target, edge.net, edge.origins) for edge in plan.edges]
+    assert {item["id"] for item in obligations["constraints"]} == {item.id for item in plan.constraints}
+    assert {item["id"] for item in obligations["precedence"]} == {item.id for item in plan.precedence}
+    assert {tuple(item["terminal"]) for item in obligations["terminals"]} == {item.terminal for item in plan.terminals}
+    assert {item["id"] for item in obligations["presentation_nets"]} == {item.id for item in plan.presentation_nets}
+    assert {item["id"] for item in obligations["local_spans"]} == {item.id for item in plan.local_spans}
+    assert len(obligations["terminals"]) == len(plan.terminals)
+    assert len(obligations["precedence"]) == len(plan.precedence)
+    assert len(obligations["local_spans"]) == len(plan.local_spans)
+
+
 def test_failed_certificate_prevents_successful_schematic_emission(tmp_path) -> None:
     resolved = assets()
     design = validate(
