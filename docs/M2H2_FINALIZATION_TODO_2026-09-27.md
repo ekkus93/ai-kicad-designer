@@ -88,10 +88,10 @@ A checkbox may be checked only from current-source evidence. Older qualification
 
 ### 3.3 Tiny exhaustive placement oracle
 
-- [ ] Implement bounded exhaustive synthetic placement oracle/enumeration.
-- [ ] Planner accepts when exhaustive oracle finds a legal arrangement.
-- [ ] Planner reports bounded infeasibility when no legal arrangement exists.
-- [ ] Precedence/non-overlap/locality outcomes are compared independently of planner implementation.
+- [x] Implement bounded exhaustive synthetic placement oracle/enumeration. Evidence: `test_tiny_exhaustive_two_band_reference_preserves_structural_classes` independently enumerates the finite synthetic two-band model.
+- [x] Planner accepts when exhaustive oracle finds a legal arrangement. Evidence: the tiny exhaustive test compares feasible `side`/`stack` classes with `_partial_beam_candidates` and requires equality.
+- [x] Planner reports bounded infeasibility when no legal arrangement exists. Evidence: exact spread boundary falsification requires `PACK_BUDGET_EXHAUSTED` for the independently infeasible over-bound synthetic placements.
+- [x] Precedence/non-overlap/locality outcomes are compared independently of planner implementation. Evidence: tiny exhaustive rectangle enumeration plus independent exact precedence/locality boundary tests in `tests/test_m2h2_contracts.py`.
 
 ### 3.4 Exact-boundary tests
 
@@ -135,10 +135,10 @@ A checkbox may be checked only from current-source evidence. Older qualification
 - [ ] Typed route/envelope-growth conflict produces a genuinely changed candidate.
 - [ ] Typed disconnected-net/island conflict is handled where represented by the current repair model.
 - [x] Repair dispatch does not parse human-readable error strings. Evidence: structured-field repair test deliberately replaces exception diagnostics with unparseable text before repair.
-- [ ] No-op/repeated candidate states are deduplicated.
-- [ ] No-op states do not consume budget as new structural exploration.
-- [ ] Candidate/repair budget counters never silently reset.
-- [ ] Exact attempted-state diversity is recorded in evidence.
+- [x] No-op/repeated candidate states are deduplicated. Evidence: `compose_with_evidence` rejects unchanged repairs and globally records `(fragment variant, delta, route_retry)` state digests as `repeat_state_skipped`.
+- [x] No-op states do not consume budget as new structural exploration. Evidence: `complete_attempts` increments only after no-op/repeat-state rejection in `compose_with_evidence`.
+- [x] Candidate/repair budget counters never silently reset. Evidence: one monotonic `complete_attempts` counter spans all seeds/rounds and is preserved in success/failure evidence.
+- [x] Exact attempted-state diversity is recorded in evidence. Evidence: `layout_attempts`, `structural_search.attempted_structure_count`, per-seed structural signatures, and exact complete-attempt budget are emitted.
 
 ## 6. Interaction coverage I1–I6 — final source
 
