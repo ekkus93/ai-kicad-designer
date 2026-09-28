@@ -839,9 +839,7 @@ def test_typed_repairs_use_structured_conflict_fields_and_change_state() -> None
     )
     blocked = RouteBlockedConflict(reference_net, (blocked_gateway.id,), 17, 23)
     blocked.args = ("no net= token exists in this diagnostic anymore",)
-    grown, growth_decision = _reservation_growth_repack(
-        reference_plan, reference_seed, blocked, 0
-    )
+    grown, growth_decision = _reservation_growth_repack(reference_plan, reference_seed, blocked, 0)
     assert growth_decision["net"] == reference_net
     assert growth_decision["growth_nm"] == PITCH
     assert tuple((item.fragment.id, item.delta) for item in grown.fragments) != tuple(
