@@ -321,10 +321,7 @@ def test_obligation_certificate_exports_pre_emission_invariant_witnesses() -> No
     assert certificate["no_cross_net_contacts"] is True
     assert certificate["no_unallocated_growth"] is True
     assert certificate["scene_geometry_sha256"] == scene.certificate_digest
-    assert (
-        certificate["candidate_input_policy_sha256"]
-        == scene.certificate_input_digest
-    )
+    assert certificate["candidate_input_policy_sha256"] == scene.certificate_input_digest
 
 
 def test_certificate_covers_required_net_graphs_and_placement_obligations() -> None:
