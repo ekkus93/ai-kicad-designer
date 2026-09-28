@@ -175,12 +175,7 @@ def test_typed_growth_repairs_use_conflict_fields_for_remaining_categories(
     variants = fragment_variants(design, resolved, plan)
     seed = pack_fragment_candidates(plan, variants)[0]
     net = next(item.id for item in plan.presentation_nets if item.internally_generated)
-    gateway = next(
-        item
-        for placed in seed.fragments
-        for item in placed.gateways
-        if item.net == net
-    )
+    gateway = next(item for placed in seed.fragments for item in placed.gateways if item.net == net)
     conflict = TypedConflict(
         category,
         f"opaque {category.value} diagnostic without parseable routing tokens",
