@@ -635,18 +635,22 @@ def test_exact_content_spread_boundaries_are_hard_and_inclusive() -> None:
 
     plan = SemanticPlan((block,), (), {}, ())
     assert pack_fragment_candidates(
-        plan, {block.id: (candidate(MAX_CONTENT_WIDTH, 10 * PITCH),)}
+        plan,
+        {block.id: (candidate(MAX_CONTENT_WIDTH, 10 * PITCH),)},
     )
     assert pack_fragment_candidates(
-        plan, {block.id: (candidate(10 * PITCH, MAX_CONTENT_HEIGHT),)}
+        plan,
+        {block.id: (candidate(10 * PITCH, MAX_CONTENT_HEIGHT),)},
     )
     with pytest.raises(InputError, match="PACK_BUDGET_EXHAUSTED"):
         pack_fragment_candidates(
-            plan, {block.id: (candidate(MAX_CONTENT_WIDTH + 1, 10 * PITCH),)}
+            plan,
+            {block.id: (candidate(MAX_CONTENT_WIDTH + 1, 10 * PITCH),)},
         )
     with pytest.raises(InputError, match="PACK_BUDGET_EXHAUSTED"):
         pack_fragment_candidates(
-            plan, {block.id: (candidate(10 * PITCH, MAX_CONTENT_HEIGHT + 1),)}
+            plan,
+            {block.id: (candidate(10 * PITCH, MAX_CONTENT_HEIGHT + 1),)},
         )
 
 
