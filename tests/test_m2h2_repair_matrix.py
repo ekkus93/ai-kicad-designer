@@ -370,8 +370,7 @@ def test_certificate_exports_complete_semantic_obligation_inventory() -> None:
         for item in obligations["edges"]
     ]
     expected_edges = [
-        (edge.kind, edge.source, edge.target, edge.net, edge.origins)
-        for edge in plan.edges
+        (edge.kind, edge.source, edge.target, edge.net, edge.origins) for edge in plan.edges
     ]
     assert exported_edges == expected_edges
 
