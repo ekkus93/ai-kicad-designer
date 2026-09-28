@@ -18,13 +18,14 @@ Current-source unit coverage now includes the structural route lower-bound role
 matrix and the remaining typed repair categories represented by the current
 repair model: reservation, collision, route/envelope growth, net connectivity,
 and dangling endpoint/island conflicts. Additional structural-routing evidence
-covers global-route channel capacity rejection and meaningful structural-diversity
-reporting in composition evidence. The obligation certificate is now covered by
-a focused current-source witness export audit for unique ownership, terminal
-inventory, complete required net-graph witnesses, gateway witnesses, placement
-witnesses, page spread, reservation/collision legality, canonical conductor
-lengths, certified-scene digests, and stale-certificate emission rejection. This
-is contract evidence only, not final real-tool qualification.
+covers global-route channel capacity rejection, meaningful structural-diversity
+reporting in composition evidence, and failure-exit preservation of candidate
+decisions plus exact typed failure witnesses. The obligation certificate is now
+covered by a focused current-source witness export audit for unique ownership,
+terminal inventory, complete required net-graph witnesses, gateway witnesses,
+placement witnesses, page spread, reservation/collision legality, canonical
+conductor lengths, certified-scene digests, and stale-certificate emission
+rejection. This is contract evidence only, not final real-tool qualification.
 
 At the current source state, fresh one-run builds in `development_checks/`
 passed locked KiCad 10.0.6, independent electrical observation, zero ERC, and
@@ -67,9 +68,8 @@ or generation alone.
 
 ## Remaining completion work
 
-1. Complete the remaining generic contract gaps, especially semantic-obligation
-   representation in the certificate and best-rejected/failure-witness evidence
-   on failure exits.
+1. Complete the remaining generic contract gap: semantic-obligation
+   representation directly inside the obligation certificate.
 2. Reconfirm V6-3 and DP2 at the final source state with locked KiCad 10.0.6 and
    unchanged gates.
 3. Validate every I1–I6 cell and selected triple against actual electrical,

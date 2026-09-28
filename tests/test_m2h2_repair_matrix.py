@@ -6,6 +6,7 @@ import json
 
 import pytest
 
+import ai_kicad.m2_compose as compose_module
 from ai_kicad.ir import InputError
 from ai_kicad.m2_conflicts import ConflictKind, TypedConflict
 from ai_kicad.m2_fragments import FragmentVariant, PortAnchor, fragment_variants
@@ -222,6 +223,36 @@ def test_composition_evidence_reports_structural_diversity_not_raw_attempt_count
     assert selection["proved_structure_count"] >= 2
     assert all(candidate["structure"] for candidate in selection["proved_candidates"])
     assert any(attempt["result"] == "pass" for attempt in evidence["layout_attempts"])
+
+
+def test_failure_exit_preserves_candidate_decisions_and_exact_failure_witness(monkeypatch) -> None:
+    resolved = assets()
+    design = validate(
+        json.loads((ROOT / "fixtures/m2h2/interaction/i2/internal_2.json").read_text()),
+        resolved,
+    )
+    conflict = compose_module.ConductorLengthConflict("VREF", 250_000_001, 0, 250_000_001)
+
+    def fail_candidate(*_args, **_kwargs):
+        raise conflict
+
+    monkeypatch.setattr(compose_module, "_assemble_candidate", fail_candidate)
+    with pytest.raises(compose_module.LayoutBudgetError) as caught:
+        compose_module.compose_with_evidence(design, resolved)
+
+    evidence = caught.value.evidence
+    rejected = [item for item in evidence["layout_attempts"] if item["result"] == "rejected"]
+    assert rejected
+    assert evidence["candidate_decisions"]
+    assert all(decision["placements"] for decision in evidence["candidate_decisions"])
+    assert evidence["failed_metric"] == str(conflict)
+    assert evidence["budgets"]["complete_attempts_used"] == len(rejected)
+    assert tuple(evidence["layout_attempts"]) == caught.value.attempts
+    assert all(item["failure_class"] == conflict.kind for item in rejected)
+    assert all(item["conflict"] == str(conflict) for item in rejected)
+    assert all(item["net"] == "VREF" for item in rejected)
+    assert all(item["actual"] == 250_000_001 for item in rejected)
+    assert all(item["limit"] == 250_000_000 for item in rejected)
 
 
 def test_obligation_certificate_exports_pre_emission_invariant_witnesses() -> None:
