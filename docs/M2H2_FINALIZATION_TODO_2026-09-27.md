@@ -62,7 +62,7 @@ A checkbox may be checked only from current-source evidence. Older qualification
 - [x] Reservation/body/text/corridor collision legality is certified pre-emission. Evidence: `tests/test_m2h2_repair_matrix.py::test_obligation_certificate_exports_pre_emission_invariant_witnesses` verifies reservation containment/allocation and no unallocated growth; `test_route_corridor_capacity_is_checked_before_candidate_acceptance` covers channel capacity rejection.
 - [x] 250 mm canonical conductor-length limits are certified pre-emission. Evidence: `tests/test_m2h2_repair_matrix.py::test_obligation_certificate_exports_pre_emission_invariant_witnesses` verifies every exported canonical length is <= 250,000,000 nm.
 - [x] Certified-scene digest matches the exact serialized in-memory scene. Evidence: `tests/test_m2h2_repair_matrix.py::test_obligation_certificate_exports_pre_emission_invariant_witnesses` verifies certificate geometry/input digests match the certified scene digests.
-- [ ] Failed certificate prevents successful `.kicad_sch` emission.
+- [x] Failed certificate prevents successful `.kicad_sch` emission. Evidence: `tests/test_m2h2_repair_matrix.py::test_failed_certificate_prevents_successful_schematic_emission` mutates the certified scene after proof and verifies emission aborts before output creation.
 
 ## 3. Generic falsification matrix
 
@@ -256,7 +256,7 @@ A checkbox may be checked only from current-source evidence. Older qualification
 - [ ] Scoped Ruff lint passes.
 - [ ] Scoped Ruff format check passes.
 - [ ] `git diff --check` passes.
-- [ ] Scoped whitespace checks pass.
+- [ ] Scoped whitespace checks passes.
 - [ ] Applicable link checks pass.
 - [ ] Historical evidence hash audit passes.
 - [ ] Literal anti-overfitting scan passes.

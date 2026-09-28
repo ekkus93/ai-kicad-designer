@@ -6,9 +6,10 @@ import json
 
 import pytest
 
+from ai_kicad.ir import InputError
 from ai_kicad.m2_conflicts import ConflictKind, TypedConflict
 from ai_kicad.m2_fragments import FragmentVariant, PortAnchor, fragment_variants
-from ai_kicad.m2a import PITCH, ROOT
+from ai_kicad.m2a import PITCH, ROOT, emit
 from ai_kicad.m2b import assets, validate
 from ai_kicad.m2_compose import _reservation_growth_repack, compose_with_evidence
 from ai_kicad.m2_geometry import (
@@ -255,3 +256,18 @@ def test_obligation_certificate_exports_pre_emission_invariant_witnesses() -> No
     assert certificate["no_unallocated_growth"] is True
     assert certificate["scene_geometry_sha256"] == scene.certificate_digest
     assert certificate["candidate_input_policy_sha256"] == scene.certificate_input_digest
+
+
+def test_failed_certificate_prevents_successful_schematic_emission(tmp_path) -> None:
+    resolved = assets()
+    design = validate(
+        json.loads((ROOT / "fixtures/m2h2/interaction/i2/internal_2.json").read_text()),
+        resolved,
+    )
+    scene, _evidence = compose_with_evidence(design, resolved)
+    scene.metrics["body_overlap_count"] = 1
+
+    output = tmp_path / "stale_certificate"
+    with pytest.raises(InputError, match="SCENE_CERTIFICATE_STALE"):
+        emit(design, resolved, scene, output)
+    assert not output.exists()
