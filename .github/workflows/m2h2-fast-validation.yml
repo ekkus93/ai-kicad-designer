@@ -9,6 +9,13 @@ on:
 permissions:
   contents: read
 
+# Only the newest master head can provide current-source baseline evidence.
+# Cancel stale queued/running validations so the single locked self-hosted
+# runner is not consumed by obsolete commits after rapid CAS updates.
+concurrency:
+  group: m2h2-fast-validation-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   static-validation:
     name: static lint / format / diff-check
