@@ -21,8 +21,7 @@ def observed_structural_class(signature: dict) -> dict:
     selected_seed = selection.get("selected_seed")
     selected_round = selection.get("selected_round")
     seeds = {
-        item.get("seed"): item
-        for item in composition.get("structural_search", {}).get("seeds", [])
+        item.get("seed"): item for item in composition.get("structural_search", {}).get("seeds", [])
     }
     seed = seeds.get(selected_seed, {})
     proved = next(
@@ -160,9 +159,7 @@ def verify(run: Path, design: dict, expected: dict) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", type=Path, required=True)
-    parser.add_argument(
-        "--group", choices=("i1", "i2", "i3", "i4", "i5", "i6"), required=True
-    )
+    parser.add_argument("--group", choices=("i1", "i2", "i3", "i4", "i5", "i6"), required=True)
     parser.add_argument("--only", type=str)
     args = parser.parse_args()
     output = args.out.resolve()
@@ -170,9 +167,7 @@ def main() -> None:
         raise SystemExit(f"refusing to overwrite evidence: {output}")
     output.mkdir(parents=True, exist_ok=True)
     results = []
-    for design_path in sorted(
-        (ROOT / "fixtures/m2h2/interaction" / args.group).glob("*.json")
-    ):
+    for design_path in sorted((ROOT / "fixtures/m2h2/interaction" / args.group).glob("*.json")):
         if design_path.name.endswith(".expected.json"):
             continue
         if args.group == "i1" and design_path.stem == "selected_triple":
