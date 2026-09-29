@@ -98,6 +98,8 @@ def _string_constants_in_match_pattern(pattern: ast.AST) -> list[tuple[str, int]
 
 
 def _suspicious_literal(value: str) -> str | None:
+    if FIXTURE_LITERAL_PATTERN.search(value):
+        return "fixture_specific_literal"
     if REFDES_LITERAL_PATTERN.fullmatch(value):
         return "refdes_literal_control_flow"
     if NET_LITERAL_PATTERN.fullmatch(value):
@@ -105,75 +107,66 @@ def _suspicious_literal(value: str) -> str | None:
     return None
 
 
+def _append_findings(
+    findings: list[dict[str, Any]],
+    relative: str,
+    lines: list[str],
+    constants: Iterable[tuple[str, int]],
+) -> None:
+    for value, line_number in constants:
+        kind = _suspicious_literal(value)
+        if kind:
+            findings.append(
+                {
+                    "kind": kind,
+                    "path": relative,
+                    "line": line_number,
+                    "literal": value,
+                    "source": _line_at(lines, line_number),
+                }
+            )
+
+
 def audit_paths(paths: Iterable[Path]) -> dict[str, Any]:
-    """Return a structured structural anti-overfitting audit report."""
+    """Return a structural anti-overfitting audit of active dispatch decisions.
+
+    Fixture/schema names used only as evidence metadata are intentionally ignored.
+    The governing risk is benchmark-specific behavior, so this audit examines
+    literals that participate in branches, assertions, loop guards, conditional
+    expressions, match patterns, and match guards.
+    """
     findings: list[dict[str, Any]] = []
     files = _source_files(paths)
     for path in files:
         text = path.read_text()
         lines = text.splitlines()
         relative = _relative(path)
-        for line_number, line in enumerate(lines, start=1):
-            match = FIXTURE_LITERAL_PATTERN.search(line)
-            if match:
-                findings.append(
-                    {
-                        "kind": "fixture_specific_literal",
-                        "path": relative,
-                        "line": line_number,
-                        "literal": match.group(0),
-                        "source": line.strip(),
-                    }
-                )
         tree = ast.parse(text, filename=relative)
         for node in ast.walk(tree):
             if isinstance(node, CONTROL_NODES):
                 inspected = node.test if hasattr(node, "test") else node
-                for value, line_number in _string_constants(inspected):
-                    kind = _suspicious_literal(value)
-                    if kind:
-                        findings.append(
-                            {
-                                "kind": kind,
-                                "path": relative,
-                                "line": line_number,
-                                "literal": value,
-                                "source": _line_at(lines, line_number),
-                            }
-                        )
+                _append_findings(findings, relative, lines, _string_constants(inspected))
             elif isinstance(node, ast.Match):
                 for case in node.cases:
-                    for value, line_number in _string_constants_in_match_pattern(case.pattern):
-                        kind = _suspicious_literal(value)
-                        if kind:
-                            findings.append(
-                                {
-                                    "kind": kind,
-                                    "path": relative,
-                                    "line": line_number,
-                                    "literal": value,
-                                    "source": _line_at(lines, line_number),
-                                }
-                            )
+                    _append_findings(
+                        findings,
+                        relative,
+                        lines,
+                        _string_constants_in_match_pattern(case.pattern),
+                    )
                     if case.guard is not None:
-                        for value, line_number in _string_constants(case.guard):
-                            kind = _suspicious_literal(value)
-                            if kind:
-                                findings.append(
-                                    {
-                                        "kind": kind,
-                                        "path": relative,
-                                        "line": line_number,
-                                        "literal": value,
-                                        "source": _line_at(lines, line_number),
-                                    }
-                                )
+                        _append_findings(
+                            findings,
+                            relative,
+                            lines,
+                            _string_constants(case.guard),
+                        )
     return {
         "schema_version": "m2h2.structural-anti-overfitting-audit.1",
         "scope": [_relative(path) for path in files],
         "git_head": _repo_head(),
         "rules": {
-            "fixture_specific_literals": FIXTURE_LITERAL_PATTERN.pattern,
+            "fixture_specific_control_flow": FIXTURE_LITERAL_PATTERN.pattern,
             "refdes_literal_control_flow": REFDES_LITERAL_PATTERN.pattern,
             "net_literal_control_flow": NET_LITERAL_PATTERN.pattern,
         },

@@ -39,7 +39,22 @@ def choose(role: str) -> str:
     assert report["findings"] == []
 
 
-def test_structural_audit_rejects_fixture_specific_literals(tmp_path: Path) -> None:
+def test_structural_audit_accepts_fixture_names_as_evidence_metadata(tmp_path: Path) -> None:
+    module = _write(
+        tmp_path / "src/ai_kicad/m2_metadata.py",
+        """
+def report() -> dict:
+    return {"schema_version": "m2g2.composition.1", "historical_case": "V6-3"}
+""",
+    )
+
+    report = audit_paths([module])
+
+    assert report["pass"] is True
+    assert report["findings"] == []
+
+
+def test_structural_audit_rejects_fixture_specific_control_flow(tmp_path: Path) -> None:
     module = _write(
         tmp_path / "src/ai_kicad/m2_bad_fixture.py",
         """
