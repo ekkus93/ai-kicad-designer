@@ -42,9 +42,7 @@ CONTROL_NODES = (ast.If, ast.IfExp, ast.While, ast.Assert)
 
 def _repo_head() -> str | None:
     try:
-        return subprocess.check_output(
-            ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
-        ).strip()
+        return subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     except (OSError, subprocess.CalledProcessError):
         return None
 
