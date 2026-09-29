@@ -180,9 +180,9 @@ jobs:
         run: git diff --check
 
   locked-runner-validation:
-    name: pytest on locked runner
+    name: pytest and M2h2 one-run regressions on locked runner
     runs-on: self-hosted
-    timeout-minutes: 60
+    timeout-minutes: 90
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -200,6 +200,19 @@ jobs:
 
       - name: Pytest
         run: python -m pytest -q
+
+      - name: M2h2 current-source V6-3 and DP2 regressions
+        run: >-
+          python tools/run_m2h2_current_regressions.py
+          --out fixtures/m2h2/development_checks/ci_current_regressions_${{ github.sha }}
+
+      - name: Upload M2h2 current-source regression evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m2h2-current-regressions-${{ github.sha }}
+          path: fixtures/m2h2/development_checks/ci_current_regressions_${{ github.sha }}
+          if-no-files-found: warn
 
       - name: Git diff check
         run: git diff --check
