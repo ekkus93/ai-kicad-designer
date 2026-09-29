@@ -185,11 +185,7 @@ def main() -> None:
         for index in range(1, 6):
             destination = output / design_path.stem / f"run{index}"
             rc = _build(design_path, destination)
-            actual = (
-                destination
-                if rc == 0
-                else destination.with_name(destination.name + ".failed")
-            )
+            actual = destination if rc == 0 else destination.with_name(destination.name + ".failed")
             record = {
                 "run": index,
                 "returncode": rc,
