@@ -1,0 +1,50 @@
+{
+  "schema_version": "m2h2.finalization-check.1",
+  "check": "interaction_coverage_evidence_validators",
+  "source_head": "9cb6e748cd880d78e1f4941d9f3f2d94989be7ea",
+  "purpose": "Enforce that covered interaction cells link structured locked real-tool qualification evidence and unsupported cells link structured semantic impossibility witnesses. Parse success, generation success, planned labels, internal-only metrics, layout failures, build failures, and routing failures are rejected as completion evidence.",
+  "implementation": {
+    "runner": "tools/run_m2h2_i1.py",
+    "functions": [
+      "validate_real_tool_qualification_evidence",
+      "validate_semantic_impossibility_witness",
+      "validate_coverage_ledger_evidence",
+      "validate_coverage_ledger_impossibilities"
+    ],
+    "portable_tests": "tests/test_m2h2_interaction_runner.py"
+  },
+  "ci_evidence": {
+    "workflow": "M2h2 Fast Validation",
+    "run_id": 36560564536,
+    "head_sha": "9cb6e748cd880d78e1f4941d9f3f2d94989be7ea",
+    "static_job": {
+      "job_id": 109380159127,
+      "conclusion": "success",
+      "evidence": [
+        "Ruff lint success",
+        "Ruff format checks success",
+        "git diff --check success",
+        "scoped trailing-whitespace check success"
+      ]
+    },
+    "hosted_contract_job": {
+      "job_id": 109380159388,
+      "conclusion": "success",
+      "evidence": [
+        "tests/test_m2h2_contracts.py success",
+        "tests/test_m2h2_repair_matrix.py success",
+        "tests/test_m2h2_interaction_runner.py success",
+        "git diff --check success"
+      ]
+    },
+    "locked_runner_job": {
+      "job_id": 109380159323,
+      "status": "queued",
+      "counts_as_final_real_tool_evidence": false
+    }
+  },
+  "does_not_mark_cells_covered": true,
+  "does_not_replace_locked_kicad_qualification": true,
+  "no_gate_changes": true,
+  "no_m3_or_corpus_v7": true
+}
