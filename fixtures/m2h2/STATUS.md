@@ -31,11 +31,15 @@ only, not final real-tool qualification.
 A fast GitHub Actions workflow exists at
 `.github/workflows/m2h2-fast-validation.yml` to produce exact-head pytest,
 Ruff lint, Ruff format, and `git diff --check` evidence. The hosted static job in
-run `36478515556` passed Ruff lint, Ruff format for `src`, M2 contract tests,
+run `36513428860` passed Ruff lint, Ruff format for `src`, M2 contract tests,
 `tools`, `git diff --check`, and scoped trailing-whitespace checks for exact head
-`8ac13a665aef36bfb4241289be7a1d34fc4c568b`. The locked self-hosted pytest job
-for that exact head remains queued, so pytest, V6-3, DP2, interaction, and final
-qualification evidence are not complete.
+`5a2b8e72267beb7dda870d2e0b6af971248b5eb7`. The hosted M2h2 contract pytest
+subset in the same run also passed for that exact head. A full hosted pytest run
+is not a valid substitute for locked evidence because the KiCad platform/CPU
+identity guard rejects the hosted runner. The locked self-hosted full pytest job
+for exact head `5a2b8e72267beb7dda870d2e0b6af971248b5eb7` remains queued, so
+complete pytest, V6-3, DP2, interaction, and final qualification evidence are not
+complete.
 
 At the current source state, fresh one-run builds in `development_checks/`
 passed locked KiCad 10.0.6, independent electrical observation, zero ERC, and
@@ -52,11 +56,12 @@ and passive/support consumers. The route report records a `producer_centered`
 strategy for both cases. These are single builds, not final five-build evidence.
 
 A previous full pytest suite passed **195 tests** after the latest routing
-change. Current-source hosted static evidence now passes at exact head
-`8ac13a665aef36bfb4241289be7a1d34fc4c568b`; exact-head pytest is still awaiting
-the locked runner. Historical protection audit passed for 7,221 tracked files
-with matching HEAD/worktree digests. The active-module literal anti-overfitting
-scan passed and found no CP-SAT dependency or implementation.
+change. Current-source hosted static evidence and hosted M2h2 contract pytest now
+pass at exact head `5a2b8e72267beb7dda870d2e0b6af971248b5eb7`; exact-head full
+pytest is still awaiting the locked runner. Historical protection audit passed
+for 7,221 tracked files with matching HEAD/worktree digests. The active-module
+literal anti-overfitting scan passed and found no CP-SAT dependency or
+implementation.
 
 ## Provisional qualification evidence
 
@@ -80,8 +85,8 @@ or generation alone.
 ## Remaining completion work
 
 1. Complete the current-source fast-validation workflow by getting the locked
-   self-hosted pytest job to run, then reconcile that baseline check only after
-   exact-head evidence exists.
+   self-hosted full pytest job to run, then reconcile that baseline check only
+   after exact-head evidence exists.
 2. Reconfirm V6-3 and DP2 at the final source state with locked KiCad 10.0.6 and
    unchanged gates.
 3. Validate every I1–I6 cell and selected triple against actual electrical,
