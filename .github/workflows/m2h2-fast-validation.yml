@@ -39,6 +39,9 @@ jobs:
       - name: Ruff lint
         run: python -m ruff check src/ai_kicad tests tools
 
+      - name: Structural anti-overfitting audit
+        run: python tools/run_m2h2_structural_audit.py
+
       - name: Ruff format check m2_compose
         run: python -m ruff format --check src/ai_kicad/m2_compose.py
 
@@ -175,6 +178,7 @@ jobs:
           tests/test_m2h2_contracts.py
           tests/test_m2h2_repair_matrix.py
           tests/test_m2h2_interaction_runner.py
+          tests/test_m2h2_structural_audit.py
 
       - name: Git diff check
         run: git diff --check

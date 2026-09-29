@@ -29,17 +29,23 @@ digests, and stale-certificate emission rejection. This is contract evidence
 only, not final real-tool qualification.
 
 A fast GitHub Actions workflow exists at
-`.github/workflows/m2h2-fast-validation.yml` to produce exact-head pytest,
-Ruff lint, Ruff format, and `git diff --check` evidence. The hosted static job in
-run `36564959452` passed Ruff lint, Ruff format for `src`, M2 contract tests,
-`tools`, `git diff --check`, and scoped trailing-whitespace checks for exact head
-`9911278d46734b8dcedb268cefece20f05244c33`. The hosted M2h2 contract pytest
-subset in the same run also passed for that exact head. A full hosted pytest run
-is not a valid substitute for locked evidence because the KiCad platform/CPU
-identity guard rejects the hosted runner. The locked self-hosted full pytest job
-for exact head `9911278d46734b8dcedb268cefece20f05244c33` remains queued, so
-complete pytest, V6-3, DP2, interaction, and final qualification evidence are not
-complete.
+`.github/workflows/m2h2-fast-validation.yml` to produce exact-head hosted Ruff,
+format, `git diff --check`, scoped whitespace, M2h2 contract pytest, and locked
+self-hosted full-pytest evidence. The locked self-hosted job also runs
+`tools/run_m2h2_current_regressions.py`, which produces one-run V6-3 and DP2
+current-source regression evidence and uploads it as
+`m2h2-current-regressions-${{ github.sha }}`. The hosted static job now also runs
+`tools/run_m2h2_structural_audit.py`, a structural anti-overfitting audit for
+active M2 production-module control flow. The audit flags benchmark-specific
+literals and literal net/refdes dispatch in active production modules; final
+source still requires exact-head CI evidence before this can be reconciled as a
+completed final audit gate.
+
+The previous exact-head fast-validation run `36601055914` passed hosted static
+validation and hosted M2h2 contract pytest at
+`5b134602edf25a1f6460aeece9496f1e839c8037`; its locked self-hosted job remained
+queued, so complete pytest, V6-3, DP2, interaction, and final qualification
+evidence were still incomplete at that head.
 
 At the current source state, fresh one-run builds in `development_checks/`
 passed locked KiCad 10.0.6, independent electrical observation, zero ERC, and
@@ -75,12 +81,12 @@ These validators pass in current-source hosted M2h2 contract pytest; they do not
 mark any I1–I6 cell covered and do not replace locked real-tool qualification.
 
 A previous full pytest suite passed **195 tests** after the latest routing
-change. Current-source hosted static evidence and hosted M2h2 contract pytest pass
-at exact head `9911278d46734b8dcedb268cefece20f05244c33`; exact-head full pytest
-is still awaiting the locked runner. Historical protection audit passed for
-7,221 tracked files with matching HEAD/worktree digests. The active-module
-literal anti-overfitting scan passed and found no CP-SAT dependency or
-implementation.
+change. Exact-head full pytest is still awaiting the locked runner. Historical
+protection audit passed for 7,221 tracked files with matching HEAD/worktree
+digests. The active-module literal anti-overfitting scan passed and found no
+CP-SAT dependency or implementation; the structural anti-overfitting audit is
+implemented and wired into hosted validation but still needs exact-head pass
+evidence before final audit reconciliation.
 
 ## Provisional qualification evidence
 
@@ -118,7 +124,7 @@ or generation alone.
    decisions, obligation proofs, layout metrics, and normalized SVG geometry.
 5. Inspect the new rendered sheets, report worst metrics and structural/variant
    coverage, rerun complete pytest/lint/format/whitespace/historical audits, and
-   perform a structural anti-overfitting review. Record agent inspection as such;
-   human approval is not available from this worktree.
+   perform literal plus structural anti-overfitting review. Record agent
+   inspection as such; human approval is not available from this worktree.
 
 No corpus.v7, M3 work, gate change, or CP-SAT was introduced. M2h2 is not PASS.
