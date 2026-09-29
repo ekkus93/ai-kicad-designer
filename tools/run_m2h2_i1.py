@@ -10,6 +10,38 @@ from ai_kicad.m2a import ROOT, observe
 from run_m2g2_qualification import _build, _erc_violations, _json, _signature
 
 
+def observed_structural_class(signature: dict) -> dict:
+    """Return the actual structural class selected by composition evidence.
+
+    This intentionally derives the class from the emitted run's composition
+    evidence, not from the requested interaction factor-cell label.
+    """
+    composition = signature.get("composition", {})
+    selection = composition.get("candidate_selection", {})
+    selected_seed = selection.get("selected_seed")
+    selected_round = selection.get("selected_round")
+    seeds = {
+        item.get("seed"): item
+        for item in composition.get("structural_search", {}).get("seeds", [])
+    }
+    seed = seeds.get(selected_seed, {})
+    proved = next(
+        (
+            item
+            for item in selection.get("proved_candidates", [])
+            if item.get("seed") == selected_seed and item.get("round") == selected_round
+        ),
+        {},
+    )
+    return {
+        "source": "composition.candidate_selection",
+        "selected_seed": selected_seed,
+        "selected_round": selected_round,
+        "placement_class": seed.get("placement_class"),
+        "structure": proved.get("structure") or seed.get("structure") or [],
+    }
+
+
 def verify(run: Path, design: dict, expected: dict) -> dict:
     signature = _signature(run)
     schematic = next((run / "project").glob("*.kicad_sch"))
@@ -116,6 +148,7 @@ def verify(run: Path, design: dict, expected: dict) -> dict:
     return {
         "pass": passed,
         "signature": signature,
+        "observed_structural_class": observed_structural_class(signature),
         "partition_match": actual_partitions == expected_partitions,
         "terminal_match": actual_terminals == expected_terminals,
         "paths": path_results,
@@ -164,11 +197,23 @@ def main() -> None:
         reproducible = len(runs) == 5 and all(
             run.get("signature") == runs[0].get("signature") for run in runs[1:]
         )
+        observed_structures = [
+            run.get("observed_structural_class")
+            for run in runs
+            if run.get("observed_structural_class") is not None
+        ]
+        observed_structure_stable = len(observed_structures) == 5 and all(
+            item == observed_structures[0] for item in observed_structures[1:]
+        )
         results.append(
             {
                 "id": design_path.stem,
                 "cell": expected.get("factor_cell"),
                 "selected_triple": expected.get("selected_triple"),
+                "observed_structural_class": (
+                    observed_structures[0] if observed_structure_stable else None
+                ),
+                "observed_structural_class_stable": observed_structure_stable,
                 "accepted": all(run.get("pass", False) for run in runs) and reproducible,
                 "reproducible": reproducible,
                 "runs": runs,

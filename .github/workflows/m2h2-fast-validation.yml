@@ -163,7 +163,11 @@ jobs:
           python -m pip install -e '.[dev]'
 
       - name: M2h2 contract pytest
-        run: python -m pytest -q tests/test_m2h2_contracts.py tests/test_m2h2_repair_matrix.py
+        run: >-
+          python -m pytest -q
+          tests/test_m2h2_contracts.py
+          tests/test_m2h2_repair_matrix.py
+          tests/test_m2h2_interaction_runner.py
 
       - name: Git diff check
         run: git diff --check
