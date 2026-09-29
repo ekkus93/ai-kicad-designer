@@ -144,7 +144,7 @@ A checkbox may be checked only from current-source evidence. Older qualification
 
 ### 6.1 Coverage infrastructure
 
-- [x] Freeze final-source interaction runner/tool hashes. Evidence: `fixtures/m2h2/finalization_checks/interaction_runner_hashes_f64f31c.json` records exact head `f64f31c149ca33db4c9ad1c81ad14fa14010a7c9`, interaction runner/generator/tool Git blob hashes, frozen manifest/coverage-plan blobs, active source module blobs, and validation workflow blobs. This is a current-source hash freeze only; it does not mark any coverage cell complete and must be replaced if listed behavior-affecting inputs change before final interaction qualification.
+- [ ] Freeze final-source interaction runner/tool hashes. Previous evidence `fixtures/m2h2/finalization_checks/interaction_runner_hashes_f64f31c.json` was invalidated by the current-source interaction-runner/validation changes through `0e6f29f42f8772af20f7ba1eae3929a93c37d162`; create a fresh freeze after the runner/tool inputs stabilize.
 - [x] Coverage result records actual observed structural class, not requested factor labels only. Evidence: `tools/run_m2h2_i1.py::observed_structural_class` derives the selected seed/round, placement class, and proved structure from composition evidence and records only a five-run-stable observed class; `tests/test_m2h2_interaction_runner.py::test_observed_structural_class_uses_selected_run_evidence_not_requested_label` passed in exact-head GitHub Actions run `36517979598`, job `M2h2 contract pytest on hosted runner` (`109244434910`) at `0e6f29f42f8772af20f7ba1eae3929a93c37d162`.
 - [ ] Every covered cell links to real-tool qualification evidence.
 - [ ] Impossible cells require semantic impossibility witnesses, not layout failures.
