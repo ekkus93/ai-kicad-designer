@@ -144,7 +144,7 @@ A checkbox may be checked only from current-source evidence. Older qualification
 
 ### 6.1 Coverage infrastructure
 
-- [ ] Freeze final-source interaction runner/tool hashes.
+- [x] Freeze final-source interaction runner/tool hashes. Evidence: `fixtures/m2h2/finalization_checks/interaction_runner_hashes_f64f31c.json` records exact head `f64f31c149ca33db4c9ad1c81ad14fa14010a7c9`, interaction runner/generator/tool Git blob hashes, frozen manifest/coverage-plan blobs, active source module blobs, and validation workflow blobs. This is a current-source hash freeze only; it does not mark any coverage cell complete and must be replaced if listed behavior-affecting inputs change before final interaction qualification.
 - [ ] Coverage result records actual observed structural class, not requested factor labels only.
 - [ ] Every covered cell links to real-tool qualification evidence.
 - [ ] Impossible cells require semantic impossibility witnesses, not layout failures.
@@ -205,7 +205,7 @@ A checkbox may be checked only from current-source evidence. Older qualification
 - [ ] Scoped Ruff lint passes.
 - [ ] Scoped Ruff format check passes.
 - [ ] `git diff --check` passes.
-- [ ] Applicable whitespace/link checks pass.
+- [ ] Applicable whitespace/link checks passes.
 - [ ] Record stabilized final source hashes.
 - [ ] Create fresh `qualification_final_candidateN` root tied to exact stabilized source.
 - [ ] Confirm no behavior-affecting source changes after final qualification starts.

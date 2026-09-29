@@ -55,6 +55,16 @@ the shared internally produced reference reaches both packages, parked units,
 and passive/support consumers. The route report records a `producer_centered`
 strategy for both cases. These are single builds, not final five-build evidence.
 
+Interaction coverage infrastructure now has a current-source runner/tool hash
+freeze at
+`fixtures/m2h2/finalization_checks/interaction_runner_hashes_f64f31c.json` for
+exact head `f64f31c149ca33db4c9ad1c81ad14fa14010a7c9`. The freeze records the
+Git blob identities for the interaction and qualification runners, I1–I6 and DP
+fixture generators, frozen manifest, frozen coverage ledger, active M2h2 source
+modules, and validation workflow. It does not mark any interaction cell covered,
+does not replace real-tool qualification, and must be replaced if any listed
+behavior-affecting input changes before final interaction qualification.
+
 A previous full pytest suite passed **195 tests** after the latest routing
 change. Current-source hosted static evidence and hosted M2h2 contract pytest now
 pass at exact head `5a2b8e72267beb7dda870d2e0b6af971248b5eb7`; exact-head full
