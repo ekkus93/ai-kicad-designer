@@ -9,6 +9,21 @@ from pathlib import Path
 from ai_kicad.m2a import ROOT, observe
 from run_m2g2_qualification import _build, _erc_violations, _json, _signature
 
+LAYOUT_FAILURE_WITNESS_KEYS = frozenset(
+    {
+        "build_failure",
+        "diagnostic",
+        "diagnostics",
+        "failure",
+        "failure_path",
+        "layout_failure",
+        "logs",
+        "returncode",
+        "route_failure",
+        "stderr",
+    }
+)
+
 
 def observed_structural_class(signature: dict) -> dict:
     """Return the actual structural class selected by composition evidence.
@@ -39,6 +54,51 @@ def observed_structural_class(signature: dict) -> dict:
         "placement_class": seed.get("placement_class"),
         "structure": proved.get("structure") or seed.get("structure") or [],
     }
+
+
+def validate_semantic_impossibility_witness(witness: object) -> list[str]:
+    """Return validation errors for a semantic impossibility witness.
+
+    A coverage cell may be unsupported only by semantic proof. Build, layout,
+    routing, or tool failure evidence must not masquerade as impossibility.
+    """
+    if not isinstance(witness, dict):
+        return ["semantic impossibility witness must be an object"]
+    errors = []
+    if witness.get("schema_version") != "m2h2.semantic-impossibility.1":
+        errors.append("witness schema_version must be m2h2.semantic-impossibility.1")
+    if witness.get("kind") != "semantic_impossibility":
+        errors.append("witness kind must be semantic_impossibility")
+    if witness.get("source") != "semantic_model":
+        errors.append("witness source must be semantic_model")
+    proof = witness.get("proof")
+    if not isinstance(proof, str) or not proof.strip():
+        errors.append("witness proof must be a non-empty semantic explanation")
+    forbidden = sorted(LAYOUT_FAILURE_WITNESS_KEYS.intersection(witness))
+    if forbidden:
+        errors.append(
+            "semantic impossibility witness must not contain layout/build failure keys: "
+            + ", ".join(forbidden)
+        )
+    return errors
+
+
+def validate_coverage_ledger_impossibilities(ledger: dict) -> None:
+    """Require every unsupported interaction cell to carry semantic proof."""
+    errors = []
+    for row_id, row in ledger.get("rows", {}).items():
+        for index, record in enumerate(row.get("unsupported_cells", [])):
+            location = f"{row_id}.unsupported_cells[{index}]"
+            if not isinstance(record, dict):
+                errors.append(f"{location} must be a structured object")
+                continue
+            if not record.get("cell"):
+                errors.append(f"{location} must name the unsupported cell")
+            witness = record.get("semantic_impossibility_witness")
+            for error in validate_semantic_impossibility_witness(witness):
+                errors.append(f"{location}: {error}")
+    if errors:
+        raise ValueError("; ".join(errors))
 
 
 def verify(run: Path, design: dict, expected: dict) -> dict:
@@ -167,6 +227,9 @@ def main() -> None:
         raise SystemExit(f"refusing to overwrite evidence: {output}")
     output.mkdir(parents=True, exist_ok=True)
     results = []
+    validate_coverage_ledger_impossibilities(
+        _json(ROOT / "fixtures/m2h2/development/interaction_coverage.json")
+    )
     for design_path in sorted((ROOT / "fixtures/m2h2/interaction" / args.group).glob("*.json")):
         if design_path.name.endswith(".expected.json"):
             continue
