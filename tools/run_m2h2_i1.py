@@ -24,6 +24,17 @@ LAYOUT_FAILURE_WITNESS_KEYS = frozenset(
     }
 )
 
+PARSE_ONLY_EVIDENCE_KEYS = frozenset(
+    {
+        "coverage_label",
+        "generation_success",
+        "internal_metric_only",
+        "parse_success",
+        "planned_cell",
+        "requested_factor_label",
+    }
+)
+
 
 def observed_structural_class(signature: dict) -> dict:
     """Return the actual structural class selected by composition evidence.
@@ -56,6 +67,31 @@ def observed_structural_class(signature: dict) -> dict:
     }
 
 
+def validate_real_tool_qualification_evidence(evidence: object) -> list[str]:
+    """Return validation errors for a covered-cell real-tool evidence link."""
+    if not isinstance(evidence, dict):
+        return ["real-tool evidence must be an object"]
+    errors = []
+    if evidence.get("schema_version") != "m2h2.real-tool-evidence.1":
+        errors.append("real-tool evidence schema_version must be m2h2.real-tool-evidence.1")
+    if evidence.get("locked_kicad_version") != "10.0.6":
+        errors.append("real-tool evidence must use locked KiCad 10.0.6")
+    for field in ("exact_head_sha", "qualification_root", "results_json", "case_id"):
+        value = evidence.get(field)
+        if not isinstance(value, str) or not value.strip():
+            errors.append(f"real-tool evidence must include non-empty {field}")
+    runs = evidence.get("runs")
+    if not isinstance(runs, list) or not runs:
+        errors.append("real-tool evidence must include at least one run link")
+    forbidden = sorted(PARSE_ONLY_EVIDENCE_KEYS.intersection(evidence))
+    if forbidden:
+        errors.append(
+            "real-tool evidence must not rely on parse/generation/planned-label keys: "
+            + ", ".join(forbidden)
+        )
+    return errors
+
+
 def validate_semantic_impossibility_witness(witness: object) -> list[str]:
     """Return validation errors for a semantic impossibility witness.
 
@@ -83,10 +119,20 @@ def validate_semantic_impossibility_witness(witness: object) -> list[str]:
     return errors
 
 
-def validate_coverage_ledger_impossibilities(ledger: dict) -> None:
-    """Require every unsupported interaction cell to carry semantic proof."""
+def validate_coverage_ledger_evidence(ledger: dict) -> None:
+    """Validate coverage ledger evidence rules for covered and unsupported cells."""
     errors = []
     for row_id, row in ledger.get("rows", {}).items():
+        for index, record in enumerate(row.get("covered_cells", [])):
+            location = f"{row_id}.covered_cells[{index}]"
+            if not isinstance(record, dict):
+                errors.append(f"{location} must be a structured object")
+                continue
+            if not record.get("cell"):
+                errors.append(f"{location} must name the covered cell")
+            evidence = record.get("real_tool_qualification_evidence")
+            for error in validate_real_tool_qualification_evidence(evidence):
+                errors.append(f"{location}: {error}")
         for index, record in enumerate(row.get("unsupported_cells", [])):
             location = f"{row_id}.unsupported_cells[{index}]"
             if not isinstance(record, dict):
@@ -99,6 +145,11 @@ def validate_coverage_ledger_impossibilities(ledger: dict) -> None:
                 errors.append(f"{location}: {error}")
     if errors:
         raise ValueError("; ".join(errors))
+
+
+def validate_coverage_ledger_impossibilities(ledger: dict) -> None:
+    """Backward-compatible wrapper for semantic impossibility validation."""
+    validate_coverage_ledger_evidence(ledger)
 
 
 def verify(run: Path, design: dict, expected: dict) -> dict:
@@ -227,7 +278,7 @@ def main() -> None:
         raise SystemExit(f"refusing to overwrite evidence: {output}")
     output.mkdir(parents=True, exist_ok=True)
     results = []
-    validate_coverage_ledger_impossibilities(
+    validate_coverage_ledger_evidence(
         _json(ROOT / "fixtures/m2h2/development/interaction_coverage.json")
     )
     for design_path in sorted((ROOT / "fixtures/m2h2/interaction" / args.group).glob("*.json")):
