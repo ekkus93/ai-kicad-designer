@@ -19,9 +19,11 @@ FIXTURE_LITERAL_PATTERN = re.compile(
     r"\b(?:"
     r"V[1-6]-[1-8]|"
     r"m2blind_v[0-9]+|"
-    r"m2g2|m2h2_dp[0-9]+|"
+    r"m2h2_dp[0-9]+|"
     r"qualification_candidate[0-9]+|"
     r"interaction_qualification|interaction_alternatives|"
+    r"dual_regulator_mixed_loads|passive_two_level_fanout|"
+    r"timer_split_filtered_gain_indicator|"
     r"corpus\.v[0-9]+"
     r")\b",
     re.IGNORECASE,
