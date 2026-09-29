@@ -31,13 +31,13 @@ only, not final real-tool qualification.
 A fast GitHub Actions workflow exists at
 `.github/workflows/m2h2-fast-validation.yml` to produce exact-head pytest,
 Ruff lint, Ruff format, and `git diff --check` evidence. The hosted static job in
-run `36560904459` passed Ruff lint, Ruff format for `src`, M2 contract tests,
+run `36564959452` passed Ruff lint, Ruff format for `src`, M2 contract tests,
 `tools`, `git diff --check`, and scoped trailing-whitespace checks for exact head
-`239c7d4afe86f78f955f6524b8aeb050a5b5a0bd`. The hosted M2h2 contract pytest
+`9911278d46734b8dcedb268cefece20f05244c33`. The hosted M2h2 contract pytest
 subset in the same run also passed for that exact head. A full hosted pytest run
 is not a valid substitute for locked evidence because the KiCad platform/CPU
 identity guard rejects the hosted runner. The locked self-hosted full pytest job
-for exact head `239c7d4afe86f78f955f6524b8aeb050a5b5a0bd` remains queued, so
+for exact head `9911278d46734b8dcedb268cefece20f05244c33` remains queued, so
 complete pytest, V6-3, DP2, interaction, and final qualification evidence are not
 complete.
 
@@ -56,28 +56,29 @@ and passive/support consumers. The route report records a `producer_centered`
 strategy for both cases. These are single builds, not final five-build evidence.
 
 Interaction coverage infrastructure now has a refreshed runner/tool hash freeze at
-`fixtures/m2h2/finalization_checks/interaction_runner_hashes_fe7335d.json` for
-exact head `fe7335d56284babad26dd531bb7229607fa1213a`, after the runner was changed
-to record observed structural classes from composition evidence. The freeze is
-infrastructure identity only: it marks no interaction cell covered and does not
-replace five-run locked-KiCad qualification. Any listed behavior-affecting input
-change invalidates it.
+`fixtures/m2h2/finalization_checks/interaction_runner_hashes_eef2698.json` for
+exact source head `eef2698ac55827592657cb34991c0859bdc8a4e5`. It supersedes the
+older `interaction_runner_hashes_fe7335d.json` freeze after the runner gained
+coverage-evidence and semantic-impossibility validators and the validation
+workflow gained concurrency control. The freeze is infrastructure identity only:
+it marks no interaction cell covered and does not replace five-run locked-KiCad
+qualification. Any listed behavior-affecting input change invalidates it.
 
 Interaction coverage ledger validation now rejects covered cells without
 structured locked real-tool evidence and rejects impossible/unsupported cells
 without a semantic impossibility witness. Evidence roots:
-`fixtures/m2h2/finalization_checks/semantic_impossibility_witness_validator_8cb5d4a.json`
+`fixtures/m2h2/finalization_checks/semantic_impossibility_witness_validator_8cb5d4a.json`,
+`fixtures/m2h2/finalization_checks/interaction_coverage_evidence_validators_9cb6e74.json`,
 and
-`fixtures/m2h2/finalization_checks/interaction_coverage_evidence_validators_9cb6e74.json`.
-These validators passed in hosted M2h2 contract pytest for exact head
-`239c7d4afe86f78f955f6524b8aeb050a5b5a0bd`; they do not mark any I1–I6 cell
-covered and do not replace locked real-tool qualification.
+`fixtures/m2h2/finalization_checks/coverage_ledger_no_parse_only_guard_b4d36ce.json`.
+These validators pass in current-source hosted M2h2 contract pytest; they do not
+mark any I1–I6 cell covered and do not replace locked real-tool qualification.
 
 A previous full pytest suite passed **195 tests** after the latest routing
-change. Current-source hosted static evidence and hosted M2h2 contract pytest now
-pass at exact head `239c7d4afe86f78f955f6524b8aeb050a5b5a0bd`; exact-head full
-pytest is still awaiting the locked runner. Historical protection audit passed
-for 7,221 tracked files with matching HEAD/worktree digests. The active-module
+change. Current-source hosted static evidence and hosted M2h2 contract pytest pass
+at exact head `9911278d46734b8dcedb268cefece20f05244c33`; exact-head full pytest
+is still awaiting the locked runner. Historical protection audit passed for
+7,221 tracked files with matching HEAD/worktree digests. The active-module
 literal anti-overfitting scan passed and found no CP-SAT dependency or
 implementation.
 
