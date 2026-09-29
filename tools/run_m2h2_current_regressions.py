@@ -102,9 +102,7 @@ def _case_errors(case_id: str, design: dict[str, Any], signature: dict[str, Any]
         if not isinstance(canonical_length, int):
             errors.append(f"missing canonical length for {net}")
         elif canonical_length > CANONICAL_LIMIT_NM:
-            errors.append(
-                f"{net} canonical length {canonical_length} exceeds {CANONICAL_LIMIT_NM}"
-            )
+            errors.append(f"{net} canonical length {canonical_length} exceeds {CANONICAL_LIMIT_NM}")
         if witness.get("component_count") != 1:
             errors.append(f"{net} has component_count={witness.get('component_count')}")
 
@@ -189,7 +187,11 @@ def main() -> None:
         results.append(result)
         print(
             json.dumps(
-                {"case": case_id, "returncode": result["returncode"], "accepted": result["accepted"]}
+                {
+                    "case": case_id,
+                    "returncode": result["returncode"],
+                    "accepted": result["accepted"],
+                }
             ),
             flush=True,
         )
