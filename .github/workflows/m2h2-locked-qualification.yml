@@ -1,0 +1,135 @@
+name: M2h2 Locked Qualification
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Locked qualification profile to run
+        required: true
+        default: current-regressions
+        type: choice
+        options:
+          - current-regressions
+          - final-qualification
+          - interaction
+          - structural-alternative
+      group:
+        description: Interaction group for profile=interaction
+        required: true
+        default: i1
+        type: choice
+        options:
+          - i1
+          - i2
+          - i3
+          - i4
+          - i5
+          - i6
+      only:
+        description: Optional interaction case stem for profile=interaction
+        required: false
+        default: ''
+        type: string
+      design:
+        description: Design JSON path for profile=structural-alternative
+        required: false
+        default: ''
+        type: string
+      bands:
+        description: Required band count for profile=structural-alternative
+        required: false
+        default: '2'
+        type: string
+      core_bands:
+        description: Count only core bands for profile=structural-alternative
+        required: true
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: m2h2-locked-qualification-${{ github.ref }}-${{ inputs.profile }}
+  cancel-in-progress: false
+
+jobs:
+  locked-qualification:
+    name: locked ${{ inputs.profile }}
+    runs-on: self-hosted
+    timeout-minutes: 1440
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install project and dev tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[dev]'
+
+      - name: Current-source V6-3 and DP2 regressions
+        if: inputs.profile == 'current-regressions'
+        run: >-
+          python tools/run_m2h2_current_regressions.py
+          --out fixtures/m2h2/development_checks/locked_current_regressions_${{ github.run_id }}_${{ github.sha }}
+
+      - name: Final 56-positive qualification
+        if: inputs.profile == 'final-qualification'
+        run: >-
+          PYTHONPATH=src:tools python tools/run_m2h2_qualification.py
+          --out fixtures/m2h2/qualification_final_candidate_${{ github.run_id }}_${{ github.sha }}
+
+      - name: Final interaction qualification
+        if: inputs.profile == 'interaction'
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="fixtures/m2h2/interaction_qualification_${{ inputs.group }}_final_candidate_${{ github.run_id }}_${{ github.sha }}"
+          if [ -n "${{ inputs.only }}" ]; then
+            PYTHONPATH=src:tools python tools/run_m2h2_i1.py --group "${{ inputs.group }}" --only "${{ inputs.only }}" --out "$out"
+          else
+            PYTHONPATH=src:tools python tools/run_m2h2_i1.py --group "${{ inputs.group }}" --out "$out"
+          fi
+
+      - name: Final structural alternative qualification
+        if: inputs.profile == 'structural-alternative'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "${{ inputs.design }}" ]; then
+            echo 'profile=structural-alternative requires a design input' >&2
+            exit 2
+          fi
+          core_bands=()
+          if [ "${{ inputs.core_bands }}" = 'true' ]; then
+            core_bands=(--core-bands)
+          fi
+          PYTHONPATH=src:tools python tools/run_m2h2_structural_alternative.py \
+            --design "${{ inputs.design }}" \
+            --bands "${{ inputs.bands }}" \
+            --out "fixtures/m2h2/interaction_alternatives_final_candidate_${{ github.run_id }}_${{ github.sha }}" \
+            "${core_bands[@]}"
+
+      - name: Upload locked qualification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m2h2-locked-${{ inputs.profile }}-${{ github.sha }}
+          path: |
+            fixtures/m2h2/development_checks/locked_current_regressions_${{ github.run_id }}_${{ github.sha }}
+            fixtures/m2h2/qualification_final_candidate_${{ github.run_id }}_${{ github.sha }}
+            fixtures/m2h2/interaction_qualification_${{ inputs.group }}_final_candidate_${{ github.run_id }}_${{ github.sha }}
+            fixtures/m2h2/interaction_alternatives_final_candidate_${{ github.run_id }}_${{ github.sha }}
+          if-no-files-found: warn
+
+      - name: Git diff check
+        run: git diff --check
