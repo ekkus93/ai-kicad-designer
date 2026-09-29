@@ -1,0 +1,48 @@
+{
+  "schema_version": "m2h2.finalization-check.1",
+  "check": "semantic_impossibility_witness_validator",
+  "source_head": "8cb5d4a394d52dff4d3e9799565d0cc319403480",
+  "purpose": "Enforce that unsupported/impossible interaction coverage cells require structured semantic impossibility witnesses, not layout, build, routing, or tool failure evidence.",
+  "implementation": {
+    "runner": "tools/run_m2h2_i1.py",
+    "functions": [
+      "validate_semantic_impossibility_witness",
+      "validate_coverage_ledger_impossibilities"
+    ],
+    "portable_tests": "tests/test_m2h2_interaction_runner.py"
+  },
+  "ci_evidence": {
+    "workflow": "M2h2 Fast Validation",
+    "run_id": 36559789300,
+    "head_sha": "8cb5d4a394d52dff4d3e9799565d0cc319403480",
+    "static_job": {
+      "job_id": 109377607344,
+      "conclusion": "success",
+      "evidence": [
+        "Ruff lint success",
+        "Ruff format checks success",
+        "git diff --check success",
+        "scoped trailing-whitespace check success"
+      ]
+    },
+    "hosted_contract_job": {
+      "job_id": 109377607614,
+      "conclusion": "success",
+      "evidence": [
+        "tests/test_m2h2_contracts.py success",
+        "tests/test_m2h2_repair_matrix.py success",
+        "tests/test_m2h2_interaction_runner.py success",
+        "git diff --check success"
+      ]
+    },
+    "locked_runner_job": {
+      "job_id": 109377607676,
+      "status": "queued",
+      "counts_as_final_real_tool_evidence": false
+    }
+  },
+  "does_not_mark_cells_covered": true,
+  "does_not_replace_locked_kicad_qualification": true,
+  "no_gate_changes": true,
+  "no_m3_or_corpus_v7": true
+}
