@@ -160,7 +160,9 @@ def verify(run: Path, design: dict, expected: dict) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", type=Path, required=True)
-    parser.add_argument("--group", choices=("i1", "i2", "i3", "i4", "i5", "i6"), required=True)
+    parser.add_argument(
+        "--group", choices=("i1", "i2", "i3", "i4", "i5", "i6"), required=True
+    )
     parser.add_argument("--only", type=str)
     args = parser.parse_args()
     output = args.out.resolve()
@@ -168,7 +170,9 @@ def main() -> None:
         raise SystemExit(f"refusing to overwrite evidence: {output}")
     output.mkdir(parents=True, exist_ok=True)
     results = []
-    for design_path in sorted((ROOT / "fixtures/m2h2/interaction" / args.group).glob("*.json")):
+    for design_path in sorted(
+        (ROOT / "fixtures/m2h2/interaction" / args.group).glob("*.json")
+    ):
         if design_path.name.endswith(".expected.json"):
             continue
         if args.group == "i1" and design_path.stem == "selected_triple":
@@ -181,8 +185,16 @@ def main() -> None:
         for index in range(1, 6):
             destination = output / design_path.stem / f"run{index}"
             rc = _build(design_path, destination)
-            actual = destination if rc == 0 else destination.with_name(destination.name + ".failed")
-            record = {"run": index, "returncode": rc, "path": str(actual.relative_to(ROOT))}
+            actual = (
+                destination
+                if rc == 0
+                else destination.with_name(destination.name + ".failed")
+            )
+            record = {
+                "run": index,
+                "returncode": rc,
+                "path": str(actual.relative_to(ROOT)),
+            }
             if rc == 0:
                 record.update(verify(actual, design, expected))
             else:
