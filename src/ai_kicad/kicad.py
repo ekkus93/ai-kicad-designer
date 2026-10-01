@@ -162,6 +162,10 @@ def run_headless(
     environment.update({"LC_ALL": "C", "TZ": "UTC", "XDG_CONFIG_HOME": str(config)})
     for prior in (netlist, erc, *renders.glob("*.svg")):
         prior.unlink(missing_ok=True)
+    # Some supported filesystems expose mtimes at coarser than nanosecond
+    # resolution. Outputs are unlinked before invocation, so allow one second
+    # of timestamp granularity while still rejecting genuinely stale reports.
+    mtime_tolerance_ns = 1_000_000_000
     for label, args, output in commands:
         start = time.time_ns()
         invocation = [str(launcher), "kicad-cli", *args]
@@ -184,7 +188,9 @@ def run_headless(
             + "\n"
         )
         if output is not None and (
-            not output.is_file() or not output.stat().st_size or output.stat().st_mtime_ns < start
+            not output.is_file()
+            or not output.stat().st_size
+            or output.stat().st_mtime_ns + mtime_tolerance_ns < start
         ):
             raise ToolFailure(f"{label} report missing, empty or stale")
         if result.stderr.strip() or "warning" in result.stdout.lower():
@@ -226,7 +232,7 @@ def run_headless(
         raise ToolFailure(f"ERC returned {count} violations")
     svgs = sorted(renders.glob("*.svg"))
     if len(svgs) != 1 or any(
-        not svg.stat().st_size or svg.stat().st_mtime_ns < start for svg in svgs
+        not svg.stat().st_size or svg.stat().st_mtime_ns + mtime_tolerance_ns < start for svg in svgs
     ):
         raise ToolFailure("SVG export missing, empty or stale")
     try:
