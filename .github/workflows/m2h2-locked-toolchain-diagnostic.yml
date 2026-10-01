@@ -1,0 +1,92 @@
+name: M2h2 Locked Toolchain Diagnostic
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  locked-toolchain-diagnostic:
+    name: locked KiCad toolchain diagnostic
+    runs-on: self-hosted
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Report and validate locked KiCad toolchain identity
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+          import platform
+          import subprocess
+          import sys
+
+          def digest(path: Path) -> str | None:
+              if not path.is_file():
+                  return None
+              return hashlib.sha256(path.read_bytes()).hexdigest()
+
+          cpu_model = next(
+              (
+                  line.split(':', 1)[1].strip()
+                  for line in Path('/proc/cpuinfo').read_text().splitlines()
+                  if line.startswith('model name')
+              ),
+              None,
+          )
+          lock = json.loads(Path('fixtures/m1a/toolchain.lock.json').read_text())
+          report = {
+              'platform': {
+                  'os': platform.platform(),
+                  'architecture': platform.machine(),
+                  'cpu': platform.processor() or platform.machine(),
+                  'cpu_model': cpu_model,
+              },
+              'expected_platform': lock['platform'],
+              'executables': [],
+              'libraries': [],
+              'mismatches': [],
+          }
+          if report['platform'] != lock['platform']:
+              report['mismatches'].append({'section': 'platform', 'expected': lock['platform'], 'actual': report['platform']})
+          for section in ('executables', 'libraries'):
+              for item in lock[section]:
+                  path = Path(item['path'])
+                  actual = digest(path)
+                  entry = {
+                      'id': item['id'],
+                      'path': str(path),
+                      'exists': path.is_file(),
+                      'expected_sha256': item.get('file_sha256'),
+                      'actual_sha256': actual,
+                      'expected_version': item.get('version'),
+                  }
+                  report[section].append(entry)
+                  if not path.is_file() or actual != item.get('file_sha256'):
+                      report['mismatches'].append({'section': section, **entry})
+          launcher = Path(lock['executables'][0]['path'])
+          if launcher.is_file():
+              probe = subprocess.run(
+                  [str(launcher), 'kicad-cli', 'version'],
+                  capture_output=True,
+                  text=True,
+                  timeout=30,
+              )
+              report['version_probe'] = {
+                  'returncode': probe.returncode,
+                  'stdout': probe.stdout.strip(),
+                  'stderr': probe.stderr.strip(),
+              }
+              if probe.returncode != 0 or probe.stdout.strip() != '10.0.6':
+                  report['mismatches'].append({'section': 'version_probe', 'expected': '10.0.6', 'actual': report['version_probe']})
+          print(json.dumps(report, indent=2, sort_keys=True))
+          if report['mismatches']:
+              sys.exit('locked KiCad toolchain identity mismatch')
+          PY
