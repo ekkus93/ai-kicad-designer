@@ -46,8 +46,56 @@ jobs:
               --out "$root/$group"; then
               overall=1
             fi
-            echo "===== $group results ====="
-            cat "$root/$group/results.json" || true
+            echo "===== $group compact results ====="
+            GROUP="$group" ROOT="$root" python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          group = os.environ["GROUP"]
+          root = Path(os.environ["ROOT"])
+          payload = json.loads((root / group / "results.json").read_text())
+          summary = {
+              "group": group,
+              "accepted": payload["accepted"],
+              "total": payload["total"],
+              "cases": [],
+          }
+          for case in payload["results"]:
+              item = {
+                  "id": case["id"],
+                  "cell": case.get("cell"),
+                  "selected_triple": case.get("selected_triple"),
+                  "accepted": case["accepted"],
+                  "reproducible": case["reproducible"],
+                  "observed_structural_class_stable": case.get(
+                      "observed_structural_class_stable"
+                  ),
+              }
+              if not case["accepted"]:
+                  item["runs"] = [
+                      {
+                          "run": run["run"],
+                          "returncode": run["returncode"],
+                          "pass": run.get("pass"),
+                          "partition_match": run.get("partition_match"),
+                          "terminal_match": run.get("terminal_match"),
+                          "failed_paths": [
+                              path["id"] for path in run.get("paths", []) if not path["pass"]
+                          ],
+                          "failed_precedence": [
+                              [edge["source"], edge["target"]]
+                              for edge in run.get("precedence", [])
+                              if not edge["pass"]
+                          ],
+                          "failure_class": run.get("failure", {}).get("failure_class"),
+                          "diagnostic": run.get("failure", {}).get("diagnostic"),
+                      }
+                      for run in case["runs"]
+                  ]
+              summary["cases"].append(item)
+          print(json.dumps(summary, separators=(",", ":")))
+          PY
           done
           exit "$overall"
 
