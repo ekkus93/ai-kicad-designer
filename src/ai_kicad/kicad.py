@@ -53,13 +53,18 @@ def validate_toolchain(path: Path, python_lock: Path) -> Path:
         ),
         None,
     )
-    if lock["platform"] != {
+    actual_platform = {
         "os": platform.platform(),
         "architecture": platform.machine(),
         "cpu": platform.processor() or platform.machine(),
         "cpu_model": cpu_model,
-    }:
-        raise InputError("KiCad platform/CPU identity mismatch")
+    }
+    if lock["platform"] != actual_platform:
+        raise InputError(
+            "KiCad platform/CPU identity mismatch; "
+            f"expected {json.dumps(lock['platform'], sort_keys=True)}, "
+            f"actual {json.dumps(actual_platform, sort_keys=True)}"
+        )
     libraries = {entry["id"]: entry for entry in lock["libraries"]}
     if set(libraries) != {"sharun", "libkicommon", "libwx_gtk3u_core", "libwx_baseu"}:
         raise InputError("KiCad library inventory mismatch")
