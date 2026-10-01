@@ -23,8 +23,10 @@ jobs:
           python - <<'PY'
           import hashlib
           import json
+          import os
           from pathlib import Path
           import platform
+          import socket
           import subprocess
           import sys
 
@@ -42,36 +44,39 @@ jobs:
               None,
           )
           lock = json.loads(Path('fixtures/m1a/toolchain.lock.json').read_text())
-          report = {
-              'platform': {
-                  'os': platform.platform(),
-                  'architecture': platform.machine(),
-                  'cpu': platform.processor() or platform.machine(),
-                  'cpu_model': cpu_model,
-              },
-              'expected_platform': lock['platform'],
-              'executables': [],
-              'libraries': [],
-              'mismatches': [],
+          platform_info = {
+              'hostname': socket.gethostname(),
+              'runner_name': os.environ.get('RUNNER_NAME'),
+              'runner_os': os.environ.get('RUNNER_OS'),
+              'runner_arch': os.environ.get('RUNNER_ARCH'),
+              'os': platform.platform(),
+              'architecture': platform.machine(),
+              'cpu': platform.processor() or platform.machine(),
+              'cpu_model': cpu_model,
           }
-          if report['platform'] != lock['platform']:
-              report['mismatches'].append({'section': 'platform', 'expected': lock['platform'], 'actual': report['platform']})
+          mismatches = []
+          if {k: platform_info[k] for k in ('os', 'architecture', 'cpu', 'cpu_model')} != lock['platform']:
+              mismatches.append({'id': 'platform', 'expected': lock['platform'], 'actual': platform_info})
           for section in ('executables', 'libraries'):
               for item in lock[section]:
                   path = Path(item['path'])
                   actual = digest(path)
-                  entry = {
-                      'id': item['id'],
-                      'path': str(path),
-                      'exists': path.is_file(),
-                      'expected_sha256': item.get('file_sha256'),
-                      'actual_sha256': actual,
-                      'expected_version': item.get('version'),
-                  }
-                  report[section].append(entry)
-                  if not path.is_file() or actual != item.get('file_sha256'):
-                      report['mismatches'].append({'section': section, **entry})
+                  expected = item.get('file_sha256')
+                  if not path.is_file() or actual != expected:
+                      mismatches.append(
+                          {
+                              'section': section,
+                              'id': item['id'],
+                              'path': str(path),
+                              'exists': path.is_file(),
+                              'expected_sha256': expected,
+                              'actual_sha256': actual,
+                              'size': path.stat().st_size if path.exists() else None,
+                              'mode': oct(path.stat().st_mode) if path.exists() else None,
+                          }
+                      )
           launcher = Path(lock['executables'][0]['path'])
+          version_probe = None
           if launcher.is_file():
               probe = subprocess.run(
                   [str(launcher), 'kicad-cli', 'version'],
@@ -79,14 +84,15 @@ jobs:
                   text=True,
                   timeout=30,
               )
-              report['version_probe'] = {
+              version_probe = {
                   'returncode': probe.returncode,
                   'stdout': probe.stdout.strip(),
                   'stderr': probe.stderr.strip(),
               }
               if probe.returncode != 0 or probe.stdout.strip() != '10.0.6':
-                  report['mismatches'].append({'section': 'version_probe', 'expected': '10.0.6', 'actual': report['version_probe']})
-          print(json.dumps(report, indent=2, sort_keys=True))
-          if report['mismatches']:
+                  mismatches.append({'id': 'version_probe', 'expected': '10.0.6', 'actual': version_probe})
+          summary = {'platform': platform_info, 'version_probe': version_probe, 'mismatches': mismatches}
+          print('LOCKED_KICAD_DIAGNOSTIC=' + json.dumps(summary, sort_keys=True))
+          if mismatches:
               sys.exit('locked KiCad toolchain identity mismatch')
           PY
