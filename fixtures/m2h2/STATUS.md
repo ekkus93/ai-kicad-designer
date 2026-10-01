@@ -48,10 +48,29 @@ format/diff/whitespace checks, and hosted Git diff checks at
 `109633910738` remained queued for 24 hours with zero observed steps and was
 then cancelled by GitHub Actions on 2026-09-30. It produced no locked-runner log
 and no current-regression artifact, so complete pytest, V6-3, DP2, interaction,
-and final qualification evidence remain incomplete at that head. Ralph-approved
+and final qualification evidence remained incomplete at that head. Ralph-approved
 rerun attempts for the cancelled job/run were rejected by the bridge/GitHub API,
 and the `m2h2-fast-validation` and `pytest` local-validation profiles were not
 available through Ralph for this repository.
+
+After a new self-hosted runner was provisioned, exact-head run `36824529633` at
+`d4bda73f8485dc36df1cae4505a7ecd127d44b67` started the locked-runner job and
+failed at `Pytest` because the runner platform did not match the old toolchain
+lock. Diagnostic commit `c284f03f8fbde2f229111ac76a530b68e1faeccf` showed the
+new runner platform is `Linux-6.8.0-87-generic-x86_64-with-glibc2.35`, CPU model
+`12th Gen Intel(R) Core(TM) i7-12700K`; commit
+`47789b8c3ace5094f71c56ebedf2bb48a45e0dba` updated only that platform identity
+in `fixtures/m1a/toolchain.lock.json`, preserving the KiCad 10.0.6 executable
+and library hashes. Run `36825923164` then got past the platform gate but failed
+at `Pytest` with `KiCad library identity mismatch: sharun`. Diagnostic commit
+`7c2dfecda645a5059272821ded42f8e10c4f7710` added an identity report; run
+`36826093092` showed all locked `/tmp/AppDir` paths were absent on the runner
+before pytest: `/tmp/AppDir/AppRun`, `/tmp/AppDir/shared/bin/kicad-cli`,
+`/tmp/AppDir/sharun`, and the locked KiCad libraries all reported
+`exists: false`. Therefore the new self-hosted runner can execute jobs, but the
+required locked KiCad 10.0.6 AppDir is not provisioned at `/tmp/AppDir`, and no
+current-source full pytest, V6-3, DP2, interaction, or final qualification
+evidence exists yet on that runner.
 
 The earlier exact-head fast-validation run `36601055914` passed hosted static
 validation and hosted M2h2 contract pytest at
@@ -93,13 +112,13 @@ These validators pass in current-source hosted M2h2 contract pytest; they do not
 mark any I1–I6 cell covered and do not replace locked real-tool qualification.
 
 A previous full pytest suite passed **195 tests** after the latest routing
-change. Exact-head full pytest is still awaiting a locked runner that actually
-starts. Historical protection audit passed for 7,221 tracked files with matching
-HEAD/worktree digests. The active-module literal anti-overfitting scan passed
-and found no CP-SAT dependency or implementation; the structural anti-overfitting
-audit is implemented and passes in hosted validation, but final-source audit
-reconciliation still requires completion of the locked baseline and final
-qualification gates.
+change. Exact-head full pytest is now awaiting the required locked KiCad 10.0.6
+AppDir at `/tmp/AppDir` on the new self-hosted runner. Historical protection
+audit passed for 7,221 tracked files with matching HEAD/worktree digests. The
+active-module literal anti-overfitting scan passed and found no CP-SAT dependency
+or implementation; the structural anti-overfitting audit is implemented and
+passes in hosted validation, but final-source audit reconciliation still requires
+completion of the locked baseline and final qualification gates.
 
 ## Provisional qualification evidence
 
@@ -122,9 +141,9 @@ or generation alone.
 
 ## Remaining completion work
 
-1. Complete the current-source fast-validation workflow by getting the locked
-   self-hosted full pytest job to run, then reconcile that baseline check only
-   after exact-head evidence exists.
+1. Provision the locked KiCad 10.0.6 AppDir at `/tmp/AppDir` on the self-hosted
+   runner so the exact-head full pytest job can run, then reconcile that baseline
+   check only after exact-head evidence exists.
 2. Reconfirm V6-3 and DP2 at the final source state with locked KiCad 10.0.6 and
    unchanged gates.
 3. Validate every I1–I6 cell and selected triple against actual electrical,
