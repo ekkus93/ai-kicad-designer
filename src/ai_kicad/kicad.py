@@ -19,6 +19,12 @@ class ToolFailure(RuntimeError):
     pass
 
 
+def _report_is_missing_empty_or_stale(path: Path, start: int, tolerance: int) -> bool:
+    if not path.is_file() or not path.stat().st_size:
+        return True
+    return path.stat().st_mtime_ns + tolerance < start
+
+
 def validate_toolchain(path: Path, python_lock: Path) -> Path:
     lock = load_json(path)
     if (
@@ -187,10 +193,8 @@ def run_headless(
             )
             + "\n"
         )
-        if output is not None and (
-            not output.is_file()
-            or not output.stat().st_size
-            or output.stat().st_mtime_ns + mtime_tolerance_ns < start
+        if output is not None and _report_is_missing_empty_or_stale(
+            output, start, mtime_tolerance_ns
         ):
             raise ToolFailure(f"{label} report missing, empty or stale")
         if result.stderr.strip() or "warning" in result.stdout.lower():
@@ -231,10 +235,8 @@ def run_headless(
     if count:
         raise ToolFailure(f"ERC returned {count} violations")
     svgs = sorted(renders.glob("*.svg"))
-    if len(svgs) != 1 or any(
-        not svg.stat().st_size
-        or svg.stat().st_mtime_ns + mtime_tolerance_ns < start
-        for svg in svgs
+    if len(svgs) != 1 or _report_is_missing_empty_or_stale(
+        svgs[0], start, mtime_tolerance_ns
     ):
         raise ToolFailure("SVG export missing, empty or stale")
     try:
