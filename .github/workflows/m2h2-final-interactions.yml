@@ -36,14 +36,20 @@ jobs:
 
       - name: Run final I1-I6 interaction qualification
         run: |
-          set -euo pipefail
+          set -uo pipefail
           export PYTHONPATH=src:tools
           root="fixtures/m2h2/interaction_final_${GITHUB_SHA}"
+          overall=0
           for group in i1 i2 i3 i4 i5 i6; do
-            python tools/run_m2h2_i1.py \
+            if ! python tools/run_m2h2_i1.py \
               --group "$group" \
-              --out "$root/$group"
+              --out "$root/$group"; then
+              overall=1
+            fi
+            echo "===== $group results ====="
+            cat "$root/$group/results.json" || true
           done
+          exit "$overall"
 
       - name: Upload final interaction evidence
         if: always()
