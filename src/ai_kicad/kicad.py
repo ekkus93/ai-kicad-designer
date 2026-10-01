@@ -193,9 +193,8 @@ def run_headless(
             )
             + "\n"
         )
-        if (
-            output is not None
-            and _report_is_missing_empty_or_stale(output, start, mtime_tolerance_ns)
+        if output is not None and _report_is_missing_empty_or_stale(
+            output, start, mtime_tolerance_ns
         ):
             raise ToolFailure(f"{label} report missing, empty or stale")
         if result.stderr.strip() or "warning" in result.stdout.lower():
@@ -236,10 +235,7 @@ def run_headless(
     if count:
         raise ToolFailure(f"ERC returned {count} violations")
     svgs = sorted(renders.glob("*.svg"))
-    if (
-        len(svgs) != 1
-        or _report_is_missing_empty_or_stale(svgs[0], start, mtime_tolerance_ns)
-    ):
+    if len(svgs) != 1 or _report_is_missing_empty_or_stale(svgs[0], start, mtime_tolerance_ns):
         raise ToolFailure("SVG export missing, empty or stale")
     try:
         svg_root = ET.parse(svgs[0]).getroot()
