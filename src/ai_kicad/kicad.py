@@ -232,7 +232,9 @@ def run_headless(
         raise ToolFailure(f"ERC returned {count} violations")
     svgs = sorted(renders.glob("*.svg"))
     if len(svgs) != 1 or any(
-        not svg.stat().st_size or svg.stat().st_mtime_ns + mtime_tolerance_ns < start for svg in svgs
+        not svg.stat().st_size
+        or svg.stat().st_mtime_ns + mtime_tolerance_ns < start
+        for svg in svgs
     ):
         raise ToolFailure("SVG export missing, empty or stale")
     try:
