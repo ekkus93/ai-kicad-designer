@@ -1,0 +1,38 @@
+{
+  "schema_version": "m2h2.finalization-diagnosis.1",
+  "source_head": "8fa88a14d40206fae703c0b6a479a76ffa46c372",
+  "workflow_run": 36861301231,
+  "workflow_job": 110365894464,
+  "group": "i1",
+  "case": "d1_b2",
+  "factor_cell": "I1:serial_depth=1|branch_degree=2",
+  "five_run_result": {
+    "build_returncode_zero": 5,
+    "partition_match": 5,
+    "terminal_match": 5,
+    "path_checks_pass": 5,
+    "reproducible": true,
+    "observed_structural_class_stable": true,
+    "accepted": false
+  },
+  "failed_precedence": [
+    {
+      "source": ["input", "1"],
+      "target": ["branch_1_r", "1"]
+    },
+    {
+      "source": ["input", "1"],
+      "target": ["branch_2_r", "1"]
+    }
+  ],
+  "root_cause": {
+    "module": "src/ai_kicad/m2_semantics.py",
+    "boundary": "semantic_plan precedence derivation",
+    "finding": "SignalPrecedence is currently derived only from signal_out ports. Connector/interface terminals are represented as passive ports, so an external interface feeding signal_in consumers contributes no compiler-enforced precedence obligation when that net has no internal signal_out producer.",
+    "required_generic_fix": "For a net with signal_in consumers and no internal signal_out producer, derive source precedence from the terminal-backed external interface port(s) on that net to each signal_in consumer. Do not infer source precedence on nets that already have an internal signal_out producer. Preserve incomparable sibling semantics: create source-to-child obligations only, never child-to-child ordering.",
+    "frozen_expectation_changed": false,
+    "hard_gate_changed": false,
+    "erc_or_observer_weakened": false
+  },
+  "qualification_impact": "Behavior-affecting semantic/placement change. After repair, rerun exact-head fast validation, five-run I1-I6 locked-KiCad interaction qualification, and fresh 56-positive x5 final qualification before completion reconciliation."
+}
