@@ -41,7 +41,19 @@ literals and literal net/refdes dispatch in active production modules; final
 source still requires exact-head CI evidence before this can be reconciled as a
 completed final audit gate.
 
-The previous exact-head fast-validation run `36601055914` passed hosted static
+Exact-head fast-validation run `36635167816` passed hosted static validation,
+the structural anti-overfitting audit, hosted M2h2 contract pytest, hosted
+format/diff/whitespace checks, and hosted Git diff checks at
+`1697c64a8626d864fbfba39a40fde0c251818bdd`. Its locked self-hosted job
+`109633910738` remained queued for 24 hours with zero observed steps and was
+then cancelled by GitHub Actions on 2026-09-30. It produced no locked-runner log
+and no current-regression artifact, so complete pytest, V6-3, DP2, interaction,
+and final qualification evidence remain incomplete at that head. Ralph-approved
+rerun attempts for the cancelled job/run were rejected by the bridge/GitHub API,
+and the `m2h2-fast-validation` and `pytest` local-validation profiles were not
+available through Ralph for this repository.
+
+The earlier exact-head fast-validation run `36601055914` passed hosted static
 validation and hosted M2h2 contract pytest at
 `5b134602edf25a1f6460aeece9496f1e839c8037`; its locked self-hosted job remained
 queued, so complete pytest, V6-3, DP2, interaction, and final qualification
@@ -81,12 +93,13 @@ These validators pass in current-source hosted M2h2 contract pytest; they do not
 mark any I1–I6 cell covered and do not replace locked real-tool qualification.
 
 A previous full pytest suite passed **195 tests** after the latest routing
-change. Exact-head full pytest is still awaiting the locked runner. Historical
-protection audit passed for 7,221 tracked files with matching HEAD/worktree
-digests. The active-module literal anti-overfitting scan passed and found no
-CP-SAT dependency or implementation; the structural anti-overfitting audit is
-implemented and wired into hosted validation but still needs exact-head pass
-evidence before final audit reconciliation.
+change. Exact-head full pytest is still awaiting a locked runner that actually
+starts. Historical protection audit passed for 7,221 tracked files with matching
+HEAD/worktree digests. The active-module literal anti-overfitting scan passed
+and found no CP-SAT dependency or implementation; the structural anti-overfitting
+audit is implemented and passes in hosted validation, but final-source audit
+reconciliation still requires completion of the locked baseline and final
+qualification gates.
 
 ## Provisional qualification evidence
 
