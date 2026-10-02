@@ -201,3 +201,9 @@ or generation alone.
    inspection as such; human approval is not available from this worktree.
 
 No corpus.v7, M3 work, gate change, or CP-SAT was introduced. M2h2 is not PASS.
+
+## Fresh final-source qualification — 2026-10-02
+
+Production source `260e33c` passes 56/56 positives over five clean builds each (run `37048500798`, locked job `110975750982`), and 72 I1–I6 cases over five builds each (run `37048500822`). Artifact audit `37050923509` confirms exact production/lock hashes against master `728478b`. Current full pytest, hosted contracts, lint/format, structural audit, and V6-3/DP2 one-run regressions pass in run `37049738355`. See `finalization_checks/qualification_260e33c_ci.json`.
+
+M2h2 remains **INCOMPLETE**: six actual I3 structural classes need fresh qualification; required triples, render inspection, coverage ledger and final audits need reconciliation. The alternate runner now searches/certifies from scratch per build, verifies frozen expectations independently, binds provenance, and records its eight-seed/32-slot bounded search. Older one-scene/five-emission alternatives remain historical evidence only.

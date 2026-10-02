@@ -58,23 +58,23 @@ jobs:
         run: |
           PYTHONPATH=src:tools python - <<'PY'
           """Inspect downloaded final qualification evidence without promoting planned labels."""
-          
+
           from __future__ import annotations
-          
+
           import argparse
           import base64
           import gzip
           import hashlib
           import json
           from pathlib import Path
-          
+
           from ai_kicad.m2a import ROOT
-          
-          
+
+
           def digest(path: Path) -> str:
               return hashlib.sha256(path.read_bytes()).hexdigest()
-          
-          
+
+
           def identity_errors(payload: dict) -> list[str]:
               errors = []
               hashes = payload.get("source_sha256", {})
@@ -92,8 +92,8 @@ jobs:
                   if payload.get(field) != digest(ROOT / relative):
                       errors.append(f"stale lock: {relative}")
               return errors
-          
-          
+
+
           def placement_classes(signature: dict) -> dict:
               composition = signature.get("composition", {})
               blocks = {block["id"]: block for block in composition.get("blocks", [])}
@@ -110,14 +110,14 @@ jobs:
                   (block, box) for block, box in placed
                   if block["kind"] in active_kinds and not block.get("unused")
               ]
-          
+
               def count_bands(items):
                   bands = []
                   for top in sorted({box[1] for _, box in items}):
                       if not bands or top - bands[-1] > 5_080_000:
                           bands.append(top)
                   return len(bands)
-          
+
               backfill = [
                   [first["id"], second["id"]]
                   for index, (first, a) in enumerate(placed)
@@ -137,8 +137,8 @@ jobs:
                       for block, box in placed
                   ],
               }
-          
-          
+
+
           def render_chunks(root: Path, case_id: str, case_dir: Path) -> None:
               svgs = sorted((case_dir / "run1/renders/schematic").glob("*.svg"))
               if len(svgs) != 1:
@@ -152,8 +152,8 @@ jobs:
                       "root": str(root), "index": index, "total": len(chunks),
                       "svg_sha256": hashlib.sha256(data).hexdigest(), "data": chunk,
                   }, separators=(",", ":")), flush=True)
-          
-          
+
+
           def main() -> None:
               args = argparse.Namespace(
                   qualification=Path("fixtures/m2h2/qualification_final_candidate_260e33cd9248efa3e5472ec32897c2e30fe41acd"),
@@ -220,11 +220,11 @@ jobs:
                                 "machine_evidence_valid": not errors}, separators=(",", ":")), flush=True)
               if errors:
                   raise SystemExit(1)
-          
-          
+
+
           if __name__ == "__main__":
               main()
-          
+
           PY
 
       - name: Upload artifact audit report

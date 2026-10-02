@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import subprocess
 from pathlib import Path
 
 from ai_kicad.assets import sha256
@@ -30,7 +31,7 @@ from ai_kicad.m2_pack import (
     pack_fragment_candidates,
 )
 from ai_kicad.m2_semantics import semantic_plan
-from run_m2g2_qualification import _erc_violations, _normalized_svg
+from run_m2g2_qualification import _erc_violations, _normalized_svg, _sha
 
 
 def band_count(packing, *, core_only: bool = False) -> int:
@@ -99,7 +100,220 @@ def extra_packings(baseline: Packing) -> tuple[Packing, ...]:
                         baseline.attempts + ("measured-staggered-band",),
                     )
                 )
-    return tuple(candidates[:32])
+    # A measured active-function row keeps package/support cells in an adjacent band.
+    active = [
+        item
+        for item in items
+        if not item.fragment.block.unused
+        and item.fragment.block.kind
+        in {"buffer", "noninverting_amplifier", "inverting_amplifier", "sallen_key"}
+    ]
+    support = [
+        item for item in items if item.fragment.block.kind != "interface" and item not in active
+    ]
+    if len(active) > 1:
+        row_top = min(item.envelope[1] for item in active)
+        left = min(item.envelope[0] for item in items)
+        for margin in (2, 4, 6, 8):
+            replacement = {}
+            cursor = left + margin * PITCH
+            for item in active:
+                replacement[item.fragment.block.id] = _place(item.fragment, cursor, row_top)
+                cursor += item.envelope[2] - item.envelope[0] + 2 * PITCH
+            next_top = max(item.envelope[3] for item in replacement.values()) + 2 * PITCH
+            cursor = left
+            for item in support:
+                replacement[item.fragment.block.id] = _place(item.fragment, cursor, next_top)
+                cursor += item.envelope[2] - item.envelope[0] + 2 * PITCH
+            candidates.insert(
+                0,
+                Packing(
+                    tuple(replacement.get(item.fragment.block.id, item) for item in items),
+                    baseline.attempts + ("measured-active-row-support-band",),
+                ),
+            )
+    # Generic vertical separation/backfill proposals include passive-only designs.
+    movable = [item for item in items if item.fragment.block.kind != "interface"]
+    for target in movable:
+        for steps in (6, 10, 14, 20, 30, 40, 50, 60):
+            moved = _place(target.fragment, target.envelope[0], target.envelope[1] + steps * PITCH)
+            candidates.append(
+                Packing(
+                    tuple(moved if item is target else item for item in items),
+                    baseline.attempts + ("measured-vertical-band",),
+                )
+            )
+    return tuple(candidates)
+
+
+def interleaved(packing: Packing) -> bool:
+    cells = [item for item in packing.fragments if item.fragment.block.kind != "interface"]
+    return any(
+        abs(first.envelope[1] - second.envelope[1]) > 5_080_000
+        and max(first.envelope[1], second.envelope[1]) < min(first.envelope[3], second.envelope[3])
+        and (first.envelope[2] <= second.envelope[0] or second.envelope[2] <= first.envelope[0])
+        for index, first in enumerate(cells)
+        for second in cells[index + 1 :]
+    )
+
+
+def frozen_obligations(observed: dict, design: dict, expected: dict) -> dict:
+    """Recheck frozen expectations from XML and independently resolved embedded pins."""
+    physical = {part["id"] for part in design["components"]}
+    reference = {part["id"]: part["refdes"] for part in design["components"]}
+    expected_partitions = sorted(
+        sorted((reference[component], pin) for component, pin in members if component in physical)
+        for members in expected["partitions"].values()
+    )
+    actual_partitions = sorted(
+        sorted((ref, pin) for ref, pin in members) for members in observed["nets"].values()
+    )
+    actual_terminals = sorted(
+        (component, pin)
+        for members in observed["nets"].values()
+        for ref, pin in members
+        for component, component_ref in reference.items()
+        if component_ref == ref
+    )
+    expected_terminals = sorted(
+        tuple(item) for item in expected["terminal_inventory"] if item[0] in physical
+    )
+    paths = []
+    for obligation in expected["path_obligations"]:
+        first = observed["pin_positions"][(reference[obligation["from"][0]], obligation["from"][1])]
+        second = observed["pin_positions"][(reference[obligation["to"][0]], obligation["to"][1])]
+        span = abs(first[0] - second[0]) + abs(first[1] - second[1])
+        limit = obligation["maximum_span_nm"]
+        paths.append(
+            {
+                "id": obligation["id"],
+                "span_nm": span,
+                "limit_nm": limit,
+                "pass": limit is None or span <= limit,
+            }
+        )
+    precedence = []
+    for relation in expected["precedence"]:
+        first = observed["pin_positions"][(reference[relation["source"][0]], relation["source"][1])]
+        second = observed["pin_positions"][
+            (reference[relation["target"][0]], relation["target"][1])
+        ]
+        precedence.append(
+            {
+                "source": relation["source"],
+                "target": relation["target"],
+                "source_x_nm": first[0],
+                "target_x_nm": second[0],
+                "pass": first[0] < second[0],
+            }
+        )
+    return {
+        "partition_match": actual_partitions == expected_partitions,
+        "terminal_match": actual_terminals == expected_terminals,
+        "paths": paths,
+        "precedence": precedence,
+        "pass": actual_partitions == expected_partitions
+        and actual_terminals == expected_terminals
+        and all(item["pass"] for item in paths + precedence),
+    }
+
+
+def select_scene(design: dict, emitted_assets: dict, args) -> tuple:
+    """A fresh bounded search for every clean build; no repeated emission of one scene."""
+    plan = semantic_plan(design, emitted_assets)
+    variants = fragment_variants(design, emitted_assets, plan)
+    seeds = pack_fragment_candidates(plan, variants)
+    packings = (*seeds, *_partial_beam_candidates(plan, variants), *extra_packings(seeds[0]))
+    candidates = []
+    seen = set()
+    for index, packing in enumerate(packings):
+        identity = tuple((item.fragment.id, item.delta) for item in packing.fragments)
+        if identity in seen:
+            continue
+        seen.add(identity)
+        if band_count(packing, core_only=args.core_bands) != args.bands:
+            continue
+        if args.interleaved and not interleaved(packing):
+            continue
+        cells = packing.fragments
+        # Sound occupied-envelope pruning; certification remains authoritative.
+        if any(
+            max(first.envelope[0], second.envelope[0]) < min(first.envelope[2], second.envelope[2])
+            and max(first.envelope[1], second.envelope[1])
+            < min(first.envelope[3], second.envelope[3])
+            for ordinal, first in enumerate(cells)
+            for second in cells[ordinal + 1 :]
+        ):
+            continue
+        candidates.append((index, packing))
+    # The finite alternatives beyond eight seeds remain explicitly uncovered.
+    retained = candidates[:8]
+    attempts = []
+    proved = []
+    for seed, (index, packing) in enumerate(retained):
+        for retry in range(4):
+            try:
+                draft, routes, trees, reservations, metrics = _assemble_candidate(
+                    design, emitted_assets, plan, packing, retry=retry
+                )
+                scene = certify_scene_geometry(
+                    Scene(
+                        draft.positions,
+                        draft.wires,
+                        draft.wire_nets,
+                        draft.labels,
+                        draft.junctions,
+                        metrics,
+                        draft.angles,
+                        draft.text_positions,
+                    )
+                )
+                scene = certify_scene_inputs(
+                    scene,
+                    design,
+                    emitted_assets,
+                    {
+                        "schema_version": "m2h2.policy.1",
+                        "content_width_nm": MAX_CONTENT_WIDTH,
+                        "content_height_nm": MAX_CONTENT_HEIGHT,
+                        "canonical_conductor_length_nm": 250_000_000,
+                        "candidate_budget": 8,
+                        "repair_rounds_per_seed": 3,
+                        "grid_pitch_nm": PITCH,
+                    },
+                )
+            except Exception as exc:
+                attempts.append(
+                    {
+                        "seed": seed,
+                        "candidate": index,
+                        "retry": retry,
+                        "proof": "rejected",
+                        "reason": str(exc),
+                    }
+                )
+                continue
+            attempts.append({"seed": seed, "candidate": index, "retry": retry, "proof": "pass"})
+            quality = (
+                max((tree.length for tree in trees), default=0),
+                sum(tree.length for tree in trees),
+                scene.certificate_digest,
+            )
+            proved.append((quality, scene, routes, trees, reservations, packing, index, retry))
+    ledger = {
+        "candidate_budget": 8,
+        "repair_rounds_per_seed": 3,
+        "slot_ceiling": 32,
+        "complete_attempts": len(attempts),
+        "attempts": attempts,
+        "available_class_candidates": len(candidates),
+        "retained_seeds": len(retained),
+        "budget_uncovered_candidate_indices": [index for index, _ in candidates[8:]],
+    }
+    if not proved:
+        raise RuntimeError(f"no proved class candidate: {json.dumps(ledger)}")
+    selected = min(proved, key=lambda item: item[0])
+    return (*selected[1:], ledger)
 
 
 def main() -> None:
@@ -108,10 +322,13 @@ def main() -> None:
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--bands", type=int, required=True)
     parser.add_argument("--core-bands", action="store_true")
+    parser.add_argument("--interleaved", action="store_true")
     args = parser.parse_args()
     if args.out.exists():
         raise SystemExit(f"refusing to overwrite {args.out}")
+    args.out.mkdir(parents=True)
     design = validate(json.loads(args.design.read_text()), assets())
+    expected = json.loads(args.design.with_suffix(".expected.json").read_text())
     resolved = assets()
     owned_assets = {component["asset"] for component in design["components"]}
     emitted_assets = {
@@ -119,125 +336,135 @@ def main() -> None:
         for key, asset in resolved.items()
         if key not in ("Regulator_Linear:L7805", "Timer:NE555D") or key in owned_assets
     }
-    plan = semantic_plan(design, emitted_assets)
-    variants = fragment_variants(design, emitted_assets, plan)
-    seeds = pack_fragment_candidates(plan, variants)
-    packings = (*seeds, *_partial_beam_candidates(plan, variants), *extra_packings(seeds[0]))
-    proved = []
-    seen = set()
-    for index, packing in enumerate(packings):
-        identity = tuple((item.fragment.id, item.delta) for item in packing.fragments)
-        if identity in seen or band_count(packing, core_only=args.core_bands) != args.bands:
-            continue
-        seen.add(identity)
+    launcher = validate_toolchain(
+        ROOT / "fixtures/m1a/toolchain.lock.json", ROOT / "requirements.lock"
+    )
+    results = []
+    for run in range(1, 6):
+        stage = args.out / f"run{run}"
         try:
-            draft, routes, trees, reservations, metrics = _assemble_candidate(
-                design, emitted_assets, plan, packing, retry=0
+            scene, routes, trees, reservations, packing, index, retry, ledger = select_scene(
+                design, emitted_assets, args
             )
         except Exception as exc:
-            proved.append({"candidate": index, "proof": "rejected", "reason": str(exc)})
-            continue
-        scene = certify_scene_geometry(
-            Scene(
-                draft.positions,
-                draft.wires,
-                draft.wire_nets,
-                draft.labels,
-                draft.junctions,
-                metrics,
-                draft.angles,
-                draft.text_positions,
+            (args.out / "failed_search.json").write_text(
+                json.dumps({"run": run, "failure": str(exc)}, indent=2) + "\n"
             )
+            raise
+        schematic = emit(design, emitted_assets, scene, stage)
+        verify_serialized_scene(design, scene, schematic)
+        local_libraries = {"Regulator_Linear": "L7805", "Timer": "NE555D"}
+        used_libraries = {
+            component["asset"].split(":", 1)[0] for component in design["components"]
+        } & set(local_libraries)
+        if used_libraries:
+            lines = ["(sym_lib_table", "  (version 7)"]
+            for library in sorted(used_libraries):
+                stem = local_libraries[library]
+                (schematic.parent / f"{stem}.kicad_sym").write_bytes(
+                    (ROOT / "fixtures/m2b" / f"{stem}.kicad_sym").read_bytes()
+                )
+                lines.append(
+                    f'  (lib (name "{library}") (type "KiCad") '
+                    f'(uri "${{KIPRJMOD}}/{stem}.kicad_sym") (options "") '
+                    '(descr "Locked KiCad 10.0.6 symbol"))'
+                )
+            lines.append(")")
+            (schematic.parent / "sym-lib-table").write_text("\n".join(lines) + "\n")
+        netlist, erc_path, svgs = run_headless(
+            schematic, launcher, stage, ROOT / "fixtures/m2a/sym-lib-table"
         )
-        scene = certify_scene_inputs(
-            scene,
-            design,
-            emitted_assets,
-            {
-                "schema_version": "m2h2.policy.1",
-                "content_width_nm": MAX_CONTENT_WIDTH,
-                "content_height_nm": MAX_CONTENT_HEIGHT,
-                "canonical_conductor_length_nm": 250_000_000,
-                "candidate_budget": 8,
-                "repair_rounds_per_seed": 3,
-                "grid_pitch_nm": PITCH,
-            },
-        )
-        proved.append({"candidate": index, "proof": "pass"})
-        args.out.mkdir(parents=True)
-        results = []
-        launcher = validate_toolchain(
-            ROOT / "fixtures/m1a/toolchain.lock.json", ROOT / "requirements.lock"
-        )
-        for run in range(1, 6):
-            stage = args.out / f"run{run}"
-            schematic = emit(design, emitted_assets, scene, stage)
-            verify_serialized_scene(design, scene, schematic)
-            local_libraries = {"Regulator_Linear": "L7805", "Timer": "NE555D"}
-            used_libraries = {
-                component["asset"].split(":", 1)[0] for component in design["components"]
-            } & set(local_libraries)
-            if used_libraries:
-                lines = ["(sym_lib_table", "  (version 7)"]
-                for library in sorted(used_libraries):
-                    stem = local_libraries[library]
-                    (schematic.parent / f"{stem}.kicad_sym").write_bytes(
-                        (ROOT / "fixtures/m2b" / f"{stem}.kicad_sym").read_bytes()
-                    )
-                    lines.append(
-                        f'  (lib (name "{library}") (type "KiCad") '
-                        f'(uri "${{KIPRJMOD}}/{stem}.kicad_sym") (options "") '
-                        '(descr "Locked KiCad 10.0.6 symbol"))'
-                    )
-                lines.append(")")
-                (schematic.parent / "sym-lib-table").write_text("\n".join(lines) + "\n")
-            netlist, erc_path, svgs = run_headless(
-                schematic, launcher, stage, ROOT / "fixtures/m2a/sym-lib-table"
-            )
-            observed = observe(schematic, netlist)
-            electrical = compare(design, observed, resolved)
-            layout = {**scene.metrics, **check_observed_layout(schematic, observed, design)}
-            erc = json.loads(erc_path.read_text())
-            report = {
-                "run": run,
-                "pass": electrical["status"] == "pass"
-                and not electrical["diagnostics"]
-                and _erc_violations(erc) == 0,
-                "schematic_sha256": sha256(schematic.read_bytes()),
-                "project_sha256": sha256(schematic.with_suffix(".kicad_pro").read_bytes()),
-                "svg_normalized_sha256": [_normalized_svg(path) for path in svgs],
-                "electrical": electrical,
-                "erc_violation_count": _erc_violations(erc),
-                "layout": layout,
-                "scene_sha256": scene.certificate_digest,
-                "candidate_input_policy_sha256": scene.certificate_input_digest,
-                "canonical_lengths_nm": {tree.net: tree.length for tree in trees},
-                "route_strategies": {route.net: route.strategy for route in routes},
-                "reservation_count": len(reservations),
-            }
-            (stage / "reports/alternative.json").write_text(json.dumps(report, indent=2) + "\n")
-            results.append(report)
-        reproducible = all(
-            {key: value for key, value in result.items() if key != "run"}
-            == {key: value for key, value in results[0].items() if key != "run"}
-            for result in results[1:]
-        )
-        payload = {
-            "schema_version": "m2h2.structural-alternative.1",
-            "design": str(args.design),
-            "band_count": args.bands,
+        observed = observe(schematic, netlist)
+        electrical = compare(design, observed, resolved)
+        layout = {**scene.metrics, **check_observed_layout(schematic, observed, design)}
+        frozen = frozen_obligations(observed, design, expected)
+        erc = json.loads(erc_path.read_text())
+        report = {
+            "run": run,
+            "pass": electrical["status"] == "pass"
+            and not electrical["diagnostics"]
+            and _erc_violations(erc) == 0
+            and frozen["pass"],
+            "serialized_scene_verified": "pass",
             "selected_candidate": index,
-            "proof_attempts": proved,
-            "accepted": reproducible and all(item["pass"] for item in results),
-            "reproducible": reproducible,
-            "runs": results,
+            "selected_retry": retry,
+            "all_bands": band_count(packing),
+            "active_core_bands": band_count(packing, core_only=True),
+            "interleaved": interleaved(packing),
+            "search": ledger,
+            "placements": [
+                {
+                    "block": item.fragment.block.id,
+                    "kind": item.fragment.block.kind,
+                    "envelope": item.envelope,
+                    "variant": item.fragment.id,
+                }
+                for item in packing.fragments
+            ],
+            "schematic_sha256": sha256(schematic.read_bytes()),
+            "project_sha256": sha256(schematic.with_suffix(".kicad_pro").read_bytes()),
+            "svg_normalized_sha256": [_normalized_svg(path) for path in svgs],
+            "electrical": electrical,
+            "erc_violation_count": _erc_violations(erc),
+            "frozen_obligations": frozen,
+            "layout": layout,
+            "scene_sha256": scene.certificate_digest,
+            "candidate_input_policy_sha256": scene.certificate_input_digest,
+            "canonical_lengths_nm": {tree.net: tree.length for tree in trees},
+            "route_strategies": {route.net: route.strategy for route in routes},
+            "reservation_count": len(reservations),
         }
-        (args.out / "results.json").write_text(json.dumps(payload, indent=2) + "\n")
-        print(json.dumps({"accepted": payload["accepted"], "candidate": index}))
-        if not payload["accepted"]:
-            raise SystemExit(1)
-        return
-    raise SystemExit(f"no proved {args.bands}-band candidate: {proved}")
+        (stage / "reports/alternative.json").write_text(json.dumps(report, indent=2) + "\n")
+        results.append(report)
+        print(
+            json.dumps(
+                {
+                    "case": args.design.stem,
+                    "run": run,
+                    "pass": report["pass"],
+                    "all_bands": report["all_bands"],
+                    "active_core_bands": report["active_core_bands"],
+                    "interleaved": report["interleaved"],
+                }
+            ),
+            flush=True,
+        )
+    reproducible = len(results) == 5 and all(
+        {key: value for key, value in result.items() if key != "run"}
+        == {key: value for key, value in results[0].items() if key != "run"}
+        for result in results[1:]
+    )
+    payload = {
+        "schema_version": "m2h2.structural-alternative.2",
+        "design": str(args.design),
+        "git_head": subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
+        ).strip(),
+        "source_sha256": {
+            str(path.relative_to(ROOT)): _sha(path)
+            for path in sorted((ROOT / "src/ai_kicad").glob("*.py"))
+        },
+        "runner_sha256": _sha(Path(__file__)),
+        "toolchain_lock_sha256": _sha(ROOT / "fixtures/m1a/toolchain.lock.json"),
+        "asset_lock_sha256": _sha(ROOT / "fixtures/m2b/assets.lock.json"),
+        "policy_lock_sha256": _sha(ROOT / "fixtures/m1a/policy.lock.json"),
+        "expected_sha256": _sha(args.design.with_suffix(".expected.json")),
+        "design_sha256": _sha(args.design),
+        "runs_per_case": 5,
+        "normalization": "Only run ordinal and documented SVG title fields; no search/certificate normalization",
+        "required_class": {
+            "bands": args.bands,
+            "core_only": args.core_bands,
+            "interleaved": args.interleaved,
+        },
+        "accepted": reproducible and all(item["pass"] for item in results),
+        "reproducible": reproducible,
+        "runs": results,
+    }
+    (args.out / "results.json").write_text(json.dumps(payload, indent=2) + "\n")
+    print(json.dumps({key: value for key, value in payload.items() if key != "runs"}), flush=True)
+    if not payload["accepted"]:
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

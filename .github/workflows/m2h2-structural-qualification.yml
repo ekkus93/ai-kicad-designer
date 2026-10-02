@@ -1,0 +1,66 @@
+name: M2h2 Structural Qualification
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: m2h2-structural-qualification-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  final-interactions:
+    name: Measured I3 alternatives five fresh builds
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[m2h2-structural-qualification]')
+    runs-on: self-hosted
+    timeout-minutes: 360
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install project and dev tools
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e '.[dev]'
+
+      - name: Qualify missing measured I3 classes
+        run: |
+          set -uo pipefail
+          export PYTHONPATH=src:tools
+          root="fixtures/m2h2/structural_final_${GITHUB_SHA}"
+          overall=0
+          qualify() {
+            case_name="$1"
+            shift
+            if ! python tools/run_m2h2_structural_alternative.py \
+              --design "fixtures/m2h2/interaction/i3/$case_name.json" \
+              --out "$root/$case_name" "$@"; then
+              overall=1
+            fi
+          }
+          qualify a0_multiple --bands 2
+          qualify a0_interleaved --bands 2 --interleaved
+          qualify a1_multiple --bands 2
+          qualify a1_interleaved --bands 2 --interleaved
+          qualify three_amplifier_one_band --bands 1 --core-bands
+          qualify a3_interleaved --bands 2 --interleaved
+          exit "$overall"
+
+      - name: Upload measured structural evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: m2h2-structural-qualification-${{ github.sha }}
+          path: fixtures/m2h2/structural_final_${{ github.sha }}
+          if-no-files-found: warn

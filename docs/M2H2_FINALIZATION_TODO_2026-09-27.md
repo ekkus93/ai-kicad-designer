@@ -27,23 +27,23 @@ A checkbox may be checked only from current-source evidence. Older qualification
 
 ## 1. Current-source baseline
 
-- [ ] Run current fast complete pytest baseline. Prior source `563de7b` passed 225 tests; behavior changes require a fresh locked baseline.
+- [x] Run current fast complete pytest baseline. Evidence: locked job `110979872867`, successful run `37049738355` at `728478b`; production and lock hashes match qualification source `260e33c` in artifact audit `37050923509`.
 - [x] Run scoped Ruff lint. Evidence: exact-head `M2h2 Fast Validation` run `37048718582`, static job `110976476016`, source `465248ba47fe0d124ecd7997f2cdf898095b1d35`, Ruff lint.
 - [x] Run scoped Ruff format check. Evidence: exact-head `M2h2 Fast Validation` run `37048718582`, static job `110976476016`, source `465248ba47fe0d124ecd7997f2cdf898095b1d35`, Ruff format.
 - [x] Run `git diff --check` / applicable whitespace checks. Evidence: exact-head `M2h2 Fast Validation` run `37048718582`, static job `110976476016`, source `465248ba47fe0d124ecd7997f2cdf898095b1d35`, Git diff check and scoped whitespace.
-- [ ] Confirm fresh V6-3 one-run real-tool regression: Prior source baseline preserved in `finalization_checks/baseline_563de7b_ci.json`; requalify after source-precedence/packing changes.
-  - [ ] locked KiCad 10.0.6;
-  - [ ] independent electrical observation;
-  - [ ] zero unexpected ERC;
-  - [ ] serialized-scene verification;
-  - [ ] canonical VREF <= 250 mm.
-- [ ] Confirm fresh DP2 one-run real-tool regression: Prior source baseline preserved in `finalization_checks/baseline_563de7b_ci.json`; requalify after source-precedence/packing changes.
-  - [ ] no external VREF connector;
-  - [ ] two NE5532 packages;
-  - [ ] all required reference consumers connected;
-  - [ ] independent electrical observation;
-  - [ ] zero unexpected ERC;
-  - [ ] canonical VREF <= 250 mm.
+- [x] Confirm fresh V6-3 one-run real-tool regression. Evidence: `fixtures/m2h2/finalization_checks/qualification_260e33c_ci.json`, locked current regression job `110979872867`.
+  - [x] locked KiCad 10.0.6;
+  - [x] independent electrical observation;
+  - [x] zero unexpected ERC;
+  - [x] serialized-scene verification;
+  - [x] canonical VREF <= 250 mm.
+- [x] Confirm fresh DP2 one-run real-tool regression. Evidence: `fixtures/m2h2/finalization_checks/qualification_260e33c_ci.json`, locked current regression job `110979872867`.
+  - [x] no external VREF connector;
+  - [x] two NE5532 packages;
+  - [x] all required reference consumers connected;
+  - [x] independent electrical observation;
+  - [x] zero unexpected ERC;
+  - [x] canonical VREF <= 250 mm.
 
 ## 2. Obligation-complete certificate audit and implementation
 
@@ -122,8 +122,8 @@ A checkbox may be checked only from current-source evidence. Older qualification
 - [x] Corridor/reservation capacity is checked before route acceptance. Evidence: `tests/test_m2h2_repair_matrix.py::test_route_corridor_capacity_is_checked_before_candidate_acceptance` proves global-route channel capacity accepts one route wire and rejects duplicate occupancy before candidate acceptance.
 - [x] Best rejected candidate and exact failure witness are preserved on every failure exit. Evidence: `tests/test_m2h2_repair_matrix.py::test_failure_exit_preserves_candidate_decisions_and_exact_failure_witness` forces every candidate to reject with a typed canonical-length conflict and verifies candidate decisions, failed metric, layout attempts, failure class, net, actual, and limit are preserved.
 - [x] Evidence reports meaningful structural/variant diversity, not raw attempt count only. Evidence: `tests/test_m2h2_repair_matrix.py::test_composition_evidence_reports_structural_diversity_not_raw_attempt_count` verifies seed structures, placement classes, proved structures, and proved-candidate structures in `compose_with_evidence`.
-- [ ] V6-3 remains <= 250 mm canonical VREF without gate change or label shortcut. Requalify revised source.
-- [ ] DP2 internal VREF remains connectorless, fully distributed, and <= 250 mm. Requalify revised source.
+- [x] V6-3 remains <= 250 mm canonical VREF without gate change or label shortcut. Evidence: `fixtures/m2h2/finalization_checks/qualification_260e33c_ci.json`, locked current regression job `110979872867`.
+- [x] DP2 internal VREF remains connectorless, fully distributed, and <= 250 mm. Evidence: `fixtures/m2h2/finalization_checks/qualification_260e33c_ci.json`, locked current regression job `110979872867`.
 
 ## 5. Typed repair closure
 
@@ -214,23 +214,25 @@ A checkbox may be checked only from current-source evidence. Older qualification
 
 ## 8. Final-source 56-positive qualification
 
-- [ ] Run all 56 required positives.
-- [ ] Run five clean builds per positive.
-- [ ] Locked KiCad 10.0.6 used for every build.
-- [ ] Fresh XML/electrical export produced.
-- [ ] Exact independent package/unit/pin identity passes.
-- [ ] Exact independent electrical partitions pass.
-- [ ] Zero unexpected ERC violations.
-- [ ] Layout/path/reservation/certificate gates pass.
-- [ ] Compiler-owned project bytes reproduce as governed.
-- [ ] Local variant choices reproduce.
-- [ ] Canonical conductor trees reproduce.
-- [ ] Obligation certificates reproduce.
-- [ ] Structural candidate/repair decisions reproduce.
-- [ ] Complete metric vectors reproduce.
-- [ ] Normalized SVG geometry/text reproduces.
-- [ ] Normalized reports/manifests reproduce under only documented normalization.
-- [ ] Historical invalid V3-8 remains correctly rejected.
+Evidence for the checked gates below: successful locked KiCad job `110975750982`, run `37048500798`, source `260e33c`; 56/56 accepted and five-run reproducible. Artifact ID `11246541158` contains all fresh projects/XML/ERC/SVG/reports. Audit run `37050923509` confirms production source and lock hashes equal current master. See `fixtures/m2h2/finalization_checks/qualification_260e33c_ci.json`.
+
+- [x] Run all 56 required positives.
+- [x] Run five clean builds per positive.
+- [x] Locked KiCad 10.0.6 used for every build.
+- [x] Fresh XML/electrical export produced.
+- [x] Exact independent package/unit/pin identity passes.
+- [x] Exact independent electrical partitions pass.
+- [x] Zero unexpected ERC violations.
+- [x] Layout/path/reservation/certificate gates pass.
+- [x] Compiler-owned project bytes reproduce as governed.
+- [x] Local variant choices reproduce.
+- [x] Canonical conductor trees reproduce.
+- [x] Obligation certificates reproduce.
+- [x] Structural candidate/repair decisions reproduce.
+- [x] Complete metric vectors reproduce.
+- [x] Normalized SVG geometry/text reproduces.
+- [x] Normalized reports/manifests reproduce under only documented normalization.
+- [ ] Historical invalid V3-8 remains correctly rejected. The fresh run rejects it; reconcile exact failure codes before closing this item.
 
 ## 9. Final interaction/stress qualification
 
