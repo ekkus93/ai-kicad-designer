@@ -9,8 +9,11 @@ import hashlib
 import json
 from pathlib import Path
 import heapq
+import re
+import subprocess
 
 from ai_kicad.m2a import ROOT, observe
+from run_m2h2_structural_audit import audit_paths
 
 
 def digest(path: Path) -> str:
@@ -423,6 +426,36 @@ def main() -> None:
             render_chunks(path.parent.parent, "structural__" + path.parent.name, path.parent)
     if len(structural) != 6:
         errors.append("six structural alternative cases required")
+    structural_audit = audit_paths([ROOT / "src/ai_kicad"])
+    if not structural_audit["pass"]:
+        errors.append("structural anti-overfitting audit failed")
+    dependency_text = "\n".join(
+        (ROOT / path).read_text() for path in ("pyproject.toml", "requirements.lock")
+    )
+    if re.search(r"cp[-_ ]?sat|ortools", dependency_text, re.IGNORECASE):
+        errors.append("forbidden solver dependency")
+    document_paths = [
+        ROOT / "docs" / name
+        for name in (
+            "M2_GENERALIZATION_REMEDIATION_SPEC.md",
+            "M2H2_FINALIZATION_SPEC_2026-09-27.md",
+            "M2H2_FINALIZATION_TODO_2026-09-27.md",
+            "M2H2_HANDOFF_2026-09-27.md",
+        )
+    ]
+    document_paths.append(ROOT / "fixtures/m2h2/STATUS.md")
+    link_errors = []
+    link_count = 0
+    for document in document_paths:
+        for target in re.findall(r"\[[^\]]*\]\(([^)]+)\)", document.read_text()):
+            target = target.split("#", 1)[0]
+            if not target or "://" in target:
+                continue
+            link_count += 1
+            if not (document.parent / target).exists():
+                link_errors.append(f"{document.relative_to(ROOT)}: {target}")
+    errors.extend(f"broken link: {item}" for item in link_errors)
+    subprocess.run(["git", "diff", "--check"], cwd=ROOT, check=True)
     metrics = {}
     for detail in details:
         for name, value in detail["layout"].items():
@@ -438,6 +471,11 @@ def main() -> None:
         "worst_metrics": metrics,
         "negative": negative,
         "structural": structural,
+        "structural_anti_overfitting": structural_audit,
+        "link_audit": {"links_checked": link_count, "errors": link_errors},
+        "cp_sat_dependency_absent": not bool(
+            re.search(r"cp[-_ ]?sat|ortools", dependency_text, re.IGNORECASE)
+        ),
         "historical_preservation": qualification["historical_preservation"],
         "anti_overfitting": qualification["anti_overfitting"],
         "schema_version": "m2h2.final-artifact-audit.1",

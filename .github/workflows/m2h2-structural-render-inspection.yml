@@ -1,0 +1,53 @@
+name: M2h2 Structural Render Audit
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  inspect:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[m2h2-structural-render-audit]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[dev]'
+      - uses: actions/download-artifact@v4
+        with:
+          name: m2h2-structural-qualification-beb50458a1ba3b35667534954d2f01e0f40152ba
+          path: fixtures/m2h2/structural_final_beb50458a1ba3b35667534954d2f01e0f40152ba
+          run-id: 37053544406
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Transfer source-matched structural renders
+        run: |
+          PYTHONPATH=src:tools python - <<'PY'
+          import json
+          from pathlib import Path
+          from run_m2h2_final_artifact_audit import identity_errors, render_chunks
+          root = Path('fixtures/m2h2/structural_final_beb50458a1ba3b35667534954d2f01e0f40152ba')
+          records = []
+          for path in sorted(root.glob('*/results.json')):
+              payload = json.loads(path.read_text())
+              errors = identity_errors(payload)
+              assert not errors, errors
+              assert payload['accepted'] and payload['reproducible'] and len(payload['runs']) == 5
+              record = {
+                  'case': path.parent.name,
+                  'required_class': payload['required_class'],
+                  'placements': payload['runs'][0]['placements'],
+                  'classes': [{key: run[key] for key in ('all_bands', 'active_core_bands', 'interleaved')}
+                              for run in payload['runs']],
+              }
+              records.append(record)
+              print(json.dumps({'kind': 'm2h2.structural-render-audit.1', **record}, separators=(',', ':')), flush=True)
+              render_chunks(root, 'structural__' + path.parent.name, path.parent)
+          assert len(records) == 6
+          PY
