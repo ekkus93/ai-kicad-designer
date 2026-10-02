@@ -111,7 +111,9 @@ def main() -> None:
                     "layout": signatures[0]["layout"] if signatures else None,
                     "canonical_lengths_nm": {
                         tree["net"]: tree["length_nm"]
-                        for tree in (signatures[0]["composition"]["canonical_trees"] if signatures else [])
+                        for tree in (
+                            signatures[0]["composition"]["canonical_trees"] if signatures else []
+                        )
                     },
                 },
                 separators=(",", ":"),
