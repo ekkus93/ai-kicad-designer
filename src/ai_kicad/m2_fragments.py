@@ -377,7 +377,7 @@ def _finish(
             "up": (0, -port_escape_length),
             "down": (0, port_escape_length),
         }[direction]
-        if direction == "left":
+        if direction == "left" and (port.net in local_only_nets or port.net in interface_nets):
             # Serialized local labels are left-justified. Their full text must
             # end before the source pin/body, not extend back across it.
             label_clearance = ((len(port.net) * 890_000 + PITCH - 1) // PITCH + 1) * PITCH
