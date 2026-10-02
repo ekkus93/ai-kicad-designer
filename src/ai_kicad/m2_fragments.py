@@ -1043,7 +1043,10 @@ def _timer_fragment(
     supply_end = ut
     d.label(timer["supply"], supply_end)
     timer_supply_end = p["supply"]
-    reset_clearance = ((len(timer["supply"]) * 890_000 + PITCH - 1) // PITCH + 1) * PITCH
+    # Keep the local terminal label when the final gateway has no label.
+    # _finish removes it only when it emits the redundant same-net gateway label.
+    d.label(timer["supply"], timer_supply_end)
+    reset_clearance = ((len(timer["supply"]) * 890_000 + PITCH - 1) // PITCH) * PITCH
     reset_label = (p["reset"][0] - reset_clearance, p["reset"][1])
     d.route(timer["supply"], p["reset"], reset_label)
     d.label(timer["supply"], reset_label)
@@ -1086,7 +1089,7 @@ def _timer_fragment(
         block,
         d,
         {
-            "supply": (timer_supply_end, "right"),
+            "supply": (timer_supply_end, "up"),
             "output": (output_end, "right"),
             "reference": (reference_end, "right"),
         },

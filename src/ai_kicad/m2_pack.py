@@ -917,6 +917,7 @@ def _measured_repack(
     top: int,
     label: str,
     displaced: PlacedFragment | None = None,
+    additional_moves: tuple[tuple[PlacedFragment, int, int], ...] = (),
 ) -> Packing | None:
     """Certify a changed measured placement before spending a route attempt."""
     moved = _place(target.fragment, left, top)
@@ -927,10 +928,13 @@ def _measured_repack(
         if displaced is not None
         else None
     )
-    items = tuple(
-        moved if item is target else replacement if item is displaced else item
-        for item in baseline.fragments
-    )
+    replacements = {
+        item.fragment.block.id: _place(item.fragment, x, y) for item, x, y in additional_moves
+    }
+    if displaced is not None:
+        replacements[displaced.fragment.block.id] = replacement
+    replacements[target.fragment.block.id] = moved
+    items = tuple(replacements.get(item.fragment.block.id, item) for item in baseline.fragments)
     if any(
         item.envelope[0] < LEFT
         or item.envelope[1] < TOP
@@ -1022,6 +1026,46 @@ def _structural_repack_candidates(plan: SemanticPlan, baseline: Packing) -> tupl
                             )
                             if exchanged is not None:
                                 proposals.append(exchanged)
+    # A row may contain several independently constrained active functions.
+    # Compact the whole row transaction so an existing reversed sibling does
+    # not make every single-fragment move fail before it can be repaired.
+    active = sorted(
+        (item for item in functional if not item.fragment.block.unused),
+        key=lambda item: item.fragment.block.id,
+    )
+    for row_top in sorted({item.envelope[1] for item in active}):
+        outside = [item for item in active if item.envelope[1] != row_top]
+        parked = sorted(
+            (
+                item
+                for item in functional
+                if item.fragment.block.unused and item.envelope[1] == row_top
+            ),
+            key=lambda item: item.fragment.block.id,
+        )
+        if not outside or len(parked) > len(outside):
+            continue
+        moves = []
+        left = LEFT + PITCH
+        for item in active:
+            moves.append((item, left, row_top))
+            left += item.envelope[2] - item.envelope[0] + PITCH
+        moves.extend(
+            (item, vacant.envelope[0], vacant.envelope[1])
+            for item, vacant in zip(parked, outside, strict=False)
+        )
+        target, x, y = next(move for move in moves if move[0] in outside)
+        grouped = _measured_repack(
+            plan,
+            baseline,
+            target,
+            x,
+            y,
+            "functional-row-compaction",
+            additional_moves=tuple(move for move in moves if move[0] is not target),
+        )
+        if grouped is not None:
+            proposals.append(grouped)
     for obligation in plan.precedence:
         source = by_id.get(obligation.source_fragment)
         target = by_id.get(obligation.target_fragment)
