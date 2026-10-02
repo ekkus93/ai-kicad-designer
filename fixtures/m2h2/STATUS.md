@@ -5,6 +5,26 @@ Development probes and their expectations remain frozen in `development/`.
 Historical blind evidence is unchanged. Do not interpret the evidence below as
 final qualification of the current worktree.
 
+## Current master baseline — 2026-10-02
+
+At source `563de7bbd79cf232cdb3a16069a5e6f2dd93405a`, exact-head fast-validation run
+`36891578571` completed successfully. Locked self-hosted job `110468241407`
+verified KiCad 10.0.6 executable/library hashes and the locked platform,
+passed all 225 pytest tests, and passed both V6-3 and DP2 one-run regressions.
+The regression harness verifies independent electrical observation, zero ERC,
+serialized-scene identity, one reference component, and the unchanged 250 mm
+canonical reference limit; DP2 also verifies two NE5532 packages, nine reference
+terminals, and no external reference connector. Artifact `11176333918` preserves
+the generated reports. This supersedes the historical missing-AppDir blocker.
+
+Hosted static and contract jobs also passed. Final qualification and interaction
+work remain incomplete: final jobs at this head were skipped, and the previous
+interaction run `36861301231` failed. No old five-run candidate or provisional
+interaction evidence is promoted to final-source PASS. The interaction runner
+hash freeze must be refreshed after all behavior changes.
+
+Evidence summary: `finalization_checks/baseline_563de7b_ci.json`.
+
 ## Current implementation and checks
 
 The worktree implements generic internal-reference producer selection and
@@ -111,9 +131,9 @@ and
 These validators pass in current-source hosted M2h2 contract pytest; they do not
 mark any I1–I6 cell covered and do not replace locked real-tool qualification.
 
-A previous full pytest suite passed **195 tests** after the latest routing
-change. Exact-head full pytest is now awaiting the required locked KiCad 10.0.6
-AppDir at `/tmp/AppDir` on the new self-hosted runner. Historical protection
+A previous full pytest suite passed **195 tests** after an earlier routing
+change. The current-master baseline above supersedes the missing-AppDir state:
+225 tests and both locked one-run regressions now pass. Historical protection
 audit passed for 7,221 tracked files with matching HEAD/worktree digests. The
 active-module literal anti-overfitting scan passed and found no CP-SAT dependency
 or implementation; the structural anti-overfitting audit is implemented and
@@ -141,9 +161,8 @@ or generation alone.
 
 ## Remaining completion work
 
-1. Provision the locked KiCad 10.0.6 AppDir at `/tmp/AppDir` on the self-hosted
-   runner so the exact-head full pytest job can run, then reconcile that baseline
-   check only after exact-head evidence exists.
+1. Keep the locked KiCad 10.0.6 identity verified for every qualification run;
+   the current-master full pytest and one-run baseline now pass.
 2. Reconfirm V6-3 and DP2 at the final source state with locked KiCad 10.0.6 and
    unchanged gates.
 3. Validate every I1–I6 cell and selected triple against actual electrical,
