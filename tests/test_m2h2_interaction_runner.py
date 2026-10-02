@@ -157,6 +157,5 @@ def test_real_tool_coverage_rejects_incomplete_or_repeated_runs(runs) -> None:
     assert validate_real_tool_qualification_evidence(evidence) == []
     evidence["exact_head_sha"] = "stale-label"
     assert any(
-        "full commit SHA" in error
-        for error in validate_real_tool_qualification_evidence(evidence)
+        "full commit SHA" in error for error in validate_real_tool_qualification_evidence(evidence)
     )
