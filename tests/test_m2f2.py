@@ -11,15 +11,17 @@ import pytest
 from ai_kicad.ir import InputError
 from ai_kicad.m2a import ROOT
 from ai_kicad.m2_compose import compose_layout
-from ai_kicad.m2_fragments import FragmentVariant
+from ai_kicad.m2_fragments import FragmentVariant, fragment_variants
 from ai_kicad.m2_pack import (
     ENVELOPE_OUTER_PADDING,
     MAX_CONTENT_HEIGHT,
     MAX_CONTENT_WIDTH,
     pack_fragments,
+    pack_fragment_candidates,
 )
 from ai_kicad.m2_semantics import BlockPlan, SemanticEdge, SemanticPlan, semantic_plan
 from ai_kicad.m2b import assets, validate
+from ai_kicad.m2_route import route_between_fragments
 
 
 def _block(block_id: str, kind: str = "rc") -> BlockPlan:
@@ -201,6 +203,39 @@ def test_oversized_measured_fragment_reports_prospective_spread_conflict():
 def test_known_v4_7_regression_fits_the_unchanged_prospective_gate():
     path = ROOT / "fixtures/m2blind_v4/ir/V4-7.json"
     design = validate(json.loads(path.read_text()), assets())
-    scene = compose_layout(design, assets())
+    try:
+        scene = compose_layout(design, assets())
+    except InputError:
+        plan = semantic_plan(design, assets())
+        variants = fragment_variants(design, assets(), plan)
+        for index, seed in enumerate(pack_fragment_candidates(plan, variants)):
+            try:
+                route_between_fragments(plan, seed.fragments)
+            except InputError as error:
+                print(
+                    json.dumps(
+                        {
+                            "route_seed": index,
+                            "failure": str(error),
+                            "placements": [
+                                {
+                                    "id": item.fragment.block.id,
+                                    "envelope": item.envelope,
+                                    "gateways": [
+                                        {
+                                            "id": g.id,
+                                            "net": g.net,
+                                            "point": g.point,
+                                            "direction": g.escape_direction,
+                                        }
+                                        for g in item.gateways
+                                    ],
+                                }
+                                for item in seed.fragments
+                            ],
+                        }
+                    )
+                )
+        raise
     assert scene.metrics["page_margin_pass"] is True
     assert ":pass:measured=" in scene.metrics["packing_attempts"][-1]

@@ -916,12 +916,21 @@ def _measured_repack(
     left: int,
     top: int,
     label: str,
+    displaced: PlacedFragment | None = None,
 ) -> Packing | None:
     """Certify a changed measured placement before spending a route attempt."""
     moved = _place(target.fragment, left, top)
     if moved.delta == target.delta:
         return None
-    items = tuple(moved if item is target else item for item in baseline.fragments)
+    replacement = (
+        _place(displaced.fragment, target.envelope[0], target.envelope[1])
+        if displaced is not None
+        else None
+    )
+    items = tuple(
+        moved if item is target else replacement if item is displaced else item
+        for item in baseline.fragments
+    )
     if any(
         item.envelope[0] < LEFT
         or item.envelope[1] < TOP
@@ -977,22 +986,42 @@ def _structural_repack_candidates(plan: SemanticPlan, baseline: Packing) -> tupl
         if target.fragment.block.unused:
             continue
         for row_top in sorted({item.envelope[1] for item in functional}):
-            if row_top == target.envelope[1]:
-                continue
             row = [item for item in items if item is not target and item.envelope[1] == row_top]
             if row:
                 # A boundary interface or support cell need not force the
                 # whole functional row past its rightmost endpoint. Enumerate
                 # measured gaps and keep only complete legal transactions.
-                origins = {LEFT + PITCH, target.envelope[0]} | {
-                    item.envelope[2] + PITCH for item in row
-                }
+                origins = (
+                    {LEFT + PITCH, target.envelope[0]}
+                    | {item.envelope[2] + PITCH for item in row}
+                    | {item.envelope[0] for item in row if item.fragment.block.unused}
+                )
                 for left in sorted(origins):
+                    if row_top == target.envelope[1] and left >= target.envelope[0]:
+                        continue
                     candidate = _measured_repack(
                         plan, baseline, target, left, row_top, "functional-row-compaction"
                     )
                     if candidate is not None:
                         proposals.append(candidate)
+                    else:
+                        # A parked function can occupy the only measured row
+                        # gap. Exchange it into the vacated cell as one atomic
+                        # transaction, then recheck every placement obligation.
+                        for parked in row:
+                            if not parked.fragment.block.unused or parked.envelope[0] != left:
+                                continue
+                            exchanged = _measured_repack(
+                                plan,
+                                baseline,
+                                target,
+                                left,
+                                row_top,
+                                "functional-row-compaction",
+                                displaced=parked,
+                            )
+                            if exchanged is not None:
+                                proposals.append(exchanged)
     for obligation in plan.precedence:
         source = by_id.get(obligation.source_fragment)
         target = by_id.get(obligation.target_fragment)
