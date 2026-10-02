@@ -573,11 +573,31 @@ def test_measured_row_compaction_and_stagger_are_legal_structural_classes() -> N
         plan = semantic_plan(design, resolved)
         variants = fragment_variants(design, resolved, plan)
         seeds = pack_fragment_candidates(plan, variants)
-        assert any(seed.attempts[-1] == label for seed in seeds), (
-            stem,
-            label,
-            [seed.attempts for seed in seeds],
-        )
+        if not any(seed.attempts[-1] == label for seed in seeds):
+            print(
+                json.dumps(
+                    {
+                        "missing_structural_class": stem,
+                        "seeds": [
+                            {
+                                "attempt": seed.attempts[-1],
+                                "placements": [
+                                    {
+                                        "id": p.fragment.block.id,
+                                        "kind": p.fragment.block.kind,
+                                        "unused": p.fragment.block.unused,
+                                        "envelope": p.envelope,
+                                        "delta": p.delta,
+                                    }
+                                    for p in seed.fragments
+                                ],
+                            }
+                            for seed in seeds
+                        ],
+                    }
+                )
+            )
+        assert any(seed.attempts[-1] == label for seed in seeds)
         alternative = next(seed for seed in seeds if seed.attempts[-1] == label)
         _, _, canonical, _, metrics = _assemble_candidate(
             design, resolved, plan, alternative, retry=0

@@ -646,7 +646,11 @@ def route_between_fragments(
                 in {"body", "text", "label", "pin", "wire", "protected"}
                 and not (
                     reservation.clearance_class
-                    in ({"label", "wire", "protected"} if net in distribution_nets else {"label"})
+                    in (
+                        {"label", "wire", "protected"}
+                        if net in distribution_nets
+                        else {"label", "wire"}
+                    )
                     and reservation.permitted_net == net
                 )
             )
