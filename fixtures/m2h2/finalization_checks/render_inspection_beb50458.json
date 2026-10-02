@@ -1,0 +1,71 @@
+{
+  "schema": "m2h2.engineering-render-inspection.1",
+  "source_head": "beb50458a1ba3b35667534954d2f01e0f40152ba",
+  "transfer_run": 37067694162,
+  "transfer_job": 111039486011,
+  "reviewer": "Codex engineering agent",
+  "method": "SHA-verified real KiCad SVGs rasterized at 2200 px; all six inspected individually and timer overlap examined in enlarged close-up.",
+  "human_approval": false,
+  "images": [
+    {
+      "case": "structural__a0_interleaved",
+      "svg_sha256": "66ced2bed506172ab3e066d74a93231b8660a1df0508059fd6862ba1048a6669"
+    },
+    {
+      "case": "structural__a0_multiple",
+      "svg_sha256": "5b5dc88975fc645677dd1e85ecc9dc8a9930f3f8a0a62b00f75c66c2157f7a5c"
+    },
+    {
+      "case": "structural__a1_interleaved",
+      "svg_sha256": "ec6aa5f5e9816292f0e399069fe09597755c76a74e596d0c2cf3b20365c42be2"
+    },
+    {
+      "case": "structural__a1_multiple",
+      "svg_sha256": "4bfbd587c9b29f9ffd227d3931c54e737955ce0273cd5cf22bdead987aac171c"
+    },
+    {
+      "case": "structural__a3_interleaved",
+      "svg_sha256": "13500b7d8ecb2581f8215a89625b153deb34f84311ee382a6327597318160305"
+    },
+    {
+      "case": "structural__three_amplifier_one_band",
+      "svg_sha256": "a6af0071970f04c5a1ddb04c7f7788eb7c8cd87f1880e8a829ca224ec17f3f69"
+    }
+  ],
+  "results": {
+    "ordering": "Observed branch/timer ordering and legal structural placement",
+    "feedback_timing": "Timing ladders and amplifier loops traceable; reset labeling hides RST text",
+    "reference": "Net names distinguish domains, except overlapping supply duplicates",
+    "package_support": "Three active buffers share one active-core band, with parked input and package-power/support on a second band; both counts retained",
+    "fanout": "Branch net names traceable but connector labels overlap pin numerals",
+    "required_text": "FAIL: duplicate timer supply labels; reset label overlaps timer body/pin name; connector net text reaches pin numeral"
+  },
+  "hard_defects": [
+    {
+      "kind": "net_label_label_overlap",
+      "cases": [
+        "a1_multiple",
+        "a1_interleaved",
+        "a3_interleaved"
+      ],
+      "description": "VPLUS supply pin label overlaps redundant gateway supply label"
+    },
+    {
+      "kind": "net_label_body_overlap",
+      "cases": [
+        "a1_multiple",
+        "a1_interleaved",
+        "a3_interleaved"
+      ],
+      "description": "left-justified reset supply label extends across timer RST/body"
+    },
+    {
+      "kind": "net_label_pin_text_overlap",
+      "cases": "all six",
+      "description": "left-side interface labels extend toward connector pin numeral; left escape must account for full serialized width"
+    }
+  ],
+  "inspection_pass": false,
+  "followup_head": "f49d3b06c2648d2f6f1fed1a7711274c5c9823ef",
+  "final_qualification_invalidated": true
+}
