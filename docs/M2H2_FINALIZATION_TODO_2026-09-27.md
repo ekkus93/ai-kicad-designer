@@ -27,17 +27,17 @@ A checkbox may be checked only from current-source evidence. Older qualification
 
 ## 1. Current-source baseline
 
-- [ ] Run current fast complete pytest baseline. Evidence: locked job `110979872867`, successful run `37049738355` at `728478b`; production and lock hashes match qualification source `260e33c` in artifact audit `37050923509`.
-- [x] Run scoped Ruff lint. Evidence: exact-head `M2h2 Fast Validation` run `37048718582`, static job `110976476016`, source `465248ba47fe0d124ecd7997f2cdf898095b1d35`, Ruff lint.
-- [x] Run scoped Ruff format check. Evidence: exact-head `M2h2 Fast Validation` run `37048718582`, static job `110976476016`, source `465248ba47fe0d124ecd7997f2cdf898095b1d35`, Ruff format.
-- [x] Run `git diff --check` / applicable whitespace checks. Evidence: exact-head `M2h2 Fast Validation` run `37048718582`, static job `110976476016`, source `465248ba47fe0d124ecd7997f2cdf898095b1d35`, Git diff check and scoped whitespace.
-- [x] Confirm fresh V6-3 one-run real-tool regression. Evidence: `fixtures/m2h2/finalization_checks/qualification_260e33c_ci.json`, locked current regression job `110979872867`.
+- [x] Run current fast complete pytest baseline. Evidence: source `beb50458a1ba3b35667534954d2f01e0f40152ba`, run `37053544188`, locked job `110992543350`: 241 passed in 105.83s.
+- [x] Run scoped Ruff lint. Evidence: exact-head `M2h2 Fast Validation` run `37053544188`, static job `110992543055`, source `beb50458a1ba3b35667534954d2f01e0f40152ba`, Ruff lint.
+- [x] Run scoped Ruff format check. Evidence: exact-head `M2h2 Fast Validation` run `37053544188`, static job `110992543055`, source `beb50458a1ba3b35667534954d2f01e0f40152ba`, Ruff format.
+- [x] Run `git diff --check` / applicable whitespace checks. Evidence: exact-head `M2h2 Fast Validation` run `37053544188`, static job `110992543055`, source `beb50458a1ba3b35667534954d2f01e0f40152ba`, Git diff check and scoped whitespace.
+- [x] Confirm fresh V6-3 one-run real-tool regression. Evidence: `fixtures/m2h2/finalization_checks/stabilization_beb50458_ci.json`, fresh locked regression job `110992543350`.
   - [x] locked KiCad 10.0.6;
   - [x] independent electrical observation;
   - [x] zero unexpected ERC;
   - [x] serialized-scene verification;
   - [x] canonical VREF <= 250 mm.
-- [x] Confirm fresh DP2 one-run real-tool regression. Evidence: `fixtures/m2h2/finalization_checks/qualification_260e33c_ci.json`, locked current regression job `110979872867`.
+- [x] Confirm fresh DP2 one-run real-tool regression. Evidence: `fixtures/m2h2/finalization_checks/stabilization_beb50458_ci.json`, fresh locked regression job `110992543350`.
   - [x] no external VREF connector;
   - [x] two NE5532 packages;
   - [x] all required reference consumers connected;
@@ -122,8 +122,8 @@ A checkbox may be checked only from current-source evidence. Older qualification
 - [x] Corridor/reservation capacity is checked before route acceptance. Evidence: `tests/test_m2h2_repair_matrix.py::test_route_corridor_capacity_is_checked_before_candidate_acceptance` proves global-route channel capacity accepts one route wire and rejects duplicate occupancy before candidate acceptance.
 - [x] Best rejected candidate and exact failure witness are preserved on every failure exit. Evidence: `tests/test_m2h2_repair_matrix.py::test_failure_exit_preserves_candidate_decisions_and_exact_failure_witness` forces every candidate to reject with a typed canonical-length conflict and verifies candidate decisions, failed metric, layout attempts, failure class, net, actual, and limit are preserved.
 - [x] Evidence reports meaningful structural/variant diversity, not raw attempt count only. Evidence: `tests/test_m2h2_repair_matrix.py::test_composition_evidence_reports_structural_diversity_not_raw_attempt_count` verifies seed structures, placement classes, proved structures, and proved-candidate structures in `compose_with_evidence`.
-- [x] V6-3 remains <= 250 mm canonical VREF without gate change or label shortcut. Evidence: `fixtures/m2h2/finalization_checks/qualification_260e33c_ci.json`, locked current regression job `110979872867`.
-- [x] DP2 internal VREF remains connectorless, fully distributed, and <= 250 mm. Evidence: `fixtures/m2h2/finalization_checks/qualification_260e33c_ci.json`, locked current regression job `110979872867`.
+- [x] V6-3 remains <= 250 mm canonical VREF without gate change or label shortcut. Evidence: `fixtures/m2h2/finalization_checks/stabilization_beb50458_ci.json`, fresh locked regression job `110992543350`.
+- [x] DP2 internal VREF remains connectorless, fully distributed, and <= 250 mm. Evidence: `fixtures/m2h2/finalization_checks/stabilization_beb50458_ci.json`, fresh locked regression job `110992543350`.
 
 ## 5. Typed repair closure
 
@@ -297,3 +297,7 @@ After PASS, stop. Do not create corpus.v7 and do not begin M3.
 ### Bounded selection follow-up — 2026-10-02
 
 The source audit found `compose_with_evidence` stopped after two proved structural classes and before considering the remaining retained seeds. The selection loop now accounts for every seed's four slots, considers an alternative routing slot after an initial proof, keeps global deduplication/counters, records non-needed repair slots, and ranks all proved candidates. `test_quality_selection_finishes_all_retained_seed_slots` independently asserts complete slot accounting, deterministic score selection, and the unchanged 32-complete-attempt ceiling. Qualification must be rerun after this behavior change. The stricter required-field geometry checks are preserved; 32 bounded nearby/fallback text slots provide compact alternatives after the shared-reference regression at `634d529`.
+
+### Stabilized-source qualification — 2026-10-02
+
+Source `beb50458a1ba3b35667534954d2f01e0f40152ba` passes 241 complete tests, scoped lint/format/whitespace, fresh V6-3/DP2 regressions, and six alternate I3 classes with five independent real-tool builds each (`37053544406`, job `110992550174`, artifact `11247344029`). Final base and interaction qualification are now started on identical production source in a new exact-head root. Coverage, final inspection, and final audits remain unchecked until their fresh evidence is reconciled.
