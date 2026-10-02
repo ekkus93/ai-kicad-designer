@@ -346,6 +346,43 @@ def main() -> None:
                 "runs": runs,
             }
         )
+        summary = results[-1]
+        print(
+            json.dumps(
+                {
+                    "kind": "m2h2.interaction-case-summary.1",
+                    "group": args.group,
+                    "id": summary["id"],
+                    "cell": summary["cell"],
+                    "selected_triple": summary["selected_triple"],
+                    "accepted": summary["accepted"],
+                    "reproducible": summary["reproducible"],
+                    "observed_structural_class": summary["observed_structural_class"],
+                    "observed_structural_class_stable": summary["observed_structural_class_stable"],
+                    "runs": [run["path"] for run in runs],
+                },
+                separators=(",", ":"),
+            ),
+            flush=True,
+        )
+        if args.group == "i3":
+            for block, variant in zip(
+                runs[0].get("signature", {}).get("composition", {}).get("blocks", []),
+                runs[0].get("signature", {}).get("composition", {}).get("variants", []),
+                strict=False,
+            ):
+                print(
+                    json.dumps(
+                        {
+                            "kind": "m2h2.observed-i3-placement.1",
+                            "case": design_path.stem,
+                            "block": block,
+                            "variant": variant,
+                        },
+                        separators=(",", ":"),
+                    ),
+                    flush=True,
+                )
         (output / "progress.json").write_text(json.dumps(results, indent=2) + "\n")
     (output / "results.json").write_text(
         json.dumps(

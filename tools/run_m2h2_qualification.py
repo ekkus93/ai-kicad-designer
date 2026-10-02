@@ -99,6 +99,25 @@ def main() -> None:
                 "signature": signatures[0] if signatures else None,
             }
         )
+        print(
+            json.dumps(
+                {
+                    "kind": "m2h2.qualification-case-summary.1",
+                    "id": case_id,
+                    "accepted": accepted,
+                    "reproducible": reproducible,
+                    "runs": [run["path"] for run in runs],
+                    "failures": [run.get("failure") for run in runs if run["returncode"]],
+                    "layout": signatures[0]["layout"] if signatures else None,
+                    "canonical_lengths_nm": {
+                        tree["net"]: tree["length_nm"]
+                        for tree in (signatures[0]["composition"]["canonical_trees"] if signatures else [])
+                    },
+                },
+                separators=(",", ":"),
+            ),
+            flush=True,
+        )
         (output / "progress.json").write_text(json.dumps(results, indent=2) + "\n")
     invalid = ROOT / "fixtures/m2blind_v3/ir/V3-8.json"
     invalid_path = output / "v3-8-invalid/run1"
@@ -130,6 +149,13 @@ def main() -> None:
         "anti_overfitting": anti_overfitting,
     }
     (output / "results.json").write_text(json.dumps(payload, indent=2) + "\n")
+    print(
+        json.dumps(
+            {key: value for key, value in payload.items() if key != "results"},
+            separators=(",", ":"),
+        ),
+        flush=True,
+    )
     print(
         json.dumps(
             {key: payload[key] for key in ("accepted", "total", "builds", "negative_v3_8_accepted")}
