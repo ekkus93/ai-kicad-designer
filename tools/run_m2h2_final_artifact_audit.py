@@ -8,8 +8,9 @@ import gzip
 import hashlib
 import json
 from pathlib import Path
+import heapq
 
-from ai_kicad.m2a import ROOT
+from ai_kicad.m2a import ROOT, observe
 
 
 def digest(path: Path) -> str:
@@ -145,9 +146,47 @@ def union_length(segments):
     return total
 
 
-def case_detail(group, case_id, signature):
+def graph_distances(segments, source, terminals):
+    points = {tuple(point) for segment in segments for point in segment} | set(terminals)
+    graph = {point: {} for point in points}
+    for a, b in segments:
+        axis = 1 if a[0] == b[0] else 0
+        fixed = 1 - axis
+        nodes = sorted(
+            (
+                point
+                for point in points
+                if point[fixed] == a[fixed]
+                and min(a[axis], b[axis]) <= point[axis] <= max(a[axis], b[axis])
+            ),
+            key=lambda point: point[axis],
+        )
+        for first, second in zip(nodes, nodes[1:]):
+            distance = abs(first[axis] - second[axis])
+            graph[first][second] = graph[second][first] = distance
+    distances = {source: 0}
+    queue = [(0, source)]
+    while queue:
+        distance, point = heapq.heappop(queue)
+        if distance != distances[point]:
+            continue
+        for target, weight in graph.get(point, {}).items():
+            proposal = distance + weight
+            if proposal < distances.get(target, float("inf")):
+                distances[target] = proposal
+                heapq.heappush(queue, (proposal, target))
+    return distances
+
+
+def case_detail(group, case_id, signature, directory, design_path):
     composition = signature["composition"]
     layout = signature["layout"]
+    schematic = next((directory / "project").glob("*.kicad_sch"))
+    observed = observe(schematic, directory / "reports/netlist.xml")
+    design = json.loads(design_path.read_text())
+    refs = {part["id"]: part["refdes"] for part in design["components"]}
+    obligations = composition["obligation_certificate"]["semantic_obligations"]
+    roles = {item["id"]: item for item in obligations["presentation_nets"]}
     lengths = []
     for tree in composition["canonical_trees"]:
         global_segments = [
@@ -160,6 +199,39 @@ def case_detail(group, case_id, signature):
         global_length = union_length(global_segments)
         if full != tree["length_nm"] or union_length(tree["segments"] + global_segments) != full:
             raise ValueError(f"{group}/{case_id}: invalid conductor accounting")
+        role = roles.get(tree["net"], {})
+        points = {
+            tuple(observed["pin_positions"][(refs[component], pin)])
+            for component, pin in role.get("terminals", [])
+            if component in refs
+        }
+        lower = (
+            (
+                max(point[0] for point in points)
+                - min(point[0] for point in points)
+                + max(point[1] for point in points)
+                - min(point[1] for point in points)
+            )
+            if points
+            else 0
+        )
+        explicit = role.get("explicit_geometry_required", False)
+        sources = {
+            tuple(observed["pin_positions"][(refs[component], pin)])
+            for port in obligations["ports"]
+            if port["net"] == tree["net"] and port["fragment"] in role.get("producer_fragments", [])
+            for component, pin in port["terminals"]
+            if component in refs
+        }
+        path_lengths = (
+            [graph_distances(tree["segments"], source, points) for source in sources]
+            if explicit
+            else []
+        )
+        worst = max(
+            (distances.get(point, -1) for distances in path_lengths for point in points),
+            default=None,
+        )
         lengths.append(
             {
                 "net": tree["net"],
@@ -167,6 +239,11 @@ def case_detail(group, case_id, signature):
                 "global_union_nm": global_length,
                 "local_residual_nm": full - global_length,
                 "accounting": "global union charged first; local residual excludes shared intervals",
+                "terminal_count": len(points),
+                "terminal_bbox_lower_bound_nm": lower if explicit else None,
+                "routed_to_bound_ratio": full / lower if explicit and lower else None,
+                "worst_explicit_source_consumer_path_nm": worst,
+                "source_count": len(sources),
             }
         )
     detail = {
@@ -174,6 +251,8 @@ def case_detail(group, case_id, signature):
         "case": case_id,
         "layout": layout,
         "net_lengths": lengths,
+        "physical_component_count": len(refs),
+        "observed_terminal_count": sum(len(members) for members in observed["nets"].values()),
         "terminal_inventory_count": composition["obligation_certificate"][
             "terminal_inventory_count"
         ],
@@ -236,7 +315,15 @@ def main() -> None:
         if len(case["runs"]) != 5 or not case["accepted"] or not case["reproducible"]:
             errors.append(f"base case not qualified: {case['id']}")
         if case["accepted"]:
-            details.append(case_detail("base", case["id"], case["signature"]))
+            details.append(
+                case_detail(
+                    "base",
+                    case["id"],
+                    case["signature"],
+                    args.qualification / case["id"] / "run1",
+                    ROOT / case["design"],
+                )
+            )
         if args.emit_renders and case["accepted"]:
             render_chunks(
                 args.qualification, "base__" + case["id"], args.qualification / case["id"]
@@ -270,7 +357,15 @@ def main() -> None:
             if case["accepted"]:
                 signature = case["runs"][0]["signature"]
                 record["observed_placement_classes"] = placement_classes(signature)
-                details.append(case_detail(group, case["id"], signature))
+                details.append(
+                    case_detail(
+                        group,
+                        case["id"],
+                        signature,
+                        args.interactions / group / case["id"] / "run1",
+                        ROOT / "fixtures/m2h2/interaction" / group / (case["id"] + ".json"),
+                    )
+                )
                 if args.emit_renders and (group == "i3" or case.get("selected_triple")):
                     render_chunks(
                         args.interactions / group,

@@ -301,3 +301,7 @@ The source audit found `compose_with_evidence` stopped after two proved structur
 ### Stabilized-source qualification — 2026-10-02
 
 Source `beb50458a1ba3b35667534954d2f01e0f40152ba` passes 241 complete tests, scoped lint/format/whitespace, fresh V6-3/DP2 regressions, and six alternate I3 classes with five independent real-tool builds each (`37053544406`, job `110992550174`, artifact `11247344029`). Final base and interaction qualification are now started on identical production source in a new exact-head root. Coverage, final inspection, and final audits remain unchecked until their fresh evidence is reconciled.
+
+### Final evidence audit implementation — 2026-10-02
+
+`tools/run_m2h2_final_artifact_audit.py` checks the complete production-module/lock inventory, interaction and structural runner identities, exact V3-8 authored rejection, five-run evidence, actual placement classes, emitted-pin terminal bounds/path diagnostics, independent local/global conductor accounting, budgets/selection/rejected candidates, prediction/observation deltas, and fresh-render/report transfers. `tests/test_m2h2_final_audit.py` independently falsifies overlapping/reversed/subdivided conductor accounting, unsplit T path distance, disconnected-island reachability, and nonorthogonal inputs. These audit/report-only changes preserve production hashes frozen in `final_source_beb50458.json`; final gates remain open pending actual fresh artifact execution and inspection.
