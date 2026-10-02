@@ -1119,7 +1119,7 @@ def _passive_fragment(
         reference_end = cathode
         d.route(relation["input"], first, input_end)
         anchors.update(
-            input=(input_end, "up"), output=(anode, "down"), reference=(reference_end, "down")
+            input=(input_end, "up"), output=(anode, "left"), reference=(reference_end, "down")
         )
     else:
         x, y = 24 * PITCH, 15 * PITCH

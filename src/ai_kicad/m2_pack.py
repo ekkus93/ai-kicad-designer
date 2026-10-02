@@ -1674,7 +1674,11 @@ def pack_fragment_candidates(
             for candidate in successful
         ):
             extras.append(distribution)
-        structural = _structural_repack_candidates(plan, successful[0])
+        structural = tuple(
+            candidate
+            for baseline in successful
+            for candidate in _structural_repack_candidates(plan, baseline)
+        )
         for label in ("functional-row-compaction", "precedence-staggered-band"):
             candidate = next((item for item in structural if item.attempts[-1] == label), None)
             if candidate is not None:

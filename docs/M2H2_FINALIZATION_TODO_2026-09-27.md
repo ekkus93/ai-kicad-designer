@@ -319,3 +319,5 @@ Label clearance is conditional on actual label emission. Explicit internal-refer
 ### Label readability regression repair — 2026-10-02
 
 Exact-head run `37068659936` at `eaf4cd6` preserved eight full-suite failures and one hosted structural-contract failure. Place left-bottom net labels in bounded measured slots with explicit stubs; retain independent label/body and label/label rejection after electrical/path diagnostic checks. Broaden measured row compaction to legal gaps and stagger offsets without changing the eight-seed/32-attempt bound. Current-source tests and all fresh qualification remain required; no completion checkbox is promoted from these implementation changes.
+
+Run `37069847886` at `8b6f258` rejects the generic label-stub prototype: LED anode escapes point inward, and moving their labels adds body-crossing conductors. Keep the independent readability gate and fix the local LED anode escape outward instead. Search measured structural compaction/stagger proposals across the retained packing baselines, keeping the same final candidate budget. Preserve the failed evidence; qualification remains open.

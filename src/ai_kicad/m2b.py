@@ -523,65 +523,7 @@ class Draft:
                 self.wire_nets.append(net)
 
     def label(self, net: str, point):
-        """Place a left-bottom label outside measured bodies, with a real stub."""
-        if (net, point) in self.labels:
-            return
-        components = {c["id"]: c for c in self.design["components"]}
-        bodies = []
-        for key, (x, y) in self.positions.items():
-            component = components.get(key[0])
-            if component is None:
-                continue
-            asset = self.resolved[component["asset"]]
-            body = asset.bodies.get(key[1]) or asset.bodies.get(0)
-            if body is None:
-                continue
-            left, top, right, bottom = body
-            corners = [
-                _turn(Pin("", "", "", xx, yy), self.angles.get(key, 0))
-                for xx in (left, right)
-                for yy in (top, bottom)
-            ]
-            bodies.append(
-                (
-                    min(x + q[0] for q in corners),
-                    min(y + q[1] for q in corners),
-                    max(x + q[0] for q in corners),
-                    max(y + q[1] for q in corners),
-                )
-            )
-
-        def box(name, at):
-            return (at[0], at[1] - PITCH, at[0] + max(635_000, len(name) * 890_000), at[1])
-
-        obstacles = bodies + [box(name, at) for name, at in self.labels]
-
-        def clear(at):
-            rect = box(net, at)
-            return not any(
-                max(rect[0], b[0]) < min(rect[2], b[2]) and max(rect[1], b[1]) < min(rect[3], b[3])
-                for b in obstacles
-            )
-
-        if clear(point):
-            self.labels.append((net, point))
-            return
-        width = ((len(net) * 890_000 + PITCH - 1) // PITCH + 1) * PITCH
-        # Finite local construction choices; final conductor and collision proofs
-        # still reject any electrically or geometrically invalid stub.
-        for offset in (1, 2, 3, 4):
-            for dx, dy in (
-                (-width * offset, 0),
-                (width * offset, 0),
-                (0, -PITCH * offset),
-                (0, PITCH * offset),
-            ):
-                target = (point[0] + dx, point[1] + dy)
-                if clear(target):
-                    self.route(net, point, target)
-                    self.labels.append((net, target))
-                    return
-        raise InputError(f"no measured label slot: {net}")
+        self.labels.append((net, point))
 
     def add(self, component: str, x: int, y: int, unit: int = 1, angle: int = 0):
         key = (component, unit)

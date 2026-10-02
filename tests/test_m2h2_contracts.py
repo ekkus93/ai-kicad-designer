@@ -573,7 +573,11 @@ def test_measured_row_compaction_and_stagger_are_legal_structural_classes() -> N
         plan = semantic_plan(design, resolved)
         variants = fragment_variants(design, resolved, plan)
         seeds = pack_fragment_candidates(plan, variants)
-        assert any(seed.attempts[-1] == label for seed in seeds)
+        assert any(seed.attempts[-1] == label for seed in seeds), (
+            stem,
+            label,
+            [seed.attempts for seed in seeds],
+        )
         alternative = next(seed for seed in seeds if seed.attempts[-1] == label)
         _, _, canonical, _, metrics = _assemble_candidate(
             design, resolved, plan, alternative, retry=0
