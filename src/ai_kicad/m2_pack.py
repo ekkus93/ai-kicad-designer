@@ -981,32 +981,35 @@ def _structural_repack_candidates(plan: SemanticPlan, baseline: Packing) -> tupl
                 continue
             row = [item for item in items if item is not target and item.envelope[1] == row_top]
             if row:
-                candidate = _measured_repack(
-                    plan,
-                    baseline,
-                    target,
-                    max(item.envelope[2] for item in row) + PITCH,
-                    row_top,
-                    "functional-row-compaction",
-                )
-                if candidate is not None:
-                    proposals.append(candidate)
+                # A boundary interface or support cell need not force the
+                # whole functional row past its rightmost endpoint. Enumerate
+                # measured gaps and keep only complete legal transactions.
+                origins = {LEFT + PITCH, target.envelope[0]} | {
+                    item.envelope[2] + PITCH for item in row
+                }
+                for left in sorted(origins):
+                    candidate = _measured_repack(
+                        plan, baseline, target, left, row_top, "functional-row-compaction"
+                    )
+                    if candidate is not None:
+                        proposals.append(candidate)
     for obligation in plan.precedence:
         source = by_id.get(obligation.source_fragment)
         target = by_id.get(obligation.target_fragment)
         if source is None or target is None or source is target:
             continue
         target_height = target.envelope[3] - target.envelope[1]
-        candidate = _measured_repack(
-            plan,
-            baseline,
-            target,
-            target.envelope[0],
-            source.envelope[3] - target_height // 4,
-            "precedence-staggered-band",
-        )
-        if candidate is not None:
-            proposals.append(candidate)
+        for numerator in (1, 2, 3):
+            candidate = _measured_repack(
+                plan,
+                baseline,
+                target,
+                target.envelope[0],
+                source.envelope[3] - numerator * target_height // 4,
+                "precedence-staggered-band",
+            )
+            if candidate is not None:
+                proposals.append(candidate)
     return tuple(proposals)
 
 

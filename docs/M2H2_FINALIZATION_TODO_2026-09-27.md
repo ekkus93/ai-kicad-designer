@@ -315,3 +315,7 @@ Close-up inspection of fresh source `beb50458` I3 renders transferred in run `37
 Exact render hashes, six-case review observations, and hard-defect witnesses are preserved in `fixtures/m2h2/finalization_checks/render_inspection_beb50458.json`. The three-amplifier alternative is explicitly one active-core band and two bands when parked/package support is included, matching the pre-existing core-band alternative protocol; these counts must never be hidden or relabeled.
 
 Label clearance is conditional on actual label emission. Explicit internal-reference gateways retain their original escape lengths; measured text clearance must not add conductor length to unlabeled routed gateways.
+
+### Label readability regression repair — 2026-10-02
+
+Exact-head run `37068659936` at `eaf4cd6` preserved eight full-suite failures and one hosted structural-contract failure. Place left-bottom net labels in bounded measured slots with explicit stubs; retain independent label/body and label/label rejection after electrical/path diagnostic checks. Broaden measured row compaction to legal gaps and stagger offsets without changing the eight-seed/32-attempt bound. Current-source tests and all fresh qualification remain required; no completion checkbox is promoted from these implementation changes.

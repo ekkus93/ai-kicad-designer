@@ -24,4 +24,8 @@ def test_emitted_net_label_overlap_is_rejected_independently(tmp_path: Path, obs
     if obstacle == "label":
         labels.append(("RETURN", (point[0] + 1_270_000, point[1])))
     with pytest.raises(InputError, match="observed net label overlaps body/label"):
-        check_observed_layout(schematic, {"labels": labels}, {})
+        check_observed_layout(
+            schematic,
+            {"labels": labels, "wires": [], "pin_positions": {}, "nets": {}, "occurrences": {}},
+            {"components": [], "relationships": [], "nets": []},
+        )
