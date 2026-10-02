@@ -403,3 +403,55 @@ def test_failed_certificate_prevents_successful_schematic_emission(tmp_path) -> 
     with pytest.raises(InputError, match="SCENE_CERTIFICATE_STALE"):
         emit(design, resolved, scene, output)
     assert not output.exists()
+
+
+@pytest.mark.parametrize("degree", (1, 2, 3))
+def test_external_signal_source_precedes_each_consumer_without_sibling_order(degree) -> None:
+    resolved = assets()
+    design = validate(
+        _load_interaction(f"fixtures/m2h2/interaction/i1/d1_b{degree}.json"),
+        resolved,
+    )
+    plan = semantic_plan(design, resolved)
+    sources = [
+        item for item in plan.precedence if item.source_fragment == "interface.input"
+    ]
+    assert {item.source_terminal for item in sources} == {("input", "1")}
+    assert {item.target_terminal for item in sources} == {
+        (f"branch_{index}_r", "1") for index in range(1, degree + 1)
+    }
+    assert len(plan.precedence) == degree
+    assert all(item.minimum_x_separation == 1 for item in sources)
+    assert all(item.source_fragment.startswith("interface.") for item in plan.precedence)
+
+
+def test_external_interface_on_internally_produced_net_is_not_a_signal_source() -> None:
+    resolved = assets()
+    design = validate(
+        _load_interaction("fixtures/m2h2/interaction/i1/d2_b2.json"),
+        resolved,
+    )
+    plan = semantic_plan(design, resolved)
+    branch_edges = [
+        item for item in plan.precedence if item.target_terminal[0].startswith("branch_")
+    ]
+    assert len(branch_edges) == 2
+    assert {item.source_terminal for item in branch_edges} == {("prefix_1_r", "2")}
+    assert not any(
+        item.source_terminal[0].startswith("output_") or item.source_terminal[0] == "return"
+        for item in plan.precedence
+    )
+
+
+def test_reference_and_supply_interfaces_do_not_create_signal_precedence() -> None:
+    resolved = assets()
+    design = validate(
+        _load_interaction("fixtures/m2h2/interaction/i2/external_2.json"),
+        resolved,
+    )
+    plan = semantic_plan(design, resolved)
+    distributive = {net.id for net in plan.presentation_nets if net.role == "distributive"}
+    assert not any(
+        item.source_fragment.startswith("interface.") and item.net in distributive
+        for item in plan.precedence
+    )

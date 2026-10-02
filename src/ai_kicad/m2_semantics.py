@@ -748,6 +748,25 @@ def semantic_plan(design: dict, resolved: dict[str, Asset]) -> SemanticPlan:
             if any(candidate.id == package for candidate in blocks):
                 edges.add(SemanticEdge("package", block.id, package, "", block.relationships))
 
+    # External interfaces carry passive electrical pin types, but a terminal
+    # feeding declared signal inputs is still the source boundary when the net
+    # has no internal producer. Reference and supply distribution have no
+    # invented signal direction. Keep sibling consumers incomparable.
+    block_by_id = {block.id: block for block in blocks}
+    signal_sources = [port for port in ports if port.role == "signal_out"]
+    for net in sorted(nets):
+        on_net = [port for port in ports if port.net == net]
+        if not any(port.role == "signal_in" for port in on_net):
+            continue
+        if any(
+            port.role in {"signal_out", "power_out", "power_in", "reference"}
+            for port in on_net
+        ):
+            continue
+        signal_sources.extend(
+            port for port in on_net if block_by_id[port.fragment].kind == "interface"
+        )
+
     precedence = tuple(
         SignalPrecedence(
             f"precedence.{source.id}.{target.id}",
@@ -767,8 +786,7 @@ def semantic_plan(design: dict, resolved: dict[str, Asset]) -> SemanticPlan:
                 )
             ),
         )
-        for source in sorted(ports, key=lambda port: port.id)
-        if source.role == "signal_out"
+        for source in sorted(signal_sources, key=lambda port: port.id)
         for target in sorted(ports, key=lambda port: port.id)
         if target.role == "signal_in"
         and target.net == source.net
