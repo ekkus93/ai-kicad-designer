@@ -540,10 +540,17 @@ def _typed_unit_order(plan: SemanticPlan, units: list[_Unit]) -> list[_Unit]:
     power_consumers = {edge.target for edge in plan.edges if edge.kind == "power"}
     branch_sources = {edge.source for edge in plan.edges if edge.kind == "branch"}
     branch_targets = {edge.target for edge in plan.edges if edge.kind == "branch"}
+    signal_interfaces = {
+        edge.source_fragment
+        for edge in plan.precedence
+        if by_id[edge.source_fragment].kind == "interface"
+    }
 
     def category(unit: _Unit) -> tuple[int, str]:
         kinds = {by_id[item].kind for item in unit.ids}
-        if unit.serial:
+        if set(unit.ids) & signal_interfaces:
+            rank = -1
+        elif unit.serial:
             rank = 0
         elif set(unit.ids) & (power_sources | branch_sources):
             rank = 1

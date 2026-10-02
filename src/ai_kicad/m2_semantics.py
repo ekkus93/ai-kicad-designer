@@ -759,8 +759,7 @@ def semantic_plan(design: dict, resolved: dict[str, Asset]) -> SemanticPlan:
         if not any(port.role == "signal_in" for port in on_net):
             continue
         if any(
-            port.role in {"signal_out", "power_out", "power_in", "reference"}
-            for port in on_net
+            port.role in {"signal_out", "power_out", "power_in", "reference"} for port in on_net
         ):
             continue
         signal_sources.extend(
@@ -880,7 +879,9 @@ def semantic_plan(design: dict, resolved: dict[str, Asset]) -> SemanticPlan:
     for obligation in precedence:
         source_kind = block_by_id[obligation.source_fragment].kind
         target_kind = block_by_id[obligation.target_fragment].kind
-        if source_kind in passive_kinds or target_kind in passive_kinds:
+        if source_kind != "interface" and (
+            source_kind in passive_kinds or target_kind in passive_kinds
+        ):
             local_spans.append(
                 LocalSpanObligation(
                     f"span.{obligation.id}",

@@ -413,9 +413,7 @@ def test_external_signal_source_precedes_each_consumer_without_sibling_order(deg
         resolved,
     )
     plan = semantic_plan(design, resolved)
-    sources = [
-        item for item in plan.precedence if item.source_fragment == "interface.input"
-    ]
+    sources = [item for item in plan.precedence if item.source_fragment == "interface.input"]
     assert {item.source_terminal for item in sources} == {("input", "1")}
     assert {item.target_terminal for item in sources} == {
         (f"branch_{index}_r", "1") for index in range(1, degree + 1)
