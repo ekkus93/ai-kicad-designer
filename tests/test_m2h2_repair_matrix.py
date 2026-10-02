@@ -513,3 +513,19 @@ def test_independent_observer_rejects_required_field_body_or_label_overlap(tmp_p
     }
     with pytest.raises(InputError, match="observed required field overlaps body/label"):
         check_observed_layout(schematic, observed, {})
+
+
+def test_quality_selection_finishes_all_retained_seed_slots():
+    design = validate(_load_interaction("fixtures/m2h2/interaction/i1/d1_b1.json"), assets())
+    _, evidence = compose_with_evidence(design, assets())
+    search = evidence["structural_search"]
+    attempts = evidence["layout_attempts"]
+    retained = min(8, search["seed_count"])
+    assert {(item["seed"], item["round"]) for item in attempts} == {
+        (seed, slot) for seed in range(retained) for slot in range(4)
+    }
+    candidates = evidence["candidate_selection"]["proved_candidates"]
+    assert evidence["candidate_selection"]["selected_score"] == min(
+        item["score"] for item in candidates
+    )
+    assert evidence["budgets"]["complete_attempts_used"] <= 32

@@ -972,7 +972,7 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
                 }
                 and last_conflict.net is not None
             )
-            if round_index == 1 and not reroutable:
+            if round_index == 1 and last_conflict is not None and not reroutable:
                 attempts.append(
                     {
                         "seed": seed_index,
@@ -1125,9 +1125,9 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
                 (score, structure, seed_index, round_index, working_packing, *candidate)
             )
             proved_structures.add(structure)
-            break
-        if len(proved_structures) >= 2:
-            break
+            # A proved candidate does not truncate the remaining ranked seeds.
+            # Keep the same global ledger and let non-needed repair slots be recorded.
+            last_conflict = None
     if not proved_candidates:
         failure_evidence = {
             "schema_version": "m2g2.composition-failure.1",

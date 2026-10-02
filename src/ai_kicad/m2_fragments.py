@@ -111,8 +111,16 @@ def _clear_nonpassive_text(design: dict, resolved: dict[str, Asset], draft: Draf
         if component is None or component["asset"] in {"Device:C", "Device:R"}:
             continue
         sx, sy = draft.positions[key]
+        tx, ty = draft.text_positions[key]
+        nearby = tuple(
+            (tx + dx * PITCH, ty + dy * PITCH)
+            for dy in (-2, -4, 0, 2, 4)
+            for dx in (0, 2, -2, 4, -4)
+            if dx or dy
+        )
         candidates = (
             draft.text_positions[key],
+            *nearby,
             (sx, sy - 12 * PITCH),
             (sx, sy - 16 * PITCH),
             (sx, sy - 20 * PITCH),
