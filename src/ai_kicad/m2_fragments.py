@@ -145,10 +145,10 @@ def _clear_nonpassive_text(design: dict, resolved: dict[str, Asset], draft: Draf
             ]
             obstacles.extend(
                 (
-                    point[0] - max(635_000, len(net) * 890_000),
+                    point[0],
                     point[1] - 1_270_000,
                     point[0] + max(635_000, len(net) * 890_000),
-                    point[1] + 1_270_000,
+                    point[1],
                 )
                 for net, point in draft.labels
             )
