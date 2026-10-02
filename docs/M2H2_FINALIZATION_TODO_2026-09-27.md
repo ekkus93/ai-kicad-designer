@@ -27,7 +27,7 @@ A checkbox may be checked only from current-source evidence. Older qualification
 
 ## 1. Current-source baseline
 
-- [x] Run current fast complete pytest baseline. Evidence: source `beb50458a1ba3b35667534954d2f01e0f40152ba`, run `37053544188`, locked job `110992543350`: 241 passed in 105.83s.
+- [ ] Run current fast complete pytest baseline. Evidence: source `beb50458a1ba3b35667534954d2f01e0f40152ba`, run `37053544188`, locked job `110992543350`: 241 passed in 105.83s.
 - [x] Run scoped Ruff lint. Evidence: exact-head `M2h2 Fast Validation` run `37053544188`, static job `110992543055`, source `beb50458a1ba3b35667534954d2f01e0f40152ba`, Ruff lint.
 - [x] Run scoped Ruff format check. Evidence: exact-head `M2h2 Fast Validation` run `37053544188`, static job `110992543055`, source `beb50458a1ba3b35667534954d2f01e0f40152ba`, Ruff format.
 - [x] Run `git diff --check` / applicable whitespace checks. Evidence: exact-head `M2h2 Fast Validation` run `37053544188`, static job `110992543055`, source `beb50458a1ba3b35667534954d2f01e0f40152ba`, Git diff check and scoped whitespace.
@@ -307,3 +307,7 @@ Source `beb50458a1ba3b35667534954d2f01e0f40152ba` passes 241 complete tests, sco
 `tools/run_m2h2_final_artifact_audit.py` checks the complete production-module/lock inventory, interaction and structural runner identities, exact V3-8 authored rejection, five-run evidence, actual placement classes, emitted-pin terminal bounds/path diagnostics, independent local/global conductor accounting, budgets/selection/rejected candidates, prediction/observation deltas, and fresh-render/report transfers. `tests/test_m2h2_final_audit.py` independently falsifies overlapping/reversed/subdivided conductor accounting, unsplit T path distance, disconnected-island reachability, and nonorthogonal inputs. These audit/report-only changes preserve production hashes frozen in `final_source_beb50458.json`; final gates remain open pending actual fresh artifact execution and inspection.
 
 The final audit also checks scoped documentation links, structural control-flow literals, dependency exclusion, and emitted-pin source-to-consumer diagnostics. Structural-render transfer uses exact successful run `37053544406`; render acceptance remains pending agent inspection, rather than being inferred from transfer or qualification success.
+
+### Net-label readability follow-up — 2026-10-02
+
+Close-up inspection of fresh source `beb50458` I3 renders transferred in run `37067694162` found duplicated timer supply text and reset labels on pin/body text. The final-source base run `37066444590` passed 56/56 x5 (artifact `11252733877`, zip SHA-256 `15a1d768ffb9fe91a678c6e6a8b94cf449c93934422c904bac757a21cb90267b`) but remains preserved, non-final machine evidence after the label correction. `m2_fragments` now accounts for the actual left-justified label footprint, gives left escapes full label clearance, removes redundant source/gateway labels, and places reset labels on explicit measured stubs. The independent observer rejects label/body and label/label overlaps, with emitted-byte synthetic negatives in `tests/test_m2h2_label_geometry.py`. Fresh complete tests and affected real-tool qualification are required; engineering inspection remains incomplete.

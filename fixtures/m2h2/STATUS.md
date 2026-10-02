@@ -217,3 +217,7 @@ M2h2 remains **INCOMPLETE**. No gate, frozen topology, historical artifact or ER
 ## Bounded selection and compact field slots — 2026-10-02
 
 All six measured I3 classes pass five fresh searches with locked KiCad and frozen independent expectations at `634d529` (run `37052922578`). That source still fails the shared-package internal-reference contract after required-field keepouts changed packing. Add bounded nearby field slots while preserving body/label/field clearance. The governing quality-selection audit also found an early two-proved-structures stop; remove it and account for every retained seed's four slots under the same eight-seed/32-attempt ceiling. See `finalization_checks/structural_634d529_ci.json` and the new full-slot selection test. Fresh tests and all final qualifications remain required; M2h2 is **INCOMPLETE**.
+
+## Fresh label-inspection defect — 2026-10-02
+
+M2h2 remains **INCOMPLETE**. Source `beb50458` passed 241 complete tests, six I3 alternatives x5, and all 56 base positives x5 at qualification head `4493c318`; exact base artifact is `11252733877`. Fresh I3 render close-ups (`37067694162`) exposed duplicate supply labels and reset-net text over the timer body. Those machine results cannot close final qualification after the label-layout/independent-observer correction. All historical roots and gates remain unchanged. Continue fresh tests, qualification, actual coverage, render inspection, and audits; this is an implementation defect, not a user blocker.

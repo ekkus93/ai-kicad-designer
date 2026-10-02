@@ -253,13 +253,13 @@ def _occupied_geometry(
             )
         )
     for index, (net, point) in enumerate(draft.labels):
-        half = max(635_000, len(net) * 445_000)
+        width = max(635_000, len(net) * 890_000)
         items.append(
             GeometryItem(
                 f"label.{index}",
                 "label",
                 block.id,
-                (point[0] - half, point[1] - 850_000, point[0] + half, point[1] + 850_000),
+                (point[0], point[1] - 1_270_000, point[0] + width, point[1]),
                 (net,),
             )
         )
@@ -377,9 +377,17 @@ def _finish(
             "up": (0, -port_escape_length),
             "down": (0, port_escape_length),
         }[direction]
+        if direction == "left":
+            # Serialized local labels are left-justified. Their full text must
+            # end before the source pin/body, not extend back across it.
+            label_clearance = ((len(port.net) * 890_000 + PITCH - 1) // PITCH + 1) * PITCH
+            dx = -max(port_escape_length, label_clearance)
         gateway_point = (anchor[0] + dx, anchor[1] + dy)
         draft.route(port.net, anchor, gateway_point)
         if port.net in local_only_nets or port.net in interface_nets:
+            # A label at the gateway's source is redundant on the same escape
+            # conductor and can overlap the final gateway label.
+            draft.labels = [item for item in draft.labels if item != (port.net, anchor)]
             draft.label(port.net, gateway_point)
         access_end = gateway_point
         access = AccessWindow(
@@ -407,6 +415,7 @@ def _finish(
         gateways.append(gateway)
         ports.append(PortAnchor(port, gateway_point, direction))
 
+    draft.labels = list(dict.fromkeys(draft.labels))
     # Required fields are final local geometry, never a post-pack cosmetic pass.
     # Include the bounded external approach while selecting slots so text can
     # never consume a gateway that was certified before measurement.
@@ -1034,8 +1043,10 @@ def _timer_fragment(
     supply_end = ut
     d.label(timer["supply"], supply_end)
     timer_supply_end = p["supply"]
-    d.label(timer["supply"], timer_supply_end)
-    d.label(timer["supply"], p["reset"])
+    reset_clearance = ((len(timer["supply"]) * 890_000 + PITCH - 1) // PITCH + 1) * PITCH
+    reset_label = (p["reset"][0] - reset_clearance, p["reset"][1])
+    d.route(timer["supply"], p["reset"], reset_label)
+    d.label(timer["supply"], reset_label)
     discharge_y = (ub[1] + lt[1]) // 2
     discharge_x = p["discharge"][0] - 8 * PITCH
     d.route(timer["discharge"], ub, (lx, discharge_y), lt)

@@ -1667,14 +1667,20 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
         (
             net,
             (
-                point[0] - max(635_000, len(net) * 890_000),
+                point[0],
                 point[1] - 1_270_000,
                 point[0] + max(635_000, len(net) * 890_000),
-                point[1] + 1_270_000,
+                point[1],
             ),
         )
         for net, point in observed["labels"]
     ]
+    for index, (net, box) in enumerate(label_boxes):
+        for owner, obstacle in rectangles + label_boxes[index + 1 :]:
+            if max(box[0], obstacle[0]) < min(box[2], obstacle[2]) and max(
+                box[1], obstacle[1]
+            ) < min(box[3], obstacle[3]):
+                raise InputError(f"observed net label overlaps body/label: {net}, {owner}")
     for ref, field_name, box in required_fields:
         for owner, obstacle in rectangles + label_boxes:
             if max(box[0], obstacle[0]) < min(box[2], obstacle[2]) and max(
