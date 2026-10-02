@@ -104,7 +104,7 @@ def _body_rect(design: dict, resolved: dict[str, Asset], draft: Draft, key: Occu
     return min(xs), min(ys), max(xs), max(ys)
 
 
-def _clear_nonpassive_text(design: dict, draft: Draft) -> None:
+def _clear_nonpassive_text(design: dict, resolved: dict[str, Asset], draft: Draft) -> None:
     components = {component["id"]: component for component in design["components"]}
     for key in sorted(draft.text_positions):
         component = components.get(key[0])
@@ -114,6 +114,8 @@ def _clear_nonpassive_text(design: dict, draft: Draft) -> None:
         candidates = (
             draft.text_positions[key],
             (sx, sy - 12 * PITCH),
+            (sx, sy - 16 * PITCH),
+            (sx, sy - 20 * PITCH),
             (sx + 12 * PITCH, sy - 8 * PITCH),
             (sx - 12 * PITCH, sy - 8 * PITCH),
             (sx + 12 * PITCH, sy + 6 * PITCH),
@@ -126,6 +128,39 @@ def _clear_nonpassive_text(design: dict, draft: Draft) -> None:
                 rectangles.append(
                     (x - half - 1_000_000, py - 1_850_000, x + half + 1_000_000, py + 1_850_000)
                 )
+            # Wires alone miss a field on a neighbouring body or net label.
+            # Use the same transformed physical bodies that the fragment owns.
+            obstacles = [
+                _body_rect(design, resolved, draft, other)
+                for other in draft.positions
+                if other[0] in components
+            ]
+            obstacles.extend(
+                (
+                    point[0] - max(635_000, len(net) * 890_000),
+                    point[1] - 1_270_000,
+                    point[0] + max(635_000, len(net) * 890_000),
+                    point[1] + 1_270_000,
+                )
+                for net, point in draft.labels
+            )
+            for other, (ox, oy) in draft.text_positions.items():
+                if other == key or other[0] not in components:
+                    continue
+                other_component = components[other[0]]
+                for value, py in (
+                    (other_component["refdes"], oy),
+                    (other_component["value"], oy + 2 * PITCH),
+                ):
+                    half = max(635_000, len(value) * 445_000)
+                    obstacles.append((ox - half, py - 850_000, ox + half, py + 850_000))
+            if any(
+                max(rect[0], obstacle[0]) < min(rect[2], obstacle[2])
+                and max(rect[1], obstacle[1]) < min(rect[3], obstacle[3])
+                for rect in rectangles
+                for obstacle in obstacles
+            ):
+                continue
             if all(
                 not (
                     (
@@ -380,7 +415,7 @@ def _finish(
         )
         draft.wire_nets.append(gateway.net)
     choose_text_slots(design, draft)
-    _clear_nonpassive_text(design, draft)
+    _clear_nonpassive_text(design, resolved, draft)
     del draft.wires[emitted_wire_count:]
     del draft.wire_nets[emitted_wire_count:]
     occupied = _occupied_geometry(design, resolved, draft, block)

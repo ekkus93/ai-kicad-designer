@@ -1609,6 +1609,7 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
                 bodies[(definition[1], unit_no)] = (min(xs), max(ys), max(xs), min(ys))
     instances = {}
     rectangles = []
+    required_fields = []
     for symbol in children(tree, "symbol"):
         ref = next(p[2] for p in children(symbol, "property") if p[1] == "Reference")
         lib = one(symbol, "lib_id")[1]
@@ -1624,6 +1625,24 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
         instances[(ref, unit)] = (x, y, angle)
         if lib == "power:PWR_FLAG":
             continue
+        if lib not in {"Device:R", "Device:C"}:
+            for prop in children(symbol, "property"):
+                if prop[1] not in {"Reference", "Value"}:
+                    continue
+                field_at = one(prop, "at")
+                fx, fy = _nm(field_at[1]), _nm(field_at[2])
+                text = prop[2]
+                # KiCad appends the function letter when rendering multi-unit references.
+                displayed_length = len(text) + (
+                    1
+                    if prop[1] == "Reference"
+                    and any(key[0] == lib and key[1] > 1 for key in bodies)
+                    else 0
+                )
+                half = max(635_000, displayed_length * 445_000)
+                required_fields.append(
+                    (ref, prop[1], (fx - half, fy - 850_000, fx + half, fy + 850_000))
+                )
         boxes = [box for key, box in bodies.items() if key[0] == lib and key[1] in (0, unit)]
         if boxes:
             left, top, right, bottom = (
@@ -1643,6 +1662,27 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
         for other, b in rectangles[i + 1 :]:
             if max(a[0], b[0]) < min(a[2], b[2]) and max(a[1], b[1]) < min(a[3], b[3]):
                 raise InputError(f"observed body overlap: {ref}, {other}")
+    # This is an independent emitted-byte check, not a certificate assertion.
+    label_boxes = [
+        (
+            net,
+            (
+                point[0] - max(635_000, len(net) * 890_000),
+                point[1] - 1_270_000,
+                point[0] + max(635_000, len(net) * 890_000),
+                point[1] + 1_270_000,
+            ),
+        )
+        for net, point in observed["labels"]
+    ]
+    for ref, field_name, box in required_fields:
+        for owner, obstacle in rectangles + label_boxes:
+            if max(box[0], obstacle[0]) < min(box[2], obstacle[2]) and max(
+                box[1], obstacle[1]
+            ) < min(box[3], obstacle[3]):
+                raise InputError(
+                    f"observed required field overlaps body/label: {ref} {field_name}, {owner}"
+                )
     wires = observed["wires"]
     labels = observed["labels"]
     pin_positions = observed["pin_positions"]

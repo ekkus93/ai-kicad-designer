@@ -27,7 +27,7 @@ A checkbox may be checked only from current-source evidence. Older qualification
 
 ## 1. Current-source baseline
 
-- [x] Run current fast complete pytest baseline. Evidence: locked job `110979872867`, successful run `37049738355` at `728478b`; production and lock hashes match qualification source `260e33c` in artifact audit `37050923509`.
+- [ ] Run current fast complete pytest baseline. Evidence: locked job `110979872867`, successful run `37049738355` at `728478b`; production and lock hashes match qualification source `260e33c` in artifact audit `37050923509`.
 - [x] Run scoped Ruff lint. Evidence: exact-head `M2h2 Fast Validation` run `37048718582`, static job `110976476016`, source `465248ba47fe0d124ecd7997f2cdf898095b1d35`, Ruff lint.
 - [x] Run scoped Ruff format check. Evidence: exact-head `M2h2 Fast Validation` run `37048718582`, static job `110976476016`, source `465248ba47fe0d124ecd7997f2cdf898095b1d35`, Ruff format.
 - [x] Run `git diff --check` / applicable whitespace checks. Evidence: exact-head `M2h2 Fast Validation` run `37048718582`, static job `110976476016`, source `465248ba47fe0d124ecd7997f2cdf898095b1d35`, Git diff check and scoped whitespace.
@@ -214,24 +214,24 @@ A checkbox may be checked only from current-source evidence. Older qualification
 
 ## 8. Final-source 56-positive qualification
 
-Evidence for the checked gates below: successful locked KiCad job `110975750982`, run `37048500798`, source `260e33c`; 56/56 accepted and five-run reproducible. Artifact ID `11246541158` contains all fresh projects/XML/ERC/SVG/reports. Audit run `37050923509` confirms production source and lock hashes equal current master. See `fixtures/m2h2/finalization_checks/qualification_260e33c_ci.json`.
+Prior machine evidence, invalidated for final-source qualification by the required-field readability fix: successful locked KiCad job `110975750982`, run `37048500798`, source `260e33c`; 56/56 accepted and five-run reproducible. Artifact ID `11246541158` contains all fresh projects/XML/ERC/SVG/reports. Audit run `37050923509` confirms production source and lock hashes equal current master. See `fixtures/m2h2/finalization_checks/qualification_260e33c_ci.json`.
 
-- [x] Run all 56 required positives.
-- [x] Run five clean builds per positive.
-- [x] Locked KiCad 10.0.6 used for every build.
-- [x] Fresh XML/electrical export produced.
-- [x] Exact independent package/unit/pin identity passes.
-- [x] Exact independent electrical partitions pass.
-- [x] Zero unexpected ERC violations.
-- [x] Layout/path/reservation/certificate gates pass.
-- [x] Compiler-owned project bytes reproduce as governed.
-- [x] Local variant choices reproduce.
-- [x] Canonical conductor trees reproduce.
-- [x] Obligation certificates reproduce.
-- [x] Structural candidate/repair decisions reproduce.
-- [x] Complete metric vectors reproduce.
-- [x] Normalized SVG geometry/text reproduces.
-- [x] Normalized reports/manifests reproduce under only documented normalization.
+- [ ] Run all 56 required positives.
+- [ ] Run five clean builds per positive.
+- [ ] Locked KiCad 10.0.6 used for every build.
+- [ ] Fresh XML/electrical export produced.
+- [ ] Exact independent package/unit/pin identity passes.
+- [ ] Exact independent electrical partitions pass.
+- [ ] Zero unexpected ERC violations.
+- [ ] Layout/path/reservation/certificate gates pass.
+- [ ] Compiler-owned project bytes reproduce as governed.
+- [ ] Local variant choices reproduce.
+- [ ] Canonical conductor trees reproduce.
+- [ ] Obligation certificates reproduce.
+- [ ] Structural candidate/repair decisions reproduce.
+- [ ] Complete metric vectors reproduce.
+- [ ] Normalized SVG geometry/text reproduces.
+- [ ] Normalized reports/manifests reproduce under only documented normalization.
 - [ ] Historical invalid V3-8 remains correctly rejected. The fresh run rejects it; reconcile exact failure codes before closing this item.
 
 ## 9. Final interaction/stress qualification
@@ -289,3 +289,7 @@ Evidence for the checked gates below: successful locked KiCad job `110975750982`
 - [ ] Mark this TODO **COMPLETE / PASS**.
 
 After PASS, stop. Do not create corpus.v7 and do not begin M3.
+
+### Render-inspection follow-up — 2026-10-02
+
+`fixtures/m2h2/finalization_checks/render_inspection_260e33c.json` records the actual agent inspection and a hard timer reference/value overlap missed by the wire-only slot/observer checks. The body/label/field-aware slot fix and independent emitted-byte rejection are behavior-affecting. Source `260e33c` and structural source `df917d0` remain preserved machine evidence, but cannot close final-source qualification gates after this fix. Fresh complete tests and qualification are required. Five alternate I3 classes passed five fresh searches at `df917d0` (run `37051640945`); the 3+ interleaved case remains a layout development failure, not semantic impossibility.

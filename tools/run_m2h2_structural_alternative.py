@@ -143,7 +143,42 @@ def extra_packings(baseline: Packing) -> tuple[Packing, ...]:
                     baseline.attempts + ("measured-vertical-band",),
                 )
             )
-    return tuple(candidates)
+    # Preserve a staggered target while moving a conflicting peer below it.
+    repaired = []
+    for proposal in candidates:
+        changed = [
+            item
+            for item, old in zip(proposal.fragments, items, strict=True)
+            if item.delta != old.delta
+        ]
+        if len(changed) != 1:
+            continue
+        target = changed[0]
+        replacements = {}
+        for peer in proposal.fragments:
+            if peer.fragment.block.id == target.fragment.block.id:
+                continue
+            if (
+                max(peer.envelope[0], target.envelope[0])
+                < min(peer.envelope[2], target.envelope[2])
+                and max(peer.envelope[1], target.envelope[1])
+                < min(peer.envelope[3], target.envelope[3])
+                and peer.fragment.block.kind not in {"interface", "timer", "power_stage"}
+            ):
+                replacements[peer.fragment.block.id] = _place(
+                    peer.fragment, peer.envelope[0], target.envelope[3] + PITCH
+                )
+        if replacements:
+            repaired.append(
+                Packing(
+                    tuple(
+                        replacements.get(item.fragment.block.id, item)
+                        for item in proposal.fragments
+                    ),
+                    proposal.attempts + ("measured-peer-separation",),
+                )
+            )
+    return tuple((*candidates, *repaired))
 
 
 def interleaved(packing: Packing) -> bool:
@@ -231,7 +266,8 @@ def select_scene(design: dict, emitted_assets: dict, args) -> tuple:
         if identity in seen:
             continue
         seen.add(identity)
-        if band_count(packing, core_only=args.core_bands) != args.bands:
+        observed_bands = band_count(packing, core_only=args.core_bands)
+        if observed_bands < args.bands if args.minimum_bands else observed_bands != args.bands:
             continue
         if args.interleaved and not interleaved(packing):
             continue
@@ -323,6 +359,7 @@ def main() -> None:
     parser.add_argument("--bands", type=int, required=True)
     parser.add_argument("--core-bands", action="store_true")
     parser.add_argument("--interleaved", action="store_true")
+    parser.add_argument("--minimum-bands", action="store_true")
     args = parser.parse_args()
     if args.out.exists():
         raise SystemExit(f"refusing to overwrite {args.out}")
@@ -455,6 +492,7 @@ def main() -> None:
         "required_class": {
             "bands": args.bands,
             "core_only": args.core_bands,
+            "minimum_bands": args.minimum_bands,
             "interleaved": args.interleaved,
         },
         "accepted": reproducible and all(item["pass"] for item in results),

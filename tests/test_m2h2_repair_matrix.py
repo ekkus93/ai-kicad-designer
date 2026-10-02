@@ -9,9 +9,14 @@ import pytest
 import ai_kicad.m2_compose as compose_module
 from ai_kicad.ir import InputError
 from ai_kicad.m2_conflicts import ConflictKind, TypedConflict
-from ai_kicad.m2_fragments import FragmentVariant, PortAnchor, fragment_variants
-from ai_kicad.m2a import PITCH, ROOT, emit
-from ai_kicad.m2b import assets, validate
+from ai_kicad.m2_fragments import (
+    FragmentVariant,
+    PortAnchor,
+    _clear_nonpassive_text,
+    fragment_variants,
+)
+from ai_kicad.m2a import Asset, PITCH, ROOT, emit
+from ai_kicad.m2b import Draft, assets, check_observed_layout, validate
 from ai_kicad.m2_compose import _reservation_growth_repack, compose_with_evidence
 from ai_kicad.m2_geometry import (
     Gateway,
@@ -453,3 +458,58 @@ def test_reference_and_supply_interfaces_do_not_create_signal_precedence() -> No
         item.source_fragment.startswith("interface.") and item.net in distributive
         for item in plan.precedence
     )
+
+
+@pytest.mark.parametrize("obstacle_kind", ["body", "label", "field"])
+def test_required_field_slot_avoids_non_wire_obstacles(obstacle_kind):
+    design = {
+        "components": [
+            {"id": "active", "refdes": "U1", "value": "Active", "asset": "Example:Active"},
+            {"id": "support", "refdes": "C1", "value": "100n", "asset": "Device:C"},
+        ]
+    }
+    resolved = {
+        "Example:Active": Asset("Example:Active", "", {1: ()}, {1: (-PITCH, PITCH, PITCH, -PITCH)}),
+        "Device:C": Asset("Device:C", "", {1: ()}, {1: (-PITCH, PITCH, PITCH, -PITCH)}),
+    }
+    initial = (50 * PITCH, 42 * PITCH)
+    draft = Draft(
+        design,
+        resolved,
+        {
+            ("active", 1): (50 * PITCH, 50 * PITCH),
+            ("support", 1): initial if obstacle_kind == "body" else (100 * PITCH, 100 * PITCH),
+        },
+        {},
+        [],
+        [],
+        [("CONTROL", initial)] if obstacle_kind == "label" else [],
+        [],
+        {
+            ("active", 1): initial,
+            ("support", 1): initial if obstacle_kind == "field" else (120 * PITCH, 100 * PITCH),
+        },
+    )
+    _clear_nonpassive_text(design, resolved, draft)
+    assert draft.text_positions[("active", 1)] != initial
+    assert draft.wires == []
+    assert draft.positions[("active", 1)] == (50 * PITCH, 50 * PITCH)
+
+
+@pytest.mark.parametrize("obstacle_kind", ["body", "label"])
+def test_independent_observer_rejects_required_field_body_or_label_overlap(tmp_path, obstacle_kind):
+    x, y = (50, 50) if obstacle_kind == "body" else (80, 30)
+    schematic = tmp_path / "mutated.kicad_sch"
+    schematic.write_text(
+        "(kicad_sch "
+        '(lib_symbols (symbol "Example:Block" '
+        '(symbol "Block_1_1" (rectangle (start -1 1) (end 1 -1))))) '
+        '(symbol (lib_id "Example:Block") (at 50 50 0) (unit 1) '
+        f'(property "Reference" "U1" (at {x} {y} 0)) '
+        '(property "Value" "Active" (at 80 32.54 0))))'
+    )
+    observed = {
+        "labels": [("CONTROL", (80_000_000, 30_000_000))] if obstacle_kind == "label" else []
+    }
+    with pytest.raises(InputError, match="observed required field overlaps body/label"):
+        check_observed_layout(schematic, observed, {})
