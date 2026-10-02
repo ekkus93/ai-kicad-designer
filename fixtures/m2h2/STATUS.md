@@ -5,7 +5,29 @@ Development probes and their expectations remain frozen in `development/`.
 Historical blind evidence is unchanged. Do not interpret the evidence below as
 final qualification of the current worktree.
 
-## Current master baseline — 2026-10-02
+## Current implementation slice — 2026-10-02
+
+Source `465248ba47fe0d124ecd7997f2cdf898095b1d35` adds terminal-backed external signal-source precedence
+when a net has signal inputs and no internal signal producer or reference/supply
+role. It preserves incomparable siblings. Measured shelf ordering places the
+source interface band before its consumers; partial beam placement retains its
+core expansion schedule and checks the exact source inequality when both ends
+are assigned. External interfaces do not create a new functional-fragment local
+span obligation. No fixed gate, ERC rule, observer, frozen probe, or historical
+evidence was changed.
+
+Coverage evidence validation now rejects fewer than five distinct run links,
+empty/repeated links, and non-full source SHAs. Interaction results record source,
+runner, and lock hashes. Qualification tools emit per-case evidence summaries.
+
+At this source, hosted contract job `110976476137` and static job `110976476016`
+in run `37048718582` pass. Locked complete pytest and V6-3/DP2 regressions remain
+pending. Five-run interactions `37048500822` and 56-positive qualification
+`37048500798` target `260e33c`; the intervening source change is qualification
+report formatting only. The source-precedence fix is not yet reconciled as a
+real-tool pass. The old baseline below is historical after these behavior changes.
+
+## Previous source baseline — 2026-10-02
 
 At source `563de7bbd79cf232cdb3a16069a5e6f2dd93405a`, exact-head fast-validation run
 `36891578571` completed successfully. Locked self-hosted job `110468241407`

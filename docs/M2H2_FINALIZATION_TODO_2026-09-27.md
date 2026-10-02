@@ -27,23 +27,23 @@ A checkbox may be checked only from current-source evidence. Older qualification
 
 ## 1. Current-source baseline
 
-- [x] Run current fast complete pytest baseline. 225 tests passed in 84.45 seconds. Evidence: exact-source `M2h2 Fast Validation` run `36891578571`, locked job `110468241407`, source `563de7bbd79cf232cdb3a16069a5e6f2dd93405a`; `fixtures/m2h2/finalization_checks/baseline_563de7b_ci.json`.
-- [x] Run scoped Ruff lint. Evidence: GitHub Actions `M2h2 Fast Validation` run `36478515556`, job `static lint / format / diff-check` (`109118128135`), exact head `8ac13a665aef36bfb4241289be7a1d34fc4c568b`, step `Ruff lint`.
-- [x] Run scoped Ruff format check. Evidence: GitHub Actions `M2h2 Fast Validation` run `36478515556`, job `static lint / format / diff-check` (`109118128135`), exact head `8ac13a665aef36bfb4241289be7a1d34fc4c568b`, steps `Ruff format check m2_compose`, `Ruff format check src remainder`, `Ruff format check test_m2h2_repair_matrix`, `Contracts format diff lines 1-200` through `801-900`, `Ruff format check key M2 tests`, `Ruff format check remaining tests`, and `Ruff format check tools`.
-- [x] Run `git diff --check` / applicable whitespace checks. Evidence: GitHub Actions `M2h2 Fast Validation` run `36478515556`, job `static lint / format / diff-check` (`109118128135`), exact head `8ac13a665aef36bfb4241289be7a1d34fc4c568b`, steps `Git diff check` and `Scoped trailing-whitespace check`.
-- [x] Confirm fresh V6-3 one-run real-tool regression: Evidence: exact-source `M2h2 Fast Validation` run `36891578571`, locked job `110468241407`, source `563de7bbd79cf232cdb3a16069a5e6f2dd93405a`; `fixtures/m2h2/finalization_checks/baseline_563de7b_ci.json`. One-run regression only; final five-run qualification remains open.
-  - [x] locked KiCad 10.0.6;
-  - [x] independent electrical observation;
-  - [x] zero unexpected ERC;
-  - [x] serialized-scene verification;
-  - [x] canonical VREF <= 250 mm.
-- [x] Confirm fresh DP2 one-run real-tool regression: Evidence: exact-source `M2h2 Fast Validation` run `36891578571`, locked job `110468241407`, source `563de7bbd79cf232cdb3a16069a5e6f2dd93405a`; `fixtures/m2h2/finalization_checks/baseline_563de7b_ci.json`. One-run regression only; final five-run qualification remains open.
-  - [x] no external VREF connector;
-  - [x] two NE5532 packages;
-  - [x] all required reference consumers connected;
-  - [x] independent electrical observation;
-  - [x] zero unexpected ERC;
-  - [x] canonical VREF <= 250 mm.
+- [ ] Run current fast complete pytest baseline. Prior source `563de7b` passed 225 tests; behavior changes require a fresh locked baseline.
+- [x] Run scoped Ruff lint. Evidence: exact-head `M2h2 Fast Validation` run `37048718582`, static job `110976476016`, source `465248ba47fe0d124ecd7997f2cdf898095b1d35`, Ruff lint.
+- [x] Run scoped Ruff format check. Evidence: exact-head `M2h2 Fast Validation` run `37048718582`, static job `110976476016`, source `465248ba47fe0d124ecd7997f2cdf898095b1d35`, Ruff format.
+- [x] Run `git diff --check` / applicable whitespace checks. Evidence: exact-head `M2h2 Fast Validation` run `37048718582`, static job `110976476016`, source `465248ba47fe0d124ecd7997f2cdf898095b1d35`, Git diff check and scoped whitespace.
+- [ ] Confirm fresh V6-3 one-run real-tool regression: Prior source baseline preserved in `finalization_checks/baseline_563de7b_ci.json`; requalify after source-precedence/packing changes.
+  - [ ] locked KiCad 10.0.6;
+  - [ ] independent electrical observation;
+  - [ ] zero unexpected ERC;
+  - [ ] serialized-scene verification;
+  - [ ] canonical VREF <= 250 mm.
+- [ ] Confirm fresh DP2 one-run real-tool regression: Prior source baseline preserved in `finalization_checks/baseline_563de7b_ci.json`; requalify after source-precedence/packing changes.
+  - [ ] no external VREF connector;
+  - [ ] two NE5532 packages;
+  - [ ] all required reference consumers connected;
+  - [ ] independent electrical observation;
+  - [ ] zero unexpected ERC;
+  - [ ] canonical VREF <= 250 mm.
 
 ## 2. Obligation-complete certificate audit and implementation
 
@@ -122,8 +122,8 @@ A checkbox may be checked only from current-source evidence. Older qualification
 - [x] Corridor/reservation capacity is checked before route acceptance. Evidence: `tests/test_m2h2_repair_matrix.py::test_route_corridor_capacity_is_checked_before_candidate_acceptance` proves global-route channel capacity accepts one route wire and rejects duplicate occupancy before candidate acceptance.
 - [x] Best rejected candidate and exact failure witness are preserved on every failure exit. Evidence: `tests/test_m2h2_repair_matrix.py::test_failure_exit_preserves_candidate_decisions_and_exact_failure_witness` forces every candidate to reject with a typed canonical-length conflict and verifies candidate decisions, failed metric, layout attempts, failure class, net, actual, and limit are preserved.
 - [x] Evidence reports meaningful structural/variant diversity, not raw attempt count only. Evidence: `tests/test_m2h2_repair_matrix.py::test_composition_evidence_reports_structural_diversity_not_raw_attempt_count` verifies seed structures, placement classes, proved structures, and proved-candidate structures in `compose_with_evidence`.
-- [x] V6-3 remains <= 250 mm canonical VREF without gate change or label shortcut. Evidence: exact-source `M2h2 Fast Validation` run `36891578571`, locked job `110468241407`, source `563de7bbd79cf232cdb3a16069a5e6f2dd93405a`; `fixtures/m2h2/finalization_checks/baseline_563de7b_ci.json`. One-run regression; final qualification remains open.
-- [x] DP2 internal VREF remains connectorless, fully distributed, and <= 250 mm. Evidence: exact-source `M2h2 Fast Validation` run `36891578571`, locked job `110468241407`, source `563de7bbd79cf232cdb3a16069a5e6f2dd93405a`; `fixtures/m2h2/finalization_checks/baseline_563de7b_ci.json`. One-run regression; final qualification remains open.
+- [ ] V6-3 remains <= 250 mm canonical VREF without gate change or label shortcut. Requalify revised source.
+- [ ] DP2 internal VREF remains connectorless, fully distributed, and <= 250 mm. Requalify revised source.
 
 ## 5. Typed repair closure
 
@@ -148,6 +148,8 @@ A checkbox may be checked only from current-source evidence. Older qualification
 - [x] Coverage result records actual observed structural class, not requested factor labels only. Evidence: `tools/run_m2h2_i1.py::observed_structural_class` derives the selected seed/round, placement class, and proved structure from composition evidence and records only a five-run-stable observed class; `tests/test_m2h2_interaction_runner.py::test_observed_structural_class_uses_selected_run_evidence_not_requested_label` passed in exact-head GitHub Actions run `36517979598`, job `M2h2 contract pytest on hosted runner` (`109244434910`) at `0e6f29f42f8772af20f7ba1eae3929a93c37d162`.
 - [x] Every covered cell links to real-tool qualification evidence. Evidence: `tools/run_m2h2_i1.py::validate_coverage_ledger_evidence` requires every covered cell to include `real_tool_qualification_evidence` with schema `m2h2.real-tool-evidence.1`, locked KiCad 10.0.6, exact source head, qualification root/results path, case ID, and nonempty run paths; `tests/test_m2h2_interaction_runner.py::test_current_coverage_ledger_has_no_invalid_evidence_records` and `tests/test_m2h2_interaction_runner.py::test_covered_cells_require_real_tool_evidence_not_parse_or_generation_only` passed in exact-head GitHub Actions run `36560904459`, job `M2h2 contract pytest on hosted runner` (`109381262073`) at `239c7d4afe86f78f955f6524b8aeb050a5b5a0bd`.
 - [x] Impossible cells require semantic impossibility witnesses, not layout failures. Evidence: `tools/run_m2h2_i1.py::validate_coverage_ledger_impossibilities` requires unsupported cells to include a semantic witness with schema `m2h2.semantic-impossibility.1`, kind `semantic_impossibility`, semantic source, and proof text while rejecting layout/build/routing/tool failure keys; `tests/test_m2h2_interaction_runner.py::test_unsupported_cells_require_semantic_impossibility_not_layout_failure` passed in exact-head GitHub Actions run `36560904459`, job `M2h2 contract pytest on hosted runner` (`109381262073`) at `239c7d4afe86f78f955f6524b8aeb050a5b5a0bd`.
+
+- [x] Reject one-run, repeated-run, empty-run-link, and non-SHA coverage records. Evidence: `tests/test_m2h2_interaction_runner.py::test_real_tool_coverage_rejects_incomplete_or_repeated_runs` (five parameterized negatives), current-source hosted contract job `110976476137`, run `37048718582` at `465248ba47fe0d124ecd7997f2cdf898095b1d35`.
 
 ### 6.2 I1
 
