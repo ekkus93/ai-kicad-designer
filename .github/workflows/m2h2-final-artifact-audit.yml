@@ -19,9 +19,6 @@ concurrency:
 jobs:
   artifact-audit:
     if: >-
-      (github.event_name == 'workflow_run' &&
-       github.event.workflow_run.head_sha == '260e33cd9248efa3e5472ec32897c2e30fe41acd' &&
-       github.event.workflow_run.conclusion == 'success') ||
       github.event_name == 'workflow_dispatch' ||
       contains(github.event.head_commit.message, '[m2h2-artifact-audit]')
     runs-on: ubuntu-24.04
@@ -41,196 +38,40 @@ jobs:
       - name: Download exact qualification evidence
         uses: actions/download-artifact@v4
         with:
-          name: m2h2-final-qualification-260e33cd9248efa3e5472ec32897c2e30fe41acd
-          path: fixtures/m2h2/qualification_final_candidate_260e33cd9248efa3e5472ec32897c2e30fe41acd
-          run-id: 37048500798
+          name: m2h2-final-qualification-4493c318b37ea73a3e487eddf659aa3c316222c4
+          path: fixtures/m2h2/qualification_final_candidate_4493c318b37ea73a3e487eddf659aa3c316222c4
+          run-id: 37066444590
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download exact interaction evidence
         uses: actions/download-artifact@v4
         with:
-          name: m2h2-final-interactions-260e33cd9248efa3e5472ec32897c2e30fe41acd
-          path: fixtures/m2h2/interaction_final_260e33cd9248efa3e5472ec32897c2e30fe41acd
-          run-id: 37048500822
+          name: m2h2-final-interactions-4493c318b37ea73a3e487eddf659aa3c316222c4
+          path: fixtures/m2h2/interaction_final_4493c318b37ea73a3e487eddf659aa3c316222c4
+          run-id: 37066444519
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Audit provenance and transfer fresh real renders for agent inspection
+      - name: Download exact structural evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: m2h2-structural-qualification-beb50458a1ba3b35667534954d2f01e0f40152ba
+          path: fixtures/m2h2/structural_final_beb50458a1ba3b35667534954d2f01e0f40152ba
+          run-id: 37053544406
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Audit final source, structural evidence, and fresh renders
         run: |
-          PYTHONPATH=src:tools python - <<'PY'
-          """Inspect downloaded final qualification evidence without promoting planned labels."""
-
-          from __future__ import annotations
-
-          import argparse
-          import base64
-          import gzip
-          import hashlib
-          import json
-          from pathlib import Path
-
-          from ai_kicad.m2a import ROOT
-
-
-          def digest(path: Path) -> str:
-              return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-          def identity_errors(payload: dict) -> list[str]:
-              errors = []
-              hashes = payload.get("source_sha256", {})
-              if not hashes:
-                  errors.append("missing source hashes")
-              for relative, expected in hashes.items():
-                  path = ROOT / relative
-                  if not path.is_file() or digest(path) != expected:
-                      errors.append(f"stale source: {relative}")
-              for field, relative in (
-                  ("toolchain_lock_sha256", "fixtures/m1a/toolchain.lock.json"),
-                  ("asset_lock_sha256", "fixtures/m2b/assets.lock.json"),
-                  ("policy_lock_sha256", "fixtures/m1a/policy.lock.json"),
-              ):
-                  if payload.get(field) != digest(ROOT / relative):
-                      errors.append(f"stale lock: {relative}")
-              return errors
-
-
-          def placement_classes(signature: dict) -> dict:
-              composition = signature.get("composition", {})
-              blocks = {block["id"]: block for block in composition.get("blocks", [])}
-              placed = [
-                  (blocks[item["fragment"]], item["placed_envelope"])
-                  for item in composition.get("variants", [])
-                  if item["fragment"] in blocks and blocks[item["fragment"]]["kind"] != "interface"
-              ]
-              active_kinds = {
-                  "timer", "power_stage", "buffer", "noninverting_amplifier",
-                  "inverting_amplifier", "sallen_key",
-              }
-              cores = [
-                  (block, box) for block, box in placed
-                  if block["kind"] in active_kinds and not block.get("unused")
-              ]
-
-              def count_bands(items):
-                  bands = []
-                  for top in sorted({box[1] for _, box in items}):
-                      if not bands or top - bands[-1] > 5_080_000:
-                          bands.append(top)
-                  return len(bands)
-
-              backfill = [
-                  [first["id"], second["id"]]
-                  for index, (first, a) in enumerate(placed)
-                  for second, b in placed[index + 1:]
-                  if abs(a[1] - b[1]) > 5_080_000
-                  and max(a[1], b[1]) < min(a[3], b[3])
-                  and (a[2] <= b[0] or b[2] <= a[0])
-              ]
-              return {
-                  "active_core_count": len(cores),
-                  "all_noninterface_bands": count_bands(placed),
-                  "active_core_bands": count_bands(cores),
-                  "backfill_pairs": backfill,
-                  "placements": [
-                      {"fragment": block["id"], "kind": block["kind"],
-                       "unused": block.get("unused"), "envelope_nm": box}
-                      for block, box in placed
-                  ],
-              }
-
-
-          def render_chunks(root: Path, case_id: str, case_dir: Path) -> None:
-              svgs = sorted((case_dir / "run1/renders/schematic").glob("*.svg"))
-              if len(svgs) != 1:
-                  raise ValueError(f"{case_id}: expected one real KiCad render, got {len(svgs)}")
-              data = svgs[0].read_bytes()
-              encoded = base64.b64encode(gzip.compress(data, mtime=0)).decode()
-              chunks = [encoded[index:index + 1000] for index in range(0, len(encoded), 1000)]
-              for index, chunk in enumerate(chunks):
-                  print(json.dumps({
-                      "kind": "m2h2.render-transfer.1", "case": case_id,
-                      "root": str(root), "index": index, "total": len(chunks),
-                      "svg_sha256": hashlib.sha256(data).hexdigest(), "data": chunk,
-                  }, separators=(",", ":")), flush=True)
-
-
-          def main() -> None:
-              args = argparse.Namespace(
-                  qualification=Path("fixtures/m2h2/qualification_final_candidate_260e33cd9248efa3e5472ec32897c2e30fe41acd"),
-                  interactions=Path("fixtures/m2h2/interaction_final_260e33cd9248efa3e5472ec32897c2e30fe41acd"),
-                  out=Path("fixtures/m2h2/finalization_checks/artifact_audit_260e33cd9248efa3e5472ec32897c2e30fe41acd.json"),
-                  emit_renders=True,
-              )
-              errors = []
-              qualification = json.loads((args.qualification / "results.json").read_text())
-              errors.extend(identity_errors(qualification))
-              if qualification.get("accepted") != 56 or qualification.get("total") != 56:
-                  errors.append("56-positive matrix incomplete")
-              if qualification.get("negative_v3_8_accepted") is not True:
-                  errors.append("V3-8 negative not proved")
-              for audit in ("historical_preservation", "anti_overfitting"):
-                  if qualification.get(audit, {}).get("pass") is not True:
-                      errors.append(f"{audit} did not pass")
-              for case in qualification["results"]:
-                  if len(case["runs"]) != 5 or not case["accepted"] or not case["reproducible"]:
-                      errors.append(f"base case not qualified: {case['id']}")
-                  if args.emit_renders and case["accepted"]:
-                      render_chunks(args.qualification, case["id"], args.qualification / case["id"])
-              summaries = {}
-              for group in ("i1", "i2", "i3", "i4", "i5", "i6"):
-                  payload = json.loads((args.interactions / group / "results.json").read_text())
-                  errors.extend(f"{group}: {error}" for error in identity_errors(payload))
-                  records = []
-                  for case in payload["results"]:
-                      if len(case["runs"]) != 5 or not case["accepted"] or not case["reproducible"]:
-                          errors.append(f"interaction not qualified: {group}/{case['id']}")
-                      record = {
-                          "case": case["id"], "cell": case.get("cell"),
-                          "selected_triple": case.get("selected_triple"),
-                          "accepted": case["accepted"], "reproducible": case["reproducible"],
-                          "observed_structural_class": case.get("observed_structural_class"),
-                          "runs": [run["path"] for run in case["runs"]],
-                      }
-                      if group == "i3" and case["runs"][0].get("signature"):
-                          record["observed_placement_classes"] = placement_classes(case["runs"][0]["signature"])
-                          record["class_coverage_status"] = "requires_final_band_class_reconciliation"
-                      records.append(record)
-                      print(json.dumps({"kind": "m2h2.artifact-case-audit.1", "group": group, **record},
-                                       separators=(",", ":")), flush=True)
-                  summaries[group] = {
-                      "git_head": payload.get("git_head"), "accepted": payload["accepted"],
-                      "total": payload["total"], "records": records,
-                  }
-              report = {
-                  "schema_version": "m2h2.final-artifact-audit.1",
-                  "qualification_head": qualification["git_head"],
-                  "source_sha256": qualification["source_sha256"],
-                  "groups": summaries, "errors": errors,
-                  "machine_evidence_valid": not errors,
-                  "M2h2": "INCOMPLETE",
-                  "remaining_gates": ["actual I3 band classes and structural alternatives",
-                                      "selected triple invariant reconciliation",
-                                      "fresh engineering render inspection", "final audit/TODO closure"],
-              }
-              args.out.parent.mkdir(parents=True, exist_ok=True)
-              if args.out.exists():
-                  raise SystemExit(f"refusing to overwrite {args.out}")
-              args.out.write_text(json.dumps(report, indent=2) + "\n")
-              print(json.dumps({"kind": "m2h2.artifact-audit-outcome.1", "errors": errors,
-                                "machine_evidence_valid": not errors}, separators=(",", ":")), flush=True)
-              if errors:
-                  raise SystemExit(1)
-
-
-          if __name__ == "__main__":
-              main()
-
-          PY
+          PYTHONPATH=src:tools python tools/run_m2h2_final_artifact_audit.py \
+            --qualification fixtures/m2h2/qualification_final_candidate_4493c318b37ea73a3e487eddf659aa3c316222c4 \
+            --interactions fixtures/m2h2/interaction_final_4493c318b37ea73a3e487eddf659aa3c316222c4 \
+            --structural fixtures/m2h2/structural_final_beb50458a1ba3b35667534954d2f01e0f40152ba \
+            --out fixtures/m2h2/finalization_checks/artifact_audit_4493c318b37ea73a3e487eddf659aa3c316222c4.json \
+            --emit-renders
 
       - name: Upload artifact audit report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: m2h2-artifact-audit-${{ github.sha }}
-          path: fixtures/m2h2/finalization_checks/artifact_audit_260e33cd9248efa3e5472ec32897c2e30fe41acd.json
+          path: fixtures/m2h2/finalization_checks/artifact_audit_4493c318b37ea73a3e487eddf659aa3c316222c4.json
           if-no-files-found: warn
