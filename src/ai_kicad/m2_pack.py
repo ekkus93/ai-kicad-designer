@@ -1035,7 +1035,13 @@ def _partial_beam_candidates(
     blocks = {block.id: block for block in plan.blocks}
     predecessors: dict[str, set[str]] = {key: set() for key in variants}
     for obligation in plan.precedence:
-        if obligation.source_fragment != obligation.target_fragment:
+        # External interfaces use the reserved boundary column after core
+        # placement. Their exact inequalities are checked when both endpoints
+        # are assigned; they do not force a different core expansion schedule.
+        if (
+            obligation.source_fragment != obligation.target_fragment
+            and blocks[obligation.source_fragment].kind != "interface"
+        ):
             predecessors[obligation.target_fragment].add(obligation.source_fragment)
     priority = {
         "timer": 0,

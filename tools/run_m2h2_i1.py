@@ -5,9 +5,11 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import re
+import subprocess
 
 from ai_kicad.m2a import ROOT, observe
-from run_m2g2_qualification import _build, _erc_violations, _json, _signature
+from run_m2g2_qualification import _build, _erc_violations, _json, _sha, _signature
 
 LAYOUT_FAILURE_WITNESS_KEYS = frozenset(
     {
@@ -80,9 +82,17 @@ def validate_real_tool_qualification_evidence(evidence: object) -> list[str]:
         value = evidence.get(field)
         if not isinstance(value, str) or not value.strip():
             errors.append(f"real-tool evidence must include non-empty {field}")
+    head = evidence.get("exact_head_sha")
+    if not isinstance(head, str) or re.fullmatch(r"[0-9a-f]{40}", head) is None:
+        errors.append("real-tool evidence exact_head_sha must be a full commit SHA")
     runs = evidence.get("runs")
-    if not isinstance(runs, list) or not runs:
-        errors.append("real-tool evidence must include at least one run link")
+    if (
+        not isinstance(runs, list)
+        or len(runs) != 5
+        or any(not isinstance(run, str) or not run.strip() for run in runs)
+        or len(set(run for run in runs if isinstance(run, str))) != 5
+    ):
+        errors.append("real-tool evidence must include exactly five distinct non-empty run links")
     forbidden = sorted(PARSE_ONLY_EVIDENCE_KEYS.intersection(evidence))
     if forbidden:
         errors.append(
@@ -342,6 +352,19 @@ def main() -> None:
             {
                 "schema_version": "m2h2.interaction-qualification.1",
                 "group": args.group,
+                "git_head": subprocess.check_output(
+                    ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True
+                ).strip(),
+                "source_sha256": {
+                    str(path.relative_to(ROOT)): _sha(path)
+                    for path in sorted((ROOT / "src/ai_kicad").glob("*.py"))
+                },
+                "runner_sha256": _sha(Path(__file__)),
+                "toolchain_lock_sha256": _sha(ROOT / "fixtures/m1a/toolchain.lock.json"),
+                "asset_lock_sha256": _sha(ROOT / "fixtures/m2b/assets.lock.json"),
+                "policy_lock_sha256": _sha(ROOT / "fixtures/m1a/policy.lock.json"),
+                "runs_per_case": 5,
+                "normalization": "run_m2g2_qualification._signature; only documented ERC date/source and SVG title fields",
                 "accepted": sum(item["accepted"] for item in results),
                 "total": len(results),
                 "results": results,

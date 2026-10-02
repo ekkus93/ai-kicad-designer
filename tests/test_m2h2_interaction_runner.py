@@ -14,6 +14,7 @@ from run_m2h2_i1 import (  # noqa: E402
     observed_structural_class,
     validate_coverage_ledger_evidence,
     validate_coverage_ledger_impossibilities,
+    validate_real_tool_qualification_evidence,
 )
 
 
@@ -76,7 +77,10 @@ def test_covered_cells_require_real_tool_evidence_not_parse_or_generation_only()
                             "qualification_root": "fixtures/m2h2/interaction_final/run1",
                             "results_json": "fixtures/m2h2/interaction_final/results.json",
                             "case_id": "m2h2_i1_d1_b1",
-                            "runs": ["fixtures/m2h2/interaction_final/m2h2_i1_d1_b1/run1"],
+                            "runs": [
+                                f"fixtures/m2h2/interaction_final/m2h2_i1_d1_b1/run{index}"
+                                for index in range(1, 6)
+                            ],
                         },
                     }
                 ],
@@ -123,3 +127,36 @@ def test_unsupported_cells_require_semantic_impossibility_not_layout_failure() -
     }
     with pytest.raises(ValueError, match="layout/build failure keys"):
         validate_coverage_ledger_impossibilities(ledger)
+
+
+@pytest.mark.parametrize(
+    "runs",
+    (
+        [],
+        ["run1"],
+        ["run1", "run2", "run3", "run4"],
+        ["run1", "run2", "run3", "run4", "run4"],
+        ["run1", "run2", "run3", "run4", ""],
+    ),
+)
+def test_real_tool_coverage_rejects_incomplete_or_repeated_runs(runs) -> None:
+    evidence = {
+        "schema_version": "m2h2.real-tool-evidence.1",
+        "locked_kicad_version": "10.0.6",
+        "exact_head_sha": "f" * 40,
+        "qualification_root": "qualification",
+        "results_json": "qualification/results.json",
+        "case_id": "case",
+        "runs": runs,
+    }
+    assert any(
+        "exactly five distinct" in error
+        for error in validate_real_tool_qualification_evidence(evidence)
+    )
+    evidence["runs"] = [f"run{index}" for index in range(1, 6)]
+    assert validate_real_tool_qualification_evidence(evidence) == []
+    evidence["exact_head_sha"] = "stale-label"
+    assert any(
+        "full commit SHA" in error
+        for error in validate_real_tool_qualification_evidence(evidence)
+    )
