@@ -250,7 +250,35 @@ def _structural_repack(design, resolved, plan, packing: Packing, conflict: Place
         # A connector boundary can constrain a complete serial group. Moving
         # only its first cell would collide with the already placed successor.
         shift = ((first_point[0] + PITCH - second_point[0] + PITCH - 1) // PITCH) * PITCH
-        related = [item for item in packing.fragments if item.fragment.block.kind != "interface"]
+        related_ids = {target.fragment.block.id}
+        while True:
+            components = {
+                component
+                for item in packing.fragments
+                if item.fragment.block.id in related_ids
+                for component, _unit in item.fragment.block.occurrences
+            }
+            expanded = related_ids | {
+                item.fragment.block.id
+                for item in packing.fragments
+                if item.fragment.block.kind != "interface"
+                and any(
+                    component in components for component, _unit in item.fragment.block.occurrences
+                )
+            }
+            for edge in plan.edges:
+                if edge.kind in {"signal", "branch", "package", "feedback", "support"} and (
+                    edge.source in related_ids or edge.target in related_ids
+                ):
+                    expanded.update(
+                        owner
+                        for owner in (edge.source, edge.target)
+                        if by_id[owner].fragment.block.kind != "interface"
+                    )
+            if expanded == related_ids:
+                break
+            related_ids = expanded
+        related = [item for item in packing.fragments if item.fragment.block.id in related_ids]
         grouped = _measured_repack(
             plan,
             packing,
@@ -271,6 +299,76 @@ def _structural_repack(design, resolved, plan, packing: Packing, conflict: Place
                 "fragments": [item.fragment.block.id for item in related],
                 "shift_nm": shift,
             }
+        blockers = [
+            item
+            for item in packing.fragments
+            if item.fragment.block.kind == "interface"
+            and any(
+                max(item.envelope[0], member.envelope[0] + shift)
+                < min(item.envelope[2], member.envelope[2] + shift)
+                and max(item.envelope[1], member.envelope[1])
+                < min(item.envelope[3], member.envelope[3])
+                for member in related
+            )
+        ]
+        if len(blockers) == 1:
+            blocker = blockers[0]
+            blocker_height = blocker.envelope[3] - blocker.envelope[1]
+            tops = {TOP, blocker.envelope[1]}
+            for item in packing.fragments:
+                if item is not blocker:
+                    tops.add(item.envelope[3] + PITCH)
+                    tops.add(item.envelope[1] - blocker_height - PITCH)
+            for left in sorted({LEFT + PITCH, target.envelope[0], blocker.envelope[0]}):
+                for top in sorted(tops):
+                    adjusted = _measured_repack(
+                        plan,
+                        packing,
+                        target,
+                        target.envelope[0] + shift,
+                        target.envelope[1],
+                        "external-precedence-interface-transaction",
+                        additional_moves=(
+                            *(
+                                (item, item.envelope[0] + shift, item.envelope[1])
+                                for item in related
+                                if item is not target
+                            ),
+                            (blocker, left, top),
+                        ),
+                    )
+                    if adjusted is not None:
+                        return adjusted, {
+                            "kind": conflict.kind,
+                            "obligation": conflict.obligation,
+                            "fragments": [item.fragment.block.id for item in related],
+                            "shift_nm": shift,
+                            "interface": blocker.fragment.block.id,
+                            "interface_to": [left, top],
+                        }
+        source_width = source.envelope[2] - source.envelope[0]
+        source_height = source.envelope[3] - source.envelope[1]
+        interface_left = (
+            (second_point[0] - PITCH - (first_point[0] - source.envelope[0])) // PITCH
+        ) * PITCH
+        if interface_left >= LEFT and interface_left + source_width <= RIGHT:
+            tops = {source.envelope[1], TOP}
+            for item in packing.fragments:
+                if item is not source:
+                    tops.add(item.envelope[3] + PITCH)
+                    tops.add(item.envelope[1] - source_height - PITCH)
+            for top in sorted(tops, key=lambda value: (abs(value - source.envelope[1]), value)):
+                adjusted = _measured_repack(
+                    plan, packing, source, interface_left, top, "external-interface-boundary"
+                )
+                if adjusted is not None:
+                    return adjusted, {
+                        "kind": conflict.kind,
+                        "obligation": conflict.obligation,
+                        "fragment": source.fragment.block.id,
+                        "from": list(source.envelope[:2]),
+                        "to": [interface_left, top],
+                    }
     target_width = target.envelope[2] - target.envelope[0]
     target_height = target.envelope[3] - target.envelope[1]
     lefts = {

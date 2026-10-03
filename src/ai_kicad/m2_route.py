@@ -575,18 +575,17 @@ def route_between_fragments(
         if net.explicit_geometry_required and len(net.fragments) > 1:
             grouped.setdefault(net.id, [])
     distribution_nets = {
-        item.id
-        for item in plan.presentation_nets
-        if item.explicit_geometry_required
-        or (
-            item.internally_generated
-            and item.role == "distributive"
-            and len(item.fragments) >= 3
-            and any(
-                port.net == item.id and port.role == "power_out"
-                for block in plan.blocks
-                for port in block.ports
-            )
+        item.id for item in plan.presentation_nets if item.explicit_geometry_required
+    }
+    shared_tree_nets = distribution_nets | {
+        net
+        for net, edges in grouped.items()
+        if any(edge.kind == "power" for edge in edges)
+        and len({owner for edge in edges for owner in (edge.source, edge.target)}) >= 3
+        and any(
+            port.net == net and port.role == "power_out"
+            for block in plan.blocks
+            for port in block.ports
         )
     }
 
@@ -658,7 +657,7 @@ def route_between_fragments(
                 in {"body", "text", "label", "pin", "wire", "protected"}
                 and not (
                     reservation.clearance_class
-                    in ({"label", "wire", "protected"} if net in distribution_nets else {"label"})
+                    in ({"label", "wire", "protected"} if net in shared_tree_nets else {"label"})
                     and reservation.permitted_net == net
                 )
             )
@@ -741,7 +740,7 @@ def route_between_fragments(
                 tuple(previous),
                 route_bounds,
             )
-            if net in distribution_nets and len(gateways) >= 3
+            if net in shared_tree_nets and len(gateways) >= 3
             else (
                 (
                     "producer_centered",
@@ -850,6 +849,32 @@ def route_between_fragments(
                                         ),
                                     )
                                 )
+                                if any(
+                                    (
+                                        trial_tree.degree.get(gateway.point, 0) < 2
+                                        or trial_tree.degree.get(
+                                            _advance(
+                                                gateway.point, gateway.escape_direction, PITCH
+                                            ),
+                                            0,
+                                        )
+                                        == 1
+                                    )
+                                    for gateway in gateways.values()
+                                    if gateway.id in connected | {target.id}
+                                    and not any(
+                                        label_net == net
+                                        and (point[0] + item.delta[0], point[1] + item.delta[1])
+                                        == gateway.point
+                                        for item in placed
+                                        for label_net, point in item.fragment.labels
+                                    )
+                                ):
+                                    # Returning through a local escape can make
+                                    # its tip a dangling leaf after interval union.
+                                    # Preserve actual attachment at every joined
+                                    # gateway, not just electrical reachability.
+                                    continue
                                 bends = max(0, trial_tree.bends - base_tree.bends)
                                 length = trial_tree.length - base_tree.length
                                 if trial_tree.length > MAX_CANONICAL_LENGTH:

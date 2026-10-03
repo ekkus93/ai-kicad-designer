@@ -355,6 +355,17 @@ def _finish(
         "down": (0, escape_length),
     }
     for port in block.ports:
+        emit_label = (
+            port.net in local_only_nets
+            or port.net in interface_nets
+            or (
+                port.role in {"power_in", "power_out"}
+                and not any(
+                    relation["kind"] == "reference_divider" and relation["local"] == port.net
+                    for relation in design["relationships"]
+                )
+            )
+        )
         suffix = port.id.rsplit(".", 1)[-1]
         if suffix not in anchors:
             raise InputError(f"FRAGMENT_PORT_MISSING: {port.id}")
@@ -389,13 +400,13 @@ def _finish(
             "up": (0, -port_escape_length),
             "down": (0, port_escape_length),
         }[direction]
-        if direction == "left" and (port.net in local_only_nets or port.net in interface_nets):
+        if direction == "left" and emit_label:
             # Serialized local labels are left-justified. Their full text must
             # end before the source pin/body, not extend back across it.
             label_clearance = ((len(port.net) * 890_000 + PITCH - 1) // PITCH + 1) * PITCH
             dx = -max(port_escape_length, label_clearance)
         gateway_point = (anchor[0] + dx, anchor[1] + dy)
-        if port.net in local_only_nets or port.net in interface_nets:
+        if emit_label:
             bodies = [
                 _body_rect(design, resolved, draft, occurrence)
                 for occurrence in draft.positions
@@ -420,7 +431,7 @@ def _finish(
             else:
                 raise InputError(f"LABEL_ESCAPE_INFEASIBLE: {port.id}")
         draft.route(port.net, anchor, gateway_point)
-        if port.net in local_only_nets or port.net in interface_nets:
+        if emit_label:
             # A label at the gateway's source is redundant on the same escape
             # conductor and can overlap the final gateway label.
             draft.labels = [item for item in draft.labels if item != (port.net, anchor)]

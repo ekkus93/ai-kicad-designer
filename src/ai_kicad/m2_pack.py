@@ -303,8 +303,21 @@ def _make_units(
                 # occupied interiors remain disjoint and no routing channel is
                 # required between a functional unit and its own package cell.
                 source_y = next(dy for owner, _, dy in offsets if owner == source)
-                local_y = source_y + source_height
                 local_x = rank_x[source_rank]
+                local_y = max(
+                    source_y + source_height,
+                    *(
+                        dy + chosen[owner].envelope[3] - chosen[owner].envelope[1]
+                        for owner, dx, dy in offsets
+                        if max(local_x, dx)
+                        < min(
+                            local_x + target_width,
+                            dx + chosen[owner].envelope[2] - chosen[owner].envelope[0],
+                        )
+                    ),
+                )
+                # Reserve one pitch for independently snapped envelope origins.
+                local_y = ((local_y + PITCH - 1) // PITCH + 1) * PITCH
                 candidate_box = (local_x, local_y, local_x + target_width, local_y + target_height)
                 if any(
                     max(candidate_box[0], dx)

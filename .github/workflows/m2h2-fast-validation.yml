@@ -295,6 +295,7 @@ jobs:
               "v6-6": "fixtures/m2blind_v6/ir/V6-6.json",
               "v6-8": "fixtures/m2blind_v6/ir/V6-8.json",
               "dp4": "fixtures/m2h2/development/dp4.json",
+              "two_signal_chains_shared_rail": "fixtures/m2f2/ir/two_signal_chains_shared_rail.json",
           }
           root = Path("fixtures/m2h2/development_checks") / ("ci_current_regressions_" + os.environ["GITHUB_SHA"]) / "qualification_regressions"
           results = []
@@ -314,7 +315,7 @@ jobs:
               else:
                   record["accepted"] = False
               results.append(record)
-              print(json.dumps(record), flush=True)
+              print(json.dumps({key: value for key, value in record.items() if key != "layout"}), flush=True)
           root.mkdir(parents=True, exist_ok=True)
           (root / "results.json").write_text(json.dumps({"git_head": os.environ["GITHUB_SHA"], "kind": "one_run_regressions_not_final_qualification", "results": results}, indent=2) + "\n")
           if not all(record["accepted"] for record in results):
