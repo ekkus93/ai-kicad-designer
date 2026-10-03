@@ -292,3 +292,8 @@ M2h2 remains **INCOMPLETE**. Actual source-1273 `a3_one` native render falsifies
 ### Worksheet-clear stabilized source (2026-10-03)
 
 Production `f161672f761559e0e8ae7294f1c4df39fa24bebb` passes current complete locked-runner baseline `37127192673`: 271 tests, source V6-3/DP2, targeted five-run probes, actual whole-layout one-band ×5 and additional real KiCad regressions. Source/runner/lock freeze and exact CI evidence are in `finalization_checks/final_source_f161672f.json`, `stabilization_f161672f_ci.json` and `source_review_f161672f.json`. Fresh full qualification is requested. M2h2 remains **INCOMPLETE** pending final-source five-run base/interaction/structural qualification, independent artifact audit, measured coverage reconciliation and native inspection.
+
+
+### Fresh worksheet-clear structural result (2026-10-03)
+
+All nine structural alternatives ×5 passed on frozen source f161672f / producer 585a4f7c in run `37127602956`. Exact native SVG digests and agent inspection in `finalization_checks/structural_585a4f7c_ci_inspection.json` confirm repaired C5/title-block clearance and readable current structural scenes. M2h2 remains **INCOMPLETE** pending base56 and I72 fresh qualification, independent final artifact audit, actual-cell reconciliation and remaining render inspection.

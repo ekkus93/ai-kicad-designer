@@ -38,34 +38,34 @@ jobs:
       - name: Download exact qualification evidence
         uses: actions/download-artifact@v4
         with:
-          name: m2h2-final-qualification-5c7640a8d9a505a733f009f7a2c7cd1d6c2012b0
-          path: fixtures/m2h2/qualification_final_candidate_5c7640a8d9a505a733f009f7a2c7cd1d6c2012b0
-          run-id: 37125376461
+          name: m2h2-final-qualification-585a4f7c96b185c3a4e9db73fa13960388ea411b
+          path: fixtures/m2h2/qualification_final_candidate_585a4f7c96b185c3a4e9db73fa13960388ea411b
+          run-id: 37127602948
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download exact interaction evidence
         uses: actions/download-artifact@v4
         with:
-          name: m2h2-final-interactions-5c7640a8d9a505a733f009f7a2c7cd1d6c2012b0
-          path: fixtures/m2h2/interaction_final_5c7640a8d9a505a733f009f7a2c7cd1d6c2012b0
-          run-id: 37125376457
+          name: m2h2-final-interactions-585a4f7c96b185c3a4e9db73fa13960388ea411b
+          path: fixtures/m2h2/interaction_final_585a4f7c96b185c3a4e9db73fa13960388ea411b
+          run-id: 37127602933
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Download exact structural evidence
         uses: actions/download-artifact@v4
         with:
-          name: m2h2-structural-qualification-5c7640a8d9a505a733f009f7a2c7cd1d6c2012b0
-          path: fixtures/m2h2/structural_final_5c7640a8d9a505a733f009f7a2c7cd1d6c2012b0
-          run-id: 37125376451
+          name: m2h2-structural-qualification-585a4f7c96b185c3a4e9db73fa13960388ea411b
+          path: fixtures/m2h2/structural_final_585a4f7c96b185c3a4e9db73fa13960388ea411b
+          run-id: 37127602956
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Audit final source, structural evidence, and fresh renders
         run: |
           PYTHONPATH=src:tools python tools/run_m2h2_final_artifact_audit.py \
-            --qualification fixtures/m2h2/qualification_final_candidate_5c7640a8d9a505a733f009f7a2c7cd1d6c2012b0 \
-            --interactions fixtures/m2h2/interaction_final_5c7640a8d9a505a733f009f7a2c7cd1d6c2012b0 \
-            --structural fixtures/m2h2/structural_final_5c7640a8d9a505a733f009f7a2c7cd1d6c2012b0 \
-            --out fixtures/m2h2/finalization_checks/artifact_audit_5c7640a8d9a505a733f009f7a2c7cd1d6c2012b0.json \
+            --qualification fixtures/m2h2/qualification_final_candidate_585a4f7c96b185c3a4e9db73fa13960388ea411b \
+            --interactions fixtures/m2h2/interaction_final_585a4f7c96b185c3a4e9db73fa13960388ea411b \
+            --structural fixtures/m2h2/structural_final_585a4f7c96b185c3a4e9db73fa13960388ea411b \
+            --out fixtures/m2h2/finalization_checks/artifact_audit_585a4f7c96b185c3a4e9db73fa13960388ea411b.json \
             --emit-renders
 
       - name: Upload artifact audit report
@@ -73,5 +73,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: m2h2-artifact-audit-${{ github.sha }}
-          path: fixtures/m2h2/finalization_checks/artifact_audit_5c7640a8d9a505a733f009f7a2c7cd1d6c2012b0.json
+          path: fixtures/m2h2/finalization_checks/artifact_audit_585a4f7c96b185c3a4e9db73fa13960388ea411b.json
           if-no-files-found: warn
