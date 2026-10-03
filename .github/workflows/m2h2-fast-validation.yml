@@ -280,6 +280,47 @@ jobs:
           python tools/run_m2h2_i1.py --group i5 --only c2_s3plus --out "$root/two_consumers"
           python tools/run_m2h2_i1.py --group i5 --only c3_s1_2 --out "$root/three_consumers"
 
+      - name: M2h2 fresh-qualification regression builds
+        env:
+          PYTHONPATH: src:tools
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from run_m2g2_qualification import _build, _signature, _erc_violations
+          cases = {
+              "v5-3": "fixtures/m2blind_v5/ir/V5-3.json",
+              "v6-5": "fixtures/m2blind_v6/ir/V6-5.json",
+              "v6-6": "fixtures/m2blind_v6/ir/V6-6.json",
+              "v6-8": "fixtures/m2blind_v6/ir/V6-8.json",
+              "dp4": "fixtures/m2h2/development/dp4.json",
+          }
+          root = Path("fixtures/m2h2/development_checks") / ("ci_current_regressions_" + os.environ["GITHUB_SHA"]) / "qualification_regressions"
+          results = []
+          for case, relative in cases.items():
+              destination = root / case / "run1"
+              rc = _build(Path(relative).resolve(), destination.resolve())
+              record = {"case": case, "returncode": rc, "path": str(destination)}
+              if rc == 0:
+                  signature = _signature(destination)
+                  record["accepted"] = (
+                      signature["electrical"]["status"] == "pass"
+                      and not signature["electrical"]["diagnostics"]
+                      and _erc_violations(signature["erc"]) == 0
+                      and signature["composition"]["obligation_certificate"]["serialized_scene_verified"] == "pass"
+                  )
+                  record["layout"] = signature["layout"]
+              else:
+                  record["accepted"] = False
+              results.append(record)
+              print(json.dumps(record), flush=True)
+          root.mkdir(parents=True, exist_ok=True)
+          (root / "results.json").write_text(json.dumps({"git_head": os.environ["GITHUB_SHA"], "kind": "one_run_regressions_not_final_qualification", "results": results}, indent=2) + "\n")
+          if not all(record["accepted"] for record in results):
+              raise SystemExit(1)
+          PY
+
       - name: Upload M2h2 current-source regression evidence
         if: always()
         uses: actions/upload-artifact@v4

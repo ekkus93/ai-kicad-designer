@@ -1095,7 +1095,7 @@ def _timer_fragment(
     d.add(ladder["lower"], lx, ty)
     d.add(ladder["capacitor"], lx, ty + (17 if compact else 24) * PITCH)
     # Keep the control bypass out of the timing-ladder/discharge corridor.
-    d.add(control["component"], tx + 14 * PITCH, ty - (8 if compact else 10) * PITCH)
+    d.add(control["component"], tx - 14 * PITCH, ty - (14 if compact else 18) * PITCH)
     ut, ub = d.point(ladder["upper"], "1"), d.point(ladder["upper"], "2")
     lt, lb = d.point(ladder["lower"], "1"), d.point(ladder["lower"], "2")
     ct, cb = d.point(ladder["capacitor"], "1"), d.point(ladder["capacitor"], "2")
@@ -1272,8 +1272,8 @@ def _access_alternatives(
     if not configurable:
         return (base,)
     allowed_by_kind = {
-        "power_stage": ("right", "up", "down"),
-        "timer": ("right", "up", "down"),
+        "power_stage": ("left", "right", "up", "down"),
+        "timer": ("left", "right", "up", "down"),
         "buffer": ("right", "up", "down"),
         "unused_amplifier": ("right", "up", "down"),
         "noninverting_amplifier": ("right", "up", "down"),

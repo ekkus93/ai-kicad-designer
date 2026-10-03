@@ -575,7 +575,19 @@ def route_between_fragments(
         if net.explicit_geometry_required and len(net.fragments) > 1:
             grouped.setdefault(net.id, [])
     distribution_nets = {
-        item.id for item in plan.presentation_nets if item.explicit_geometry_required
+        item.id
+        for item in plan.presentation_nets
+        if item.explicit_geometry_required
+        or (
+            item.internally_generated
+            and item.role == "distributive"
+            and len(item.fragments) >= 3
+            and any(
+                port.net == item.id and port.role == "power_out"
+                for block in plan.blocks
+                for port in block.ports
+            )
+        )
     }
 
     def net_gateways(net: str) -> tuple[Gateway, ...]:

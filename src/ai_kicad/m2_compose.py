@@ -27,6 +27,7 @@ from .m2_pack import (
     RIGHT,
     TOP,
     Packing,
+    _measured_repack,
     _place,
     pack_fragment_candidates,
 )
@@ -240,6 +241,36 @@ def _structural_repack(design, resolved, plan, packing: Packing, conflict: Place
     )
     first_point = draft.point(*first_terminal)
     second_point = draft.point(*second_terminal)
+    if (
+        hasattr(relation, "source_terminal")
+        and source.fragment.block.kind == "interface"
+        and target.fragment.block.kind != "interface"
+        and second_point[0] <= first_point[0]
+    ):
+        # A connector boundary can constrain a complete serial group. Moving
+        # only its first cell would collide with the already placed successor.
+        shift = ((first_point[0] + PITCH - second_point[0] + PITCH - 1) // PITCH) * PITCH
+        related = [item for item in packing.fragments if item.fragment.block.kind != "interface"]
+        grouped = _measured_repack(
+            plan,
+            packing,
+            target,
+            target.envelope[0] + shift,
+            target.envelope[1],
+            "external-precedence-transaction",
+            additional_moves=tuple(
+                (item, item.envelope[0] + shift, item.envelope[1])
+                for item in related
+                if item is not target
+            ),
+        )
+        if grouped is not None:
+            return grouped, {
+                "kind": conflict.kind,
+                "obligation": conflict.obligation,
+                "fragments": [item.fragment.block.id for item in related],
+                "shift_nm": shift,
+            }
     target_width = target.envelope[2] - target.envelope[0]
     target_height = target.envelope[3] - target.envelope[1]
     lefts = {

@@ -302,7 +302,22 @@ def _make_units(
                 # Measured reservation envelopes may share a boundary; their
                 # occupied interiors remain disjoint and no routing channel is
                 # required between a functional unit and its own package cell.
-                local_y = source_height
+                source_y = next(dy for owner, _, dy in offsets if owner == source)
+                local_y = source_y + source_height
+                local_x = rank_x[source_rank]
+                candidate_box = (local_x, local_y, local_x + target_width, local_y + target_height)
+                if any(
+                    max(candidate_box[0], dx)
+                    < min(
+                        candidate_box[2], dx + chosen[owner].envelope[2] - chosen[owner].envelope[0]
+                    )
+                    and max(candidate_box[1], dy)
+                    < min(
+                        candidate_box[3], dy + chosen[owner].envelope[3] - chosen[owner].envelope[1]
+                    )
+                    for owner, dx, dy in offsets
+                ):
+                    continue
                 if target_width <= rank_widths[source_rank]:
                     candidates.append(
                         (
@@ -730,14 +745,27 @@ def _distribution_column_candidate(
     envelopes and the presentation net inventory; its routes still undergo the
     ordinary placement, conductor, reservation and observer proofs.
     """
+    producers = {
+        net.id: tuple(
+            sorted(
+                set(net.producer_fragments)
+                | {
+                    port.fragment
+                    for block in plan.blocks
+                    for port in block.ports
+                    if port.net == net.id and port.role == "power_out"
+                }
+            )
+        )
+        for net in plan.presentation_nets
+    }
     demands = sorted(
         (
             net
             for net in plan.presentation_nets
             if net.role == "distributive"
             and net.internally_generated
-            and net.explicit_geometry_required
-            and len(net.producer_fragments) == 1
+            and len(producers[net.id]) == 1
             and len(net.fragments) >= 3
         ),
         key=lambda net: (-len(net.fragments), net.id),
@@ -745,7 +773,7 @@ def _distribution_column_candidate(
     if not demands or not packings:
         return None
     net = demands[0]
-    producer_id = net.producer_fragments[0]
+    producer_id = producers[net.id][0]
     consumers = tuple(fragment_id for fragment_id in net.fragments if fragment_id != producer_id)
     if len(consumers) < 2:
         return None
@@ -808,6 +836,8 @@ def _distribution_column_candidate(
             ),
         )
     wide_choices = [choice for choice in variants[wide] if "left" in approach(choice)]
+    if not wide_choices:
+        wide_choices = [choice for choice in variants[wide] if "right" in approach(choice)]
     if not wide_choices:
         return None
     chosen[wide] = min(
@@ -881,6 +911,104 @@ def _distribution_column_candidate(
             side_y,
         )
         side_y = placed[fragment_id].envelope[3] + PITCH
+    if not net.explicit_geometry_required:
+        # A generated power rail needs a compact producer beside a complete
+        # consumer column, rather than below a pre-existing interface shelf.
+        # Retain the independent envelope and terminal proofs below.
+        chosen[producer_id] = min(
+            variants[producer_id],
+            key=lambda choice: (
+                "up" not in approach(choice),
+                local_length(choice),
+                area(choice),
+                choice.id,
+            ),
+        )
+        column_y = TOP
+        column_right = LEFT
+        for fragment_id in consumers:
+            chosen[fragment_id] = min(
+                variants[fragment_id],
+                key=lambda choice: (
+                    "up" not in approach(choice),
+                    area(choice),
+                    local_length(choice),
+                    choice.id,
+                ),
+            )
+            placed[fragment_id] = _place(chosen[fragment_id], PLACEMENT_LEFT, column_y)
+            column_y = placed[fragment_id].envelope[3] + PITCH
+            column_right = max(column_right, placed[fragment_id].envelope[2])
+        placed[producer_id] = _place(chosen[producer_id], column_right + PITCH, TOP)
+        unrelated_left = placed[producer_id].envelope[0]
+        unrelated_x = unrelated_left
+        unrelated_y = TOP
+        for obligation in plan.precedence:
+            if obligation.source_fragment in consumers and obligation.target_fragment in {
+                item.fragment.block.id for item in unrelated
+            }:
+                source = next(
+                    (
+                        g
+                        for g in placed[obligation.source_fragment].gateways
+                        if g.net == obligation.net
+                    ),
+                    None,
+                )
+                target = next(
+                    (
+                        g
+                        for g in chosen[obligation.target_fragment].gateways
+                        if g.net == obligation.net
+                    ),
+                    None,
+                )
+                if source is not None and target is not None:
+                    unrelated_y = max(
+                        TOP,
+                        source.point[1]
+                        - (target.point[1] - chosen[obligation.target_fragment].envelope[1]),
+                    )
+                    break
+        row_bottom = unrelated_y
+        unrelated_width = (
+            sum(
+                sorted((item.envelope[2] - item.envelope[0] for item in unrelated), reverse=True)[
+                    :2
+                ]
+            )
+            + PITCH
+        )
+        order = {fragment_id: index for index, fragment_id in enumerate(plan.signal_order)}
+        for item in sorted(
+            unrelated,
+            key=lambda item: (
+                order.get(item.fragment.block.id, len(order)),
+                item.fragment.block.id,
+            ),
+        ):
+            fragment_id = item.fragment.block.id
+            width = chosen[fragment_id].envelope[2] - chosen[fragment_id].envelope[0]
+            if unrelated_x + width > unrelated_left + unrelated_width:
+                unrelated_x = unrelated_left
+                unrelated_y = row_bottom + PITCH
+            placed[fragment_id] = _place(chosen[fragment_id], unrelated_x, unrelated_y)
+            unrelated_x = placed[fragment_id].envelope[2] + PITCH
+            row_bottom = max(row_bottom, placed[fragment_id].envelope[3])
+        placed[producer_id] = _place(chosen[producer_id], unrelated_left, row_bottom + PITCH)
+        interface_x = (
+            max(
+                item.envelope[2]
+                for item in placed.values()
+                if item.fragment.block.kind != "interface"
+            )
+            + PITCH
+        )
+        interface_y = TOP
+        for item in interfaces:
+            fragment_id = item.fragment.block.id
+            placed[fragment_id] = _place(chosen[fragment_id], interface_x, interface_y)
+            interface_y = placed[fragment_id].envelope[3] + PITCH
     items = tuple(sorted(placed.values(), key=lambda item: item.fragment.block.id))
     if any(
         item.envelope[0] < LEFT
