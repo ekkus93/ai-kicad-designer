@@ -1,8 +1,11 @@
 """Independent artifact accounting distinguishes proposals from emitted wires."""
 
 import pytest
+import sys
+from pathlib import Path
 
-from run_m2h2_final_artifact_audit import conductor_accounting, verify_emitted_conductors
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+from run_m2h2_final_artifact_audit import conductor_accounting, verify_emitted_conductors  # noqa: E402
 
 
 def test_pruned_router_leaf_is_not_emitted_global_conductor():
