@@ -237,3 +237,7 @@ M2h2 remains **INCOMPLETE**. Production `1397637d0fe51e5dfcf46038ec34d9a65e91017
 ### Tall-core interaction restabilization — 2026-10-03
 
 M2h2 remains **INCOMPLETE**. Candidate `47d4978c` passes 56-positive x5 qualification and six structural alternatives x5, but its I3 selected-triple composition has an inward timer-output routing failure. The generic outward-access repair is under new locked validation; all prior candidate qualification is preserved and non-final after this production change. Source freeze and final qualification must be refreshed. Exact development evidence: `finalization_checks/outward_timer_output_repair_2026-10-03.json`.
+
+### Outward-access source restabilized — 2026-10-03
+
+M2h2 remains **INCOMPLETE**. Source `2575ee20fba0ca24cc6edf50e0ae038b9aa8153c` passes exact locked validation `37096621691`: 256 tests, static/hosted checks, V6-3/DP2, four targeted cases x5 including the tall-core selected triple, and six real-tool regressions. All 56 positive and 72 interaction composition probes also pass, without final qualification credit. Freeze and evidence: `finalization_checks/final_source_2575ee20.json`, `stabilization_2575ee20_ci.json`, `source_review_2575ee20.json`. Fresh complete five-run base/negative, interaction and structural roots are started on identical production source; actual coverage, final render inspection and audits remain required.
