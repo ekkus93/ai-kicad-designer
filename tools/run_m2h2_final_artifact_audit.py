@@ -424,8 +424,19 @@ def main() -> None:
         )
         if args.emit_renders:
             render_chunks(path.parent.parent, "structural__" + path.parent.name, path.parent)
-    if len(structural) != 6:
-        errors.append("six structural alternative cases required")
+    required_structural_cases = {
+        "a0_multiple",
+        "a0_interleaved",
+        "a1_multiple",
+        "a1_interleaved",
+        "a2_one",
+        "a2_interleaved",
+        "three_amplifier_one_band",
+        "a3_interleaved",
+    }
+    observed_structural_cases = {item["case"] for item in structural}
+    if observed_structural_cases != required_structural_cases or len(structural) != 8:
+        errors.append("eight distinct required structural alternative cases must qualify")
     structural_audit = audit_paths([ROOT / "src/ai_kicad"])
     if not structural_audit["pass"]:
         errors.append("structural anti-overfitting audit failed")

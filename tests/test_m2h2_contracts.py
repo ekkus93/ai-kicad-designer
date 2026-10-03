@@ -547,8 +547,17 @@ def test_two_shared_packages_have_complete_reference_distribution() -> None:
         tuple(terminal) for terminal, _component in proof["terminal_components"]
     } == expected_terminals
     tree = next(item for item in evidence["canonical_trees"] if item["net"] == reference.id)
+    # Coordinate compression preserves every orthogonal contact/crossing.
+    # The cell-walk oracle uses unit cells, not millions of nanometre cells.
+    xs = sorted({point[0] for segment in tree["segments"] for point in segment})
+    ys = sorted({point[1] for segment in tree["segments"] for point in segment})
     segments = tuple(
-        ConductorSegment(tuple(start), tuple(end), reference.id, "independent-oracle")
+        ConductorSegment(
+            (xs.index(start[0]), ys.index(start[1])),
+            (xs.index(end[0]), ys.index(end[1])),
+            reference.id,
+            "independent-oracle",
+        )
         for start, end in tree["segments"]
     )
     assert reference_components(segments) == 1
