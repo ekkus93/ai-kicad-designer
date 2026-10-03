@@ -1,6 +1,12 @@
 # M2h2 development status — INCOMPLETE
 
-**Current finalization state: INCOMPLETE — final ledger validation and PASS reconciliation pending.** Production `79a36b173c6c82a68cbe575cc1d666c55d2296b3`, producer `42ab8452`: fresh 56×5 base, 72×5 interaction and 9×5 structural qualification pass, historical V3-8 is rejected, complete 283-test baseline passes, independent audit `37143838789` passes, and all 90 SHA-verified native SVGs pass engineering agent review. The ledger now closes 69 actual pair cells and five selected triples. See `final_artifact_reconciliation_42ab8452.json` and `native_inspection_42ab8452.json` under `fixtures/m2h2/finalization_checks/`. Prior candidate `585a4f7c` remains falsified historical evidence. No M3/corpus.v7 work performed.
+**M2h2 PASS — final current-source evidence reconciled, 2026-10-03.**
+
+Production source `79a36b173c6c82a68cbe575cc1d666c55d2296b3` and qualification producer `42ab8452fca16592ead8f628b17980a9d34794b7` pass all finalization requirements. Final ledger head `d4e493b2a99a010a5763288e45ab1bdcc07769c9` passes run `37144876230`: 283 tests, hosted contracts, lint/format/diff/whitespace/structural checks and locked KiCad 10.0.6 regressions. Fresh base 56×5 (`37132185217`), interaction 72×5 (`37132185171`), structural nine×5 (`37132185186`) and independent audit (`37143838789`) pass. All 69 required interaction cells and five selected triples have current-source five-run evidence, including actual final-source I3 band classes. All 90 SHA-verified native renders pass engineering agent inspection with no unresolved hard defect; this is not human approval. Historical invalid V3-8 remains rejected with both authored power-precondition diagnostics.
+
+Exact closure authority: `fixtures/m2h2/finalization_checks/final_closure_42ab8452.json`. Detailed metrics, canonical local/global lengths, terminal/component coverage, structural/variant decisions, exact budgets, rejected witnesses and prediction/observation deltas are preserved in `final_artifact_reconciliation_42ab8452.json`, its four case-diagnostic files, and the SHA-verified full audit archive. Native SVG archive and review are preserved beside them. V6-3 canonical VREF is 196.85 mm; DP2 is 247.65 mm. Every canonical net remains within 250 mm; all other hard gates and ERC/independent observation remain unchanged. All 7,221 historical protected files retain aggregate SHA `f1dcfc89822b37c6c376f844adf6a43295ffd716ad64921f44d687dfb880200e`. Frozen coverage planning vectors and DP1–DP4 topology remain unchanged. Prior falsified candidates remain preserved without final credit.
+
+The canonical TODO is COMPLETE / PASS. Stop after M2h2; no M3 or corpus.v7 is begun.
 
 ### Preserved historical working status
 

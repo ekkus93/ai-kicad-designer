@@ -1,8 +1,10 @@
 # M2h2 Finalization TODO — 2026-09-27
 
-**Status:** ACTIVE / INCOMPLETE
+**Status:** COMPLETE / PASS
 
 Canonical executable checklist for the M2h2 Ralph Loop.
+
+Final PASS authority: `fixtures/m2h2/finalization_checks/final_closure_42ab8452.json`. Production `79a36b17`, qualification producer `42ab8452`, exact reconciled-ledger CI `d4e493b2` / `37144876230`: 283 tests, 56 positives ×5, 72 interactions ×5, nine structural cases ×5, V3-8 rejection, 69 actual interaction cells, five selected triples, all 90 native engineering inspections, independent audits, and preserved historical evidence. Every implementation/test reference below is revalidated by this current complete suite; every qualification checkbox is backed by the final producer and archived exact artifacts.
 
 Governing documents:
 
@@ -275,20 +277,24 @@ Prior machine evidence, invalidated for final-source qualification by the requir
 
 ## 12. Reconciliation and PASS
 
-- [ ] Reconcile `fixtures/m2h2/STATUS.md` to final current-source evidence. Pending final ledger CI and explicit PASS reconciliation.
-- [ ] Reconcile every completed TODO item with exact evidence references. Pending final ledger CI and explicit PASS reconciliation.
-- [ ] Confirm all generic obligation/certificate completion criteria are satisfied. Pending final ledger CI and explicit PASS reconciliation.
-- [ ] Confirm all I1–I6 coverage criteria are satisfied. Pending final ledger CI and explicit PASS reconciliation.
-- [ ] Confirm 56-positive five-run final-source qualification is PASS. Pending final ledger CI and explicit PASS reconciliation.
-- [ ] Confirm all required interaction/stress final qualification is PASS. Pending final ledger CI and explicit PASS reconciliation.
-- [ ] Confirm historical V3-8 remains rejected. Pending final ledger CI and explicit PASS reconciliation.
-- [ ] Confirm all reproducibility gates are PASS. Pending final ledger CI and explicit PASS reconciliation.
-- [ ] Confirm engineering inspection has no unresolved hard defect. Pending final ledger CI and explicit PASS reconciliation.
-- [ ] Confirm all final audits are PASS. Pending final ledger CI and explicit PASS reconciliation.
-- [ ] Declare **M2h2 PASS** in `fixtures/m2h2/STATUS.md`. Pending final ledger CI and explicit PASS reconciliation.
-- [ ] Mark this TODO **COMPLETE / PASS**. Pending final ledger CI and explicit PASS reconciliation.
+- [x] Reconcile `fixtures/m2h2/STATUS.md` to final current-source evidence. Evidence: `fixtures/m2h2/finalization_checks/final_closure_42ab8452.json`, ledger CI `37144876230` on exact head `d4e493b2`, all 283 tests and all required fresh qualification/native/audit gates.
+- [x] Reconcile every completed TODO item with exact evidence references. Evidence: `fixtures/m2h2/finalization_checks/final_closure_42ab8452.json`, ledger CI `37144876230` on exact head `d4e493b2`, all 283 tests and all required fresh qualification/native/audit gates.
+- [x] Confirm all generic obligation/certificate completion criteria are satisfied. Evidence: `fixtures/m2h2/finalization_checks/final_closure_42ab8452.json`, ledger CI `37144876230` on exact head `d4e493b2`, all 283 tests and all required fresh qualification/native/audit gates.
+- [x] Confirm all I1–I6 coverage criteria are satisfied. Evidence: `fixtures/m2h2/finalization_checks/final_closure_42ab8452.json`, ledger CI `37144876230` on exact head `d4e493b2`, all 283 tests and all required fresh qualification/native/audit gates.
+- [x] Confirm 56-positive five-run final-source qualification is PASS. Evidence: `fixtures/m2h2/finalization_checks/final_closure_42ab8452.json`, ledger CI `37144876230` on exact head `d4e493b2`, all 283 tests and all required fresh qualification/native/audit gates.
+- [x] Confirm all required interaction/stress final qualification is PASS. Evidence: `fixtures/m2h2/finalization_checks/final_closure_42ab8452.json`, ledger CI `37144876230` on exact head `d4e493b2`, all 283 tests and all required fresh qualification/native/audit gates.
+- [x] Confirm historical V3-8 remains rejected. Evidence: `fixtures/m2h2/finalization_checks/final_closure_42ab8452.json`, ledger CI `37144876230` on exact head `d4e493b2`, all 283 tests and all required fresh qualification/native/audit gates.
+- [x] Confirm all reproducibility gates are PASS. Evidence: `fixtures/m2h2/finalization_checks/final_closure_42ab8452.json`, ledger CI `37144876230` on exact head `d4e493b2`, all 283 tests and all required fresh qualification/native/audit gates.
+- [x] Confirm engineering inspection has no unresolved hard defect. Evidence: `fixtures/m2h2/finalization_checks/final_closure_42ab8452.json`, ledger CI `37144876230` on exact head `d4e493b2`, all 283 tests and all required fresh qualification/native/audit gates.
+- [x] Confirm all final audits are PASS. Evidence: `fixtures/m2h2/finalization_checks/final_closure_42ab8452.json`, ledger CI `37144876230` on exact head `d4e493b2`, all 283 tests and all required fresh qualification/native/audit gates.
+- [x] Declare **M2h2 PASS** in `fixtures/m2h2/STATUS.md`. Evidence: `fixtures/m2h2/finalization_checks/final_closure_42ab8452.json`, ledger CI `37144876230` on exact head `d4e493b2`, all 283 tests and all required fresh qualification/native/audit gates.
+- [x] Mark this TODO **COMPLETE / PASS**. Evidence: `fixtures/m2h2/finalization_checks/final_closure_42ab8452.json`, ledger CI `37144876230` on exact head `d4e493b2`, all 283 tests and all required fresh qualification/native/audit gates.
 
 After PASS, stop. Do not create corpus.v7 and do not begin M3.
+
+## Historical execution log — superseded by final PASS evidence above
+
+Earlier candidate failures, source freezes and interim status statements below are preserved history. Final-source authority is `final_closure_42ab8452.json`; no earlier candidate supplies final qualification credit.
 
 ### Render-inspection follow-up — 2026-10-02
 
@@ -400,7 +406,7 @@ The generic narrow timer escape and measured all-cell row now prove frozen `a3_o
 
 Exact instrumentation on frozen DP2 found 33 and 35 local proposals for package support cells, above the governing 32-proposal ceiling. A shared per-fragment ledger now counts accepted and rejected body/support/access proposals, stops before proposal 33 and exposes budget-uncovered and retention-uncovered classes. Failure before packing preserves its rejection ledger and earlier completed fragments. Exact development evidence: `fixtures/m2h2/finalization_checks/local_construction_budget_2026-10-03.json`. Original current-master regressions for I1 `d2_b3`, `d3_b3` and I3 selected triple are restored after snapshot restoration omitted them. All original assertions remain intact.
 
-- [ ] Confirm local-construction proposals never exceed 32 per fragment, including rejected proposals, and exact budget/retention-uncovered classes are recorded on current source. Pending final ledger CI and explicit PASS reconciliation.
+- [x] Confirm local-construction proposals never exceed 32 per fragment, including rejected proposals, and exact budget/retention-uncovered classes are recorded on current source. Evidence: `fixtures/m2h2/finalization_checks/final_closure_42ab8452.json`, ledger CI `37144876230` on exact head `d4e493b2`, all 283 tests and all required fresh qualification/native/audit gates.
 
 Predecessor baseline `37113559365` passes all jobs and five actual whole-band builds, but cannot close final-source gates after this budget/evidence behavior change. Fresh source baseline and qualification remain required; no stale or local-only evidence is promoted.
 
