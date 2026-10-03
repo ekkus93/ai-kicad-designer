@@ -153,45 +153,45 @@ A checkbox may be checked only from current-source evidence. Older qualification
 
 ### 6.2 I1
 
-- [ ] Qualify every required I1 cell on final source.
-- [ ] Qualify selected I1 triple(s).
+- [x] Qualify every required I1 cell on final source. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
+- [x] Qualify selected I1 triple(s). Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
 - [ ] Verify terminal/electrical/ERC/layout/path/order invariants.
 - [ ] Reconcile I1 covered cells in `development/interaction_coverage.json`.
 
 ### 6.3 I2
 
-- [ ] Qualify every required I2 cell on final source.
+- [x] Qualify every required I2 cell on final source. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
 - [ ] Qualify selected I2 triple(s).
 - [ ] Verify internal-reference/parked/shunt-return obligations.
 - [ ] Reconcile I2 covered cells.
 
 ### 6.4 I3
 
-- [ ] Qualify every required I3 electrical/path case on final source.
+- [x] Qualify every required I3 electrical/path case on final source. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
 - [ ] Qualify all required actual shelf/band structural classes.
 - [x] Re-run required structural alternatives on final source. Evidence: `fixtures/m2h2/finalization_checks/structural_585a4f7c_ci_inspection.json`, all nine cases ×5, source f161672f / producer 585a4f7c; actual class records and native SHA-verified agent review.
-- [ ] Qualify selected I3 triple(s).
+- [x] Qualify selected I3 triple(s). Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
 - [ ] Reconcile I3 covered cells from actual class evidence.
 
 ### 6.5 I4
 
-- [ ] Qualify every required I4 cell on final source.
-- [ ] Qualify selected I4 triple(s).
+- [x] Qualify every required I4 cell on final source. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
+- [x] Qualify selected I4 triple(s). Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
 - [ ] Verify unequal-consumer/cross-fragment/sibling-order invariants.
 - [ ] Reconcile I4 covered cells.
 
 ### 6.6 I5
 
-- [ ] Qualify every required I5 cell on final source.
-- [ ] Qualify selected I5 triple(s).
+- [x] Qualify every required I5 cell on final source. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
+- [x] Qualify selected I5 triple(s). Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
 - [ ] Verify 3+ gateway distribution/multiple-shelf/restricted-entry invariants.
 - [ ] Reconcile I5 covered cells.
 
 ### 6.7 I6
 
-- [ ] Qualify every required I6 shared-package/reference cell on final source.
-- [ ] Qualify required text-stress × support-count cells.
-- [ ] Qualify required text-stress × branch-degree cells.
+- [x] Qualify every required I6 shared-package/reference cell on final source. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
+- [x] Qualify required text-stress × support-count cells. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
+- [x] Qualify required text-stress × branch-degree cells. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
 - [ ] Reconcile I6 covered cells.
 
 ### 6.8 Coverage completion
@@ -236,12 +236,12 @@ Prior machine evidence, invalidated for final-source qualification by the requir
 
 ## 9. Final interaction/stress qualification
 
-- [ ] Run required final-source interaction qualification roots for I1–I6.
+- [x] Run required final-source interaction qualification roots for I1–I6. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
 - [ ] Run required selected triples.
-- [ ] Run required final-source structural alternatives.
-- [ ] Run required long-field/stress derivatives.
+- [x] Run required final-source structural alternatives. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence and `fixtures/m2h2/finalization_checks/structural_585a4f7c_ci_inspection.json`.
+- [x] Run required long-field/stress derivatives. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
 - [ ] Five-run reproducibility passes for every governed interaction/stress case.
-- [ ] No interaction/stress evidence relies solely on pre-final-source runs.
+- [x] No interaction/stress evidence relies solely on pre-final-source runs. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
 
 ## 10. Engineering inspection
 

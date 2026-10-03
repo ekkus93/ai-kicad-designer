@@ -297,3 +297,8 @@ Production `f161672f761559e0e8ae7294f1c4df39fa24bebb` passes current complete lo
 ### Fresh worksheet-clear structural result (2026-10-03)
 
 All nine structural alternatives ×5 passed on frozen source f161672f / producer 585a4f7c in run `37127602956`. Exact native SVG digests and agent inspection in `finalization_checks/structural_585a4f7c_ci_inspection.json` confirm repaired C5/title-block clearance and readable current structural scenes. M2h2 remains **INCOMPLETE** pending base56 and I72 fresh qualification, independent final artifact audit, actual-cell reconciliation and remaining render inspection.
+
+
+### Fresh source f161 interaction qualification — 2026-10-03
+
+All 72 current-source interaction cases passed five fresh locked-KiCad 10.0.6 builds at producer `585a4f7c96b185c3a4e9db73fa13960388ea411b`, run `37127602933`, job `111216003619`. Exact case paths, reproducibility and artifact SHA are recorded in `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`. This closes qualification of those cases, not actual I3 band-class coverage or the V6-3 internal-reference selected triple; final independent artifact audit and coverage reconciliation remain required. M2h2 remains **INCOMPLETE**.
