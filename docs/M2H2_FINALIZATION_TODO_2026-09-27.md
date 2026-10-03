@@ -437,3 +437,8 @@ Exact source `1273d6af219475db5fc804d487d06e8fb6fa8c69` passes all jobs of `3712
 ### Final audit input and stress-render preparation
 
 The report-only audit workflow now points to current producer `5c7640a8d9a505a733f009f7a2c7cd1d6c2012b0`: base `37125376461`, interactions `37125376457`, structural `37125376451`. These runs remain pending; download and audit must not execute until all succeed. Native render transfer additionally includes all six I6 long-text branch/support stress cases for actual readability inspection. This changes audit/report presentation only; all 19 production source hashes and four qualification-runner hashes remain frozen in `final_source_1273d6af.json`. No final checkbox is promoted.
+
+
+## Fresh interaction result — frozen source 1273d6af
+
+Run `37125376457`, job `111209500807`, completed successfully on qualification producer `5c7640a8d9a505a733f009f7a2c7cd1d6c2012b0`: all 72 cases accepted and reproducible across five distinct fresh builds (360 builds). Exact case/run references, measured selected structures, artifact ID and ZIP digest are recorded in `fixtures/m2h2/finalization_checks/interaction_5c7640a8_ci.json`. This is current-source locked-KiCad evidence. Coverage closure still requires the final independent artifact audit and actual I3 band classification; render inspection and remaining base/structural qualification are pending. No pending gate is checked from CI success alone.
