@@ -663,7 +663,7 @@ def _translated_rect(rect, delta):
     return tuple(value + shift for value, shift in zip(rect, (*delta, *delta), strict=True))
 
 
-def _source_marker_placement(candidates, body, obstacles):
+def _source_marker_placement(candidates, body, obstacles, wires=()):
     """Choose one existing electrical contact and a measured glyph orientation."""
     left, top, right, bottom = body
     for point in dict.fromkeys(candidates):
@@ -678,6 +678,22 @@ def _source_marker_placement(candidates, body, obstacles):
                 max(rect[0], other[0]) < min(rect[2], other[2])
                 and max(rect[1], other[1]) < min(rect[3], other[3])
                 for other in obstacles
+            ):
+                continue
+            if any(
+                (
+                    first[0] == second[0]
+                    and rect[0] < first[0] < rect[2]
+                    and max(min(first[1], second[1]), rect[1])
+                    < min(max(first[1], second[1]), rect[3])
+                )
+                or (
+                    first[1] == second[1]
+                    and rect[1] < first[1] < rect[3]
+                    and max(min(first[0], second[0]), rect[0])
+                    < min(max(first[0], second[0]), rect[2])
+                )
+                for first, second in wires
             ):
                 continue
             return point, angle, rect
@@ -827,12 +843,28 @@ def _assemble_candidate(design: dict, resolved: dict, plan, packing: Packing, re
                 if gateway.net == assertion["net"]
             )
         )
+        candidates.extend(
+            sorted(
+                {
+                    point
+                    for tree in canonical_trees
+                    if tree.net == assertion["net"]
+                    for segment in tree.segments
+                    for point in (segment.start, segment.end)
+                }
+            )
+        )
         if not candidates:
             raise InputError(
                 f"COMPOSE_ASSERTION_PORT_MISSING: {assertion['id']}:{assertion['net']}"
             )
         source_body = resolved["power:PWR_FLAG"].bodies[0]
-        point, angle, rect = _source_marker_placement(candidates, source_body, marker_obstacles)
+        point, angle, rect = _source_marker_placement(
+            candidates,
+            source_body,
+            marker_obstacles,
+            [(segment.start, segment.end) for segment in conductors],
+        )
         assertion_points[assertion["id"]] = point
         assertion_glyphs[assertion["id"]] = rect
         draft.angles[(assertion["id"], 1)] = angle

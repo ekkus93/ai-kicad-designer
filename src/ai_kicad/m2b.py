@@ -2264,6 +2264,17 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
                 box[1], obstacle[1]
             ) < min(box[3], obstacle[3]):
                 raise InputError(f"observed source glyph overlaps label: {ref}, {net}")
+        for first, second in wires:
+            if (
+                first[0] == second[0]
+                and box[0] < first[0] < box[2]
+                and max(min(first[1], second[1]), box[1]) < min(max(first[1], second[1]), box[3])
+            ) or (
+                first[1] == second[1]
+                and box[1] < first[1] < box[3]
+                and max(min(first[0], second[0]), box[0]) < min(max(first[0], second[0]), box[2])
+            ):
+                raise InputError(f"observed wire through source glyph: {ref}")
     for index, (net, box) in enumerate(label_boxes):
         for owner, obstacle in visible_pin_numbers:
             if max(box[0], obstacle[0]) < min(box[2], obstacle[2]) and max(
