@@ -333,3 +333,5 @@ Run `37071209807` preserves both failures. Compaction must repair the complete a
 ### Restabilized source — 2026-10-03
 
 Source `8675431f76594fd51c591180f0bba85ece942c9f` passes 246 complete tests, hosted contracts, scoped lint/format/whitespace and both locked KiCad 10.0.6 current-source regressions in run `37071729309`. See `stabilization_8675431f_ci.json` and the complete production/runner/lock freeze `final_source_8675431f.json`. Start new base, I1–I6 and six-class structural roots on this identical production source. Transfer actual structural renders automatically after a successful five-run structural job. All coverage, fresh qualification, render inspection and final audits remain open.
+
+Fresh qualification head `ada198a39b6fc8f652793f9444393276619f7984` passes full fast validation (`37089782363`). The audit workflow now targets exact base run `37089782367`, I1–I6 run `37089782393` and structural run `37089782376`, all new roots on frozen production source `8675431f`. These jobs are pending/running; the audit is not dispatched and no qualification checkbox is completed until actual accepted evidence is reconciled.
