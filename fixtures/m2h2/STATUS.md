@@ -225,3 +225,7 @@ M2h2 remains **INCOMPLETE**. Source `beb50458` passed 241 complete tests, six I3
 ## Restabilized source — 2026-10-03
 
 Source `8675431f76594fd51c591180f0bba85ece942c9f` passes all 246 tests and both locked KiCad 10.0.6 V6-3/DP2 regressions in run `37071729309`; static checks and hosted contracts also pass. Evidence: `finalization_checks/stabilization_8675431f_ci.json`. The render-driven label, timer-exit and complete-row placement fixes require fresh base 56 x5, I1–I6 x5 and actual structural-class qualification. New qualification roots are started against frozen identical production source; M2h2 remains **INCOMPLETE** pending coverage reconciliation, render inspection and final audits.
+
+### Current finalization repair — 2026-10-03
+
+M2h2 remains **INCOMPLETE**. Fresh `ada198a` interaction qualification finds three five-run label/body regressions, with exact reports preserved in artifact `11262462251` and inspection run `37090552267`. Measured on-conductor gateway label clearance and three targeted real-tool regressions are under current-source validation. Existing final qualification roots are preserved but non-final after this behavior change. The governing gates, electrical topology, frozen probes and historical evidence are unchanged.

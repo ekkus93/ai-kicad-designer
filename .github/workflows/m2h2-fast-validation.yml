@@ -272,6 +272,14 @@ jobs:
           python tools/run_m2h2_current_regressions.py
           --out fixtures/m2h2/development_checks/ci_current_regressions_${{ github.sha }}
 
+      - name: M2h2 connector-label five-run regressions
+        run: |
+          export PYTHONPATH=src:tools
+          root="fixtures/m2h2/development_checks/ci_current_regressions_${GITHUB_SHA}/connector_labels"
+          python tools/run_m2h2_i1.py --group i3 --only three_amplifier_one_band --out "$root/three_amplifier"
+          python tools/run_m2h2_i1.py --group i5 --only c2_s3plus --out "$root/two_consumers"
+          python tools/run_m2h2_i1.py --group i5 --only c3_s1_2 --out "$root/three_consumers"
+
       - name: Upload M2h2 current-source regression evidence
         if: always()
         uses: actions/upload-artifact@v4
