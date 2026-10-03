@@ -27,23 +27,23 @@ A checkbox may be checked only from current-source evidence. Older qualification
 
 ## 1. Current-source baseline
 
-- [ ] Run current fast complete pytest baseline. Evidence: `fixtures/m2h2/finalization_checks/stabilization_1273d6af_ci.json`, source `1273d6af219475db5fc804d487d06e8fb6fa8c69`, run `37124948961`, locked job `111208242107`, 270 passed in 146.58s.
-- [ ] Run scoped Ruff lint. Evidence: `fixtures/m2h2/finalization_checks/stabilization_1273d6af_ci.json`, static job `111208241942`.
-- [ ] Run scoped Ruff format check. Evidence: same exact-source static job.
-- [ ] Run `git diff --check` / applicable whitespace checks. Evidence: same static and locked jobs.
-- [ ] Confirm fresh V6-3 one-run real-tool regression. Evidence: `fixtures/m2h2/finalization_checks/stabilization_1273d6af_ci.json`, accepted V6-3 build; complete signature archived in artifact `11275495312`.
-  - [ ] locked KiCad 10.0.6; evidence: locked regression runner reports no version errors.
-  - [ ] independent electrical observation; evidence: accepted regression validates electrical status and diagnostics.
-  - [ ] zero unexpected ERC; evidence: accepted regression validates independent ERC report.
-  - [ ] serialized-scene verification; evidence: accepted regression validates obligation certificate.
-  - [ ] canonical VREF <= 250 mm; evidence: accepted regression validates single canonical VREF graph and unchanged length gate.
-- [ ] Confirm fresh DP2 one-run real-tool regression. Evidence: `fixtures/m2h2/finalization_checks/stabilization_1273d6af_ci.json`, accepted DP2 build; complete signature archived in artifact `11275495312`.
-  - [ ] no external VREF connector; evidence: regression explicitly validates reference connector inventory.
-  - [ ] two NE5532 packages; evidence: regression validates exact package count.
-  - [ ] all required reference consumers connected; evidence: regression requires one canonical reference component and nine terminals.
-  - [ ] independent electrical observation; evidence: accepted electrical status with no diagnostics.
-  - [ ] zero unexpected ERC; evidence: accepted independent ERC report.
-  - [ ] canonical VREF <= 250 mm; evidence: accepted canonical reference graph/length checks.
+- [x] Run current fast complete pytest baseline. Evidence: `fixtures/m2h2/finalization_checks/stabilization_f161672f_ci.json`, source `f161672f761559e0e8ae7294f1c4df39fa24bebb`, run `37127192673`, locked job `111214831140`, 271 passed in 145.14s.
+- [x] Run scoped Ruff lint. Evidence: `fixtures/m2h2/finalization_checks/stabilization_f161672f_ci.json`, static job `111214830860`.
+- [x] Run scoped Ruff format check. Evidence: same exact-source static job.
+- [x] Run `git diff --check` / applicable whitespace checks. Evidence: same static and locked jobs.
+- [x] Confirm fresh V6-3 one-run real-tool regression. Evidence: `fixtures/m2h2/finalization_checks/stabilization_f161672f_ci.json`, accepted V6-3 build; complete signature archived in artifact `11275239169`.
+  - [x] locked KiCad 10.0.6; evidence: locked regression runner reports no version errors.
+  - [x] independent electrical observation; evidence: accepted regression validates electrical status and diagnostics.
+  - [x] zero unexpected ERC; evidence: accepted regression validates independent ERC report.
+  - [x] serialized-scene verification; evidence: accepted regression validates obligation certificate.
+  - [x] canonical VREF <= 250 mm; evidence: accepted regression validates single canonical VREF graph and unchanged length gate.
+- [x] Confirm fresh DP2 one-run real-tool regression. Evidence: `fixtures/m2h2/finalization_checks/stabilization_f161672f_ci.json`, accepted DP2 build; complete signature archived in artifact `11275239169`.
+  - [x] no external VREF connector; evidence: regression explicitly validates reference connector inventory.
+  - [x] two NE5532 packages; evidence: regression validates exact package count.
+  - [x] all required reference consumers connected; evidence: regression requires one canonical reference component and nine terminals.
+  - [x] independent electrical observation; evidence: accepted electrical status with no diagnostics.
+  - [x] zero unexpected ERC; evidence: accepted independent ERC report.
+  - [x] canonical VREF <= 250 mm; evidence: accepted canonical reference graph/length checks.
 
 ## 2. Obligation-complete certificate audit and implementation
 
@@ -144,12 +144,12 @@ A checkbox may be checked only from current-source evidence. Older qualification
 
 ### 6.1 Coverage infrastructure
 
-- [ ] Freeze final-source interaction runner/tool hashes. Evidence: `fixtures/m2h2/finalization_checks/final_source_1273d6af.json`, 19 production modules, four qualification runners and three locks; no cell qualification credit.
-- [ ] Coverage result records actual observed structural class, not requested factor labels only. Evidence: `tools/run_m2h2_i1.py::observed_structural_class` derives the selected seed/round, placement class, and proved structure from composition evidence and records only a five-run-stable observed class; `tests/test_m2h2_interaction_runner.py::test_observed_structural_class_uses_selected_run_evidence_not_requested_label` passed in exact-head GitHub Actions run `36517979598`, job `M2h2 contract pytest on hosted runner` (`109244434910`) at `0e6f29f42f8772af20f7ba1eae3929a93c37d162`.
-- [ ] Every covered cell links to real-tool qualification evidence. Evidence: `tools/run_m2h2_i1.py::validate_coverage_ledger_evidence` requires every covered cell to include `real_tool_qualification_evidence` with schema `m2h2.real-tool-evidence.1`, locked KiCad 10.0.6, exact source head, qualification root/results path, case ID, and nonempty run paths; `tests/test_m2h2_interaction_runner.py::test_current_coverage_ledger_has_no_invalid_evidence_records` and `tests/test_m2h2_interaction_runner.py::test_covered_cells_require_real_tool_evidence_not_parse_or_generation_only` passed in exact-head GitHub Actions run `36560904459`, job `M2h2 contract pytest on hosted runner` (`109381262073`) at `239c7d4afe86f78f955f6524b8aeb050a5b5a0bd`.
-- [ ] Impossible cells require semantic impossibility witnesses, not layout failures. Evidence: `tools/run_m2h2_i1.py::validate_coverage_ledger_impossibilities` requires unsupported cells to include a semantic witness with schema `m2h2.semantic-impossibility.1`, kind `semantic_impossibility`, semantic source, and proof text while rejecting layout/build/routing/tool failure keys; `tests/test_m2h2_interaction_runner.py::test_unsupported_cells_require_semantic_impossibility_not_layout_failure` passed in exact-head GitHub Actions run `36560904459`, job `M2h2 contract pytest on hosted runner` (`109381262073`) at `239c7d4afe86f78f955f6524b8aeb050a5b5a0bd`.
+- [x] Freeze final-source interaction runner/tool hashes. Evidence: `fixtures/m2h2/finalization_checks/final_source_f161672f.json`, 19 production modules, four qualification runners and three locks; no cell qualification credit.
+- [x] Coverage result records actual observed structural class, not requested factor labels only. Evidence: `tools/run_m2h2_i1.py::observed_structural_class` derives the selected seed/round, placement class, and proved structure from composition evidence and records only a five-run-stable observed class; `tests/test_m2h2_interaction_runner.py::test_observed_structural_class_uses_selected_run_evidence_not_requested_label` passed in exact-head GitHub Actions run `36517979598`, job `M2h2 contract pytest on hosted runner` (`109244434910`) at `0e6f29f42f8772af20f7ba1eae3929a93c37d162`.
+- [x] Every covered cell links to real-tool qualification evidence. Evidence: `tools/run_m2h2_i1.py::validate_coverage_ledger_evidence` requires every covered cell to include `real_tool_qualification_evidence` with schema `m2h2.real-tool-evidence.1`, locked KiCad 10.0.6, exact source head, qualification root/results path, case ID, and nonempty run paths; `tests/test_m2h2_interaction_runner.py::test_current_coverage_ledger_has_no_invalid_evidence_records` and `tests/test_m2h2_interaction_runner.py::test_covered_cells_require_real_tool_evidence_not_parse_or_generation_only` passed in exact-head GitHub Actions run `36560904459`, job `M2h2 contract pytest on hosted runner` (`109381262073`) at `239c7d4afe86f78f955f6524b8aeb050a5b5a0bd`.
+- [x] Impossible cells require semantic impossibility witnesses, not layout failures. Evidence: `tools/run_m2h2_i1.py::validate_coverage_ledger_impossibilities` requires unsupported cells to include a semantic witness with schema `m2h2.semantic-impossibility.1`, kind `semantic_impossibility`, semantic source, and proof text while rejecting layout/build/routing/tool failure keys; `tests/test_m2h2_interaction_runner.py::test_unsupported_cells_require_semantic_impossibility_not_layout_failure` passed in exact-head GitHub Actions run `36560904459`, job `M2h2 contract pytest on hosted runner` (`109381262073`) at `239c7d4afe86f78f955f6524b8aeb050a5b5a0bd`.
 
-- [ ] Reject one-run, repeated-run, empty-run-link, and non-SHA coverage records. Evidence: `tests/test_m2h2_interaction_runner.py::test_real_tool_coverage_rejects_incomplete_or_repeated_runs` (five parameterized negatives), current-source hosted contract job `110976476137`, run `37048718582` at `465248ba47fe0d124ecd7997f2cdf898095b1d35`.
+- [x] Reject one-run, repeated-run, empty-run-link, and non-SHA coverage records. Evidence: `tests/test_m2h2_interaction_runner.py::test_real_tool_coverage_rejects_incomplete_or_repeated_runs` (five parameterized negatives), current-source hosted contract job `110976476137`, run `37048718582` at `465248ba47fe0d124ecd7997f2cdf898095b1d35`.
 
 ### 6.2 I1
 
@@ -202,13 +202,13 @@ A checkbox may be checked only from current-source evidence. Older qualification
 
 ## 7. Source stabilization
 
-- [ ] Finish the identified behavior-affecting repair. Evidence: `fixtures/m2h2/finalization_checks/source_review_1273d6af.json`, current complete tests and locked regressions. Reopen on any fresh qualification/native falsification.
-- [ ] Complete pytest passes. Evidence: `fixtures/m2h2/finalization_checks/stabilization_1273d6af_ci.json`, exact source `1273d6af219475db5fc804d487d06e8fb6fa8c69`, 270 passed.
-- [ ] Scoped Ruff lint passes. Evidence: same exact-source static job `111208241942`.
-- [ ] Scoped Ruff format check passes. Evidence: same exact-source static job.
-- [ ] `git diff --check` passes. Evidence: same static and locked jobs.
+- [x] Finish the identified behavior-affecting repair. Evidence: `fixtures/m2h2/finalization_checks/source_review_f161672f.json`, current complete tests and locked regressions. Reopen on any fresh qualification/native falsification.
+- [x] Complete pytest passes. Evidence: `fixtures/m2h2/finalization_checks/stabilization_f161672f_ci.json`, exact source `f161672f761559e0e8ae7294f1c4df39fa24bebb`, 271 passed.
+- [x] Scoped Ruff lint passes. Evidence: same exact-source static job `111214830860`.
+- [x] Scoped Ruff format check passes. Evidence: same exact-source static job.
+- [x] `git diff --check` passes. Evidence: same static and locked jobs.
 - [ ] Applicable whitespace/link checks passes. Scoped whitespace passes; final evidence-link audit remains required.
-- [ ] Record stabilized final source hashes. Evidence: `fixtures/m2h2/finalization_checks/final_source_1273d6af.json`, all 19 production modules, four qualification runners and three locks.
+- [x] Record stabilized final source hashes. Evidence: `fixtures/m2h2/finalization_checks/final_source_f161672f.json`, all 19 production modules, four qualification runners and three locks.
 - [ ] Create fresh qualification root tied to exact stabilized source. Trigger requests separate exact producer-SHA roots for all 56 positives, 72 interactions and nine structural cases. Verify actual workflow roots before closing.
 - [ ] Confirm no behavior-affecting source changes after final qualification starts.
 
@@ -449,3 +449,10 @@ Run `37125376457`, job `111209500807`, completed successfully on qualification p
 The source-1273 structural `a3_one` native SVG, obtained through run `37126310097` from successful five-run qualification `37125376451`, places `C5.Value=10u` across the locked KiCad worksheet title-block border. Exact native bytes and measured coordinates are preserved in `fixtures/m2h2/finalization_checks/worksheet_native_falsification_2026-10-03.json` and its referenced SVG. Engineering inspection therefore falsifies the prior candidate despite accepted/reproducible machine results. Current-source baseline/freeze, qualification and inspection gates are reopened.
 
 The repair preserves the original packing origin for unaffected layouts and translates only measured worksheet-colliding complete packings upward by a finite grid displacement. Composer and independent emitted-symbol observer reject worksheet overlap, including rotated passive fields and wires. No topology, spread, path, length, ERC or evidence gate is weakened. Fresh locked-KiCad qualification remains mandatory.
+
+
+## Worksheet-clear source freeze and fresh qualification — 2026-10-03
+
+Production source `f161672f761559e0e8ae7294f1c4df39fa24bebb` is stabilized: 271 complete locked-runner tests passed in 145.14s in run `37127192673`; static job `111214830860`, hosted contract job `111214831072`, locked job `111214831140` all succeeded. Locked real V6-3/DP2, four targeted ×5 probes, true whole-layout `a3_one` ×5, and additional regressions passed. Exact current evidence: `fixtures/m2h2/finalization_checks/stabilization_f161672f_ci.json`; all 19 source hashes, four runners and three locks: `fixtures/m2h2/finalization_checks/final_source_f161672f.json`; generic source review: `fixtures/m2h2/finalization_checks/source_review_f161672f.json`.
+
+Fresh 56-positive, 72-interaction and nine-structural five-run qualification is requested under separate roots tied to the new producer head. Older 5c7640a8 candidate success is historical falsification evidence, not final-source completion evidence. Native inspection must verify the repaired C5/title-block separation and all remaining engineering gates.

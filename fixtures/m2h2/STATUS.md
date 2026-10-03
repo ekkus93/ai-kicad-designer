@@ -287,3 +287,8 @@ Frozen production source `1273d6af219475db5fc804d487d06e8fb6fa8c69`, producer `5
 ### Native worksheet falsification and bounded page-placement repair (2026-10-03)
 
 M2h2 remains **INCOMPLETE**. Actual source-1273 `a3_one` native render falsifies engineering inspection: the title-block top border crosses `C5.Value=10u`. See `fixtures/m2h2/finalization_checks/worksheet_native_falsification_2026-10-03.json`. Preserve successful interaction run `37125376457` and structural run `37125376451` as historical candidate evidence; neither qualifies the repaired final source. New generic finite page translation and independent worksheet collision gates require fresh baseline, all five-run qualification and inspection. No corpus.v7 or M3 work is started.
+
+
+### Worksheet-clear stabilized source (2026-10-03)
+
+Production `f161672f761559e0e8ae7294f1c4df39fa24bebb` passes current complete locked-runner baseline `37127192673`: 271 tests, source V6-3/DP2, targeted five-run probes, actual whole-layout one-band ×5 and additional real KiCad regressions. Source/runner/lock freeze and exact CI evidence are in `finalization_checks/final_source_f161672f.json`, `stabilization_f161672f_ci.json` and `source_review_f161672f.json`. Fresh full qualification is requested. M2h2 remains **INCOMPLETE** pending final-source five-run base/interaction/structural qualification, independent artifact audit, measured coverage reconciliation and native inspection.
