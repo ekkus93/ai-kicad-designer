@@ -181,11 +181,44 @@ def graph_distances(segments, source, terminals):
     return distances
 
 
+def conductor_accounting(canonical, proposed_global, reported_length, pruned_count):
+    """Charge only emitted intervals; router proposals can have pruned leaves."""
+    full = union_length(canonical)
+    if full != reported_length:
+        raise ValueError("canonical length differs from independent interval union")
+    proposed = union_length(proposed_global)
+    # Inclusion/exclusion gives the interval intersection without trusting route
+    # provenance or charging proposal-only leaves as emitted conductor.
+    emitted_global = full + proposed - union_length(canonical + proposed_global)
+    removed = proposed - emitted_global
+    if removed and not pruned_count:
+        raise ValueError("proposal-only conductor has no pruning witness")
+    return {
+        "canonical_union_nm": full,
+        "global_union_nm": emitted_global,
+        "local_residual_nm": full - emitted_global,
+        "proposed_global_union_nm": proposed,
+        "pruned_proposal_union_nm": removed,
+        "pruned_leaf_count": pruned_count,
+        "accounting": "emitted global intersection charged first; local residual excludes shared intervals; pruned router proposals are reported separately",
+    }
+
+
+def verify_emitted_conductors(canonical_trees, observed_wires):
+    def normalized(segments):
+        return sorted(tuple(sorted(tuple(point) for point in segment)) for segment in segments)
+
+    canonical = [segment for tree in canonical_trees for segment in tree["segments"]]
+    if normalized(canonical) != normalized(observed_wires):
+        raise ValueError("canonical conductor inventory differs from emitted schematic bytes")
+
+
 def case_detail(group, case_id, signature, directory, design_path):
     composition = signature["composition"]
     layout = signature["layout"]
     schematic = next((directory / "project").glob("*.kicad_sch"))
     observed = observe(schematic, directory / "reports/netlist.xml")
+    verify_emitted_conductors(composition["canonical_trees"], observed["wires"])
     design = json.loads(design_path.read_text())
     refs = {part["id"]: part["refdes"] for part in design["components"]}
     obligations = composition["obligation_certificate"]["semantic_obligations"]
@@ -198,10 +231,13 @@ def case_detail(group, case_id, signature, directory, design_path):
             if route["net"] == tree["net"]
             for segment in route["segments"]
         ]
-        full = union_length(tree["segments"])
-        global_length = union_length(global_segments)
-        if full != tree["length_nm"] or union_length(tree["segments"] + global_segments) != full:
-            raise ValueError(f"{group}/{case_id}: invalid conductor accounting")
+        accounting = conductor_accounting(
+            tree["segments"],
+            global_segments,
+            tree["length_nm"],
+            layout.get("pruned_route_leaves", {}).get(tree["net"], 0),
+        )
+        full = accounting["canonical_union_nm"]
         role = roles.get(tree["net"], {})
         points = {
             tuple(observed["pin_positions"][(refs[component], pin)])
@@ -238,10 +274,7 @@ def case_detail(group, case_id, signature, directory, design_path):
         lengths.append(
             {
                 "net": tree["net"],
-                "canonical_union_nm": full,
-                "global_union_nm": global_length,
-                "local_residual_nm": full - global_length,
-                "accounting": "global union charged first; local residual excludes shared intervals",
+                **accounting,
                 "terminal_count": len(points),
                 "terminal_bbox_lower_bound_nm": lower if explicit else None,
                 "routed_to_bound_ratio": full / lower if explicit and lower else None,

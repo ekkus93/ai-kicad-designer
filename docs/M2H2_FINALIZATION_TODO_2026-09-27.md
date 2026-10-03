@@ -463,3 +463,8 @@ Fresh 56-positive, 72-interaction and nine-structural five-run qualification is 
 `fixtures/m2h2/finalization_checks/structural_585a4f7c_ci_inspection.json` records successful run `37127602956`: all nine actual structural alternatives × five fresh locked-KiCad builds, plus exact native SVG SHA-256 verification and engineering/agent inspection of every structural scene. Actual new `a3_one` C5 value is clear of the worksheet border; all-noninterface one-band evidence remains distinct from core-only three-amplifier evidence. Full base/interaction coverage, remaining renders and final independent audit are still pending.
 
 Final audit workflow inputs are repointed to the live producer `585a4f7c96b185c3a4e9db73fa13960388ea411b`, base run `37127602948`, interaction run `37127602933`, structural run `37127602956`. The final audit will be triggered only after all three succeed; no pending evidence gate is closed by preparation.
+
+
+### Independent final artifact accounting repair — 2026-10-03
+
+Fresh 56×5 base qualification passes at producer `585a4f7c96b185c3a4e9db73fa13960388ea411b`; V6-3 VREF is 196.85 mm. Final audit run `37129407515` falsified an audit-only assumption that pre-pruning router proposals were all emitted: V6-8 legitimately removes a 1.27 mm leaf and emits a 242.57 mm canonical tree. `fixtures/m2h2/finalization_checks/artifact_accounting_falsification_585a4f7c.json` preserves the witness. The corrected audit charges emitted interval intersections and independently compares canonical wires with emitted schematic bytes. Production and all four qualification runner hashes remain frozen; final audit, coverage, native inspection and milestone gates remain open.
