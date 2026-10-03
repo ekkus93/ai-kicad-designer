@@ -27,17 +27,17 @@ A checkbox may be checked only from current-source evidence. Older qualification
 
 ## 1. Current-source baseline
 
-- [ ] Run current fast complete pytest baseline. Evidence: `fixtures/m2h2/finalization_checks/stabilization_f161672f_ci.json`, source `f161672f761559e0e8ae7294f1c4df39fa24bebb`, run `37127192673`, locked job `111214831140`, 271 passed in 145.14s. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
+- [x] Run current fast complete pytest baseline. Evidence: `fixtures/m2h2/finalization_checks/stabilization_79a36b17_ci.json`, producer `42ab8452`, complete 283-test locked validation and accepted real-tool regressions.
 - [x] Run scoped Ruff lint. Evidence: `fixtures/m2h2/finalization_checks/stabilization_f161672f_ci.json`, static job `111214830860`.
 - [x] Run scoped Ruff format check. Evidence: same exact-source static job.
 - [x] Run `git diff --check` / applicable whitespace checks. Evidence: same static and locked jobs.
-- [ ] Confirm fresh V6-3 one-run real-tool regression. Evidence: `fixtures/m2h2/finalization_checks/stabilization_f161672f_ci.json`, accepted V6-3 build; complete signature archived in artifact `11275239169`. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
+- [x] Confirm fresh V6-3 one-run real-tool regression. Evidence: `fixtures/m2h2/finalization_checks/stabilization_79a36b17_ci.json`, producer `42ab8452`, complete 283-test locked validation and accepted real-tool regressions.
   - [x] locked KiCad 10.0.6; evidence: locked regression runner reports no version errors.
   - [x] independent electrical observation; evidence: accepted regression validates electrical status and diagnostics.
   - [x] zero unexpected ERC; evidence: accepted regression validates independent ERC report.
   - [x] serialized-scene verification; evidence: accepted regression validates obligation certificate.
   - [x] canonical VREF <= 250 mm; evidence: accepted regression validates single canonical VREF graph and unchanged length gate.
-- [ ] Confirm fresh DP2 one-run real-tool regression. Evidence: `fixtures/m2h2/finalization_checks/stabilization_f161672f_ci.json`, accepted DP2 build; complete signature archived in artifact `11275239169`. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
+- [x] Confirm fresh DP2 one-run real-tool regression. Evidence: `fixtures/m2h2/finalization_checks/stabilization_79a36b17_ci.json`, producer `42ab8452`, complete 283-test locked validation and accepted real-tool regressions.
   - [x] no external VREF connector; evidence: regression explicitly validates reference connector inventory.
   - [x] two NE5532 packages; evidence: regression validates exact package count.
   - [x] all required reference consumers connected; evidence: regression requires one canonical reference component and nine terminals.
@@ -203,7 +203,7 @@ A checkbox may be checked only from current-source evidence. Older qualification
 ## 7. Source stabilization
 
 - [ ] Finish the identified behavior-affecting repair. Evidence: `fixtures/m2h2/finalization_checks/source_review_f161672f.json`, current complete tests and locked regressions. Reopen on any fresh qualification/native falsification. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
-- [ ] Complete pytest passes. Evidence: `fixtures/m2h2/finalization_checks/stabilization_f161672f_ci.json`, exact source `f161672f761559e0e8ae7294f1c4df39fa24bebb`, 271 passed. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
+- [x] Complete pytest passes. Evidence: `fixtures/m2h2/finalization_checks/stabilization_79a36b17_ci.json`, producer `42ab8452`, complete 283-test locked validation and accepted real-tool regressions.
 - [x] Scoped Ruff lint passes. Evidence: same exact-source static job `111214830860`.
 - [x] Scoped Ruff format check passes. Evidence: same exact-source static job.
 - [x] `git diff --check` passes. Evidence: same static and locked jobs.
@@ -256,7 +256,7 @@ Prior machine evidence, invalidated for final-source qualification by the requir
 
 ## 11. Final audits
 
-- [ ] Complete pytest passes on final source.
+- [x] Complete pytest passes on final source. Evidence: `fixtures/m2h2/finalization_checks/stabilization_79a36b17_ci.json`, producer `42ab8452`, complete 283-test locked validation and accepted real-tool regressions.
 - [ ] Scoped Ruff lint passes.
 - [ ] Scoped Ruff format check passes.
 - [ ] `git diff --check` passes.
@@ -483,6 +483,4 @@ Before accepting new qualification, the independent worksheet observer was corre
 
 Production observer closure is frozen at `79a36b173c6c82a68cbe575cc1d666c55d2296b3`. All 13 targeted long-field/worksheet/accounting tests pass; the positive synthetic observation fixture was completed with its actual visible properties after exposing missing test metadata. Fresh qualification runs are authoritative only after completion and new native review. `fixtures/m2h2/finalization_checks/final_source_79a36b17.json` records all 19 final production hashes, unchanged four runners and unchanged three locks.
 
-### Fresh frozen-source qualification — 2026-10-03
-
-Producer `42ab8452fca16592ead8f628b17980a9d34794b7` on production source `79a36b173c6c82a68cbe575cc1d666c55d2296b3` completed base 56×5 (`37132185217`), interactions 72×5 (`37132185171`), structural alternatives 9×5 (`37132185186`), and complete fast validation (`37132185188`) successfully. The independent artifact audit now targets these exact fresh roots. Native engineering review and actual cell/triple reconciliation remain open; successful job conclusions alone do not close them.
+Current-source revalidation for preserved test/oracle/repair and static-check references: `fixtures/m2h2/finalization_checks/stabilization_79a36b17_ci.json`, all 283 tests, hosted contracts, scoped lint/format/diff/whitespace and structural audit pass on the final 19-module freeze. Native/render/coverage/final audit gates remain open.
