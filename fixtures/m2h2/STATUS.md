@@ -229,3 +229,7 @@ Source `8675431f76594fd51c591180f0bba85ece942c9f` passes all 246 tests and both 
 ### Current finalization repair — 2026-10-03
 
 M2h2 remains **INCOMPLETE**. Fresh `ada198a` interaction qualification finds three five-run label/body regressions, with exact reports preserved in artifact `11262462251` and inspection run `37090552267`. Measured on-conductor gateway label clearance and three targeted real-tool regressions are under current-source validation. Existing final qualification roots are preserved but non-final after this behavior change. The governing gates, electrical topology, frozen probes and historical evidence are unchanged.
+
+### Power/packing source restabilized — 2026-10-03
+
+M2h2 remains **INCOMPLETE**. Production `1397637d0fe51e5dfcf46038ec34d9a65e910173` passes full locked validation `37094984816`: 255 tests, all static/hosted checks, V6-3/DP2, three connector-label cases x5, and all six targeted real-tool regressions including V6-8 and the shared-rail case. The unconnected endpoint is resolved with actual scope-correct power labels and the snapped package-envelope overlap is repaired; ERC and independent observation remain enforced. See `finalization_checks/stabilization_1397637d_ci.json` and exact source freeze `finalization_checks/final_source_1397637d.json`. Fresh base, interaction and structural five-run qualification is required; historical failed candidates remain preserved and non-final.
