@@ -129,7 +129,12 @@ def _clear_nonpassive_text(design: dict, resolved: dict[str, Asset], draft: Draf
     components = {component["id"]: component for component in design["components"]}
     for key in sorted(draft.text_positions):
         component = components.get(key[0])
-        if component is None or component["asset"] in {"Device:C", "Device:R"}:
+        if component is None:
+            continue
+        if (
+            component["asset"] in {"Device:C", "Device:R"}
+            and max(len(component["refdes"]), len(component["value"])) <= 4
+        ):
             continue
         sx, sy = draft.positions[key]
         tx, ty = draft.text_positions[key]

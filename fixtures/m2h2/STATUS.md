@@ -5,7 +5,11 @@ Development probes and their expectations remain frozen in `development/`.
 Historical blind evidence is unchanged. Do not interpret the evidence below as
 final qualification of the current worktree.
 
-## Current implementation slice — 2026-10-02
+## Native long-field falsification — 2026-10-03
+
+M2h2 remains **INCOMPLETE**. Producer `585a4f7c96b185c3a4e9db73fa13960388ea411b` completed 56×5 base, 72×5 interaction, structural9×5 and independent machine audit, but native I6 long-field inspection found long rotated resistor values overlapping their bodies/references. The preserved candidate is falsified for final readability. The production repair adds measured long-passive text clearance, explicit field orientation, and independent long-passive body checks. Relevant TODO checks are reopened; all final-source qualification and render gates must be repeated. Exact native evidence: `finalization_checks/long_passive_field_falsification_585a4f7c.json`; complete archives: `final_native_585a4f7c/` and `final_audit_585a4f7c/`. No hard gate, topology, ERC requirement, or historical evidence is weakened.
+
+## Historical implementation slice — 2026-10-02
 
 Source `465248ba47fe0d124ecd7997f2cdf898095b1d35` adds terminal-backed external signal-source precedence
 when a net has signal inputs and no internal signal producer or reference/supply

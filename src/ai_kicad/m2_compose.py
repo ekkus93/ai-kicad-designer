@@ -1508,6 +1508,14 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
             metrics,
             draft.angles,
             draft.text_positions,
+            {
+                (component["id"], unit): angle
+                for component in design["components"]
+                if component["asset"] in {"Device:R", "Device:C"}
+                and max(len(component["refdes"]), len(component["value"])) > 4
+                for (cid, unit), angle in draft.angles.items()
+                if cid == component["id"] and angle % 180
+            },
         )
     )
     scene = certify_scene_inputs(

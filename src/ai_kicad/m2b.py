@@ -1789,7 +1789,12 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
                 half = max(635_000, displayed_length * 445_000)
                 dx, dy = (850_000, half) if int(field_at[3]) % 180 else (half, 850_000)
                 worksheet_fields.append((fx - dx, fy - dy, fx + dx, fy + dy))
-        if lib not in {"Device:R", "Device:C", "power:PWR_FLAG"}:
+        long_passive = lib in {"Device:R", "Device:C"} and any(
+            len(prop[2]) > 4
+            for prop in children(symbol, "property")
+            if prop[1] in {"Reference", "Value"}
+        )
+        if lib not in {"Device:R", "Device:C", "power:PWR_FLAG"} or long_passive:
             for prop in children(symbol, "property"):
                 if prop[1] not in {"Reference", "Value"}:
                     continue
@@ -1804,9 +1809,10 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
                     else 0
                 )
                 half = max(635_000, displayed_length * 445_000)
-                required_fields.append(
-                    (ref, prop[1], (fx - half, fy - 850_000, fx + half, fy + 850_000))
-                )
+                # KiCad rotates passive property glyphs relative to their symbol.
+                native_angle = int(field_at[3]) - (angle if long_passive else 0)
+                dx, dy = (850_000, half) if native_angle % 180 else (half, 850_000)
+                required_fields.append((ref, prop[1], (fx - dx, fy - dy, fx + dx, fy + dy)))
         boxes = [box for key, box in bodies.items() if key[0] == lib and key[1] in (0, unit)]
         if boxes:
             left, top, right, bottom = (

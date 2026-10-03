@@ -27,17 +27,17 @@ A checkbox may be checked only from current-source evidence. Older qualification
 
 ## 1. Current-source baseline
 
-- [x] Run current fast complete pytest baseline. Evidence: `fixtures/m2h2/finalization_checks/stabilization_f161672f_ci.json`, source `f161672f761559e0e8ae7294f1c4df39fa24bebb`, run `37127192673`, locked job `111214831140`, 271 passed in 145.14s.
+- [ ] Run current fast complete pytest baseline. Evidence: `fixtures/m2h2/finalization_checks/stabilization_f161672f_ci.json`, source `f161672f761559e0e8ae7294f1c4df39fa24bebb`, run `37127192673`, locked job `111214831140`, 271 passed in 145.14s. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
 - [x] Run scoped Ruff lint. Evidence: `fixtures/m2h2/finalization_checks/stabilization_f161672f_ci.json`, static job `111214830860`.
 - [x] Run scoped Ruff format check. Evidence: same exact-source static job.
 - [x] Run `git diff --check` / applicable whitespace checks. Evidence: same static and locked jobs.
-- [x] Confirm fresh V6-3 one-run real-tool regression. Evidence: `fixtures/m2h2/finalization_checks/stabilization_f161672f_ci.json`, accepted V6-3 build; complete signature archived in artifact `11275239169`.
+- [ ] Confirm fresh V6-3 one-run real-tool regression. Evidence: `fixtures/m2h2/finalization_checks/stabilization_f161672f_ci.json`, accepted V6-3 build; complete signature archived in artifact `11275239169`. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
   - [x] locked KiCad 10.0.6; evidence: locked regression runner reports no version errors.
   - [x] independent electrical observation; evidence: accepted regression validates electrical status and diagnostics.
   - [x] zero unexpected ERC; evidence: accepted regression validates independent ERC report.
   - [x] serialized-scene verification; evidence: accepted regression validates obligation certificate.
   - [x] canonical VREF <= 250 mm; evidence: accepted regression validates single canonical VREF graph and unchanged length gate.
-- [x] Confirm fresh DP2 one-run real-tool regression. Evidence: `fixtures/m2h2/finalization_checks/stabilization_f161672f_ci.json`, accepted DP2 build; complete signature archived in artifact `11275239169`.
+- [ ] Confirm fresh DP2 one-run real-tool regression. Evidence: `fixtures/m2h2/finalization_checks/stabilization_f161672f_ci.json`, accepted DP2 build; complete signature archived in artifact `11275239169`. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
   - [x] no external VREF connector; evidence: regression explicitly validates reference connector inventory.
   - [x] two NE5532 packages; evidence: regression validates exact package count.
   - [x] all required reference consumers connected; evidence: regression requires one canonical reference component and nine terminals.
@@ -123,7 +123,7 @@ A checkbox may be checked only from current-source evidence. Older qualification
 - [x] Best rejected candidate and exact failure witness are preserved on every failure exit. Evidence: `tests/test_m2h2_repair_matrix.py::test_failure_exit_preserves_candidate_decisions_and_exact_failure_witness` forces every candidate to reject with a typed canonical-length conflict and verifies candidate decisions, failed metric, layout attempts, failure class, net, actual, and limit are preserved.
 - [x] Evidence reports meaningful structural/variant diversity, not raw attempt count only. Evidence: `tests/test_m2h2_repair_matrix.py::test_composition_evidence_reports_structural_diversity_not_raw_attempt_count` verifies seed structures, placement classes, proved structures, and proved-candidate structures in `compose_with_evidence`.
 - [ ] V6-3 remains <= 250 mm canonical VREF without gate change or label shortcut. Evidence: `fixtures/m2h2/finalization_checks/stabilization_1273d6af_ci.json`, fresh locked accepted regression.
-- [x] DP2 internal VREF remains connectorless, fully distributed, and <= 250 mm. Evidence: `fixtures/m2h2/finalization_checks/stabilization_1273d6af_ci.json`, fresh locked accepted regression.
+- [ ] DP2 internal VREF remains connectorless, fully distributed, and <= 250 mm. Evidence: `fixtures/m2h2/finalization_checks/stabilization_1273d6af_ci.json`, fresh locked accepted regression. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
 
 ## 5. Typed repair closure
 
@@ -144,7 +144,7 @@ A checkbox may be checked only from current-source evidence. Older qualification
 
 ### 6.1 Coverage infrastructure
 
-- [x] Freeze final-source interaction runner/tool hashes. Evidence: `fixtures/m2h2/finalization_checks/final_source_f161672f.json`, 19 production modules, four qualification runners and three locks; no cell qualification credit. Current-source revalidation: complete 271-test baseline `37127192673`, locked job `111214831140`, evidence `fixtures/m2h2/finalization_checks/stabilization_f161672f_ci.json`.
+- [ ] Freeze final-source interaction runner/tool hashes. Evidence: `fixtures/m2h2/finalization_checks/final_source_f161672f.json`, 19 production modules, four qualification runners and three locks; no cell qualification credit. Current-source revalidation: complete 271-test baseline `37127192673`, locked job `111214831140`, evidence `fixtures/m2h2/finalization_checks/stabilization_f161672f_ci.json`. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
 - [x] Coverage result records actual observed structural class, not requested factor labels only. Evidence: `tools/run_m2h2_i1.py::observed_structural_class` derives the selected seed/round, placement class, and proved structure from composition evidence and records only a five-run-stable observed class; `tests/test_m2h2_interaction_runner.py::test_observed_structural_class_uses_selected_run_evidence_not_requested_label` passed in exact-head GitHub Actions run `36517979598`, job `M2h2 contract pytest on hosted runner` (`109244434910`) at `0e6f29f42f8772af20f7ba1eae3929a93c37d162`. Current-source revalidation: complete 271-test baseline `37127192673`, locked job `111214831140`, evidence `fixtures/m2h2/finalization_checks/stabilization_f161672f_ci.json`.
 - [x] Every covered cell links to real-tool qualification evidence. Evidence: `tools/run_m2h2_i1.py::validate_coverage_ledger_evidence` requires every covered cell to include `real_tool_qualification_evidence` with schema `m2h2.real-tool-evidence.1`, locked KiCad 10.0.6, exact source head, qualification root/results path, case ID, and nonempty run paths; `tests/test_m2h2_interaction_runner.py::test_current_coverage_ledger_has_no_invalid_evidence_records` and `tests/test_m2h2_interaction_runner.py::test_covered_cells_require_real_tool_evidence_not_parse_or_generation_only` passed in exact-head GitHub Actions run `36560904459`, job `M2h2 contract pytest on hosted runner` (`109381262073`) at `239c7d4afe86f78f955f6524b8aeb050a5b5a0bd`. Current-source revalidation: complete 271-test baseline `37127192673`, locked job `111214831140`, evidence `fixtures/m2h2/finalization_checks/stabilization_f161672f_ci.json`.
 - [x] Impossible cells require semantic impossibility witnesses, not layout failures. Evidence: `tools/run_m2h2_i1.py::validate_coverage_ledger_impossibilities` requires unsupported cells to include a semantic witness with schema `m2h2.semantic-impossibility.1`, kind `semantic_impossibility`, semantic source, and proof text while rejecting layout/build/routing/tool failure keys; `tests/test_m2h2_interaction_runner.py::test_unsupported_cells_require_semantic_impossibility_not_layout_failure` passed in exact-head GitHub Actions run `36560904459`, job `M2h2 contract pytest on hosted runner` (`109381262073`) at `239c7d4afe86f78f955f6524b8aeb050a5b5a0bd`. Current-source revalidation: complete 271-test baseline `37127192673`, locked job `111214831140`, evidence `fixtures/m2h2/finalization_checks/stabilization_f161672f_ci.json`.
@@ -153,45 +153,45 @@ A checkbox may be checked only from current-source evidence. Older qualification
 
 ### 6.2 I1
 
-- [x] Qualify every required I1 cell on final source. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
-- [x] Qualify selected I1 triple(s). Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
+- [ ] Qualify every required I1 cell on final source. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
+- [ ] Qualify selected I1 triple(s). Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
 - [ ] Verify terminal/electrical/ERC/layout/path/order invariants.
 - [ ] Reconcile I1 covered cells in `development/interaction_coverage.json`.
 
 ### 6.3 I2
 
-- [x] Qualify every required I2 cell on final source. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
+- [ ] Qualify every required I2 cell on final source. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
 - [ ] Qualify selected I2 triple(s).
 - [ ] Verify internal-reference/parked/shunt-return obligations.
 - [ ] Reconcile I2 covered cells.
 
 ### 6.4 I3
 
-- [x] Qualify every required I3 electrical/path case on final source. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
+- [ ] Qualify every required I3 electrical/path case on final source. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
 - [ ] Qualify all required actual shelf/band structural classes.
-- [x] Re-run required structural alternatives on final source. Evidence: `fixtures/m2h2/finalization_checks/structural_585a4f7c_ci_inspection.json`, all nine cases ×5, source f161672f / producer 585a4f7c; actual class records and native SHA-verified agent review.
-- [x] Qualify selected I3 triple(s). Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
+- [ ] Re-run required structural alternatives on final source. Evidence: `fixtures/m2h2/finalization_checks/structural_585a4f7c_ci_inspection.json`, all nine cases ×5, source f161672f / producer 585a4f7c; actual class records and native SHA-verified agent review. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
+- [ ] Qualify selected I3 triple(s). Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
 - [ ] Reconcile I3 covered cells from actual class evidence.
 
 ### 6.5 I4
 
-- [x] Qualify every required I4 cell on final source. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
-- [x] Qualify selected I4 triple(s). Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
+- [ ] Qualify every required I4 cell on final source. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
+- [ ] Qualify selected I4 triple(s). Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
 - [ ] Verify unequal-consumer/cross-fragment/sibling-order invariants.
 - [ ] Reconcile I4 covered cells.
 
 ### 6.6 I5
 
-- [x] Qualify every required I5 cell on final source. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
-- [x] Qualify selected I5 triple(s). Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
+- [ ] Qualify every required I5 cell on final source. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
+- [ ] Qualify selected I5 triple(s). Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
 - [ ] Verify 3+ gateway distribution/multiple-shelf/restricted-entry invariants.
 - [ ] Reconcile I5 covered cells.
 
 ### 6.7 I6
 
-- [x] Qualify every required I6 shared-package/reference cell on final source. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
-- [x] Qualify required text-stress × support-count cells. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
-- [x] Qualify required text-stress × branch-degree cells. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
+- [ ] Qualify every required I6 shared-package/reference cell on final source. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
+- [ ] Qualify required text-stress × support-count cells. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
+- [ ] Qualify required text-stress × branch-degree cells. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
 - [ ] Reconcile I6 covered cells.
 
 ### 6.8 Coverage completion
@@ -202,13 +202,13 @@ A checkbox may be checked only from current-source evidence. Older qualification
 
 ## 7. Source stabilization
 
-- [x] Finish the identified behavior-affecting repair. Evidence: `fixtures/m2h2/finalization_checks/source_review_f161672f.json`, current complete tests and locked regressions. Reopen on any fresh qualification/native falsification.
-- [x] Complete pytest passes. Evidence: `fixtures/m2h2/finalization_checks/stabilization_f161672f_ci.json`, exact source `f161672f761559e0e8ae7294f1c4df39fa24bebb`, 271 passed.
+- [ ] Finish the identified behavior-affecting repair. Evidence: `fixtures/m2h2/finalization_checks/source_review_f161672f.json`, current complete tests and locked regressions. Reopen on any fresh qualification/native falsification. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
+- [ ] Complete pytest passes. Evidence: `fixtures/m2h2/finalization_checks/stabilization_f161672f_ci.json`, exact source `f161672f761559e0e8ae7294f1c4df39fa24bebb`, 271 passed. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
 - [x] Scoped Ruff lint passes. Evidence: same exact-source static job `111214830860`.
 - [x] Scoped Ruff format check passes. Evidence: same exact-source static job.
 - [x] `git diff --check` passes. Evidence: same static and locked jobs.
 - [ ] Applicable whitespace/link checks passes. Scoped whitespace passes; final evidence-link audit remains required.
-- [x] Record stabilized final source hashes. Evidence: `fixtures/m2h2/finalization_checks/final_source_f161672f.json`, all 19 production modules, four qualification runners and three locks.
+- [ ] Record stabilized final source hashes. Evidence: `fixtures/m2h2/finalization_checks/final_source_f161672f.json`, all 19 production modules, four qualification runners and three locks. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
 - [ ] Create fresh qualification root tied to exact stabilized source. Trigger requests separate exact producer-SHA roots for all 56 positives, 72 interactions and nine structural cases. Verify actual workflow roots before closing.
 - [ ] Confirm no behavior-affecting source changes after final qualification starts.
 
@@ -236,12 +236,12 @@ Prior machine evidence, invalidated for final-source qualification by the requir
 
 ## 9. Final interaction/stress qualification
 
-- [x] Run required final-source interaction qualification roots for I1–I6. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
+- [ ] Run required final-source interaction qualification roots for I1–I6. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
 - [ ] Run required selected triples.
-- [x] Run required final-source structural alternatives. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence and `fixtures/m2h2/finalization_checks/structural_585a4f7c_ci_inspection.json`.
-- [x] Run required long-field/stress derivatives. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
+- [ ] Run required final-source structural alternatives. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence and `fixtures/m2h2/finalization_checks/structural_585a4f7c_ci_inspection.json`. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
+- [ ] Run required long-field/stress derivatives. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
 - [ ] Five-run reproducibility passes for every governed interaction/stress case.
-- [x] No interaction/stress evidence relies solely on pre-final-source runs. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence.
+- [ ] No interaction/stress evidence relies solely on pre-final-source runs. Evidence: `fixtures/m2h2/finalization_checks/interaction_585a4f7c_ci.json`, current 72×5 locked KiCad evidence. Reopened: native long-passive-field falsification invalidates final-source credit; historical evidence remains preserved.
 
 ## 10. Engineering inspection
 
@@ -468,3 +468,7 @@ Final audit workflow inputs are repointed to the live producer `585a4f7c96b185c3
 ### Independent final artifact accounting repair — 2026-10-03
 
 Fresh 56×5 base qualification passes at producer `585a4f7c96b185c3a4e9db73fa13960388ea411b`; V6-3 VREF is 196.85 mm. Final audit run `37129407515` falsified an audit-only assumption that pre-pruning router proposals were all emitted: V6-8 legitimately removes a 1.27 mm leaf and emits a 242.57 mm canonical tree. `fixtures/m2h2/finalization_checks/artifact_accounting_falsification_585a4f7c.json` preserves the witness. The corrected audit charges emitted interval intersections and independently compares canonical wires with emitted schematic bytes. Production and all four qualification runner hashes remain frozen; final audit, coverage, native inspection and milestone gates remain open.
+
+## Native long-field falsification — 2026-10-03
+
+Fresh qualification producer `585a4f7c96b185c3a4e9db73fa13960388ea411b` passed machine checks, but native SVG inspection falsified required long-field readability. In I6 `text_long_branch_1`, `text_long_branch_2`, `text_long_branch_3`, and `text_long_support_0`, the long R1 value is rotated through the resistor body and overlaps its reference. The independent observer excluded passive fields from required-field/body checks and the planner represented these fields horizontally. Machine PASS is therefore insufficient. Full native SVGs and independent audit are preserved in `final_native_585a4f7c/part01.json`–`part10.json` and `final_audit_585a4f7c/part01.json`–`part04.json` under `fixtures/m2h2/finalization_checks/`. Exact counterexample references and proposed repair are in `fixtures/m2h2/finalization_checks/long_passive_field_falsification_585a4f7c.json`. Final qualification, stabilization, and relevant checklist items are reopened. No M2h2 PASS claim is made. Fresh 56×5, 72×5, structural9×5, artifact audit, and native inspection are required after the behavior change.
