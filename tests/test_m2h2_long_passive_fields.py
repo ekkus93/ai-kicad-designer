@@ -72,6 +72,22 @@ def test_compensated_horizontal_native_value_does_not_cross_worksheet(tmp_path):
         "pin_positions": {},
         "nets": {},
         "junctions": [],
-        "occurrences": {},
+        "occurrences": {
+            ("R1", 1): {
+                "lib": "Device:R",
+                "properties": {
+                    "Reference": {
+                        "position": (179_000_000, 157_460_000),
+                        "value": "R1",
+                        "hidden": False,
+                    },
+                    "Value": {
+                        "position": (179_000_000, 160_000_000),
+                        "value": "R12345678901234567890123",
+                        "hidden": False,
+                    },
+                },
+            }
+        },
     }
     check_observed_layout(schematic, observed, {"components": [], "relationships": []})
