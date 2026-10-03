@@ -13,9 +13,7 @@ from ai_kicad.m2_semantics import semantic_plan
 
 
 @pytest.mark.parametrize("obstacle", ["body", "label"])
-def test_emitted_net_label_overlap_is_rejected_independently(
-    tmp_path: Path, obstacle: str
-):
+def test_emitted_net_label_overlap_is_rejected_independently(tmp_path: Path, obstacle: str):
     schematic = tmp_path / "mutated.kicad_sch"
     schematic.write_text(
         "(kicad_sch "
@@ -59,9 +57,7 @@ def test_connector_access_labels_clear_owned_physical_bodies(case: str):
         for variant in choices:
             if variant.block.kind != "interface":
                 continue
-            bodies = [
-                item.rect for item in variant.occupied_geometry if item.kind == "body"
-            ]
+            bodies = [item.rect for item in variant.occupied_geometry if item.kind == "body"]
             for net, (x, y) in variant.labels:
                 # The serialized label is left-justified above its anchor. A
                 # connector's pin exit does not imply that this text is clear.
@@ -72,8 +68,6 @@ def test_connector_access_labels_clear_owned_physical_bodies(case: str):
                     for body in bodies
                 ), (variant.id, net, box, bodies)
             downward.extend(
-                gateway
-                for gateway in variant.gateways
-                if gateway.escape_direction == "down"
+                gateway for gateway in variant.gateways if gateway.escape_direction == "down"
             )
     assert downward, "the regression must exercise downward connector alternatives"
