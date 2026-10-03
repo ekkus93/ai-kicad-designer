@@ -64,5 +64,9 @@ jobs:
               records.append(record)
               print(json.dumps({'kind': 'm2h2.structural-render-audit.1', **record}, separators=(',', ':')), flush=True)
               render_chunks(root, 'structural__' + path.parent.name, path.parent)
-          assert len(records) == 6
+          required = {
+              'a0_multiple', 'a0_interleaved', 'a1_multiple', 'a1_interleaved',
+              'a2_one', 'a2_interleaved', 'three_amplifier_one_band', 'a3_interleaved',
+          }
+          assert len(records) == 8 and {record['case'] for record in records} == required
           PY
