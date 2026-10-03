@@ -1818,14 +1818,6 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
         )
         for net, point in observed["labels"]
     ]
-    for ref, box in rectangles:
-        if ref not in source_refs:
-            continue
-        for net, obstacle in label_boxes:
-            if max(box[0], obstacle[0]) < min(box[2], obstacle[2]) and max(
-                box[1], obstacle[1]
-            ) < min(box[3], obstacle[3]):
-                raise InputError(f"observed source glyph overlaps label: {ref}, {net}")
     for ref, field_name, box in required_fields:
         for owner, obstacle in rectangles + label_boxes:
             if max(box[0], obstacle[0]) < min(box[2], obstacle[2]) and max(
@@ -2263,6 +2255,15 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
         raise InputError("observed motif fragmentation")
     if any(span > 60 for span in support_spans):
         raise InputError("observed support component detached from consumer")
+    # Keep electrical falsification diagnostics ahead of source readability failures.
+    for ref, box in rectangles:
+        if ref not in source_refs:
+            continue
+        for net, obstacle in label_boxes:
+            if max(box[0], obstacle[0]) < min(box[2], obstacle[2]) and max(
+                box[1], obstacle[1]
+            ) < min(box[3], obstacle[3]):
+                raise InputError(f"observed source glyph overlaps label: {ref}, {net}")
     for index, (net, box) in enumerate(label_boxes):
         for owner, obstacle in visible_pin_numbers:
             if max(box[0], obstacle[0]) < min(box[2], obstacle[2]) and max(
