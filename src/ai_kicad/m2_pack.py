@@ -1047,7 +1047,16 @@ def _distribution_column_candidate(
         for second in items[index + 1 :]
     ):
         return None
-    return Packing(items, baseline.attempts + (f"distribution-column:{net.id}",))
+    width = max(item.content_envelope[2] for item in items) - min(
+        item.content_envelope[0] for item in items
+    )
+    height = max(item.content_envelope[3] for item in items) - min(
+        item.content_envelope[1] for item in items
+    )
+    return Packing(
+        items,
+        baseline.attempts + (f"distribution-column:{net.id}:pass:measured={width}x{height}",),
+    )
 
 
 def _measured_repack(

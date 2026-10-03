@@ -849,7 +849,7 @@ def route_between_fragments(
                                         ),
                                     )
                                 )
-                                if any(
+                                if net in shared_tree_nets and any(
                                     (
                                         trial_tree.degree.get(gateway.point, 0) < 2
                                         or trial_tree.degree.get(
