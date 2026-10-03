@@ -20,6 +20,46 @@ Rect = tuple[int, int, int, int]
 Direction = Literal["left", "right", "up", "down"]
 
 
+# Locked KiCad 10.0.6 uses the newstroke font at 1.27 mm for net labels.
+# Advance units are 1/21 of that height; reserve the 0.2032 mm stroke extent plus a 0.127 mm clear gap
+# so distinct labels remain visibly separated. Unmeasured glyphs use a
+# conservative wide-glyph advance, never the old average-character estimate.
+_LABEL_ADVANCE_UNITS = {
+    **dict.fromkeys("0123456789SX", 20),
+    **dict.fromkeys("AFV", 18),
+    **dict.fromkeys("BCDGKPR", 21),
+    **dict.fromkeys("HNOQU", 22),
+    **dict.fromkeys("MW", 24),
+    **dict.fromkeys("JT_ ", 16),
+    "E": 19,
+    "I": 10,
+    "L": 17,
+    "+": 26,
+    "-": 26,
+    **dict.fromkeys("abdghnopu", 19),
+    **dict.fromkeys("ce", 18),
+    **dict.fromkeys("ft", 12),
+    "i": 10,
+    "k": 17,
+    "l": 11,
+    "m": 28,
+    "r": 13,
+    **dict.fromkeys("sx", 17),
+    **dict.fromkeys("vy", 16),
+}
+
+
+def label_text_width(text: str) -> int:
+    units = sum(_LABEL_ADVANCE_UNITS.get(character, 32) for character in text)
+    return max(635_000, (1_270_000 * units + 20) // 21 + 330_200)
+
+
+def label_text_rect(text: str, point: Point) -> Rect:
+    # The actual stroke baseline is offset above the conductor anchor.
+    # Two millimetres includes the 1.27 mm glyph plus baseline/stroke extent.
+    return (point[0], point[1] - 2_000_000, point[0] + label_text_width(text), point[1])
+
+
 def _ordered_segment(first: Point, second: Point) -> tuple[Point, Point]:
     return (first, second) if first <= second else (second, first)
 

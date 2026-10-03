@@ -522,7 +522,7 @@ def test_standalone_generated_reference_has_owned_producer_and_complete_graph(
     assert all(proofs[net.id]["component_count"] == 1 for net in generated)
 
 
-def test_two_shared_packages_use_interleaved_distribution_seed() -> None:
+def test_two_shared_packages_have_complete_reference_distribution() -> None:
     path = ROOT / "fixtures/m2h2/interaction/i6/pkg2_internal.json"
     resolved = assets()
     design = validate(json.loads(path.read_text()), resolved)
@@ -537,7 +537,21 @@ def test_two_shared_packages_use_interleaved_distribution_seed() -> None:
     assert len(reference.fragments) == 4
     assert proof["component_count"] == 1
     assert proof["canonical_length_nm"] <= 250_000_000
-    assert any("partial-beam" in item for item in evidence["packing_attempts"])
+    expected_terminals = {
+        tuple(member)
+        for net in design["nets"]
+        if net["id"] == reference.id
+        for member in net["members"]
+    }
+    assert {
+        tuple(terminal) for terminal, _component in proof["terminal_components"]
+    } == expected_terminals
+    tree = next(item for item in evidence["canonical_trees"] if item["net"] == reference.id)
+    segments = tuple(
+        ConductorSegment(tuple(start), tuple(end), reference.id, "independent-oracle")
+        for start, end in tree["segments"]
+    )
+    assert reference_components(segments) == 1
 
 
 def test_proved_structural_candidates_are_ranked_by_complete_tree() -> None:

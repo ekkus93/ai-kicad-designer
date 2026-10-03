@@ -198,7 +198,11 @@ def _distribution_repack(
         "gateway_bbox_before_nm": baseline_box,
         "gateway_bbox_after_nm": box,
     }
-    if steps_left > 1 and isinstance(conflict, ConductorLengthConflict):
+    if steps_left > 1 and (
+        isinstance(conflict, ConductorLengthConflict)
+        or isinstance(conflict, TypedConflict)
+        and conflict.category == ConflictKind.CANONICAL_LENGTH
+    ):
         try:
             further, next_decision = _distribution_repack(
                 design, resolved, plan, repaired, conflict, steps_left - 1
@@ -1139,9 +1143,31 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
                             plan, working_packing, last_conflict, seed_index
                         )
                     elif round_index == 3 and isinstance(last_conflict, ConductorLengthConflict):
-                        working_packing, substitution = _substitution_repack(
-                            plan, variants, working_packing, last_conflict, seed_index
-                        )
+                        # A preceding placement repair can expose a distribution
+                        # length conflict. Keep the final bounded round available
+                        # for that measured repair before changing access variants.
+                        try:
+                            working_packing, substitution = _distribution_repack(
+                                design, resolved, plan, working_packing, last_conflict
+                            )
+                        except InputError:
+                            working_packing, substitution = _substitution_repack(
+                                plan, variants, working_packing, last_conflict, seed_index
+                            )
+                    elif (
+                        round_index == 3
+                        and isinstance(last_conflict, TypedConflict)
+                        and last_conflict.net is not None
+                        and "distribution_placement" in last_conflict.repair_classes
+                    ):
+                        try:
+                            working_packing, substitution = _distribution_repack(
+                                design, resolved, plan, working_packing, last_conflict
+                            )
+                        except InputError:
+                            working_packing, substitution = _substitution_repack(
+                                plan, variants, working_packing, last_conflict, seed_index
+                            )
                     elif (
                         round_index == 3
                         and isinstance(last_conflict, TypedConflict)

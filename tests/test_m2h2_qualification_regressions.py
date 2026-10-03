@@ -19,6 +19,8 @@ from ai_kicad.m2_compose import compose_with_evidence
         "fixtures/m2blind_v6/ir/V6-8.json",
         "fixtures/m2h2/development/dp4.json",
         "fixtures/m2f2/ir/two_signal_chains_shared_rail.json",
+        "fixtures/m2h2/interaction/i1/d2_b3.json",
+        "fixtures/m2h2/interaction/i1/d3_b3.json",
         "fixtures/m2h2/interaction/i3/selected_triple.json",
     ],
 )

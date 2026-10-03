@@ -9,6 +9,7 @@ from ai_kicad.ir import InputError
 from ai_kicad.m2a import ROOT
 from ai_kicad.m2b import assets, check_observed_layout, validate
 from ai_kicad.m2_fragments import fragment_variants
+from ai_kicad.m2_geometry import label_text_rect, label_text_width
 from ai_kicad.m2_semantics import semantic_plan
 
 
@@ -61,7 +62,7 @@ def test_connector_access_labels_clear_owned_physical_bodies(case: str):
             for net, (x, y) in variant.labels:
                 # The serialized label is left-justified above its anchor. A
                 # connector's pin exit does not imply that this text is clear.
-                box = (x, y - 1_270_000, x + max(635_000, len(net) * 890_000), y)
+                box = label_text_rect(net, (x, y))
                 assert all(
                     max(box[0], body[0]) >= min(box[2], body[2])
                     or max(box[1], body[1]) >= min(box[3], body[3])
@@ -71,3 +72,38 @@ def test_connector_access_labels_clear_owned_physical_bodies(case: str):
                 gateway for gateway in variant.gateways if gateway.escape_direction == "down"
             )
     assert downward, "the regression must exercise downward connector alternatives"
+
+
+@pytest.mark.parametrize(
+    ("name", "next_x"),
+    [("WWWWWW", 8_890_000), ("LONG_NET_ALIAS_ALPHA", 22_000_000)],
+)
+def test_stroke_font_label_advance_rejects_visually_adjacent_names(tmp_path, name, next_x):
+    schematic = tmp_path / "wide_labels.kicad_sch"
+    schematic.write_text("(kicad_sch (lib_symbols))")
+    # The former 0.89 mm average leaves these authored wide-glyph labels
+    # apparently separate. Actual locked-tool stroke advance reaches the
+    # neighbouring alias; the emitted-byte observer must reject it.
+    assert len(name) * 890_000 < next_x < label_text_width(name)
+    with pytest.raises(InputError, match="observed net label overlaps body/label"):
+        check_observed_layout(
+            schematic,
+            {
+                "labels": [
+                    (name, (50_000_000, 50_000_000)),
+                    ("OTHER", (50_000_000 + next_x, 50_000_000)),
+                ],
+                "wires": [],
+                "pin_positions": {},
+                "nets": {},
+                "occurrences": {},
+            },
+            {"components": [], "relationships": [], "nets": []},
+        )
+
+
+def test_label_extent_contains_locked_stroke_width_and_anchor_offset():
+    # Independently measured native KiCad 10.0.6 SVG textLength, not the
+    # planner's prior average-character rectangle.
+    assert label_text_width("REQUIRED_NET_LABEL20") >= 22_942_100
+    assert label_text_rect("N", (0, 0))[1] <= -1_859_000

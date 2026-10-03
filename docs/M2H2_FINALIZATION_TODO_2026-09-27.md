@@ -27,23 +27,23 @@ A checkbox may be checked only from current-source evidence. Older qualification
 
 ## 1. Current-source baseline
 
-- [x] Run current fast complete pytest baseline. Evidence: `fixtures/m2h2/finalization_checks/stabilization_2575ee20_ci.json`: exact source `2575ee20fba0ca24cc6edf50e0ae038b9aa8153c`, run `37096621691`, locked job `111127754787`, 256 passed in 137.77s.
-- [x] Run scoped Ruff lint. Evidence: exact-head `M2h2 Fast Validation` run `37096621691`, static job `111127754658`, source `2575ee20fba0ca24cc6edf50e0ae038b9aa8153c`, Ruff lint.
-- [x] Run scoped Ruff format check. Evidence: exact-head `M2h2 Fast Validation` run `37096621691`, static job `111127754658`, source `2575ee20fba0ca24cc6edf50e0ae038b9aa8153c`, Ruff format.
-- [x] Run `git diff --check` / applicable whitespace checks. Evidence: exact-head `M2h2 Fast Validation` run `37096621691`, static job `111127754658`, source `2575ee20fba0ca24cc6edf50e0ae038b9aa8153c`, Git diff check and scoped whitespace.
-- [x] Confirm fresh V6-3 one-run real-tool regression. Evidence: `fixtures/m2h2/finalization_checks/stabilization_2575ee20_ci.json`, fresh locked regression job `111127754787`.
-  - [x] locked KiCad 10.0.6;
-  - [x] independent electrical observation;
-  - [x] zero unexpected ERC;
-  - [x] serialized-scene verification;
-  - [x] canonical VREF <= 250 mm.
-- [x] Confirm fresh DP2 one-run real-tool regression. Evidence: `fixtures/m2h2/finalization_checks/stabilization_2575ee20_ci.json`, fresh locked regression job `111127754787`.
-  - [x] no external VREF connector;
-  - [x] two NE5532 packages;
-  - [x] all required reference consumers connected;
-  - [x] independent electrical observation;
-  - [x] zero unexpected ERC;
-  - [x] canonical VREF <= 250 mm.
+- [ ] Run current fast complete pytest baseline. Evidence: `fixtures/m2h2/finalization_checks/stabilization_2575ee20_ci.json`: exact source `2575ee20fba0ca24cc6edf50e0ae038b9aa8153c`, run `37096621691`, locked job `111127754787`, 256 passed in 137.77s.
+- [ ] Run scoped Ruff lint. Evidence: exact-head `M2h2 Fast Validation` run `37096621691`, static job `111127754658`, source `2575ee20fba0ca24cc6edf50e0ae038b9aa8153c`, Ruff lint.
+- [ ] Run scoped Ruff format check. Evidence: exact-head `M2h2 Fast Validation` run `37096621691`, static job `111127754658`, source `2575ee20fba0ca24cc6edf50e0ae038b9aa8153c`, Ruff format.
+- [ ] Run `git diff --check` / applicable whitespace checks. Evidence: exact-head `M2h2 Fast Validation` run `37096621691`, static job `111127754658`, source `2575ee20fba0ca24cc6edf50e0ae038b9aa8153c`, Git diff check and scoped whitespace.
+- [ ] Confirm fresh V6-3 one-run real-tool regression. Evidence: `fixtures/m2h2/finalization_checks/stabilization_2575ee20_ci.json`, fresh locked regression job `111127754787`.
+  - [ ] locked KiCad 10.0.6;
+  - [ ] independent electrical observation;
+  - [ ] zero unexpected ERC;
+  - [ ] serialized-scene verification;
+  - [ ] canonical VREF <= 250 mm.
+- [ ] Confirm fresh DP2 one-run real-tool regression. Evidence: `fixtures/m2h2/finalization_checks/stabilization_2575ee20_ci.json`, fresh locked regression job `111127754787`.
+  - [ ] no external VREF connector;
+  - [ ] two NE5532 packages;
+  - [ ] all required reference consumers connected;
+  - [ ] independent electrical observation;
+  - [ ] zero unexpected ERC;
+  - [ ] canonical VREF <= 250 mm.
 
 ## 2. Obligation-complete certificate audit and implementation
 
@@ -122,8 +122,8 @@ A checkbox may be checked only from current-source evidence. Older qualification
 - [x] Corridor/reservation capacity is checked before route acceptance. Evidence: `tests/test_m2h2_repair_matrix.py::test_route_corridor_capacity_is_checked_before_candidate_acceptance` proves global-route channel capacity accepts one route wire and rejects duplicate occupancy before candidate acceptance.
 - [x] Best rejected candidate and exact failure witness are preserved on every failure exit. Evidence: `tests/test_m2h2_repair_matrix.py::test_failure_exit_preserves_candidate_decisions_and_exact_failure_witness` forces every candidate to reject with a typed canonical-length conflict and verifies candidate decisions, failed metric, layout attempts, failure class, net, actual, and limit are preserved.
 - [x] Evidence reports meaningful structural/variant diversity, not raw attempt count only. Evidence: `tests/test_m2h2_repair_matrix.py::test_composition_evidence_reports_structural_diversity_not_raw_attempt_count` verifies seed structures, placement classes, proved structures, and proved-candidate structures in `compose_with_evidence`.
-- [x] V6-3 remains <= 250 mm canonical VREF without gate change or label shortcut. Evidence: `fixtures/m2h2/finalization_checks/stabilization_2575ee20_ci.json`, fresh locked regression job `111127754787`.
-- [x] DP2 internal VREF remains connectorless, fully distributed, and <= 250 mm. Evidence: `fixtures/m2h2/finalization_checks/stabilization_2575ee20_ci.json`, fresh locked regression job `111127754787`.
+- [ ] V6-3 remains <= 250 mm canonical VREF without gate change or label shortcut. Evidence: `fixtures/m2h2/finalization_checks/stabilization_2575ee20_ci.json`, fresh locked regression job `111127754787`.
+- [ ] DP2 internal VREF remains connectorless, fully distributed, and <= 250 mm. Evidence: `fixtures/m2h2/finalization_checks/stabilization_2575ee20_ci.json`, fresh locked regression job `111127754787`.
 
 ## 5. Typed repair closure
 
@@ -371,3 +371,7 @@ Source `2575ee20fba0ca24cc6edf50e0ae038b9aa8153c` passes 256 tests (137.77 s), s
 ### Native locked-font render falsification — 2026-10-03
 
 All 56 positives x5, 72 interaction cases x5, six structural alternatives x5, and the original V3-8 negative pass machine qualification for producer `84b21bc399e2239cd796bb9ec4f09a989f8ce808`, with unchanged production source `2575ee20`. Artifact audit `37106385552` verifies their complete machine evidence and all 7,221 protected historical files. This does not close final qualification: actual native DP3 long-field inspection finds `REQUIRED_NET_LABEL20` running into `A_OUT` with a nominal 0.0821 mm text overlap. The former 0.89 mm-per-character label bounds miss the locked stroke font width. Exact native evidence is archived in `fixtures/m2h2/finalization_checks/native_render_defect_dp3_long_fields_84b21bc3.svg`; audit/run/artifact references and the witnessed text coordinates are in `fixtures/m2h2/finalization_checks/render_falsification_84b21bc3_2026-10-03.json`. Only six base cases were visually inspected before finding this hard defect. Source stabilization and the final-source hash freeze are reopened. Correct font measurement, repair ensuing ordinary layout failures, and repeat all required fresh qualifications and render inspection before checking any final completion item. I3 active-count 2 / one-band and actual-interleaving classes also require explicit observed evidence; one active-core band in the three-amplifier alternative must not be described as one total non-interface band.
+
+### Locked-stroke font repair — 2026-10-03
+
+`fixtures/m2h2/finalization_checks/font_metrics_repair_2026-10-03.json` binds the repaired source and test hashes. Glyph-based label bounds contain all 5,397 actual native locked-font samples; the independent emitted-byte observer now rejects the authored wide-glyph collision controls. Expanded package geometry is retained alongside a balanced compact alternative within eight local variants; compact passive support and typed distribution repair retain all fixed gates and complete-attempt budgets. Targeted V6-3, DP2 and V6-8 compositions pass; scoped lint/format pass. Full matrices and exact-head locked validation are required before source stabilization. Composition, calibration and unit evidence do not count as fresh final-source KiCad x5 qualification. Baseline, source freeze and final qualification/render/audit gates remain open.

@@ -17,6 +17,8 @@ from .m2_geometry import (
     Reservation,
     canonical_conductor_tree,
     content_envelope,
+    label_text_rect,
+    label_text_width,
     prove_gateway_witnesses,
     prove_no_cross_net_contacts,
     segment_is_admissible,
@@ -151,15 +153,7 @@ def _clear_nonpassive_text(design: dict, resolved: dict[str, Asset], draft: Draf
                 for other in draft.positions
                 if other[0] in components
             ]
-            obstacles.extend(
-                (
-                    point[0],
-                    point[1] - 1_270_000,
-                    point[0] + max(635_000, len(net) * 890_000),
-                    point[1],
-                )
-                for net, point in draft.labels
-            )
+            obstacles.extend(label_text_rect(net, point) for net, point in draft.labels)
             for other, (ox, oy) in draft.text_positions.items():
                 if other == key or other[0] not in components:
                     continue
@@ -261,13 +255,12 @@ def _occupied_geometry(
             )
         )
     for index, (net, point) in enumerate(draft.labels):
-        width = max(635_000, len(net) * 890_000)
         items.append(
             GeometryItem(
                 f"label.{index}",
                 "label",
                 block.id,
-                (point[0], point[1] - 1_270_000, point[0] + width, point[1]),
+                label_text_rect(net, point),
                 (net,),
             )
         )
@@ -400,11 +393,6 @@ def _finish(
             "up": (0, -port_escape_length),
             "down": (0, port_escape_length),
         }[direction]
-        if direction == "left" and emit_label:
-            # Serialized local labels are left-justified. Their full text must
-            # end before the source pin/body, not extend back across it.
-            label_clearance = ((len(port.net) * 890_000 + PITCH - 1) // PITCH + 1) * PITCH
-            dx = -max(port_escape_length, label_clearance)
         gateway_point = (anchor[0] + dx, anchor[1] + dy)
         if emit_label:
             bodies = [
@@ -420,7 +408,7 @@ def _finish(
             }[direction]
             for _ in range(32):
                 x, y = gateway_point
-                label_box = (x, y - PITCH, x + max(635_000, len(port.net) * 890_000), y)
+                label_box = label_text_rect(port.net, (x, y))
                 if not any(
                     max(label_box[0], body[0]) < min(label_box[2], body[2])
                     and max(label_box[1], body[1]) < min(label_box[3], body[3])
@@ -833,6 +821,7 @@ def _package_fragment(
     *,
     reference_side: str = "down",
     compact: bool = False,
+    balanced: bool = False,
 ) -> FragmentVariant:
     rail = next(
         r
@@ -859,7 +848,7 @@ def _package_fragment(
     )
     d.add(
         cap_neg["component"],
-        px + 11 * PITCH,
+        px + (10 if balanced else 11) * PITCH,
         py,
         angle=180 if reference_side == "up" and compact else 0,
     )
@@ -873,7 +862,7 @@ def _package_fragment(
         d.route(rail["positive"], pos, (pos[0], cp1[1]), cp1)
         pos_end = (pos[0], pos[1] - 3 * PITCH)
         d.route(rail["positive"], pos, pos_end)
-        negative_side_x = cn1[0] + 5 * PITCH
+        negative_side_x = cn1[0] + (4 if balanced else 5) * PITCH
         d.route(
             rail["negative"],
             neg,
@@ -959,7 +948,8 @@ def _package_fragment(
         block,
         d,
         anchors,
-        variant_suffix=("compact_" if compact else "expanded_") + reference_side,
+        variant_suffix=("compact_balanced_" if balanced else "compact_" if compact else "expanded_")
+        + reference_side,
     )
 
 
@@ -1117,7 +1107,7 @@ def _timer_fragment(
     # Keep the local terminal label when the final gateway has no label.
     # _finish removes it only when it emits the redundant same-net gateway label.
     d.label(timer["supply"], timer_supply_end)
-    reset_clearance = ((len(timer["supply"]) * 890_000 + PITCH - 1) // PITCH) * PITCH
+    reset_clearance = ((label_text_width(timer["supply"]) + PITCH - 1) // PITCH) * PITCH
     reset_label = (p["reset"][0] - reset_clearance, p["reset"][1])
     d.route(timer["supply"], p["reset"], reset_label)
     d.label(timer["supply"], reset_label)
@@ -1230,7 +1220,7 @@ def _passive_fragment(
                 if r["kind"] == "shunt" and r["id"] in block.relationships
             )
             node = (second[0] + 4 * PITCH, second[1])
-            d.add(shunt["component"], node[0], y + (11 if compact else 18) * PITCH)
+            d.add(shunt["component"], node[0], y + (8 if compact else 18) * PITCH)
             top, bottom = (
                 d.point(shunt["component"], "1"),
                 d.point(shunt["component"], "2"),
@@ -1430,6 +1420,14 @@ def fragment_variants(
                     )
                 except InputError:
                     pass
+            try:
+                bases.append(
+                    _package_fragment(
+                        design, resolved, block, reference_side="up", compact=True, balanced=True
+                    )
+                )
+            except InputError:
+                pass
         elif block.kind == "reference_divider":
             bases = [_reference_divider_fragment(design, resolved, block)]
             try:

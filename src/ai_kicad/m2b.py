@@ -9,7 +9,12 @@ from pathlib import Path
 from .assets import _extract_symbol, sha256
 from .ir import InputError
 from .m2a import Asset, Pin, PITCH, ROOT, Scene, _nm, load_assets
-from .m2_geometry import ConductorSegment, canonical_conductor_tree, conductor_reachable
+from .m2_geometry import (
+    ConductorSegment,
+    canonical_conductor_tree,
+    conductor_reachable,
+    label_text_rect,
+)
 from .sexpr import children, one, parse, quote
 
 EXTRA = {
@@ -1666,12 +1671,7 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
     label_boxes = [
         (
             net,
-            (
-                point[0],
-                point[1] - 1_270_000,
-                point[0] + max(635_000, len(net) * 890_000),
-                point[1],
-            ),
+            label_text_rect(net, point),
         )
         for net, point in observed["labels"]
     ]
