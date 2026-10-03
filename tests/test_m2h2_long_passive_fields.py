@@ -53,3 +53,25 @@ def test_independent_observer_rejects_long_native_rotated_value_on_resistor(tmp_
     }
     with pytest.raises(InputError, match="observed required field overlaps body/label"):
         check_observed_layout(schematic, observed, {"components": [], "relationships": []})
+
+
+def test_compensated_horizontal_native_value_does_not_cross_worksheet(tmp_path):
+    definition = re.sub(
+        r'\(symbol\s+"R"', '(symbol "Device:R"', assets()["Device:R"].definition, count=1
+    )
+    schematic = tmp_path / "horizontal_field.kicad_sch"
+    schematic.write_text(
+        "(kicad_sch (lib_symbols " + definition + ") "
+        '(symbol (lib_id "Device:R") (at 170 155 90) (unit 1) '
+        '(property "Reference" "R1" (at 179 157.46 90) (effects (font (size 1.27 1.27)))) '
+        '(property "Value" "R12345678901234567890123" (at 179 160 90) (effects (font (size 1.27 1.27))))))'
+    )
+    observed = {
+        "labels": [],
+        "wires": [],
+        "pin_positions": {},
+        "nets": {},
+        "junctions": [],
+        "occurrences": {},
+    }
+    check_observed_layout(schematic, observed, {"components": [], "relationships": []})

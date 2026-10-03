@@ -476,3 +476,7 @@ Fresh qualification producer `585a4f7c96b185c3a4e9db73fa13960388ea411b` passed m
 ### Long-passive production repair and composition sweep
 
 Production `0646914b5906c77b942a800fb95885c10259e9ec` passed all 128 base/interaction composition checks, 70 focused contract/oracle/repair tests, seven new native-field tests, scoped lint/format, and current remote structural/static checks. These are implementation checks, **not real-tool qualification**. See `fixtures/m2h2/finalization_checks/long_passive_composition_0646914b.json` and `final_source_0646914b.json`. The first full CI attempt exposed a preexisting audit-test import-path error before tests ran (`37131659470`, job `111227814272`); the audit-only test now resolves the tools directory explicitly. The retry and all fresh qualification roots remain required.
+
+### Native worksheet-orientation closure
+
+Before accepting new qualification, the independent worksheet observer was corrected to apply native symbol-relative passive field rotation, matching the required-field/body observer. A compensated horizontal long value near the worksheet is a positive counterexample: its native glyphs are horizontal and clear, whereas the old worksheet estimator falsely treated them as vertical. `tests/test_m2h2_long_passive_fields.py` contains this real emitted-byte positive alongside the overlapping rotated-value negative. Supersede the intermediate `641c8c26bbdb730874fb9831abf784321e139894` candidate and repeat all final-source qualification after this observer correction. No existing candidate is credited as final.

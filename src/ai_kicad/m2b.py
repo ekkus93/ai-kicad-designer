@@ -1787,7 +1787,8 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
                     else 0
                 )
                 half = max(635_000, displayed_length * 445_000)
-                dx, dy = (850_000, half) if int(field_at[3]) % 180 else (half, 850_000)
+                native_angle = int(field_at[3]) - (angle if lib in {"Device:R", "Device:C"} else 0)
+                dx, dy = (850_000, half) if native_angle % 180 else (half, 850_000)
                 worksheet_fields.append((fx - dx, fy - dy, fx + dx, fy + dy))
         long_passive = lib in {"Device:R", "Device:C"} and any(
             len(prop[2]) > 4
