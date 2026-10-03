@@ -233,3 +233,7 @@ M2h2 remains **INCOMPLETE**. Fresh `ada198a` interaction qualification finds thr
 ### Power/packing source restabilized — 2026-10-03
 
 M2h2 remains **INCOMPLETE**. Production `1397637d0fe51e5dfcf46038ec34d9a65e910173` passes full locked validation `37094984816`: 255 tests, all static/hosted checks, V6-3/DP2, three connector-label cases x5, and all six targeted real-tool regressions including V6-8 and the shared-rail case. The unconnected endpoint is resolved with actual scope-correct power labels and the snapped package-envelope overlap is repaired; ERC and independent observation remain enforced. See `finalization_checks/stabilization_1397637d_ci.json` and exact source freeze `finalization_checks/final_source_1397637d.json`. Fresh base, interaction and structural five-run qualification is required; historical failed candidates remain preserved and non-final.
+
+### Tall-core interaction restabilization — 2026-10-03
+
+M2h2 remains **INCOMPLETE**. Candidate `47d4978c` passes 56-positive x5 qualification and six structural alternatives x5, but its I3 selected-triple composition has an inward timer-output routing failure. The generic outward-access repair is under new locked validation; all prior candidate qualification is preserved and non-final after this production change. Source freeze and final qualification must be refreshed. Exact development evidence: `finalization_checks/outward_timer_output_repair_2026-10-03.json`.

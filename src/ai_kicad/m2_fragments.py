@@ -1303,6 +1303,9 @@ def _access_alternatives(
         for name in configurable
         for direction in allowed_by_kind.get(base.block.kind, (suffixes[name].escape_direction,))
         if direction != suffixes[name].escape_direction
+        # A timer's right-facing output must leave the local motif outward.
+        # A left escape folds back into its owned pin/terminal corridor.
+        and not (base.block.kind == "timer" and name == "output" and direction == "left")
     ]
     for name, direction in alternatives:
         draft = Draft(
