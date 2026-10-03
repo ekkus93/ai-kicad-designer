@@ -273,3 +273,7 @@ Source `94e8b4bc45242a1e834a1ae1a123d0717a589a6c` is frozen in `fixtures/m2h2/fi
 ### Source-glyph wire clearance reopened — 2026-10-03
 
 The `94e8b4bc` source baseline and `f2628c9c` qualification are superseded: exact DP2 geometry reveals a source-attached vertical wire through the rotated power-source diamond. Finite existing-conductor contact selection now requires measured wire clearance, and independent emitted-byte observation rejects wire entry into source glyphs without the component-pin endpoint exemption. No conductor or electrical topology is added or weakened. Details: `fixtures/m2h2/finalization_checks/source_glyph_wire_clearance_2026-10-03.json`. M2h2 remains **INCOMPLETE** pending new baseline and final-source evidence.
+
+### Wire-clear source stabilized — 2026-10-03
+
+`1273d6af219475db5fc804d487d06e8fb6fa8c69` passes complete baseline `37124948961`: 270 tests and every locked KiCad 10.0.6 regression, including five actual whole-band builds. Artifact `11275495312` preserves evidence. `final_source_1273d6af.json` freezes all 19 production hashes, four runner hashes and three locks. A report-only trigger requests fresh complete five-run base, interaction and nine-case structural qualification. No prior-source qualification is final credit; coverage, native inspection and final audits remain open. M2h2 remains **INCOMPLETE**.
