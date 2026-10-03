@@ -265,3 +265,7 @@ M2h2 remains **INCOMPLETE**. Exact DP2 instrumentation falsified the 32-local-pr
 ### Native source-marker readability repair — 2026-10-03
 
 Baseline `37114227421` on `354efeda` succeeds with 266 tests and all locked regressions, including five actual three-timer whole-band builds. A separate actual native inspection exposes the power-source diamond overlapping VPLUS. The measured finite contact/orientation repair and independent emitted-byte source-body rejection reopen source stabilization and qualification. Historical native evidence is preserved; M2h2 remains **INCOMPLETE**, pending fresh final-source qualification and renders. Details: `fixtures/m2h2/finalization_checks/source_marker_clearance_2026-10-03.json`.
+
+### Stabilized source after source-marker repair — 2026-10-03
+
+Source `94e8b4bc45242a1e834a1ae1a123d0717a589a6c` is frozen in `fixtures/m2h2/finalization_checks/final_source_94e8b4bc.json`. Complete baseline `37123857550` passes all jobs: 268 tests and all locked KiCad 10.0.6 regression builds, including five actual whole-band three-timer builds. Artifact `11274093988` preserves the evidence. A report-only commit requests fresh 56-positive x5, 72-interaction x5 and nine structural x5 qualification. Coverage reconciliation, full normalized reproducibility, native render inspection and audits remain pending. M2h2 remains **INCOMPLETE**.
