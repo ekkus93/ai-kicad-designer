@@ -1751,6 +1751,7 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
     instances = {}
     rectangles = []
     required_fields = []
+    worksheet_fields = []
     visible_pin_numbers = []
     source_refs = set()
     for symbol in children(tree, "symbol"):
@@ -1773,6 +1774,21 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
                 (ref, rectangle)
                 for rectangle in pin_number_rectangles(definitions[lib], unit, x, y, angle)
             )
+        if lib != "power:PWR_FLAG":
+            for prop in children(symbol, "property"):
+                if prop[1] not in {"Reference", "Value"}:
+                    continue
+                field_at = one(prop, "at")
+                fx, fy = _nm(field_at[1]), _nm(field_at[2])
+                displayed_length = len(prop[2]) + (
+                    1
+                    if prop[1] == "Reference"
+                    and any(key[0] == lib and key[1] > 1 for key in bodies)
+                    else 0
+                )
+                half = max(635_000, displayed_length * 445_000)
+                dx, dy = (850_000, half) if int(field_at[3]) % 180 else (half, 850_000)
+                worksheet_fields.append((fx - dx, fy - dy, fx + dx, fy + dy))
         if lib not in {"Device:R", "Device:C", "power:PWR_FLAG"}:
             for prop in children(symbol, "property"):
                 if prop[1] not in {"Reference", "Value"}:
@@ -2275,6 +2291,22 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
                 and max(min(first[0], second[0]), box[0]) < min(max(first[0], second[0]), box[2])
             ):
                 raise InputError(f"observed wire through source glyph: {ref}")
+    # Independently measured native A4 worksheet corner, including border stroke.
+    worksheet = (177_000_000, 165_900_000, 285_100_000, 198_100_000)
+    page_geometry = (
+        worksheet_fields
+        + [box for _, box in rectangles + label_boxes]
+        + [box for _, _, box in required_fields]
+        + [(min(a[0], b[0]), min(a[1], b[1]), max(a[0], b[0]), max(a[1], b[1])) for a, b in wires]
+    )
+    for box in page_geometry:
+        if (
+            box[0] < worksheet[2]
+            and box[2] > worksheet[0]
+            and box[1] < worksheet[3]
+            and box[3] > worksheet[1]
+        ):
+            raise InputError(f"observed content overlaps worksheet title block: {box}")
     for index, (net, box) in enumerate(label_boxes):
         for owner, obstacle in visible_pin_numbers:
             if max(box[0], obstacle[0]) < min(box[2], obstacle[2]) and max(

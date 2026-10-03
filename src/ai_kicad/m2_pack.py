@@ -55,6 +55,44 @@ class _Unit:
     affinity_source: str | None = None
 
 
+def _worksheet_clearance_packing(packing: Packing) -> Packing:
+    """Translate a colliding whole packing on-grid; preserve all relative geometry."""
+    worksheet = (177_000_000, 165_900_000, 285_100_000, 198_100_000)
+    boxes = [
+        (
+            item.rect[0] + placed.delta[0],
+            item.rect[1] + placed.delta[1],
+            item.rect[2] + placed.delta[0],
+            item.rect[3] + placed.delta[1],
+        )
+        for placed in packing.fragments
+        for item in placed.fragment.occupied_geometry
+    ]
+
+    def overlaps(box):
+        return (
+            box[0] < worksheet[2]
+            and box[2] > worksheet[0]
+            and box[1] < worksheet[3]
+            and box[3] > worksheet[1]
+        )
+
+    if not any(overlaps(box) for box in boxes):
+        return packing
+    for shift in (-2 * PITCH, -4 * PITCH):
+        shifted = [(x0, y0 + shift, x1, y1 + shift) for x0, y0, x1, y1 in boxes]
+        if any(box[1] < 25_400_000 or overlaps(box) for box in shifted):
+            continue
+        return Packing(
+            tuple(
+                _place(item.fragment, item.envelope[0], item.envelope[1] + shift)
+                for item in packing.fragments
+            ),
+            packing.attempts + (f"worksheet-clearance-translation:{shift}",),
+        )
+    return packing
+
+
 def _translate_point(point: Point, delta: Point) -> Point:
     return point[0] + delta[0], point[1] + delta[1]
 

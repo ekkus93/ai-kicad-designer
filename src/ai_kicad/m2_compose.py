@@ -30,6 +30,7 @@ from .m2_pack import (
     Packing,
     _measured_repack,
     _place,
+    _worksheet_clearance_packing,
     pack_fragment_candidates,
 )
 from .m2_route import RouteBlockedConflict, _crosses, route_between_fragments
@@ -1008,6 +1009,25 @@ def _assemble_candidate(design: dict, resolved: dict, plan, packing: Packing, re
             )
         )
 
+    # Locked KiCad A4 worksheet: native border starts at (177.0022, 166.0072) mm.
+    # Reserve its stroke as an obstacle independently of the 210 x 140 spread gate.
+    worksheet = (177_000_000, 165_900_000, 285_100_000, 198_100_000)
+    page_geometry = [item.rect for item in occupied] + [
+        (min(a[0], b[0]), min(a[1], b[1]), max(a[0], b[0]), max(a[1], b[1])) for a, b in draft.wires
+    ]
+    for rectangle in page_geometry:
+        if (
+            rectangle[0] < worksheet[2]
+            and rectangle[2] > worksheet[0]
+            and rectangle[1] < worksheet[3]
+            and rectangle[3] > worksheet[1]
+        ):
+            raise TypedConflict(
+                ConflictKind.PAGE_SPREAD,
+                f"PAGE_WORKSHEET_OVERLAP: geometry={rectangle}",
+                offending_geometry=(rectangle,),
+            )
+
     allocation_witnesses = prove_reservation_allocation(occupied, reservations)
     final_rect = (
         min(item.rect[0] for item in occupied),
@@ -1296,6 +1316,7 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
                     )
                     continue
                 repair_changed = True
+            working_packing = _worksheet_clearance_packing(working_packing)
             route_retry = 1 if round_index == 1 else 2 if round_index == 3 else 0
             digest = (
                 tuple((item.fragment.id, item.delta) for item in working_packing.fragments),

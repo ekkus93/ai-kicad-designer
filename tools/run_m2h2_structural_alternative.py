@@ -28,6 +28,7 @@ from ai_kicad.m2_pack import (
     Packing,
     _partial_beam_candidates,
     _place,
+    _worksheet_clearance_packing,
     pack_fragment_candidates,
 )
 from ai_kicad.m2_semantics import semantic_plan
@@ -300,6 +301,7 @@ def select_scene(design: dict, emitted_assets: dict, args) -> tuple:
     candidates = []
     seen = set()
     for index, packing in enumerate(packings):
+        packing = _worksheet_clearance_packing(packing)
         identity = tuple((item.fragment.id, item.delta) for item in packing.fragments)
         if identity in seen:
             continue

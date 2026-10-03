@@ -282,3 +282,8 @@ The `94e8b4bc` source baseline and `f2628c9c` qualification are superseded: exac
 ### Current-source interaction qualification result (2026-10-03)
 
 Frozen production source `1273d6af219475db5fc804d487d06e8fb6fa8c69`, producer `5c7640a8d9a505a733f009f7a2c7cd1d6c2012b0`: I1–I6 run `37125376457` passed all 72 cases × five fresh independent locked-KiCad 10.0.6 builds with reproducible results. See `fixtures/m2h2/finalization_checks/interaction_5c7640a8_ci.json`. M2h2 remains **INCOMPLETE** pending fresh base56/structural9 results, independent final artifact audit, measured coverage reconciliation and native render inspection.
+
+
+### Native worksheet falsification and bounded page-placement repair (2026-10-03)
+
+M2h2 remains **INCOMPLETE**. Actual source-1273 `a3_one` native render falsifies engineering inspection: the title-block top border crosses `C5.Value=10u`. See `fixtures/m2h2/finalization_checks/worksheet_native_falsification_2026-10-03.json`. Preserve successful interaction run `37125376457` and structural run `37125376451` as historical candidate evidence; neither qualifies the repaired final source. New generic finite page translation and independent worksheet collision gates require fresh baseline, all five-run qualification and inspection. No corpus.v7 or M3 work is started.
