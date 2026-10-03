@@ -379,6 +379,9 @@ def select_scene(design: dict, emitted_assets: dict, args) -> tuple:
         "repair_rounds_per_seed": 3,
         "slot_ceiling": 32,
         "complete_attempts": len(attempts),
+        "local_construction": {
+            block_id: family[0].construction_evidence() for block_id, family in variants.items()
+        },
         "attempts": attempts,
         "available_class_candidates": len(candidates),
         "retained_seeds": len(retained),

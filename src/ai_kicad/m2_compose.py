@@ -1303,6 +1303,7 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
                 {
                     "fragment": block_id,
                     "variant": variant.id,
+                    "local_construction": variant.construction_evidence(),
                     "content_envelope": list(variant.content_envelope),
                     "packing_envelope": list(variant.packing_envelope),
                     "reservations": [
@@ -1351,6 +1352,7 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
                         {
                             "fragment": item.fragment.block.id,
                             "variant": item.fragment.id,
+                            "local_construction": item.fragment.construction_evidence(),
                             "envelope": list(item.envelope),
                         }
                         for item in seed.fragments

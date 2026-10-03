@@ -71,6 +71,19 @@ class FragmentVariant:
     protected_paths: tuple[ProtectedPath, ...] = field(default_factory=tuple)
     obligations: tuple[PathObligation, ...] = field(default_factory=tuple)
     wire_provenance: tuple[tuple[str, ...], ...] = field(default_factory=tuple)
+    construction_trace: tuple[tuple[str, ...], ...] = ()
+    construction_uncovered: tuple[str, ...] = ()
+    retention_uncovered: tuple[str, ...] = ()
+
+    def construction_evidence(self) -> dict:
+        return {
+            "proposal_limit": 32,
+            "proposals_attempted": len(self.construction_trace),
+            "attempts": [list(item) for item in self.construction_trace],
+            "budget_uncovered": list(self.construction_uncovered),
+            "retention_uncovered": list(self.retention_uncovered),
+            "retained_variant_limit": 8,
+        }
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "positions", MappingProxyType(dict(self.positions)))
@@ -1320,6 +1333,10 @@ def _access_alternatives(
     design: dict,
     resolved: dict[str, Asset],
     base: FragmentVariant,
+    *,
+    construction_trace: list[tuple[str, ...]] | None = None,
+    uncovered: list[str] | None = None,
+    family_index: int = 0,
 ) -> tuple[FragmentVariant, ...]:
     """Derive finite gateway alternatives from the same complete local motif."""
     suffixes = {gateway.id.rsplit(".", 1)[-1]: gateway for gateway in base.gateways}
@@ -1363,7 +1380,17 @@ def _access_alternatives(
         # A left escape folds back into its owned pin/terminal corridor.
         and not (base.block.kind == "timer" and name == "output" and direction == "left")
     ]
+    if construction_trace is None:
+        construction_trace = []
+    if uncovered is None:
+        uncovered = []
     for name, direction in alternatives:
+        descriptor = f"family={family_index}:access={name}:{direction}"
+        if len(construction_trace) >= 32:
+            uncovered.append(descriptor)
+            continue
+        trace_index = len(construction_trace)
+        construction_trace.append(("access", descriptor, "attempted", ""))
         draft = Draft(
             design,
             resolved,
@@ -1391,8 +1418,10 @@ def _access_alternatives(
                 anchors,
                 variant_suffix=f"v{len(variants)}",
             )
-        except InputError:
+        except InputError as exc:
+            construction_trace[trace_index] = ("access", descriptor, "rejected", str(exc))
             continue
+        construction_trace[trace_index] = ("access", descriptor, "certified", "")
         variants.append(
             FragmentVariant(
                 **{
@@ -1445,6 +1474,39 @@ def fragment_variants(
     """Build finite local variants without inspecting unrelated blocks."""
     result = {}
     for block in plan.blocks:
+        construction_trace = []
+        construction_uncovered = []
+
+        def construct(factory, *args, **kwargs):
+            descriptor = (
+                factory.__name__
+                + ":"
+                + ",".join(f"{key}={value}" for key, value in sorted(kwargs.items()))
+            )
+            if len(construction_trace) >= 32:
+                construction_uncovered.append(descriptor)
+                raise InputError("LOCAL_CONSTRUCTION_BUDGET_EXHAUSTED: limit=32")
+            index = len(construction_trace)
+            construction_trace.append(("body_support", descriptor, "attempted", ""))
+            try:
+                candidate = factory(*args, **kwargs)
+            except InputError as exc:
+                construction_trace[index] = ("body_support", descriptor, "rejected", str(exc))
+                exc.local_construction_evidence = {
+                    "fragment": block.id,
+                    "proposal_limit": 32,
+                    "proposals_attempted": len(construction_trace),
+                    "attempts": [list(item) for item in construction_trace],
+                    "budget_uncovered": list(construction_uncovered),
+                    "completed_fragments": {
+                        block_id: family[0].construction_evidence()
+                        for block_id, family in result.items()
+                    },
+                }
+                raise
+            construction_trace[index] = ("body_support", descriptor, "certified", "")
+            return candidate
+
         if block.kind in {
             "buffer",
             "unused_amplifier",
@@ -1452,10 +1514,11 @@ def fragment_variants(
             "inverting_amplifier",
             "sallen_key",
         }:
-            bases = [_amplifier_fragment(design, resolved, block)]
+            bases = [construct(_amplifier_fragment, design, resolved, block)]
             try:
                 bases.append(
-                    _amplifier_fragment(
+                    construct(
+                        _amplifier_fragment,
                         design,
                         resolved,
                         block,
@@ -1465,10 +1528,11 @@ def fragment_variants(
             except InputError:
                 pass
         elif block.kind == "package_power":
-            bases = [_package_fragment(design, resolved, block)]
+            bases = [construct(_package_fragment, design, resolved, block)]
             try:
                 bases.append(
-                    _package_fragment(
+                    construct(
+                        _package_fragment,
                         design,
                         resolved,
                         block,
@@ -1480,15 +1544,21 @@ def fragment_variants(
             for side in ("up", "down"):
                 try:
                     bases.append(
-                        _package_fragment(
-                            design, resolved, block, reference_side=side, compact=True
+                        construct(
+                            _package_fragment,
+                            design,
+                            resolved,
+                            block,
+                            reference_side=side,
+                            compact=True,
                         )
                     )
                 except InputError:
                     pass
             try:
                 bases.append(
-                    _package_fragment(
+                    construct(
+                        _package_fragment,
                         design,
                         resolved,
                         block,
@@ -1500,35 +1570,51 @@ def fragment_variants(
             except InputError:
                 pass
         elif block.kind == "reference_divider":
-            bases = [_reference_divider_fragment(design, resolved, block)]
+            bases = [construct(_reference_divider_fragment, design, resolved, block)]
             try:
-                bases.append(_reference_divider_fragment(design, resolved, block, compact=True))
+                bases.append(
+                    construct(_reference_divider_fragment, design, resolved, block, compact=True)
+                )
             except InputError:
                 pass
         elif block.kind == "power_stage":
-            bases = [_power_stage_fragment(design, resolved, block)]
+            bases = [construct(_power_stage_fragment, design, resolved, block)]
         elif block.kind == "timer":
-            bases = [_timer_fragment(design, resolved, block)]
+            bases = [construct(_timer_fragment, design, resolved, block)]
             try:
-                bases.append(_timer_fragment(design, resolved, block, compact=True))
+                bases.append(construct(_timer_fragment, design, resolved, block, compact=True))
             except InputError:
                 pass
             try:
-                bases.append(_timer_fragment(design, resolved, block, compact=True, narrow=True))
+                bases.append(
+                    construct(_timer_fragment, design, resolved, block, compact=True, narrow=True)
+                )
             except InputError:
                 pass
         elif block.kind in {"series", "rc", "led_branch"}:
-            bases = [_passive_fragment(design, resolved, block)]
+            bases = [construct(_passive_fragment, design, resolved, block)]
             if block.kind in {"rc", "led_branch"}:
                 try:
-                    bases.append(_passive_fragment(design, resolved, block, compact=True))
+                    bases.append(
+                        construct(_passive_fragment, design, resolved, block, compact=True)
+                    )
                 except InputError:
                     pass
         elif block.kind == "interface":
-            bases = [_interface_fragment(design, resolved, block)]
+            bases = [construct(_interface_fragment, design, resolved, block)]
         else:
             raise InputError(f"FRAGMENT_KIND_UNSUPPORTED: {block.id}:{block.kind}")
-        families = [_access_alternatives(design, resolved, base) for base in bases]
+        families = [
+            _access_alternatives(
+                design,
+                resolved,
+                base,
+                construction_trace=construction_trace,
+                uncovered=construction_uncovered,
+                family_index=index,
+            )
+            for index, base in enumerate(bases)
+        ]
         retained = []
         access_families = families[:2] if block.kind == "timer" and len(families) == 3 else families
         for rank in range(max(map(len, access_families))):
@@ -1573,10 +1659,20 @@ def fragment_variants(
                 return "compact" if ".compact_" in bases[index].id else "expanded"
             return "above" if index else "below"
 
+        retained_candidates = [candidate for _, candidate, _ in retained]
+        retention_uncovered = tuple(
+            f"family={family_index}:access_variant={index}:envelope={candidate.envelope}"
+            for family_index, family in enumerate(families)
+            for index, candidate in enumerate(family)
+            if candidate not in retained_candidates
+        )
         result[block.id] = tuple(
             replace(
                 candidate,
                 id=f"{block.id}.v{index}",
+                construction_trace=tuple(construction_trace),
+                construction_uncovered=tuple(construction_uncovered),
+                retention_uncovered=retention_uncovered,
                 rule_id=(
                     f"m2g2.local-aspect.{block.kind}.{structural_name(family_index)}.v1"
                     if len(families) > 1

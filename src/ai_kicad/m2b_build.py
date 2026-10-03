@@ -195,6 +195,9 @@ def build(args) -> int:
                     "electrical_observation": (
                         electrical if "electrical" in locals() else "not_evaluated"
                     ),
+                    "local_construction": getattr(
+                        exc, "local_construction_evidence", "not_evaluated"
+                    ),
                     "stage_status": {
                         name: "complete" if name in completed else "not_evaluated"
                         for name in (
