@@ -75,9 +75,7 @@ class FragmentVariant:
     def __post_init__(self) -> None:
         object.__setattr__(self, "positions", MappingProxyType(dict(self.positions)))
         object.__setattr__(self, "angles", MappingProxyType(dict(self.angles)))
-        object.__setattr__(
-            self, "text_positions", MappingProxyType(dict(self.text_positions))
-        )
+        object.__setattr__(self, "text_positions", MappingProxyType(dict(self.text_positions)))
         if self.content_envelope is None:
             object.__setattr__(self, "content_envelope", self.envelope)
         if self.packing_envelope is None:
@@ -93,14 +91,10 @@ def _relationship(design: dict, relationship_id: str) -> dict:
 
 
 def _terminal_net(design: dict, component: str, pin: str) -> str:
-    return next(
-        net["id"] for net in design["nets"] if [component, pin] in net["members"]
-    )
+    return next(net["id"] for net in design["nets"] if [component, pin] in net["members"])
 
 
-def _body_rect(
-    design: dict, resolved: dict[str, Asset], draft: Draft, key: Occurrence
-) -> Rect:
+def _body_rect(design: dict, resolved: dict[str, Asset], draft: Draft, key: Occurrence) -> Rect:
     component = _component(design, key[0])
     body = resolved[component["asset"]].bodies.get(key[1]) or resolved[
         component["asset"]
@@ -118,9 +112,7 @@ def _body_rect(
     return min(xs), min(ys), max(xs), max(ys)
 
 
-def _clear_nonpassive_text(
-    design: dict, resolved: dict[str, Asset], draft: Draft
-) -> None:
+def _clear_nonpassive_text(design: dict, resolved: dict[str, Asset], draft: Draft) -> None:
     components = {component["id"]: component for component in design["components"]}
     for key in sorted(draft.text_positions):
         component = components.get(key[0])
@@ -190,14 +182,12 @@ def _clear_nonpassive_text(
                     (
                         a[0] == b[0]
                         and rect[0] < a[0] < rect[2]
-                        and max(min(a[1], b[1]), rect[1])
-                        < min(max(a[1], b[1]), rect[3])
+                        and max(min(a[1], b[1]), rect[1]) < min(max(a[1], b[1]), rect[3])
                     )
                     or (
                         a[1] == b[1]
                         and rect[1] < a[1] < rect[3]
-                        and max(min(a[0], b[0]), rect[0])
-                        < min(max(a[0], b[0]), rect[2])
+                        and max(min(a[0], b[0]), rect[0]) < min(max(a[0], b[0]), rect[2])
                     )
                 )
                 for rect in rectangles
@@ -255,9 +245,7 @@ def _occupied_geometry(
                     (pin.name, pin.electrical_type),
                 )
             )
-    for index, ((first, second), net) in enumerate(
-        zip(draft.wires, draft.wire_nets, strict=True)
-    ):
+    for index, ((first, second), net) in enumerate(zip(draft.wires, draft.wire_nets, strict=True)):
         items.append(
             GeometryItem(
                 f"wire.{index}",
@@ -283,9 +271,7 @@ def _occupied_geometry(
             )
         )
     for index, point in enumerate(draft.junctions):
-        items.append(
-            GeometryItem(f"junction.{index}", "junction", block.id, (*point, *point))
-        )
+        items.append(GeometryItem(f"junction.{index}", "junction", block.id, (*point, *point)))
     return tuple(items)
 
 
@@ -358,8 +344,7 @@ def _finish(
     original_wire_count = len(draft.wires)
     escape_length = (
         3 * PITCH
-        if block.kind
-        in {"package_power", "power_stage", "timer", "led_branch", "rc", "series"}
+        if block.kind in {"package_power", "power_stage", "timer", "led_branch", "rc", "series"}
         else PITCH
     )
     direction_delta = {
@@ -375,8 +360,7 @@ def _finish(
             or (
                 port.role in {"power_in", "power_out"}
                 and not any(
-                    relation["kind"] == "reference_divider"
-                    and relation["local"] == port.net
+                    relation["kind"] == "reference_divider" and relation["local"] == port.net
                     for relation in design["relationships"]
                 )
             )
@@ -390,14 +374,10 @@ def _finish(
                 terminal
                 for terminal, net in terminal_nets.items()
                 if net == port.net
-                and any(
-                    occurrence[0] == terminal[0] for occurrence in block.occurrences
-                )
+                and any(occurrence[0] == terminal[0] for occurrence in block.occurrences)
             )
         )
-        if not witnesses or any(
-            terminal_nets.get(terminal) != port.net for terminal in witnesses
-        ):
+        if not witnesses or any(terminal_nets.get(terminal) != port.net for terminal in witnesses):
             raise InputError(f"FRAGMENT_PORT_TERMINAL_IDENTITY: {port.id}:{port.net}")
         port_escape_length = (
             PITCH
@@ -461,8 +441,7 @@ def _finish(
             escape_polyline = (anchor, gateway_point)
             box = label_text_rect(port.net, gateway_point)
             if any(
-                max(box[0], r[0]) < min(box[2], r[2])
-                and max(box[1], r[1]) < min(box[3], r[3])
+                max(box[0], r[0]) < min(box[2], r[2]) and max(box[1], r[1]) < min(box[3], r[3])
                 for r in pin_text
             ):
                 original = gateway_point
@@ -706,8 +685,7 @@ def _finish(
             "terminal_to_gateway",
             60_000_000
             if any(
-                relation["kind"] == "decoupling"
-                and relation["component"] == terminal[0]
+                relation["kind"] == "decoupling" and relation["component"] == terminal[0]
                 for relation in design["relationships"]
                 for terminal in gateway.terminals
             )
@@ -1031,9 +1009,7 @@ def _package_fragment(
         block,
         d,
         anchors,
-        variant_suffix=(
-            "compact_balanced_" if balanced else "compact_" if compact else "expanded_"
-        )
+        variant_suffix=("compact_balanced_" if balanced else "compact_" if compact else "expanded_")
         + reference_side,
     )
 
@@ -1049,8 +1025,7 @@ def _reference_divider_fragment(
     divider = next(
         relation
         for relation in design["relationships"]
-        if relation["kind"] == "reference_divider"
-        and relation["id"] in block.relationships
+        if relation["kind"] == "reference_divider" and relation["id"] in block.relationships
     )
     draft = _new_draft(design, resolved)
     x, upper_y = 35 * PITCH, 25 * PITCH
@@ -1155,7 +1130,12 @@ def _power_stage_fragment(
 
 
 def _timer_fragment(
-    design: dict, resolved: dict[str, Asset], block: BlockPlan, *, compact: bool = False
+    design: dict,
+    resolved: dict[str, Asset],
+    block: BlockPlan,
+    *,
+    compact: bool = False,
+    narrow: bool = False,
 ) -> FragmentVariant:
     timer = next(
         r
@@ -1175,10 +1155,7 @@ def _timer_fragment(
     d = _new_draft(design, resolved)
     tx, ty, lx = 42 * PITCH, 38 * PITCH, 15 * PITCH
     d.add(timer["component"], tx, ty)
-    p = {
-        role: d.point(timer["component"], number)
-        for role, number in timer["pins"].items()
-    }
+    p = {role: d.point(timer["component"], number) for role, number in timer["pins"].items()}
     # The compact construction keeps the same ordered ladder terminals while
     # using separate measured body/text clearances for a shorter support band.
     d.add(ladder["upper"], lx, ty - (14 if compact else 20) * PITCH)
@@ -1222,7 +1199,7 @@ def _timer_fragment(
     )
     d.route(timer["timing"], (sense_x, p["trigger"][1]), p["trigger"])
     d.junctions.append((sense_x, p["trigger"][1]))
-    output_end = (p["output"][0] + 12 * PITCH, p["output"][1])
+    output_end = (p["output"][0] + (6 if narrow else 12) * PITCH, p["output"][1])
     d.route(timer["output"], p["output"], output_end)
     # Reference support terminals are typed rail contacts, not part of the
     # protected timing/discharge path.  Keep the timer terminal's gateway
@@ -1380,15 +1357,11 @@ def _access_alternatives(
     alternatives = [
         (name, direction)
         for name in configurable
-        for direction in allowed_by_kind.get(
-            base.block.kind, (suffixes[name].escape_direction,)
-        )
+        for direction in allowed_by_kind.get(base.block.kind, (suffixes[name].escape_direction,))
         if direction != suffixes[name].escape_direction
         # A timer's right-facing output must leave the local motif outward.
         # A left escape folds back into its owned pin/terminal corridor.
-        and not (
-            base.block.kind == "timer" and name == "output" and direction == "left"
-        )
+        and not (base.block.kind == "timer" and name == "output" and direction == "left")
     ]
     for name, direction in alternatives:
         draft = Draft(
@@ -1441,8 +1414,7 @@ def _access_alternatives(
     available = [variant for variant in variants if variant in distinct.values()]
     retained = [base]
     base_directions = {
-        gateway.id.rsplit(".", 1)[-1]: gateway.escape_direction
-        for gateway in base.gateways
+        gateway.id.rsplit(".", 1)[-1]: gateway.escape_direction for gateway in base.gateways
     }
     for name in configurable:
         representative = next(
@@ -1530,9 +1502,7 @@ def fragment_variants(
         elif block.kind == "reference_divider":
             bases = [_reference_divider_fragment(design, resolved, block)]
             try:
-                bases.append(
-                    _reference_divider_fragment(design, resolved, block, compact=True)
-                )
+                bases.append(_reference_divider_fragment(design, resolved, block, compact=True))
             except InputError:
                 pass
         elif block.kind == "power_stage":
@@ -1543,13 +1513,15 @@ def fragment_variants(
                 bases.append(_timer_fragment(design, resolved, block, compact=True))
             except InputError:
                 pass
+            try:
+                bases.append(_timer_fragment(design, resolved, block, compact=True, narrow=True))
+            except InputError:
+                pass
         elif block.kind in {"series", "rc", "led_branch"}:
             bases = [_passive_fragment(design, resolved, block)]
             if block.kind in {"rc", "led_branch"}:
                 try:
-                    bases.append(
-                        _passive_fragment(design, resolved, block, compact=True)
-                    )
+                    bases.append(_passive_fragment(design, resolved, block, compact=True))
                 except InputError:
                     pass
         elif block.kind == "interface":
@@ -1558,8 +1530,9 @@ def fragment_variants(
             raise InputError(f"FRAGMENT_KIND_UNSUPPORTED: {block.id}:{block.kind}")
         families = [_access_alternatives(design, resolved, base) for base in bases]
         retained = []
-        for rank in range(max(map(len, families))):
-            for family_index, family in enumerate(families):
+        access_families = families[:2] if block.kind == "timer" and len(families) == 3 else families
+        for rank in range(max(map(len, access_families))):
+            for family_index, family in enumerate(access_families):
                 if rank >= len(family):
                     continue
                 candidate = family[rank]
@@ -1580,9 +1553,22 @@ def fragment_variants(
             if len(retained) == 8:
                 break
 
+        if block.kind == "timer" and len(families) == 3:
+            # Preserve both legacy families' diverse accesses within the same
+            # eight-variant budget; substitute one expanded access for a new
+            # independently measured narrow base, keeping compact access choices.
+            narrow = families[2][0]
+            retained[-2] = (None, narrow, 2)
+
         def structural_name(index: int) -> str:
             if block.kind in {"timer", "rc", "led_branch"}:
-                return "compact" if index else "expanded"
+                return (
+                    "narrow"
+                    if block.kind == "timer" and index == 2
+                    else "compact"
+                    if index
+                    else "expanded"
+                )
             if block.kind == "package_power":
                 return "compact" if ".compact_" in bases[index].id else "expanded"
             return "above" if index else "below"

@@ -76,9 +76,7 @@ def assets() -> dict[str, Asset]:
                     raise InputError("unsupported duplicate or hidden pin")
                 seen.add(n)
                 at = one(pin, "at")
-                pins.append(
-                    Pin(n, str(one(pin, "name")[1]), pin[1], _nm(at[1]), _nm(at[2]))
-                )
+                pins.append(Pin(n, str(one(pin, "name")[1]), pin[1], _nm(at[1]), _nm(at[2])))
             if pins:
                 units[number] = tuple(pins)
             points = []
@@ -86,19 +84,13 @@ def assets() -> dict[str, Asset]:
                 if isinstance(shape, list) and shape[0] == "rectangle":
                     points += [one(shape, "start"), one(shape, "end")]
                 elif isinstance(shape, list) and shape[0] == "polyline":
-                    points += [
-                        xy
-                        for pts in children(shape, "pts")
-                        for xy in children(pts, "xy")
-                    ]
+                    points += [xy for pts in children(shape, "pts") for xy in children(pts, "xy")]
             if points:
                 xs, ys = [_nm(p[1]) for p in points], [_nm(p[2]) for p in points]
                 bodies[number] = (min(xs), max(ys), max(xs), min(ys))
         if 0 in units:
             common = units.pop(0)
-            if 1 not in units or {p.number for p in common} & {
-                p.number for p in units[1]
-            }:
+            if 1 not in units or {p.number for p in common} & {p.number for p in units[1]}:
                 raise InputError("unsupported common physical pins")
             units[1] = common + units[1]
         if (
@@ -117,9 +109,7 @@ def _fields(item, required, optional=()):
         or not set(required) <= set(item)
         or set(item) - set(required) - set(optional)
     ):
-        raise InputError(
-            f"unsupported fields: expected {required}, optional {optional}"
-        )
+        raise InputError(f"unsupported fields: expected {required}, optional {optional}")
 
 
 def _validate_power_assertions(
@@ -142,9 +132,7 @@ def _validate_power_assertions(
     diagnostics = []
     for net, assertions in sorted(assertions_by_net.items()):
         drivers = sorted(
-            terminal
-            for terminal in nets[net]
-            if terminal_types[terminal] == "power_out"
+            terminal for terminal in nets[net] if terminal_types[terminal] == "power_out"
         )
         if drivers:
             diagnostics.append(
@@ -229,9 +217,7 @@ def validate(raw: dict, resolved: dict[str, Asset]) -> dict:
         refs.add(c["refdes"])
         if c["asset"] == "Amplifier_Operational:NE5532":
             functions = c.get("functions")
-            if not isinstance(functions, list) or {
-                f.get("unit") for f in functions
-            } != {1, 2, 3}:
+            if not isinstance(functions, list) or {f.get("unit") for f in functions} != {1, 2, 3}:
                 raise InputError("NE5532 requires all three function units")
             for f in functions:
                 _fields(f, ("id", "role", "unit", "pins"))
@@ -378,8 +364,7 @@ def validate(raw: dict, resolved: dict[str, Asset]) -> dict:
             raise InputError("shunt terminal/net mismatch")
         if r["kind"] == "polarity":
             pin_names = {
-                p.name: p.number
-                for p in resolved[components[r["component"]]["asset"]].units[1]
+                p.name: p.number for p in resolved[components[r["component"]]["asset"]].units[1]
             }
             if (
                 pin_names.get("A") is None
@@ -388,8 +373,7 @@ def validate(raw: dict, resolved: dict[str, Asset]) -> dict:
             ):
                 raise InputError("diode polarity mismatch")
         if r["kind"] == "feedback" and (
-            r["polarity"] != "negative"
-            or (r["component"], r["source"]) not in nets[r["net"]]
+            r["polarity"] != "negative" or (r["component"], r["source"]) not in nets[r["net"]]
         ):
             raise InputError("feedback source/polarity mismatch")
         if r["kind"] == "decoupling" and not isinstance(r["consumer"], list):
@@ -408,9 +392,7 @@ def validate(raw: dict, resolved: dict[str, Asset]) -> dict:
         ):
             raise InputError("power relation physical terminal/net mismatch")
         if r["kind"] == "power_stage":
-            if set(r["pins"]) != {"input", "output", "reference"} or r[
-                "polarity"
-            ] not in (
+            if set(r["pins"]) != {"input", "output", "reference"} or r["polarity"] not in (
                 "positive",
                 "negative",
             ):
@@ -423,14 +405,9 @@ def validate(raw: dict, resolved: dict[str, Asset]) -> dict:
             actual = {p.number: p.name for pins in asset.units.values() for p in pins}
             for role in ("input", "output", "reference"):
                 number = r["pins"][role]
-                if (
-                    number not in actual
-                    or (r["component"], number) not in nets[r[role]]
-                ):
+                if number not in actual or (r["component"], number) not in nets[r[role]]:
                     raise InputError("power stage physical pin/net mismatch")
-            if any(
-                actual[r["pins"][role]] != adapter["roles"][role] for role in r["pins"]
-            ):
+            if any(actual[r["pins"][role]] != adapter["roles"][role] for role in r["pins"]):
                 raise InputError("power stage actual pin role mismatch")
         if r["kind"] == "timer":
             expected_roles = {
@@ -446,8 +423,7 @@ def validate(raw: dict, resolved: dict[str, Asset]) -> dict:
             asset = resolved[components[r["component"]]["asset"]]
             actual = {p.number: p.name for pins in asset.units.values() for p in pins}
             if set(r["pins"]) != set(expected_roles) or any(
-                actual.get(r["pins"][role]) != name
-                for role, name in expected_roles.items()
+                actual.get(r["pins"][role]) != name for role, name in expected_roles.items()
             ):
                 raise InputError("timer actual physical pin roles differ")
             role_net = {
@@ -461,8 +437,7 @@ def validate(raw: dict, resolved: dict[str, Asset]) -> dict:
                 "control": r["control"],
             }
             if any(
-                (r["component"], r["pins"][role]) not in nets[net]
-                for role, net in role_net.items()
+                (r["component"], r["pins"][role]) not in nets[net] for role, net in role_net.items()
             ):
                 raise InputError("timer physical terminal/net mismatch")
         if r["kind"] == "timing_ladder":
@@ -509,9 +484,7 @@ def validate(raw: dict, resolved: dict[str, Asset]) -> dict:
         ):
             raise InputError("invalid power assertion")
         refs.add(a["refdes"])
-    if len({a["id"] for a in data["power_assertions"]}) != len(
-        data["power_assertions"]
-    ):
+    if len({a["id"] for a in data["power_assertions"]}) != len(data["power_assertions"]):
         raise InputError("duplicate power assertion ID")
     _validate_power_assertions(data, components, nets, resolved)
     for key in ("components", "nets", "relationships", "power_assertions"):
@@ -585,19 +558,13 @@ class Draft:
             raise InputError("duplicate geometry owner")
         self.positions[key] = (x, y)
         self.angles[key] = angle
-        asset = next(c for c in self.design["components"] if c["id"] == component)[
-            "asset"
-        ]
+        asset = next(c for c in self.design["components"] if c["id"] == component)["asset"]
         self.text_positions[key] = (
-            (x + 8 * PITCH, y - 2 * PITCH)
-            if asset == "Device:C"
-            else (x, y - 8 * PITCH)
+            (x + 8 * PITCH, y - 2 * PITCH) if asset == "Device:C" else (x, y - 8 * PITCH)
         )
 
 
-def passive_layout(
-    design: dict, resolved: dict[str, Asset], partial: bool = False
-) -> Scene:
+def passive_layout(design: dict, resolved: dict[str, Asset], partial: bool = False) -> Scene:
     """Compose series, shunt and diode relations through net anchors."""
     if not partial:
         from .m2_compose import compose_layout
@@ -610,19 +577,13 @@ def passive_layout(
     if not series or not shunts and not polarities:
         raise InputError("unsupported passive composition")
     flows = [r for r in relations if r["kind"] == "signal_flow"]
-    s = next(
-        (r for r in series if flows and r["input"] == flows[0]["input"]), series[0]
-    )
+    s = next((r for r in series if flows and r["input"] == flows[0]["input"]), series[0])
     shunts = [r for r in shunts if r["node"] == s["output"]]
     polarities = [r for r in polarities if r["anode"] == s["output"]]
     if len(shunts) + len(polarities) != 1:
         raise InputError(f"series {s['id']}: no unique downstream shunt/polarity rule")
     final_net = polarities[0]["cathode"] if polarities else s["output"]
-    if (
-        len(flows) != 1
-        or flows[0]["input"] != s["input"]
-        or flows[0]["output"] != final_net
-    ):
+    if len(flows) != 1 or flows[0]["input"] != s["input"] or flows[0]["output"] != final_net:
         raise InputError("signal flow relation does not match passive path")
     components = {c["id"]: c for c in design["components"]}
     if components[s["component"]]["asset"] not in ("Device:R", "Device:C"):
@@ -645,8 +606,7 @@ def passive_layout(
             (
                 cid
                 for cid, pin in members
-                if pin == "1"
-                and components[cid]["asset"] == "Connector_Generic:Conn_01x01"
+                if pin == "1" and components[cid]["asset"] == "Connector_Generic:Conn_01x01"
             ),
             None,
         )
@@ -720,9 +680,7 @@ def passive_layout(
     )
 
 
-def power_stage_layout(
-    design: dict, resolved: dict[str, Asset], partial: bool = False
-) -> Scene:
+def power_stage_layout(design: dict, resolved: dict[str, Asset], partial: bool = False) -> Scene:
     """Place a three-terminal power stage between its interfaces and local support."""
     if not partial:
         from .m2_compose import compose_layout
@@ -779,21 +737,15 @@ def power_stage_layout(
         reference_pin_number = "2" if rail_pin == "1" else "1"
         rail_above = cap_y > sy
         angle = (
-            0
-            if (rail_above and rail_pin == "1") or (not rail_above and rail_pin == "2")
-            else 180
+            0 if (rail_above and rail_pin == "1") or (not rail_above and rail_pin == "2") else 180
         )
         d.add(relation["component"], x, cap_y, angle=angle)
         return d.point(relation["component"], rail_pin), d.point(
             relation["component"], reference_pin_number
         )
 
-    left_rail, left_reference = support_endpoints(
-        in_relation, stage["input"], sx - 24 * PITCH
-    )
-    right_rail, right_reference = support_endpoints(
-        out_relation, stage["output"], sx + 24 * PITCH
-    )
+    left_rail, left_reference = support_endpoints(in_relation, stage["input"], sx - 24 * PITCH)
+    right_rail, right_reference = support_endpoints(out_relation, stage["output"], sx + 24 * PITCH)
     d.add(ports[stage["input"]], sx - 55 * PITCH, sy, angle=180)
     d.add(ports[stage["output"]], sx + 55 * PITCH, sy)
     reference_y = cap_y + (19 * PITCH if cap_y > sy else -19 * PITCH)
@@ -809,9 +761,7 @@ def power_stage_layout(
     d.route(stage["output"], right_node, right_rail)
     d.junctions.extend((left_node, right_node))
     return_y = return_port[1]
-    d.route(
-        stage["reference"], left_reference, (left_reference[0], return_y), return_port
-    )
+    d.route(stage["reference"], left_reference, (left_reference[0], return_y), return_port)
     d.route(stage["reference"], right_reference, (right_reference[0], return_y))
     d.route(stage["reference"], reference_pin, (reference_pin[0], return_y))
     d.junctions.extend(((right_reference[0], return_y), (reference_pin[0], return_y)))
@@ -829,9 +779,7 @@ def power_stage_layout(
         (stage["reference"], (reference_pin[0], return_y)),
     ):
         d.positions[(flags[net]["id"], 1)] = point
-    if not partial and {cid for cid, _ in d.positions if cid in components} != set(
-        components
-    ):
+    if not partial and {cid for cid, _ in d.positions if cid in components} != set(components):
         raise InputError("unplaced power-stage component")
     if not partial:
         choose_text_slots(design, d)
@@ -848,9 +796,7 @@ def power_stage_layout(
     )
 
 
-def timing_layout(
-    design: dict, resolved: dict[str, Asset], partial: bool = False
-) -> Scene:
+def timing_layout(design: dict, resolved: dict[str, Asset], partial: bool = False) -> Scene:
     """Compose a vertical timing ladder beside a physical timer symbol."""
     if not partial:
         from .m2_compose import compose_layout
@@ -862,9 +808,7 @@ def timing_layout(
     if len(timers) != 1 or len(ladders) != 1 or len(controls) != 1:
         raise InputError("unsupported timing relation inventory")
     timer, ladder, control = timers[0], ladders[0], controls[0]
-    if any(
-        timer[k] != ladder[k] for k in ("supply", "reference", "timing", "discharge")
-    ):
+    if any(timer[k] != ladder[k] for k in ("supply", "reference", "timing", "discharge")):
         raise InputError("timer and timing ladder nets disagree")
     if control["consumer"] != [timer["component"], timer["pins"]["control"]] or (
         control["supply"],
@@ -888,10 +832,7 @@ def timing_layout(
     lx = tx - 43 * PITCH
     d.add(timer["component"], tx, ty)
     d.text_positions[(timer["component"], 1)] = (tx + 18 * PITCH, ty - 12 * PITCH)
-    p = {
-        role: d.point(timer["component"], number)
-        for role, number in timer["pins"].items()
-    }
+    p = {role: d.point(timer["component"], number) for role, number in timer["pins"].items()}
     d.add(ladder["upper"], lx, ty - 25 * PITCH)
     d.add(ladder["lower"], lx, ty - 5 * PITCH)
     d.add(ladder["capacitor"], lx, ty + 21 * PITCH)
@@ -979,9 +920,7 @@ def timing_layout(
         (timer["reference"], (p["reference"][0], return_port[1])),
     ):
         d.positions[(flags[net]["id"], 1)] = point
-    if not partial and {cid for cid, _ in d.positions if cid in components} != set(
-        components
-    ):
+    if not partial and {cid for cid, _ in d.positions if cid in components} != set(components):
         raise InputError("unplaced timer component")
     if not partial:
         choose_text_slots(design, d)
@@ -1005,9 +944,7 @@ def measure(design: dict, resolved: dict[str, Asset], draft: Draft) -> dict:
         c = next((c for c in design["components"] if c["id"] == cid), None)
         if c is None:
             continue
-        body = resolved[c["asset"]].bodies.get(unit) or resolved[c["asset"]].bodies.get(
-            0
-        )
+        body = resolved[c["asset"]].bodies.get(unit) or resolved[c["asset"]].bodies.get(0)
         if body:
             left, top, right, bottom = body
             corners = [
@@ -1054,9 +991,9 @@ def measure(design: dict, resolved: dict[str, Asset], draft: Draft) -> dict:
                 raise InputError(f"wire through body: {net}, {cid}")
 
     def on_segment(p, a, b):
-        return (
-            a[0] == b[0] == p[0] and min(a[1], b[1]) <= p[1] <= max(a[1], b[1])
-        ) or (a[1] == b[1] == p[1] and min(a[0], b[0]) <= p[0] <= max(a[0], b[0]))
+        return (a[0] == b[0] == p[0] and min(a[1], b[1]) <= p[1] <= max(a[1], b[1])) or (
+            a[1] == b[1] == p[1] and min(a[0], b[0]) <= p[0] <= max(a[0], b[0])
+        )
 
     for i, (a, b) in enumerate(draft.wires):
         for j in range(i + 1, len(draft.wires)):
@@ -1081,13 +1018,13 @@ def measure(design: dict, resolved: dict[str, Asset], draft: Draft) -> dict:
                 raise InputError(
                     f"unrelated wire crossing: {draft.wire_nets[i]} {a}->{b}, {draft.wire_nets[j]} {c}->{e}"
                 )
-            if a[0] == b[0] == c[0] == e[0] and max(
-                min(a[1], b[1]), min(c[1], e[1])
-            ) <= min(max(a[1], b[1]), max(c[1], e[1])):
+            if a[0] == b[0] == c[0] == e[0] and max(min(a[1], b[1]), min(c[1], e[1])) <= min(
+                max(a[1], b[1]), max(c[1], e[1])
+            ):
                 raise InputError("unrelated wire overlap")
-            if a[1] == b[1] == c[1] == e[1] and max(
-                min(a[0], b[0]), min(c[0], e[0])
-            ) <= min(max(a[0], b[0]), max(c[0], e[0])):
+            if a[1] == b[1] == c[1] == e[1] and max(min(a[0], b[0]), min(c[0], e[0])) <= min(
+                max(a[0], b[0]), max(c[0], e[0])
+            ):
                 raise InputError("unrelated wire overlap")
     for c in design["components"]:
         key_units = resolved[c["asset"]].units
@@ -1109,20 +1046,15 @@ def measure(design: dict, resolved: dict[str, Asset], draft: Draft) -> dict:
                         and max(min(a[0], b[0]), box[0]) < min(max(a[0], b[0]), box[2])
                     ):
                         raise InputError(f"wire through text: {c['id']}")
-    endpoints = {p for a, b in draft.wires for p in (a, b)} | {
-        p for _, p in draft.labels
-    }
+    endpoints = {p for a, b in draft.wires for p in (a, b)} | {p for _, p in draft.labels}
     for c in design["components"]:
         for pins in resolved[c["asset"]].units.values():
             for p in pins:
                 if draft.point(c["id"], p.number) not in endpoints:
                     raise InputError(f"unrouted pin: {c['id']}:{p.number}")
-    points = (
-        endpoints | set(draft.positions.values()) | set(draft.text_positions.values())
-    )
+    points = endpoints | set(draft.positions.values()) | set(draft.text_positions.values())
     if any(
-        not (20_320_000 <= x <= 276_680_000 and 25_400_000 <= y <= 184_600_000)
-        for x, y in points
+        not (20_320_000 <= x <= 276_680_000 and 25_400_000 <= y <= 184_600_000) for x, y in points
     ):
         raise InputError("content exceeds A4 margin")
     bends = sum(
@@ -1209,9 +1141,7 @@ def choose_text_slots(design: dict, draft: Draft) -> None:
             raise InputError(f"no clear value/reference slot for {c['id']}")
 
 
-def compare(
-    design: dict, observed: dict, resolved: dict[str, Asset] | None = None
-) -> dict:
+def compare(design: dict, observed: dict, resolved: dict[str, Asset] | None = None) -> dict:
     """Compare intended terminals with independent artifact/CLI inventories."""
     diagnostics = []
     resolved = resolved or assets()
@@ -1261,9 +1191,7 @@ def compare(
             if {n: p["name"] for n, p in actual.items()} != {"1": "K", "2": "A"}:
                 diagnostics.append(f"{ref}: actual diode polarity differs")
         elif c["asset"] in LOCKED_PIN_ROLES:
-            if {n: p["name"] for n, p in actual.items()} != LOCKED_PIN_ROLES[
-                c["asset"]
-            ]:
+            if {n: p["name"] for n, p in actual.items()} != LOCKED_PIN_ROLES[c["asset"]]:
                 diagnostics.append(f"{ref}: actual locked physical pin roles differ")
         elif set(actual) != {p.number for p in resolved[c["asset"]].units[unit]}:
             diagnostics.append(f"{ref} actual pin inventory differs")
@@ -1272,9 +1200,7 @@ def compare(
     for ref, c in by_ref.items():
         actual = observed["xml_components"].get(ref)
         wanted = {
-            unit: set(o["pins"])
-            for (r, unit), o in observed["occurrences"].items()
-            if r == ref
+            unit: set(o["pins"]) for (r, unit), o in observed["occurrences"].items() if r == ref
         }
         if actual is None or actual["lib"] != c["asset"] or actual["units"] != wanted:
             diagnostics.append(f"{ref} KiCad XML unit/pin inventory differs")
@@ -1283,8 +1209,7 @@ def compare(
         for n in design["nets"]
     }
     actual = {
-        frozenset(tuple(member) for member in members)
-        for members in observed["nets"].values()
+        frozenset(tuple(member) for member in members) for members in observed["nets"].values()
     }
     if expected != actual:
         diagnostics.append("real KiCad connectivity differs")
@@ -1352,9 +1277,7 @@ def compare(
     }
 
 
-def active_layout(
-    design: dict, resolved: dict[str, Asset], partial: bool = False
-) -> Scene:
+def active_layout(design: dict, resolved: dict[str, Asset], partial: bool = False) -> Scene:
     """Construct functional stage, feedback corridor and support islands from relations."""
     if not partial:
         from .m2_compose import compose_layout
@@ -1365,20 +1288,11 @@ def active_layout(
     rails = [r for r in relations if r["kind"] == "power_rails"]
     feedbacks = [r for r in relations if r["kind"] == "feedback"]
     decouplers = [r for r in relations if r["kind"] == "decoupling"]
-    if (
-        len(stages) != 2
-        or len(rails) != 1
-        or len(feedbacks) != 2
-        or len(decouplers) != 2
-    ):
+    if len(stages) != 2 or len(rails) != 1 or len(feedbacks) != 2 or len(decouplers) != 2:
         raise InputError("unsupported active-stage relation inventory")
     active_stages = [r for r in stages if not r.get("unused")]
     active = next(
-        (
-            r
-            for r in active_stages
-            if r["input"] not in {s["output"] for s in active_stages}
-        ),
+        (r for r in active_stages if r["input"] not in {s["output"] for s in active_stages}),
         active_stages[0] if active_stages else None,
     )
     parked = next((r for r in stages if r is not active), None)
@@ -1475,11 +1389,7 @@ def active_layout(
     series = [r for r in relations if r["kind"] == "series"]
     shunts = [r for r in relations if r["kind"] == "shunt"]
     gain_leg = next(
-        (
-            r
-            for r in shunts
-            if r["node"] == minus_net and r["component"] != feedback_resistor
-        ),
+        (r for r in shunts if r["node"] == minus_net and r["component"] != feedback_resistor),
         None,
     )
     input_leg = next((r for r in series if r["output"] == minus_net), None)
@@ -1498,11 +1408,7 @@ def active_layout(
     ):
         raise InputError("bridge does not compose with the signal path and output")
     accepted_input = (
-        input_leg["input"]
-        if input_leg
-        else input_filter["output"]
-        if input_filter
-        else plus_net
+        input_leg["input"] if input_leg else input_filter["output"] if input_filter else plus_net
     )
     if active["input"] != accepted_input:
         raise InputError("amplifier input relation does not match semantic stage port")
@@ -1574,9 +1480,7 @@ def active_layout(
         if upstream:
             up_component = upstream["component"]
             up_asset = resolved[
-                next(c for c in design["components"] if c["id"] == up_component)[
-                    "asset"
-                ]
+                next(c for c in design["components"] if c["id"] == up_component)["asset"]
             ]
             d.add(
                 up_component,
@@ -1601,9 +1505,7 @@ def active_layout(
                 bridge = bridges[0]
                 bridge_id = bridge["component"]
                 bridge_asset = resolved[
-                    next(c for c in design["components"] if c["id"] == bridge_id)[
-                        "asset"
-                    ]
+                    next(c for c in design["components"] if c["id"] == bridge_id)["asset"]
                 ]
                 bridge_y = plus[1] - 19 * PITCH
                 d.add(
@@ -1651,15 +1553,11 @@ def active_layout(
         pout,
     )
     if parked.get("unused"):
-        d.route(
-            by_pin[(amp, pf["pins"]["plus"])], pplus, (pplus[0] - 5 * PITCH, pplus[1])
-        )
+        d.route(by_pin[(amp, pf["pins"]["plus"])], pplus, (pplus[0] - 5 * PITCH, pplus[1]))
         d.label(by_pin[(amp, pf["pins"]["plus"])], (pplus[0] - 5 * PITCH, pplus[1]))
     else:
         if parked["input"] != out_net or parked["output"] != parked_net:
-            raise InputError(
-                f"stages {active['id']}, {parked['id']}: incompatible ports"
-            )
+            raise InputError(f"stages {active['id']}, {parked['id']}: incompatible ports")
         first_out = (branch_x + 7 * PITCH, branch[1])
         second_in = (pplus[0] - 5 * PITCH, pplus[1])
         d.route(out_net, first_out, (second_in[0], first_out[1]), second_in, pplus)
@@ -1733,9 +1631,7 @@ def active_layout(
         d.label(negative, (divider_x, lower_bottom[1] + 5 * PITCH))
         d.label(reference, local_node)
     # Mixed connector is a lookup island; each terminal carries its semantic net.
-    connectors = [
-        c for c in design["components"] if c["asset"].startswith("Connector_Generic:")
-    ]
+    connectors = [c for c in design["components"] if c["asset"].startswith("Connector_Generic:")]
     if len(connectors) != 1:
         raise InputError("active stage requires one mixed interface")
     interface = connectors[0]
@@ -1747,9 +1643,7 @@ def active_layout(
         d.route(net, point, end)
         d.label(net, end)
     flags = {a["net"]: a for a in design["power_assertions"]}
-    required_flags = (
-        {positive, negative} if dividers else {positive, negative, reference}
-    )
+    required_flags = {positive, negative} if dividers else {positive, negative, reference}
     if set(flags) != required_flags:
         raise InputError("missing external supply assertions")
     for net, point in (
@@ -1761,9 +1655,7 @@ def active_layout(
             d.positions[(flags[net]["id"], 1)] = point
             d.angles[(flags[net]["id"], 1)] = 0
     # Each component is placed once even when it belongs to several relations.
-    placed = {
-        cid for cid, _ in d.positions if cid in {c["id"] for c in design["components"]}
-    }
+    placed = {cid for cid, _ in d.positions if cid in {c["id"] for c in design["components"]}}
     if not partial and placed != {c["id"] for c in design["components"]}:
         raise InputError(
             f"components without geometry owner: {sorted({c['id'] for c in design['components']} - placed)}"
@@ -1796,10 +1688,7 @@ def active_layout(
 def _local_pin_number_rectangles(definition: str, unit: int) -> tuple:
     """Conservative visible-number keepouts from actual embedded pin geometry."""
     tree = parse(definition)
-    if any(
-        children(item, "hide") or "hide" in item[1:]
-        for item in children(tree, "pin_numbers")
-    ):
+    if any(children(item, "hide") or "hide" in item[1:] for item in children(tree, "pin_numbers")):
         return ()
     rectangles = []
     for body in children(tree, "symbol"):
@@ -1822,9 +1711,7 @@ def _local_pin_number_rectangles(definition: str, unit: int) -> tuple:
     return tuple(rectangles)
 
 
-def pin_number_rectangles(
-    definition: str, unit: int, x: int, y: int, angle: int
-) -> tuple:
+def pin_number_rectangles(definition: str, unit: int, x: int, y: int, angle: int) -> tuple:
     rectangles = []
     for px, py, dx, dy, width, height in _local_pin_number_rectangles(definition, unit):
         cx, cy = _turn(Pin("", "", "", px, py), angle)
@@ -1847,9 +1734,7 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
     bodies = {}
     definitions = {}
     for definition in children(one(tree, "lib_symbols"), "symbol"):
-        definitions[definition[1]] = _extract_symbol(
-            schematic.read_text(), definition[1]
-        )
+        definitions[definition[1]] = _extract_symbol(schematic.read_text(), definition[1])
         for unit in children(definition, "symbol"):
             unit_no = int(unit[1].rsplit("_", 2)[-2])
             points = []
@@ -1859,11 +1744,7 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
                 if shape[0] == "rectangle":
                     points += [one(shape, "start"), one(shape, "end")]
                 elif shape[0] == "polyline":
-                    points += [
-                        xy
-                        for pts in children(shape, "pts")
-                        for xy in children(pts, "xy")
-                    ]
+                    points += [xy for pts in children(shape, "pts") for xy in children(pts, "xy")]
             if points:
                 xs, ys = [_nm(p[1]) for p in points], [_nm(p[2]) for p in points]
                 bodies[(definition[1], unit_no)] = (min(xs), max(ys), max(xs), min(ys))
@@ -1887,9 +1768,7 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
         if lib in definitions:
             visible_pin_numbers.extend(
                 (ref, rectangle)
-                for rectangle in pin_number_rectangles(
-                    definitions[lib], unit, x, y, angle
-                )
+                for rectangle in pin_number_rectangles(definitions[lib], unit, x, y, angle)
             )
         if lib == "power:PWR_FLAG":
             continue
@@ -1911,9 +1790,7 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
                 required_fields.append(
                     (ref, prop[1], (fx - half, fy - 850_000, fx + half, fy + 850_000))
                 )
-        boxes = [
-            box for key, box in bodies.items() if key[0] == lib and key[1] in (0, unit)
-        ]
+        boxes = [box for key, box in bodies.items() if key[0] == lib and key[1] in (0, unit)]
         if boxes:
             left, top, right, bottom = (
                 min(z[0] for z in boxes),
@@ -1952,15 +1829,13 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
     labels = observed["labels"]
     pin_positions = observed["pin_positions"]
     pin_to_net = {
-        (ref, pin): name
-        for name, members in observed["nets"].items()
-        for ref, pin in members
+        (ref, pin): name for name, members in observed["nets"].items() for ref, pin in members
     }
 
     def on_segment(p, a, b):
-        return (
-            a[0] == b[0] == p[0] and min(a[1], b[1]) <= p[1] <= max(a[1], b[1])
-        ) or (a[1] == b[1] == p[1] and min(a[0], b[0]) <= p[0] <= max(a[0], b[0]))
+        return (a[0] == b[0] == p[0] and min(a[1], b[1]) <= p[1] <= max(a[1], b[1])) or (
+            a[1] == b[1] == p[1] and min(a[0], b[0]) <= p[0] <= max(a[0], b[0])
+        )
 
     wire_net = [set() for _ in wires]
     for i, (a, b) in enumerate(wires):
@@ -2018,9 +1893,9 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
             raise InputError(f"observed branch junction missing: {missing_junctions}")
     for i, (a, b) in enumerate(wires):
         for ref, rect in rectangles:
-            if a in {
+            if a in {point for (r, _), point in pin_positions.items() if r == ref} or b in {
                 point for (r, _), point in pin_positions.items() if r == ref
-            } or b in {point for (r, _), point in pin_positions.items() if r == ref}:
+            }:
                 continue
             left, top, right, bottom = rect
             if (
@@ -2036,11 +1911,7 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
             ):
                 raise InputError(f"observed wire through body: {ref}")
         for key, point in pin_positions.items():
-            if (
-                key in pin_to_net
-                and pin_to_net[key] != names[i]
-                and on_segment(point, a, b)
-            ):
+            if key in pin_to_net and pin_to_net[key] != names[i] and on_segment(point, a, b):
                 raise InputError("wire touches unrelated physical pin")
         for j, (c, e) in enumerate(wires[i + 1 :], i + 1):
             if names[i] == names[j]:
@@ -2059,13 +1930,13 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
                 and on_segment((c[0], a[1]), c, e)
             ):
                 raise InputError("observed unrelated wire crossing")
-            if a[0] == b[0] == c[0] == e[0] and max(
-                min(a[1], b[1]), min(c[1], e[1])
-            ) <= min(max(a[1], b[1]), max(c[1], e[1])):
+            if a[0] == b[0] == c[0] == e[0] and max(min(a[1], b[1]), min(c[1], e[1])) <= min(
+                max(a[1], b[1]), max(c[1], e[1])
+            ):
                 raise InputError("observed unrelated wire overlap")
-            if a[1] == b[1] == c[1] == e[1] and max(
-                min(a[0], b[0]), min(c[0], e[0])
-            ) <= min(max(a[0], b[0]), max(c[0], e[0])):
+            if a[1] == b[1] == c[1] == e[1] and max(min(a[0], b[0]), min(c[0], e[0])) <= min(
+                max(a[0], b[0]), max(c[0], e[0])
+            ):
                 raise InputError("observed unrelated wire overlap")
     minimum_text_clearance = None
     for (ref, unit), item in observed["occurrences"].items():
@@ -2120,12 +1991,8 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
     ):
         raise InputError("observed content outside A4 margin")
     extent_points = all_points + list(pin_positions.values())
-    width_mm = (
-        max(p[0] for p in extent_points) - min(p[0] for p in extent_points)
-    ) / 1_000_000
-    height_mm = (
-        max(p[1] for p in extent_points) - min(p[1] for p in extent_points)
-    ) / 1_000_000
+    width_mm = (max(p[0] for p in extent_points) - min(p[0] for p in extent_points)) / 1_000_000
+    height_mm = (max(p[1] for p in extent_points) - min(p[1] for p in extent_points)) / 1_000_000
     if width_mm > 210 or height_mm > 140:
         raise InputError("observed layout spreads unnecessarily across the page")
     by_ref = {c["id"]: c["refdes"] for c in design["components"]}
@@ -2177,12 +2044,8 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
             start, end = pin_positions[(ref, "2")], pin_positions[(ref, "1")]
             reversals += not (start[0] < end[0] or start[1] < end[1])
         elif kind == "amplifier" and not relation.get("unused"):
-            component = next(
-                c for c in design["components"] if c["id"] == relation["component"]
-            )
-            function = next(
-                f for f in component["functions"] if f["id"] == relation["function"]
-            )
+            component = next(c for c in design["components"] if c["id"] == relation["component"])
+            function = next(f for f in component["functions"] if f["id"] == relation["function"])
             ref = component["refdes"]
             reversals += (
                 pin_positions[(ref, function["pins"]["plus"])][0]
@@ -2211,13 +2074,9 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
 
     def require_path(first, second, relation):
         if not wired_path(first, second):
-            raise InputError(
-                f"observed local motif lacks explicit wire path: {relation}"
-            )
+            raise InputError(f"observed local motif lacks explicit wire path: {relation}")
         a, b = pin_positions[first], pin_positions[second]
-        local_paths.append(
-            (relation, (abs(a[0] - b[0]) + abs(a[1] - b[1])) / 1_000_000)
-        )
+        local_paths.append((relation, (abs(a[0] - b[0]) + abs(a[1] - b[1])) / 1_000_000))
 
     for first in relation_by_kind.get("series", []):
         for second in relation_by_kind.get("series", []):
@@ -2243,12 +2102,8 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
         for second in relation_by_kind.get("amplifier", []):
             if second.get("unused") or first["output"] != second["input"]:
                 continue
-            component = next(
-                c for c in design["components"] if c["id"] == second["component"]
-            )
-            function = next(
-                f for f in component["functions"] if f["id"] == second["function"]
-            )
+            component = next(c for c in design["components"] if c["id"] == second["component"])
+            function = next(f for f in component["functions"] if f["id"] == second["function"])
             source = pin(first["component"], "2")
             input_leg = next(
                 (
@@ -2256,9 +2111,7 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
                     for r in relation_by_kind.get("series", [])
                     if r["input"] == first["output"]
                     and pin_to_net.get(pin(r["component"], "2"))
-                    == pin_to_net.get(
-                        pin(second["component"], function["pins"]["minus"])
-                    )
+                    == pin_to_net.get(pin(second["component"], function["pins"]["minus"]))
                 ),
                 None,
             )
@@ -2292,23 +2145,17 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
             if net["id"] == relation["first"]
             for cid, number in net["members"]
             if cid != relation["component"]
-            and not next(c for c in design["components"] if c["id"] == cid)[
-                "asset"
-            ].startswith("Connector_Generic:")
+            and not next(c for c in design["components"] if c["id"] == cid)["asset"].startswith(
+                "Connector_Generic:"
+            )
         ]
-        if peers and not any(
-            wired_path(peer, pin(relation["component"], "1")) for peer in peers
-        ):
+        if peers and not any(wired_path(peer, pin(relation["component"], "1")) for peer in peers):
             raise InputError("observed bridge is visually detached")
         for stage in relation_by_kind.get("amplifier", []):
             if stage.get("unused") or stage["output"] != relation["second"]:
                 continue
-            component = next(
-                c for c in design["components"] if c["id"] == stage["component"]
-            )
-            function = next(
-                f for f in component["functions"] if f["id"] == stage["function"]
-            )
+            component = next(c for c in design["components"] if c["id"] == stage["component"])
+            function = next(f for f in component["functions"] if f["id"] == stage["function"])
             require_path(
                 pin(relation["component"], "2"),
                 pin(stage["component"], function["pins"]["out"]),
@@ -2319,17 +2166,12 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
         cap = next(
             pin(relation["component"], number)
             for number in ("1", "2")
-            if pin_to_net.get(pin(relation["component"], number))
-            == pin_to_net.get(consumer)
+            if pin_to_net.get(pin(relation["component"], number)) == pin_to_net.get(consumer)
         )
         require_path(consumer, cap, "decoupling")
     for relation in relation_by_kind.get("timing_ladder", []):
-        require_path(
-            pin(relation["upper"], "2"), pin(relation["lower"], "1"), "timing discharge"
-        )
-        require_path(
-            pin(relation["lower"], "2"), pin(relation["capacitor"], "1"), "timing node"
-        )
+        require_path(pin(relation["upper"], "2"), pin(relation["lower"], "1"), "timing discharge")
+        require_path(pin(relation["lower"], "2"), pin(relation["capacitor"], "1"), "timing node")
         if not (
             pin_positions[pin(relation["upper"], "1")][1]
             < pin_positions[pin(relation["lower"], "1")][1]
@@ -2364,8 +2206,7 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
             ]
             if peers:
                 local_spans.append(
-                    min(abs(anode[0] - p[0]) + abs(anode[1] - p[1]) for p in peers)
-                    / 1_000_000
+                    min(abs(anode[0] - p[0]) + abs(anode[1] - p[1]) for p in peers) / 1_000_000
                 )
         elif kind == "shunt":
             shunt_ref = by_ref[relation["component"]]
@@ -2376,15 +2217,13 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
                 if net["id"] == relation["node"]
                 for cid, pin in net["members"]
                 if cid != relation["component"]
-                and not next(c for c in design["components"] if c["id"] == cid)[
-                    "asset"
-                ].startswith("Connector_Generic:")
+                and not next(c for c in design["components"] if c["id"] == cid)["asset"].startswith(
+                    "Connector_Generic:"
+                )
             ]
             if peers:
                 local_spans.append(
-                    min(
-                        abs(terminal[0] - p[0]) + abs(terminal[1] - p[1]) for p in peers
-                    )
+                    min(abs(terminal[0] - p[0]) + abs(terminal[1] - p[1]) for p in peers)
                     / 1_000_000
                 )
         elif kind == "feedback" and "resistor" in relation:
@@ -2405,9 +2244,7 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
                 p
                 for p in ("1", "2")
                 if (cap_ref, p)
-                in observed["nets"].get(
-                    pin_to_net[(consumer_ref, relation["consumer"][1])], []
-                )
+                in observed["nets"].get(pin_to_net[(consumer_ref, relation["consumer"][1])], [])
             )
             cap = pin_positions[(cap_ref, member)]
             span = (abs(consumer[0] - cap[0]) + abs(consumer[1] - cap[1])) / 1_000_000
@@ -2422,16 +2259,12 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
             if max(box[0], obstacle[0]) < min(box[2], obstacle[2]) and max(
                 box[1], obstacle[1]
             ) < min(box[3], obstacle[3]):
-                raise InputError(
-                    f"observed net label overlaps visible pin number: {net}, {owner}"
-                )
+                raise InputError(f"observed net label overlaps visible pin number: {net}, {owner}")
         for owner, obstacle in rectangles + label_boxes[index + 1 :]:
             if max(box[0], obstacle[0]) < min(box[2], obstacle[2]) and max(
                 box[1], obstacle[1]
             ) < min(box[3], obstacle[3]):
-                raise InputError(
-                    f"observed net label overlaps body/label: {net}, {owner}"
-                )
+                raise InputError(f"observed net label overlaps body/label: {net}, {owner}")
     bends = sum(tree.bends for tree in conductor_trees.values())
     if bends > max(16, len(wires) * 3):
         raise InputError("observed excessive bends")
@@ -2446,9 +2279,7 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
         "observed_motif_fragmentation_mm": max(local_spans, default=0),
         "observed_bend_count": bends,
         "observed_required_visible_fields": 2
-        * sum(
-            item["lib"] != "power:PWR_FLAG" for item in observed["occurrences"].values()
-        ),
+        * sum(item["lib"] != "power:PWR_FLAG" for item in observed["occurrences"].values()),
         "observed_page_margin_pass": True,
         "observed_feedback_span_mm": max(spans, default=0),
         "observed_wire_length_mm": sum(tree.length for tree in conductor_trees.values())
@@ -2461,9 +2292,7 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
             len(tree.junctions) for tree in conductor_trees.values()
         ),
         "observed_stage_order_reversal_count": 0,
-        "observed_local_wire_span_mm": max(
-            (span for _, span in local_paths), default=0
-        ),
+        "observed_local_wire_span_mm": max((span for _, span in local_paths), default=0),
         "observed_local_wire_span_witness": max(
             local_paths, key=lambda item: item[1], default=None
         ),
@@ -2472,8 +2301,6 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
         "observed_content_height_mm": height_mm,
         "observed_page_utilization": round(width_mm * height_mm / (256.36 * 159.2), 6),
         "observed_text_wire_clearance_mm": (
-            None
-            if minimum_text_clearance is None
-            else minimum_text_clearance / 1_000_000
+            None if minimum_text_clearance is None else minimum_text_clearance / 1_000_000
         ),
     }

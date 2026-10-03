@@ -281,6 +281,13 @@ jobs:
           python tools/run_m2h2_i1.py --group i5 --only c3_s1_2 --out "$root/three_consumers"
           python tools/run_m2h2_i1.py --group i3 --only selected_triple --out "$root/tall_core_package_long_text"
 
+      - name: M2h2 actual whole-band five-run regression
+        run: |
+          PYTHONPATH=src:tools python tools/run_m2h2_structural_alternative.py \
+            --design fixtures/m2h2/interaction/i3/a3_one.json \
+            --out fixtures/m2h2/development_checks/ci_current_regressions_${{ github.sha }}/whole_band/a3_one \
+            --bands 1
+
       - name: M2h2 fresh-qualification regression builds
         env:
           PYTHONPATH: src:tools

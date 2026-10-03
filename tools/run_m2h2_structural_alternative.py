@@ -63,7 +63,7 @@ def band_count(packing, *, core_only: bool = False) -> int:
     return len(bands)
 
 
-def extra_packings(baseline: Packing) -> tuple[Packing, ...]:
+def extra_packings(baseline: Packing, variants=None) -> tuple[Packing, ...]:
     """Bounded measured row compaction and staggered-band development classes."""
     items = baseline.fragments
     functional = [item for item in items if item.fragment.block.function is not None]
@@ -132,6 +132,40 @@ def extra_packings(baseline: Packing) -> tuple[Packing, ...]:
                     baseline.attempts + ("measured-active-row-support-band",),
                 ),
             )
+    # One measured row of all non-interface cells uses certified local variants.
+    # Interface cells remain in their existing band; no semantic topology changes.
+    if variants is not None:
+        row_cells = [item for item in items if item.fragment.block.kind != "interface"]
+        if len(row_cells) > 1:
+            left = min(item.envelope[0] for item in items)
+            row_top = (
+                max(
+                    (item.envelope[3] for item in items if item.fragment.block.kind == "interface"),
+                    default=min(item.envelope[1] for item in items),
+                )
+                + 2 * PITCH
+            )
+            replacement = {}
+            cursor = left
+            for item in row_cells:
+                fragment = min(
+                    variants[item.fragment.block.id],
+                    key=lambda variant: (
+                        variant.envelope[2] - variant.envelope[0],
+                        variant.envelope[3] - variant.envelope[1],
+                        variant.id,
+                    ),
+                )
+                replacement[item.fragment.block.id] = _place(fragment, cursor, row_top)
+                cursor += fragment.envelope[2] - fragment.envelope[0] + 2 * PITCH
+            if cursor - left - 2 * PITCH <= MAX_CONTENT_WIDTH:
+                candidates.insert(
+                    0,
+                    Packing(
+                        tuple(replacement.get(item.fragment.block.id, item) for item in items),
+                        baseline.attempts + ("measured-all-cell-row",),
+                    ),
+                )
     # Generic vertical separation/backfill proposals include passive-only designs.
     movable = [item for item in items if item.fragment.block.kind != "interface"]
     for target in movable:
@@ -258,7 +292,11 @@ def select_scene(design: dict, emitted_assets: dict, args) -> tuple:
     plan = semantic_plan(design, emitted_assets)
     variants = fragment_variants(design, emitted_assets, plan)
     seeds = pack_fragment_candidates(plan, variants)
-    packings = (*seeds, *_partial_beam_candidates(plan, variants), *extra_packings(seeds[0]))
+    packings = (
+        *seeds,
+        *_partial_beam_candidates(plan, variants),
+        *extra_packings(seeds[0], variants),
+    )
     candidates = []
     seen = set()
     for index, packing in enumerate(packings):
