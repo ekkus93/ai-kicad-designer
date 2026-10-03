@@ -15,27 +15,18 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: m2h2-final-interactions-ada198a39b6fc8f652793f9444393276619f7984
+          name: m2h2-current-regressions-7ebfe8b3d10fb90532aa1e20277618b399886fb9
           path: evidence
-          run-id: 37089782393
+          run-id: 37093175818
           github-token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Read preserved failure witnesses
+      - name: Read preserved ERC failure witnesses
         run: |
           python - <<'PY'
           import json
           from pathlib import Path
-          root = Path("evidence")
-          for group, case in (
-              ("i3", "three_amplifier_one_band"),
-              ("i5", "c2_s3plus"),
-              ("i5", "c3_s1_2"),
-          ):
-              directory = root / group / case / "run1.failed"
-              for path in sorted((directory / "reports").glob("*.json")):
-                  payload = json.loads(path.read_text())
-                  print(json.dumps({
-                      "kind": "m2h2.failure-inspection.1",
-                      "group": group, "case": case,
-                      "report": path.name, "payload": payload,
-                  }, separators=(",", ":")), flush=True)
+          directory = Path("evidence/qualification_regressions/v6-8/run1.failed/reports")
+          for name in ("failure.json", "erc.json", "electrical.json"):
+              path = directory / name
+              if path.is_file():
+                  print(json.dumps({"kind": "m2h2.failure-inspection.1", "case": "v6-8", "report": name, "payload": json.loads(path.read_text())}, separators=(",", ":")), flush=True)
           PY
