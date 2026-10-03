@@ -221,3 +221,7 @@ All six measured I3 classes pass five fresh searches with locked KiCad and froze
 ## Fresh label-inspection defect — 2026-10-02
 
 M2h2 remains **INCOMPLETE**. Source `beb50458` passed 241 complete tests, six I3 alternatives x5, and all 56 base positives x5 at qualification head `4493c318`; exact base artifact is `11252733877`. Fresh I3 render close-ups (`37067694162`) exposed duplicate supply labels and reset-net text over the timer body. Those machine results cannot close final qualification after the label-layout/independent-observer correction. All historical roots and gates remain unchanged. Continue fresh tests, qualification, actual coverage, render inspection, and audits; this is an implementation defect, not a user blocker.
+
+## Restabilized source — 2026-10-03
+
+Source `8675431f76594fd51c591180f0bba85ece942c9f` passes all 246 tests and both locked KiCad 10.0.6 V6-3/DP2 regressions in run `37071729309`; static checks and hosted contracts also pass. Evidence: `finalization_checks/stabilization_8675431f_ci.json`. The render-driven label, timer-exit and complete-row placement fixes require fresh base 56 x5, I1–I6 x5 and actual structural-class qualification. New qualification roots are started against frozen identical production source; M2h2 remains **INCOMPLETE** pending coverage reconciliation, render inspection and final audits.

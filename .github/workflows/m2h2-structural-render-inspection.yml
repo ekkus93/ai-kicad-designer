@@ -1,9 +1,18 @@
 name: M2h2 Structural Render Audit
 
 on:
-  push:
+  workflow_run:
+    workflows: [M2h2 Structural Qualification]
+    types: [completed]
     branches: [master]
   workflow_dispatch:
+    inputs:
+      source_head:
+        description: Exact qualified source head
+        required: true
+      run_id:
+        description: Completed structural qualification run
+        required: true
 
 permissions:
   contents: read
@@ -11,28 +20,34 @@ permissions:
 
 jobs:
   inspect:
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[m2h2-structural-render-audit]')
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
+    env:
+      QUALIFICATION_HEAD: ${{ github.event.workflow_run.head_sha || inputs.source_head }}
+      QUALIFICATION_RUN: ${{ github.event.workflow_run.id || inputs.run_id }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.QUALIFICATION_HEAD }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - run: python -m pip install -e '.[dev]'
       - uses: actions/download-artifact@v4
         with:
-          name: m2h2-structural-qualification-beb50458a1ba3b35667534954d2f01e0f40152ba
-          path: fixtures/m2h2/structural_final_beb50458a1ba3b35667534954d2f01e0f40152ba
-          run-id: 37053544406
+          name: m2h2-structural-qualification-${{ env.QUALIFICATION_HEAD }}
+          path: fixtures/m2h2/structural_final_${{ env.QUALIFICATION_HEAD }}
+          run-id: ${{ env.QUALIFICATION_RUN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Transfer source-matched structural renders
         run: |
           PYTHONPATH=src:tools python - <<'PY'
           import json
+          import os
           from pathlib import Path
           from run_m2h2_final_artifact_audit import identity_errors, render_chunks
-          root = Path('fixtures/m2h2/structural_final_beb50458a1ba3b35667534954d2f01e0f40152ba')
+          root = Path('fixtures/m2h2/structural_final_' + os.environ['QUALIFICATION_HEAD'])
           records = []
           for path in sorted(root.glob('*/results.json')):
               payload = json.loads(path.read_text())

@@ -27,17 +27,17 @@ A checkbox may be checked only from current-source evidence. Older qualification
 
 ## 1. Current-source baseline
 
-- [ ] Run current fast complete pytest baseline. Evidence: source `beb50458a1ba3b35667534954d2f01e0f40152ba`, run `37053544188`, locked job `110992543350`: 241 passed in 105.83s.
-- [x] Run scoped Ruff lint. Evidence: exact-head `M2h2 Fast Validation` run `37053544188`, static job `110992543055`, source `beb50458a1ba3b35667534954d2f01e0f40152ba`, Ruff lint.
-- [x] Run scoped Ruff format check. Evidence: exact-head `M2h2 Fast Validation` run `37053544188`, static job `110992543055`, source `beb50458a1ba3b35667534954d2f01e0f40152ba`, Ruff format.
-- [x] Run `git diff --check` / applicable whitespace checks. Evidence: exact-head `M2h2 Fast Validation` run `37053544188`, static job `110992543055`, source `beb50458a1ba3b35667534954d2f01e0f40152ba`, Git diff check and scoped whitespace.
-- [x] Confirm fresh V6-3 one-run real-tool regression. Evidence: `fixtures/m2h2/finalization_checks/stabilization_beb50458_ci.json`, fresh locked regression job `110992543350`.
+- [x] Run current fast complete pytest baseline. Evidence: `fixtures/m2h2/finalization_checks/stabilization_8675431f_ci.json`: exact source `8675431f76594fd51c591180f0bba85ece942c9f`, run `37071729309`, locked job `111052498258`, 246 passed in 99.94s.
+- [x] Run scoped Ruff lint. Evidence: exact-head `M2h2 Fast Validation` run `37071729309`, static job `111052498198`, source `8675431f76594fd51c591180f0bba85ece942c9f`, Ruff lint.
+- [x] Run scoped Ruff format check. Evidence: exact-head `M2h2 Fast Validation` run `37071729309`, static job `111052498198`, source `8675431f76594fd51c591180f0bba85ece942c9f`, Ruff format.
+- [x] Run `git diff --check` / applicable whitespace checks. Evidence: exact-head `M2h2 Fast Validation` run `37071729309`, static job `111052498198`, source `8675431f76594fd51c591180f0bba85ece942c9f`, Git diff check and scoped whitespace.
+- [x] Confirm fresh V6-3 one-run real-tool regression. Evidence: `fixtures/m2h2/finalization_checks/stabilization_8675431f_ci.json`, fresh locked regression job `111052498258`.
   - [x] locked KiCad 10.0.6;
   - [x] independent electrical observation;
   - [x] zero unexpected ERC;
   - [x] serialized-scene verification;
   - [x] canonical VREF <= 250 mm.
-- [x] Confirm fresh DP2 one-run real-tool regression. Evidence: `fixtures/m2h2/finalization_checks/stabilization_beb50458_ci.json`, fresh locked regression job `110992543350`.
+- [x] Confirm fresh DP2 one-run real-tool regression. Evidence: `fixtures/m2h2/finalization_checks/stabilization_8675431f_ci.json`, fresh locked regression job `111052498258`.
   - [x] no external VREF connector;
   - [x] two NE5532 packages;
   - [x] all required reference consumers connected;
@@ -122,8 +122,8 @@ A checkbox may be checked only from current-source evidence. Older qualification
 - [x] Corridor/reservation capacity is checked before route acceptance. Evidence: `tests/test_m2h2_repair_matrix.py::test_route_corridor_capacity_is_checked_before_candidate_acceptance` proves global-route channel capacity accepts one route wire and rejects duplicate occupancy before candidate acceptance.
 - [x] Best rejected candidate and exact failure witness are preserved on every failure exit. Evidence: `tests/test_m2h2_repair_matrix.py::test_failure_exit_preserves_candidate_decisions_and_exact_failure_witness` forces every candidate to reject with a typed canonical-length conflict and verifies candidate decisions, failed metric, layout attempts, failure class, net, actual, and limit are preserved.
 - [x] Evidence reports meaningful structural/variant diversity, not raw attempt count only. Evidence: `tests/test_m2h2_repair_matrix.py::test_composition_evidence_reports_structural_diversity_not_raw_attempt_count` verifies seed structures, placement classes, proved structures, and proved-candidate structures in `compose_with_evidence`.
-- [x] V6-3 remains <= 250 mm canonical VREF without gate change or label shortcut. Evidence: `fixtures/m2h2/finalization_checks/stabilization_beb50458_ci.json`, fresh locked regression job `110992543350`.
-- [x] DP2 internal VREF remains connectorless, fully distributed, and <= 250 mm. Evidence: `fixtures/m2h2/finalization_checks/stabilization_beb50458_ci.json`, fresh locked regression job `110992543350`.
+- [x] V6-3 remains <= 250 mm canonical VREF without gate change or label shortcut. Evidence: `fixtures/m2h2/finalization_checks/stabilization_8675431f_ci.json`, fresh locked regression job `111052498258`.
+- [x] DP2 internal VREF remains connectorless, fully distributed, and <= 250 mm. Evidence: `fixtures/m2h2/finalization_checks/stabilization_8675431f_ci.json`, fresh locked regression job `111052498258`.
 
 ## 5. Typed repair closure
 
@@ -329,3 +329,7 @@ Run `37070465631` preserves the same two failures (244/246 tests pass). Net rout
 Measured diagnostics from `37070806754` identify a parked function in the needed active-row slot. Add a bounded atomic active/parked placement exchange into the vacated cell, followed by complete placement constraints and routing proofs. Remove the ineffective same-net obstacle experiment; retain V4-7 gateway diagnostics for the unresolved route. No gate or completion evidence is changed.
 
 Run `37071209807` preserves both failures. Compaction must repair the complete active row: a baseline sibling's external-source inequality can invalidate every isolated move. Add a bounded atomic active-row transaction and relocate parked blockers into vacated cells, with all geometry/terminal constraints rechecked. Timer supply escapes now follow their physical upward pin exit; preserve a local supply label only when no gateway label replaces it. Reset-label escape uses the full text width on grid without an unnecessary extra pitch. Fresh tests, length proofs, actual render inspection and all qualification remain open.
+
+### Restabilized source — 2026-10-03
+
+Source `8675431f76594fd51c591180f0bba85ece942c9f` passes 246 complete tests, hosted contracts, scoped lint/format/whitespace and both locked KiCad 10.0.6 current-source regressions in run `37071729309`. See `stabilization_8675431f_ci.json` and the complete production/runner/lock freeze `final_source_8675431f.json`. Start new base, I1–I6 and six-class structural roots on this identical production source. Transfer actual structural renders automatically after a successful five-run structural job. All coverage, fresh qualification, render inspection and final audits remain open.
