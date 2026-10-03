@@ -1,5 +1,10 @@
 # M2h2 development status — INCOMPLETE
 
+**Current finalization state: INCOMPLETE — final ledger validation and PASS reconciliation pending.** Production `79a36b173c6c82a68cbe575cc1d666c55d2296b3`, producer `42ab8452`: fresh 56×5 base, 72×5 interaction and 9×5 structural qualification pass, historical V3-8 is rejected, complete 283-test baseline passes, independent audit `37143838789` passes, and all 90 SHA-verified native SVGs pass engineering agent review. The ledger now closes 69 actual pair cells and five selected triples. See `final_artifact_reconciliation_42ab8452.json` and `native_inspection_42ab8452.json` under `fixtures/m2h2/finalization_checks/`. Prior candidate `585a4f7c` remains falsified historical evidence. No M3/corpus.v7 work performed.
+
+### Preserved historical working status
+
+
 The governing requirements are in `docs/M2_GENERALIZATION_REMEDIATION_SPEC.md`.
 Development probes and their expectations remain frozen in `development/`.
 Historical blind evidence is unchanged. Do not interpret the evidence below as
