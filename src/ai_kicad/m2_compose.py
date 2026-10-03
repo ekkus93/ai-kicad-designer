@@ -8,6 +8,7 @@ from .ir import InputError
 from .m2_conflicts import ConflictKind, TypedConflict
 from .m2a import PITCH, Scene, certify_scene_geometry, certify_scene_inputs
 from .m2b import Draft, measure
+from .m2_geometry import label_text_rect
 from .m2_fragments import fragment_variants
 from .m2_geometry import (
     ConductorSegment,
@@ -271,9 +272,13 @@ def _structural_repack(design, resolved, plan, packing: Packing, conflict: Place
                 )
             }
             for edge in plan.edges:
-                if edge.kind in {"signal", "branch", "package", "feedback", "support"} and (
-                    edge.source in related_ids or edge.target in related_ids
-                ):
+                if edge.kind in {
+                    "signal",
+                    "branch",
+                    "package",
+                    "feedback",
+                    "support",
+                } and (edge.source in related_ids or edge.target in related_ids):
                     expanded.update(
                         owner
                         for owner in (edge.source, edge.target)
@@ -363,7 +368,12 @@ def _structural_repack(design, resolved, plan, packing: Packing, conflict: Place
                     tops.add(item.envelope[1] - source_height - PITCH)
             for top in sorted(tops, key=lambda value: (abs(value - source.envelope[1]), value)):
                 adjusted = _measured_repack(
-                    plan, packing, source, interface_left, top, "external-interface-boundary"
+                    plan,
+                    packing,
+                    source,
+                    interface_left,
+                    top,
+                    "external-interface-boundary",
                 )
                 if adjusted is not None:
                     return adjusted, {
@@ -653,6 +663,27 @@ def _translated_rect(rect, delta):
     return tuple(value + shift for value, shift in zip(rect, (*delta, *delta), strict=True))
 
 
+def _source_marker_placement(candidates, body, obstacles):
+    """Choose one existing electrical contact and a measured glyph orientation."""
+    left, top, right, bottom = body
+    for point in dict.fromkeys(candidates):
+        for angle in (0, 180):
+            local = (left, -top, right, -bottom)
+            if angle == 180:
+                local = (-right, bottom, -left, top)
+            rect = tuple(v + d for v, d in zip(local, (*point, *point), strict=True))
+            if rect[0] < LEFT or rect[1] < TOP or rect[2] > RIGHT or rect[3] > BOTTOM:
+                continue
+            if any(
+                max(rect[0], other[0]) < min(rect[2], other[2])
+                and max(rect[1], other[1]) < min(rect[3], other[3])
+                for other in obstacles
+            ):
+                continue
+            return point, angle, rect
+    raise InputError("COMPOSE_SOURCE_GLYPH_CLEARANCE: no measured source-marker slot")
+
+
 def _assemble_candidate(design: dict, resolved: dict, plan, packing: Packing, retry: int):
     draft = Draft(design, resolved, {}, {}, [], [], [], [], {})
     conductors: list[ConductorSegment] = []
@@ -781,6 +812,11 @@ def _assemble_candidate(design: dict, resolved: dict, plan, packing: Packing, re
         canonical_trees.append(tree)
     conductors = [segment for tree in canonical_trees for segment in tree.segments]
     assertion_points = {}
+    assertion_glyphs = {}
+    marker_obstacles = [
+        item.rect for item in occupied if item.kind in {"body", "text", "label", "pin"}
+    ]
+    marker_obstacles.extend(label_text_rect(net, point) for net, point in draft.labels)
     for assertion in design["power_assertions"]:
         candidates = sorted(point for net, point in draft.labels if net == assertion["net"])
         candidates.extend(
@@ -795,7 +831,12 @@ def _assemble_candidate(design: dict, resolved: dict, plan, packing: Packing, re
             raise InputError(
                 f"COMPOSE_ASSERTION_PORT_MISSING: {assertion['id']}:{assertion['net']}"
             )
-        assertion_points[assertion["id"]] = candidates[0]
+        source_body = resolved["power:PWR_FLAG"].bodies[0]
+        point, angle, rect = _source_marker_placement(candidates, source_body, marker_obstacles)
+        assertion_points[assertion["id"]] = point
+        assertion_glyphs[assertion["id"]] = rect
+        draft.angles[(assertion["id"], 1)] = angle
+        marker_obstacles.append(rect)
     net_proofs = []
     presentation_by_net = {item.id: item for item in plan.presentation_nets}
     for tree in canonical_trees:
@@ -922,7 +963,7 @@ def _assemble_candidate(design: dict, resolved: dict, plan, packing: Packing, re
             assertion["id"],
             "source_glyph",
             assertion["id"],
-            (point[0] - PITCH, point[1] - PITCH, point[0] + PITCH, point[1] + PITCH),
+            assertion_glyphs[assertion["id"]],
         )
         occupied.append(glyph)
         reservations.append(
@@ -1053,7 +1094,10 @@ def _structural_signature(packing: Packing) -> tuple[tuple, ...]:
         for index, item in enumerate(
             sorted(
                 items,
-                key=lambda item: (item.envelope[0] + item.envelope[2], item.fragment.block.id),
+                key=lambda item: (
+                    item.envelope[0] + item.envelope[2],
+                    item.fragment.block.id,
+                ),
             )
         )
     }
@@ -1152,7 +1196,11 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
                             )
                         except InputError:
                             working_packing, substitution = _substitution_repack(
-                                plan, variants, working_packing, last_conflict, seed_index
+                                plan,
+                                variants,
+                                working_packing,
+                                last_conflict,
+                                seed_index,
                             )
                     elif (
                         round_index == 3
@@ -1166,7 +1214,11 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
                             )
                         except InputError:
                             working_packing, substitution = _substitution_repack(
-                                plan, variants, working_packing, last_conflict, seed_index
+                                plan,
+                                variants,
+                                working_packing,
+                                last_conflict,
+                                seed_index,
                             )
                     elif (
                         round_index == 3

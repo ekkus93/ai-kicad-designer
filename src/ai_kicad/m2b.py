@@ -1752,6 +1752,7 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
     rectangles = []
     required_fields = []
     visible_pin_numbers = []
+    source_refs = set()
     for symbol in children(tree, "symbol"):
         ref = next(p[2] for p in children(symbol, "property") if p[1] == "Reference")
         lib = one(symbol, "lib_id")[1]
@@ -1765,14 +1766,14 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
         at = one(symbol, "at")
         x, y, angle = _nm(at[1]), _nm(at[2]), int(at[3])
         instances[(ref, unit)] = (x, y, angle)
+        if lib == "power:PWR_FLAG":
+            source_refs.add(ref)
         if lib in definitions:
             visible_pin_numbers.extend(
                 (ref, rectangle)
                 for rectangle in pin_number_rectangles(definitions[lib], unit, x, y, angle)
             )
-        if lib == "power:PWR_FLAG":
-            continue
-        if lib not in {"Device:R", "Device:C"}:
+        if lib not in {"Device:R", "Device:C", "power:PWR_FLAG"}:
             for prop in children(symbol, "property"):
                 if prop[1] not in {"Reference", "Value"}:
                     continue
@@ -1817,6 +1818,14 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
         )
         for net, point in observed["labels"]
     ]
+    for ref, box in rectangles:
+        if ref not in source_refs:
+            continue
+        for net, obstacle in label_boxes:
+            if max(box[0], obstacle[0]) < min(box[2], obstacle[2]) and max(
+                box[1], obstacle[1]
+            ) < min(box[3], obstacle[3]):
+                raise InputError(f"observed source glyph overlaps label: {ref}, {net}")
     for ref, field_name, box in required_fields:
         for owner, obstacle in rectangles + label_boxes:
             if max(box[0], obstacle[0]) < min(box[2], obstacle[2]) and max(

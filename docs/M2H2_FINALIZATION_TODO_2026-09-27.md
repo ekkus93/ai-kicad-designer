@@ -403,3 +403,13 @@ Exact instrumentation on frozen DP2 found 33 and 35 local proposals for package 
 - [ ] Confirm local-construction proposals never exceed 32 per fragment, including rejected proposals, and exact budget/retention-uncovered classes are recorded on current source. Development tests: `test_local_construction_budget_counts_rejections_and_preserves_uncovered` and `test_failed_local_constructor_preserves_rejected_proposal_evidence`; full new baseline remains pending.
 
 Predecessor baseline `37113559365` passes all jobs and five actual whole-band builds, but cannot close final-source gates after this budget/evidence behavior change. Fresh source baseline and qualification remain required; no stale or local-only evidence is promoted.
+
+## Native power-source glyph clearance — 2026-10-03
+
+Current-source baseline `37114227421` on `354efedab75f7af017019d41d1eefa59e6d27d99` passes all jobs: locked job `111177784156` has 266 passing tests, V6-3/DP2 real-tool regressions, target five-run regressions and five actual whole-band `a3_one` builds; hosted `111177784262` and static `111177784266` pass. This baseline confirms the shared local-construction ceiling and restored original regression inventory, but is superseded for final-source qualification by the glyph-clearance behavior change below.
+
+Actual native inspection of preserved `fixtures/m2h2/interaction_alternatives/a3_one_three_amplifier_candidate1/run1/renders/schematic/M2h2I3ThreeAmplifierOneBand.svg` finds the PWR_FLAG diamond over the first letter of VPLUS. The source marker was placed at the same label anchor with a symmetric one-pitch planner box; the locked glyph extends two pitches above its electrical pin. This is historical native falsification evidence, not current qualification credit.
+
+The generic repair uses the actual locked PWR_FLAG body, finite existing same-net contacts and 0/180-degree orientations. It moves no electrical contact off its existing conductor, adds no wires and changes no route budget. Actual source-glyph extents are reserved. Independent emitted-byte layout observation now includes source bodies and rejects their collisions with labels, required fields and other bodies. `tests/test_m2h2_source_marker.py` includes measured orientation and an independent embedded-glyph collision negative. Exact evidence: `fixtures/m2h2/finalization_checks/source_marker_clearance_2026-10-03.json`.
+
+Fresh complete baseline, full final-source qualification, native render inspection, coverage and audits remain required. No final checkbox is promoted from this development slice.
