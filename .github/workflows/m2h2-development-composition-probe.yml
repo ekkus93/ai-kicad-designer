@@ -1,0 +1,20 @@
+name: M2h2 Development Composition Probe
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  composition-probe:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[m2h2-development-probe]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[dev]'
+      - name: Inspect bounded composition of preserved regressions
+        run: PYTHONPATH=src:tools python .github/scripts/m2h2_development_probe.py
