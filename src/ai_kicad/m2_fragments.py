@@ -24,7 +24,13 @@ from .m2_geometry import (
     segment_is_admissible,
 )
 from .m2a import Asset, PITCH, Pin
-from .m2b import Draft, choose_text_slots, orientation_for_flow, _turn
+from .m2b import (
+    Draft,
+    choose_text_slots,
+    orientation_for_flow,
+    pin_number_rectangles,
+    _turn,
+)
 from .m2_semantics import BlockPlan, Occurrence, SemanticPlan, SemanticPort
 
 
@@ -69,7 +75,9 @@ class FragmentVariant:
     def __post_init__(self) -> None:
         object.__setattr__(self, "positions", MappingProxyType(dict(self.positions)))
         object.__setattr__(self, "angles", MappingProxyType(dict(self.angles)))
-        object.__setattr__(self, "text_positions", MappingProxyType(dict(self.text_positions)))
+        object.__setattr__(
+            self, "text_positions", MappingProxyType(dict(self.text_positions))
+        )
         if self.content_envelope is None:
             object.__setattr__(self, "content_envelope", self.envelope)
         if self.packing_envelope is None:
@@ -85,10 +93,14 @@ def _relationship(design: dict, relationship_id: str) -> dict:
 
 
 def _terminal_net(design: dict, component: str, pin: str) -> str:
-    return next(net["id"] for net in design["nets"] if [component, pin] in net["members"])
+    return next(
+        net["id"] for net in design["nets"] if [component, pin] in net["members"]
+    )
 
 
-def _body_rect(design: dict, resolved: dict[str, Asset], draft: Draft, key: Occurrence) -> Rect:
+def _body_rect(
+    design: dict, resolved: dict[str, Asset], draft: Draft, key: Occurrence
+) -> Rect:
     component = _component(design, key[0])
     body = resolved[component["asset"]].bodies.get(key[1]) or resolved[
         component["asset"]
@@ -106,7 +118,9 @@ def _body_rect(design: dict, resolved: dict[str, Asset], draft: Draft, key: Occu
     return min(xs), min(ys), max(xs), max(ys)
 
 
-def _clear_nonpassive_text(design: dict, resolved: dict[str, Asset], draft: Draft) -> None:
+def _clear_nonpassive_text(
+    design: dict, resolved: dict[str, Asset], draft: Draft
+) -> None:
     components = {component["id"]: component for component in design["components"]}
     for key in sorted(draft.text_positions):
         component = components.get(key[0])
@@ -176,12 +190,14 @@ def _clear_nonpassive_text(design: dict, resolved: dict[str, Asset], draft: Draf
                     (
                         a[0] == b[0]
                         and rect[0] < a[0] < rect[2]
-                        and max(min(a[1], b[1]), rect[1]) < min(max(a[1], b[1]), rect[3])
+                        and max(min(a[1], b[1]), rect[1])
+                        < min(max(a[1], b[1]), rect[3])
                     )
                     or (
                         a[1] == b[1]
                         and rect[1] < a[1] < rect[3]
-                        and max(min(a[0], b[0]), rect[0]) < min(max(a[0], b[0]), rect[2])
+                        and max(min(a[0], b[0]), rect[0])
+                        < min(max(a[0], b[0]), rect[2])
                     )
                 )
                 for rect in rectangles
@@ -239,7 +255,9 @@ def _occupied_geometry(
                     (pin.name, pin.electrical_type),
                 )
             )
-    for index, ((first, second), net) in enumerate(zip(draft.wires, draft.wire_nets, strict=True)):
+    for index, ((first, second), net) in enumerate(
+        zip(draft.wires, draft.wire_nets, strict=True)
+    ):
         items.append(
             GeometryItem(
                 f"wire.{index}",
@@ -265,7 +283,9 @@ def _occupied_geometry(
             )
         )
     for index, point in enumerate(draft.junctions):
-        items.append(GeometryItem(f"junction.{index}", "junction", block.id, (*point, *point)))
+        items.append(
+            GeometryItem(f"junction.{index}", "junction", block.id, (*point, *point))
+        )
     return tuple(items)
 
 
@@ -338,7 +358,8 @@ def _finish(
     original_wire_count = len(draft.wires)
     escape_length = (
         3 * PITCH
-        if block.kind in {"package_power", "power_stage", "timer", "led_branch", "rc", "series"}
+        if block.kind
+        in {"package_power", "power_stage", "timer", "led_branch", "rc", "series"}
         else PITCH
     )
     direction_delta = {
@@ -354,7 +375,8 @@ def _finish(
             or (
                 port.role in {"power_in", "power_out"}
                 and not any(
-                    relation["kind"] == "reference_divider" and relation["local"] == port.net
+                    relation["kind"] == "reference_divider"
+                    and relation["local"] == port.net
                     for relation in design["relationships"]
                 )
             )
@@ -368,10 +390,14 @@ def _finish(
                 terminal
                 for terminal, net in terminal_nets.items()
                 if net == port.net
-                and any(occurrence[0] == terminal[0] for occurrence in block.occurrences)
+                and any(
+                    occurrence[0] == terminal[0] for occurrence in block.occurrences
+                )
             )
         )
-        if not witnesses or any(terminal_nets.get(terminal) != port.net for terminal in witnesses):
+        if not witnesses or any(
+            terminal_nets.get(terminal) != port.net for terminal in witnesses
+        ):
             raise InputError(f"FRAGMENT_PORT_TERMINAL_IDENTITY: {port.id}:{port.net}")
         port_escape_length = (
             PITCH
@@ -394,12 +420,26 @@ def _finish(
             "down": (0, port_escape_length),
         }[direction]
         gateway_point = (anchor[0] + dx, anchor[1] + dy)
+        escape_polyline = (anchor, gateway_point)
         if emit_label:
             bodies = [
                 _body_rect(design, resolved, draft, occurrence)
                 for occurrence in draft.positions
                 if occurrence[0] in component_ids
             ]
+            pin_text = []
+            for occurrence, (sx, sy) in draft.positions.items():
+                if occurrence[0] in component_ids:
+                    component = _component(design, occurrence[0])
+                    pin_text.extend(
+                        pin_number_rectangles(
+                            resolved[component["asset"]].definition,
+                            occurrence[1],
+                            sx,
+                            sy,
+                            draft.angles.get(occurrence, 0),
+                        )
+                    )
             step_x, step_y = {
                 "left": (-PITCH, 0),
                 "right": (PITCH, 0),
@@ -418,7 +458,49 @@ def _finish(
                 gateway_point = (x + step_x, y + step_y)
             else:
                 raise InputError(f"LABEL_ESCAPE_INFEASIBLE: {port.id}")
-        draft.route(port.net, anchor, gateway_point)
+            escape_polyline = (anchor, gateway_point)
+            box = label_text_rect(port.net, gateway_point)
+            if any(
+                max(box[0], r[0]) < min(box[2], r[2])
+                and max(box[1], r[1]) < min(box[3], r[3])
+                for r in pin_text
+            ):
+                original = gateway_point
+                candidates = (
+                    (
+                        (original[0] + step * step_x, original[1] + step * step_y)
+                        for step in range(1, 9)
+                    )
+                    if len(block.ports) > 1
+                    else (
+                        (
+                            (original[0], original[1] + step * PITCH)
+                            for step in (2, -2, 3, -3, 4, -4, 6, -6)
+                        )
+                        if direction in {"left", "right"}
+                        else (
+                            (original[0] + step * PITCH, original[1])
+                            for step in (2, -2, 3, -3, 4, -4, 6, -6)
+                        )
+                    )
+                )
+                for candidate in candidates:
+                    box = label_text_rect(port.net, candidate)
+                    if all(
+                        max(box[0], r[0]) >= min(box[2], r[2])
+                        or max(box[1], r[1]) >= min(box[3], r[3])
+                        for r in bodies + pin_text
+                    ):
+                        gateway_point = candidate
+                        escape_polyline = (
+                            (anchor, gateway_point)
+                            if len(block.ports) > 1
+                            else (anchor, original, gateway_point)
+                        )
+                        break
+                else:
+                    raise InputError(f"LABEL_PIN_TEXT_ESCAPE_INFEASIBLE: {port.id}")
+        draft.route(port.net, *escape_polyline)
         if emit_label:
             # A label at the gateway's source is redundant on the same escape
             # conductor and can overlap the final gateway label.
@@ -442,7 +524,7 @@ def _finish(
             f"{block.id}:{port.net}",
             anchor,
             direction,
-            (anchor, gateway_point),
+            escape_polyline,
             frozenset({direction}),
             (access,),
         )
@@ -624,7 +706,8 @@ def _finish(
             "terminal_to_gateway",
             60_000_000
             if any(
-                relation["kind"] == "decoupling" and relation["component"] == terminal[0]
+                relation["kind"] == "decoupling"
+                and relation["component"] == terminal[0]
                 for relation in design["relationships"]
                 for terminal in gateway.terminals
             )
@@ -948,7 +1031,9 @@ def _package_fragment(
         block,
         d,
         anchors,
-        variant_suffix=("compact_balanced_" if balanced else "compact_" if compact else "expanded_")
+        variant_suffix=(
+            "compact_balanced_" if balanced else "compact_" if compact else "expanded_"
+        )
         + reference_side,
     )
 
@@ -964,7 +1049,8 @@ def _reference_divider_fragment(
     divider = next(
         relation
         for relation in design["relationships"]
-        if relation["kind"] == "reference_divider" and relation["id"] in block.relationships
+        if relation["kind"] == "reference_divider"
+        and relation["id"] in block.relationships
     )
     draft = _new_draft(design, resolved)
     x, upper_y = 35 * PITCH, 25 * PITCH
@@ -1089,7 +1175,10 @@ def _timer_fragment(
     d = _new_draft(design, resolved)
     tx, ty, lx = 42 * PITCH, 38 * PITCH, 15 * PITCH
     d.add(timer["component"], tx, ty)
-    p = {role: d.point(timer["component"], number) for role, number in timer["pins"].items()}
+    p = {
+        role: d.point(timer["component"], number)
+        for role, number in timer["pins"].items()
+    }
     # The compact construction keeps the same ordered ladder terminals while
     # using separate measured body/text clearances for a shorter support band.
     d.add(ladder["upper"], lx, ty - (14 if compact else 20) * PITCH)
@@ -1291,11 +1380,15 @@ def _access_alternatives(
     alternatives = [
         (name, direction)
         for name in configurable
-        for direction in allowed_by_kind.get(base.block.kind, (suffixes[name].escape_direction,))
+        for direction in allowed_by_kind.get(
+            base.block.kind, (suffixes[name].escape_direction,)
+        )
         if direction != suffixes[name].escape_direction
         # A timer's right-facing output must leave the local motif outward.
         # A left escape folds back into its owned pin/terminal corridor.
-        and not (base.block.kind == "timer" and name == "output" and direction == "left")
+        and not (
+            base.block.kind == "timer" and name == "output" and direction == "left"
+        )
     ]
     for name, direction in alternatives:
         draft = Draft(
@@ -1348,7 +1441,8 @@ def _access_alternatives(
     available = [variant for variant in variants if variant in distinct.values()]
     retained = [base]
     base_directions = {
-        gateway.id.rsplit(".", 1)[-1]: gateway.escape_direction for gateway in base.gateways
+        gateway.id.rsplit(".", 1)[-1]: gateway.escape_direction
+        for gateway in base.gateways
     }
     for name in configurable:
         representative = next(
@@ -1423,7 +1517,12 @@ def fragment_variants(
             try:
                 bases.append(
                     _package_fragment(
-                        design, resolved, block, reference_side="up", compact=True, balanced=True
+                        design,
+                        resolved,
+                        block,
+                        reference_side="up",
+                        compact=True,
+                        balanced=True,
                     )
                 )
             except InputError:
@@ -1431,7 +1530,9 @@ def fragment_variants(
         elif block.kind == "reference_divider":
             bases = [_reference_divider_fragment(design, resolved, block)]
             try:
-                bases.append(_reference_divider_fragment(design, resolved, block, compact=True))
+                bases.append(
+                    _reference_divider_fragment(design, resolved, block, compact=True)
+                )
             except InputError:
                 pass
         elif block.kind == "power_stage":
@@ -1446,7 +1547,9 @@ def fragment_variants(
             bases = [_passive_fragment(design, resolved, block)]
             if block.kind in {"rc", "led_branch"}:
                 try:
-                    bases.append(_passive_fragment(design, resolved, block, compact=True))
+                    bases.append(
+                        _passive_fragment(design, resolved, block, compact=True)
+                    )
                 except InputError:
                     pass
         elif block.kind == "interface":

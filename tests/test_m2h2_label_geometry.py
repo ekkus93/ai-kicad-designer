@@ -7,14 +7,16 @@ import pytest
 
 from ai_kicad.ir import InputError
 from ai_kicad.m2a import ROOT
-from ai_kicad.m2b import assets, check_observed_layout, validate
+from ai_kicad.m2b import assets, check_observed_layout, pin_number_rectangles, validate
 from ai_kicad.m2_fragments import fragment_variants
 from ai_kicad.m2_geometry import label_text_rect, label_text_width
 from ai_kicad.m2_semantics import semantic_plan
 
 
 @pytest.mark.parametrize("obstacle", ["body", "label"])
-def test_emitted_net_label_overlap_is_rejected_independently(tmp_path: Path, obstacle: str):
+def test_emitted_net_label_overlap_is_rejected_independently(
+    tmp_path: Path, obstacle: str
+):
     schematic = tmp_path / "mutated.kicad_sch"
     schematic.write_text(
         "(kicad_sch "
@@ -58,7 +60,9 @@ def test_connector_access_labels_clear_owned_physical_bodies(case: str):
         for variant in choices:
             if variant.block.kind != "interface":
                 continue
-            bodies = [item.rect for item in variant.occupied_geometry if item.kind == "body"]
+            bodies = [
+                item.rect for item in variant.occupied_geometry if item.kind == "body"
+            ]
             for net, (x, y) in variant.labels:
                 # The serialized label is left-justified above its anchor. A
                 # connector's pin exit does not imply that this text is clear.
@@ -69,7 +73,9 @@ def test_connector_access_labels_clear_owned_physical_bodies(case: str):
                     for body in bodies
                 ), (variant.id, net, box, bodies)
             downward.extend(
-                gateway for gateway in variant.gateways if gateway.escape_direction == "down"
+                gateway
+                for gateway in variant.gateways
+                if gateway.escape_direction == "down"
             )
     assert downward, "the regression must exercise downward connector alternatives"
 
@@ -78,7 +84,9 @@ def test_connector_access_labels_clear_owned_physical_bodies(case: str):
     ("name", "next_x"),
     [("WWWWWW", 8_890_000), ("LONG_NET_ALIAS_ALPHA", 22_000_000)],
 )
-def test_stroke_font_label_advance_rejects_visually_adjacent_names(tmp_path, name, next_x):
+def test_stroke_font_label_advance_rejects_visually_adjacent_names(
+    tmp_path, name, next_x
+):
     schematic = tmp_path / "wide_labels.kicad_sch"
     schematic.write_text("(kicad_sch (lib_symbols))")
     # The former 0.89 mm average leaves these authored wide-glyph labels
@@ -107,3 +115,64 @@ def test_label_extent_contains_locked_stroke_width_and_anchor_offset():
     # planner's prior average-character rectangle.
     assert label_text_width("REQUIRED_NET_LABEL20") >= 22_942_100
     assert label_text_rect("N", (0, 0))[1] <= -1_859_000
+
+
+def test_emitted_label_cannot_merge_with_visible_connector_pin_number(tmp_path):
+    schematic = tmp_path / "pin_number_overlap.kicad_sch"
+    definition = assets()["Connector_Generic:Conn_01x01"].definition
+    schematic.write_text(
+        f"(kicad_sch (lib_symbols {definition}) "
+        '(symbol (lib_id "Connector_Generic:Conn_01x01") (at 50 50 0) (unit 1) '
+        '(property "Reference" "J9" (at 50 30 0)) '
+        '(property "Value" "Input" (at 50 32.54 0))))'
+    )
+    # Native pin number is centered at x=46.825 mm. INPUT ends at
+    # x=47.6166 mm with this authored anchor: body-only clearance misses it.
+    with pytest.raises(
+        InputError, match="observed net label overlaps visible pin number"
+    ):
+        check_observed_layout(
+            schematic,
+            {
+                "labels": [("INPUT", (41_910_000, 50_000_000))],
+                "wires": [],
+                "pin_positions": {},
+                "nets": {},
+                "occurrences": {},
+            },
+            {"components": [], "relationships": [], "nets": []},
+        )
+
+
+def test_connector_gateway_labels_clear_native_visible_pin_number_keepouts():
+    resolved = assets()
+    design = validate(
+        json.loads(
+            (ROOT / "fixtures/m2h2/interaction/i3/a0_interleaved.json").read_text()
+        ),
+        resolved,
+    )
+    variants = fragment_variants(design, resolved, semantic_plan(design, resolved))
+    components = {c["id"]: c for c in design["components"]}
+    for choices in variants.values():
+        for variant in choices:
+            if variant.block.kind != "interface":
+                continue
+            obstacles = []
+            for key, (x, y) in variant.positions.items():
+                obstacles.extend(
+                    pin_number_rectangles(
+                        resolved[components[key[0]]["asset"]].definition,
+                        key[1],
+                        x,
+                        y,
+                        variant.angles.get(key, 0),
+                    )
+                )
+            for net, point in variant.labels:
+                box = label_text_rect(net, point)
+                assert all(
+                    max(box[0], r[0]) >= min(box[2], r[2])
+                    or max(box[1], r[1]) >= min(box[3], r[3])
+                    for r in obstacles
+                ), (variant.id, net)
