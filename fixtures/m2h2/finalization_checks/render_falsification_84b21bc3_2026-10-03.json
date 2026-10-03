@@ -1,0 +1,65 @@
+{
+  "schema_version": "m2h2.native-render-falsification.1",
+  "review_date": "2026-10-03",
+  "reviewer": "engineering/agent inspection",
+  "production_source": "2575ee20fba0ca24cc6edf50e0ae038b9aa8153c",
+  "qualification_producer": "84b21bc399e2239cd796bb9ec4f09a989f8ce808",
+  "inspected_master": "4732b0bb06c535f2c619cc2a18daa17c5a4d0087",
+  "M2h2": "INCOMPLETE",
+  "machine_qualification": {
+    "base_run": 37097234464,
+    "base_artifact": 11264579811,
+    "positives": 56,
+    "runs_per_positive": 5,
+    "negative": "original V3-8 rejected",
+    "interaction_run": 37097234532,
+    "interaction_artifact": 11265256652,
+    "interaction_cases": 72,
+    "runs_per_interaction": 5,
+    "structural_run": 37097234493,
+    "structural_artifact": 11264678212,
+    "structural_cases": 6,
+    "runs_per_structural_case": 5
+  },
+  "artifact_audit": {
+    "run": 37106385552,
+    "job": 111155635444,
+    "artifact": 11267817862,
+    "report_sha256": "594470013afafdef460866898294f4ee37002fd98d1232f9c2d25fcc0b047031",
+    "report_bytes": 13199443,
+    "machine_evidence_valid": true,
+    "remaining_gates": "actual I3 structural-class reconciliation, engineering inspection, final audits and current-source reconciliation",
+    "historical_files": 7221,
+    "historical_aggregate_sha256": "f1dcfc89822b37c6c376f844adf6a43295ffd716ad64921f44d687dfb880200e"
+  },
+  "native_render": {
+    "run": 37097935010,
+    "job": 111131585323,
+    "case": "dp3_long_fields",
+    "qualification_root": "fixtures/m2h2/qualification_final_candidate_84b21bc399e2239cd796bb9ec4f09a989f8ce808",
+    "run_path": "dp3_long_fields/run1",
+    "archived_svg": "fixtures/m2h2/finalization_checks/native_render_defect_dp3_long_fields_84b21bc3.svg",
+    "svg_sha256": "d1e1bc32dcce80c2a85a0c07790fabfba35d5776e8b84e623d9514b97711ff30",
+    "method": "Native locked KiCad SVG transferred from completed Ralph Bridge CI logs, chunk completeness checked, decompressed SVG SHA-256 verified; full-page and cropped native-vector engineering inspection.",
+    "inspection_scope": "Only six base cases were visually inspected before the hard defect was found; no claim of completed render inspection."
+  },
+  "hard_defect": {
+    "kind": "net-label readability collision",
+    "first_label": "REQUIRED_NET_LABEL20",
+    "first_x_mm": 128.27,
+    "baseline_y_mm": 99.9807,
+    "native_text_length_mm": 22.9421,
+    "second_label": "A_OUT",
+    "second_x_mm": 151.13,
+    "second_native_text_length_mm": 5.888,
+    "nominal_overlap_mm": 0.0821,
+    "former_estimator": "0.89 mm per character",
+    "reason": "Planner and independent emitted-byte observer used the same underestimated glyph width. Native rendered names run together.",
+    "required_action": "Use measured locked-font bounds in both geometry observation and planning; independently authored wide-glyph collision controls; repair resulting layout failures; stabilize and rerun all required final-source x5 qualifications. Do not waive ERC, weaken observation, or change any fixed gate."
+  },
+  "actual_i3_followup": {
+    "classes_requiring_evidence": "Active-count 2 / one core band and active-count 2 / actual interleaving need explicit observed final-source evidence; planned labels do not close them.",
+    "three_amplifier_one_band": "Prior alternative qualified one active-core band, but two total non-interface bands; record both values explicitly."
+  },
+  "credit": "Preserved failed engineering evidence. Machine qualification success cannot close final qualification or PASS after the unresolved native-render hard defect."
+}
