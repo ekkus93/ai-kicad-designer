@@ -1,0 +1,41 @@
+name: M2h2 Preserved Failure Inspection
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  failure-inspection:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[m2h2-failure-inspection]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: m2h2-final-interactions-ada198a39b6fc8f652793f9444393276619f7984
+          path: evidence
+          run-id: 37089782393
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Read preserved failure witnesses
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path("evidence")
+          for group, case in (
+              ("i3", "three_amplifier_one_band"),
+              ("i5", "c2_s3plus"),
+              ("i5", "c3_s1_2"),
+          ):
+              directory = root / group / case / "run1.failed"
+              for path in sorted((directory / "reports").glob("*.json")):
+                  payload = json.loads(path.read_text())
+                  print(json.dumps({
+                      "kind": "m2h2.failure-inspection.1",
+                      "group": group, "case": case,
+                      "report": path.name, "payload": payload,
+                  }, separators=(",", ":")), flush=True)
+          PY
