@@ -369,7 +369,11 @@ def main() -> None:
                         ROOT / "fixtures/m2h2/interaction" / group / (case["id"] + ".json"),
                     )
                 )
-                if args.emit_renders and (group == "i3" or case.get("selected_triple")):
+                if args.emit_renders and (
+                    group == "i3"
+                    or case.get("selected_triple")
+                    or (group == "i6" and case["id"].startswith("text_long_"))
+                ):
                     render_chunks(
                         args.interactions / group,
                         group + "__" + case["id"],

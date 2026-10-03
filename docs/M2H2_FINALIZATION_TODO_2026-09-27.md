@@ -433,3 +433,7 @@ Source stabilization and all affected final-source qualification gates are reope
 ## Wire-clear stabilized source and qualification trigger — 2026-10-03
 
 Exact source `1273d6af219475db5fc804d487d06e8fb6fa8c69` passes all jobs of `37124948961`: 270 tests in 146.58s, fresh V6-3/DP2, targeted five-run cases, five actual whole-band builds and six additional locked regressions. Artifact `11275495312`, ZIP SHA-256 `04d34307cd8446c37d1dd82d469cb00481befc9147b0e414983935f68d8eeea1`, preserves complete evidence. The source and runner freeze is `final_source_1273d6af.json`. The report-only trigger requests fresh final qualification of all 56 positives x5, 72 interactions x5 and nine structural alternatives x5. All final qualification, actual coverage, reproducibility, native render inspection and audit gates remain open.
+
+### Final audit input and stress-render preparation
+
+The report-only audit workflow now points to current producer `5c7640a8d9a505a733f009f7a2c7cd1d6c2012b0`: base `37125376461`, interactions `37125376457`, structural `37125376451`. These runs remain pending; download and audit must not execute until all succeed. Native render transfer additionally includes all six I6 long-text branch/support stress cases for actual readability inspection. This changes audit/report presentation only; all 19 production source hashes and four qualification-runner hashes remain frozen in `final_source_1273d6af.json`. No final checkbox is promoted.
