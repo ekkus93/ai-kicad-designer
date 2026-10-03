@@ -1,0 +1,63 @@
+name: M2h2 Base Render Audit
+
+on:
+  workflow_run:
+    workflows: [M2h2 Final Qualification]
+    types: [completed]
+    branches: [master]
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  inspect:
+    if: github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      QUALIFICATION_HEAD: ${{ github.event.workflow_run.head_sha }}
+      QUALIFICATION_RUN: ${{ github.event.workflow_run.id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.QUALIFICATION_HEAD }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[dev]'
+      - uses: actions/download-artifact@v4
+        with:
+          name: m2h2-final-qualification-${{ env.QUALIFICATION_HEAD }}
+          path: fixtures/m2h2/qualification_final_candidate_${{ env.QUALIFICATION_HEAD }}
+          run-id: ${{ env.QUALIFICATION_RUN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Transfer source-matched base renders and inspection metadata
+        run: |
+          PYTHONPATH=src:tools python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          from run_m2h2_final_artifact_audit import identity_errors, render_chunks
+          root = Path('fixtures/m2h2/qualification_final_candidate_' + os.environ['QUALIFICATION_HEAD'])
+          payload = json.loads((root / 'results.json').read_text())
+          errors = identity_errors(payload)
+          assert not errors, errors
+          assert payload['accepted'] == payload['total'] == 56
+          assert payload['negative_v3_8_accepted'] is True
+          for case in payload['results']:
+              assert case['accepted'] and case['reproducible'] and len(case['runs']) == 5
+              signature = case['signature']
+              composition = signature['composition']
+              print(json.dumps({
+                  'kind': 'm2h2.base-render-audit.1',
+                  'case': case['id'],
+                  'source_head': payload['git_head'],
+                  'source_sha256': payload['source_sha256'],
+                  'layout': signature['layout'],
+                  'blocks': composition['blocks'],
+                  'variants': composition['variants'],
+                  'runs': [run['path'] for run in case['runs']],
+              }, separators=(',', ':')), flush=True)
+              render_chunks(root, 'base__' + case['id'], root / case['id'])
+          PY
