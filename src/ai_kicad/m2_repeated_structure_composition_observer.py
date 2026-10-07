@@ -1,6 +1,8 @@
 """Independent repeated-structure composition observer."""
-from dataclasses import dataclass
+
 from collections import defaultdict
+from dataclasses import dataclass
+
 
 @dataclass(frozen=True)
 class RepeatedMember:
@@ -10,6 +12,7 @@ class RepeatedMember:
     center: tuple[int, int]
     orientation: int = 0
 
+
 @dataclass(frozen=True)
 class RepeatedStructureMetrics:
     row_alignment_variance: int
@@ -18,9 +21,11 @@ class RepeatedStructureMetrics:
     orientation_variance: int
     pitch_variance: int
 
+
 def _spread(values):
     values = tuple(values)
     return 0 if not values else max(values) - min(values)
+
 
 def measure_repeated_structure(members: tuple[RepeatedMember, ...]) -> RepeatedStructureMetrics:
     channels = defaultdict(list)
@@ -39,4 +44,6 @@ def measure_repeated_structure(members: tuple[RepeatedMember, ...]) -> RepeatedS
     for group in channels.values():
         ordered = sorted(group, key=lambda m: (m.semantic_slot, m.member_id))
         pitches += [abs(b.center[0] - a.center[0]) for a, b in zip(ordered, ordered[1:])]
-    return RepeatedStructureMetrics(row, column, _spread(displacement), orientation, _spread(pitches))
+    return RepeatedStructureMetrics(
+        row, column, _spread(displacement), orientation, _spread(pitches)
+    )
