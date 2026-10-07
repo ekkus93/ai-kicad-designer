@@ -92,7 +92,9 @@ def functional_block_dispersion(
             for occurrence in occurrences
             if occurrence in point_by_occurrence
         ]
-        missing = tuple(occurrence for occurrence in occurrences if occurrence not in point_by_occurrence)
+        missing = tuple(
+            occurrence for occurrence in occurrences if occurrence not in point_by_occurrence
+        )
         if observed:
             xs = [point[0] for _, point in observed]
             ys = [point[1] for _, point in observed]
