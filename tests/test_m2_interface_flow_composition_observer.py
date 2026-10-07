@@ -109,10 +109,16 @@ def test_renamed_permuted_equivalent_keeps_same_generic_violation_distances() ->
         ExternalInterface("left_result", SIGNAL_OUTPUT_ROLE, (10, 0), "producer"),
     )
     original_stages = (FlowStage("producer", (70, 0)),)
-    renamed_interfaces = (ExternalInterface("zeta", SIGNAL_OUTPUT_ROLE, (10, 0), "omega"),)
+    renamed_interfaces = (
+        ExternalInterface("zeta", SIGNAL_OUTPUT_ROLE, (10, 0), "omega"),
+    )
     renamed_stages = (FlowStage("omega", (70, 0)),)
 
-    original = measure_interface_flow_composition(original_interfaces, original_stages, ())
+    original = measure_interface_flow_composition(
+        original_interfaces,
+        original_stages,
+        (),
+    )
     renamed = measure_interface_flow_composition(renamed_interfaces, renamed_stages, ())
 
     original_distances = tuple(w.distance for w in original.interface_side_violations)
