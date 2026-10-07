@@ -19,14 +19,18 @@ def test_directed_input_and_output_frontier_violations_are_reported() -> None:
             ExternalInterface("input", SIGNAL_INPUT_ROLE, (50, 0), "first"),
             ExternalInterface("output", SIGNAL_OUTPUT_ROLE, (80, 0), "final"),
         ),
-        (FlowStage("first", (20, 0)), FlowStage("final", (120, 0))),
+        (
+            FlowStage("first", (20, 0)),
+            FlowStage("final", (120, 0)),
+        ),
         (),
     )
 
-    assert [
+    violations = [
         (w.interface_id, w.expected_side, w.owner_stage_id, w.distance)
         for w in metrics.interface_side_violations
-    ] == [
+    ]
+    assert violations == [
         ("input", "left", "first", 30),
         ("output", "right", "final", 40),
     ]
@@ -60,11 +64,12 @@ def test_power_input_reports_grouping_distance_not_signal_side_violation() -> No
         (),
     )
 
-    assert metrics.interface_side_violations == ()
-    assert [
+    distances = [
         (w.interface_id, w.owner_stage_id, w.distance)
         for w in metrics.power_interface_distances
-    ] == [
+    ]
+    assert metrics.interface_side_violations == ()
+    assert distances == [
         ("power", "supply", 30),
     ]
 
@@ -72,14 +77,18 @@ def test_power_input_reports_grouping_distance_not_signal_side_violation() -> No
 def test_stage_order_inversions_and_primary_backtracking_are_reported() -> None:
     metrics = measure_interface_flow_composition(
         (),
-        (FlowStage("early", (100, 0)), FlowStage("late", (40, 0))),
+        (
+            FlowStage("early", (100, 0)),
+            FlowStage("late", (40, 0)),
+        ),
         (FlowPrecedence("early", "late", PRIMARY_FLOW_ROLE),),
     )
 
-    assert [
+    reversals = [
         (w.before_stage_id, w.after_stage_id, w.reversal_distance)
         for w in metrics.stage_order_violations
-    ] == [
+    ]
+    assert reversals == [
         ("early", "late", 60),
     ]
     assert metrics.primary_flow_backtracking_distance == 60
@@ -116,7 +125,7 @@ def test_renamed_permuted_equivalent_keeps_same_generic_violation_distances() ->
         (),
     )
 
-    assert tuple(w.distance for w in original.interface_side_violations) == (60,)
-    assert tuple(
-        w.distance for w in renamed_permuted.interface_side_violations
-    ) == (60,)
+    original_distances = tuple(w.distance for w in original.interface_side_violations)
+    renamed_distances = tuple(w.distance for w in renamed_permuted.interface_side_violations)
+    assert original_distances == (60,)
+    assert renamed_distances == (60,)
