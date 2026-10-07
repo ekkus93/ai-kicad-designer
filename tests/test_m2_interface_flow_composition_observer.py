@@ -1,3 +1,4 @@
+# fmt: off
 from ai_kicad import m2_interface_flow_composition_observer as obs
 
 
@@ -156,3 +157,4 @@ def test_renamed_permuted_equivalent_keeps_same_generic_violation_distances() ->
     renamed_distances = tuple(w.distance for w in renamed.interface_side_violations)
     assert original_distances == (60,)
     assert renamed_distances == (60,)
+# fmt: on
