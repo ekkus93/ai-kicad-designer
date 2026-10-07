@@ -1,3 +1,4 @@
+# fmt: off
 from fractions import Fraction
 
 import pytest
