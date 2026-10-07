@@ -157,7 +157,9 @@ def _branch_inconsistency(segments: tuple[Segment, ...], branch_points: tuple[Po
     return worst
 
 
-def _route_excursions(segments: tuple[Segment, ...], unrelated_blocks: tuple[Rect, ...]) -> tuple[Segment, ...]:
+def _route_excursions(
+    segments: tuple[Segment, ...], unrelated_blocks: tuple[Rect, ...]
+) -> tuple[Segment, ...]:
     return tuple(
         segment
         for segment in segments
