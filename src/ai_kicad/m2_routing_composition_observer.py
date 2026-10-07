@@ -185,7 +185,9 @@ def _point_inside_rect(point: Point, rect: Rect) -> bool:
 
 
 def _local_label_disconnects(
-    segments: tuple[Segment, ...], local_label_pairs: tuple[LabelPair, ...], direct_distance_limit: int
+    segments: tuple[Segment, ...],
+    local_label_pairs: tuple[LabelPair, ...],
+    direct_distance_limit: int,
 ) -> tuple[str, ...]:
     disconnected = []
     for label_id, first, second in local_label_pairs:

@@ -75,7 +75,10 @@ def production_dominated_by_oracle(
 
 
 def _score(
-    nodes: tuple[TinyNode, ...], edges: tuple[TinyEdge, ...], positions: dict[str, Point], width: int
+    nodes: tuple[TinyNode, ...],
+    edges: tuple[TinyEdge, ...],
+    positions: dict[str, Point],
+    width: int,
 ) -> tuple[tuple[int, int, int, int, int], tuple[str, ...]]:
     witnesses: list[str] = []
     interface_penalty = _interface_side_penalty(nodes, positions, width, witnesses)
