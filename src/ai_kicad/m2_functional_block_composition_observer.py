@@ -1,236 +1,170 @@
-"""Functional-block composition observer for M2h2 human-readability evidence.
+"""Independent functional-block and visual-ownership composition observer.
 
-This module consumes independently reconstructed semantic ownership and emitted
-geometry. It intentionally has no production layout score input: every metric is
-computed from semantic block identity, visual ownership, and drawing geometry.
+This observer consumes semantic/connectivity-derived block membership and emitted
+symbol positions.  It deliberately has no dependency on production layout
+scores, candidate ranks, or placement objectives.
 """
 
 from __future__ import annotations
 
-from collections import defaultdict, deque
 from dataclasses import dataclass
+from collections import defaultdict
 
 Point = tuple[int, int]
-Rect = tuple[int, int, int, int]
-
-PRIMARY_ROLE = "primary"
-SUPPORT_ROLE = "support"
-FEEDBACK_ROLE = "feedback"
-INTERFACE_ROLE = "interface"
-SHARED_ROLE = "shared"
 
 
 @dataclass(frozen=True)
-class VisualBlockMember:
-    ref: str
+class VisualMember:
+    member_id: str
     block_id: str
-    role: str
     center: Point
-    bbox: Rect
+    owner_id: str | None = None
+    ownership: str = "block"
+
+
+@dataclass(frozen=True)
+class VisualRelation:
+    relation_id: str
+    role: str
+    member_ids: tuple[str, ...]
     owner_block_id: str | None = None
 
 
 @dataclass(frozen=True)
-class OwnershipDistanceWitness:
-    ref: str
-    owner_block_id: str
+class BlockDispersion:
+    block_id: str
+    member_count: int
+    span_x: int
+    span_y: int
+    manhattan_diameter: int
+
+
+@dataclass(frozen=True)
+class OwnershipDistance:
+    member_id: str
+    owner_id: str
+    role: str
     distance: int
 
 
 @dataclass(frozen=True)
-class FeedbackSpanWitness:
-    ref: str
-    owner_block_id: str
-    span_width: int
-    span_height: int
-    intrusion_refs: tuple[str, ...]
-
-
-@dataclass(frozen=True)
-class BlockIntrusionWitness:
-    ref: str
-    intruded_block_id: str
-    intruded_refs: tuple[str, ...]
+class FeedbackWitness:
+    relation_id: str
+    owner_block_id: str | None
+    span: int
+    unrelated_block_intrusions: tuple[str, ...]
 
 
 @dataclass(frozen=True)
 class FunctionalBlockCompositionMetrics:
-    block_dispersion: dict[str, int]
-    block_fragmentation: dict[str, int]
-    support_to_owner_distance: tuple[OwnershipDistanceWitness, ...]
-    interface_to_owner_distance: tuple[OwnershipDistanceWitness, ...]
-    feedback_loop_span: tuple[FeedbackSpanWitness, ...]
-    unrelated_block_intrusions: tuple[BlockIntrusionWitness, ...]
+    block_dispersion: tuple[BlockDispersion, ...]
+    fragmented_blocks: tuple[str, ...]
+    support_to_owner: tuple[OwnershipDistance, ...]
+    interface_to_owner: tuple[OwnershipDistance, ...]
+    feedback: tuple[FeedbackWitness, ...]
+    shared_members: tuple[str, ...]
 
 
 def measure_functional_block_composition(
-    members: tuple[VisualBlockMember, ...], *, adjacency_gap: int = 0
+    members: tuple[VisualMember, ...],
+    relations: tuple[VisualRelation, ...] = (),
+    *,
+    fragmentation_gap: int = 40,
 ) -> FunctionalBlockCompositionMetrics:
-    """Compute independent functional-block and ownership readability metrics."""
-    members_by_block = _members_by_block(members)
-    block_bboxes = {
-        block_id: _union_rect(tuple(member.bbox for member in block_members))
-        for block_id, block_members in members_by_block.items()
-    }
+    """Measure grouping from independent semantic ownership and emitted positions."""
+    by_id = {member.member_id: member for member in members}
+    by_block: dict[str, list[VisualMember]] = defaultdict(list)
+    for member in members:
+        by_block[member.block_id].append(member)
+
+    dispersion = tuple(
+        _dispersion(block_id, tuple(block_members))
+        for block_id, block_members in sorted(by_block.items())
+    )
+    fragmented = tuple(
+        item.block_id
+        for item in dispersion
+        if item.member_count > 1
+        and max(item.span_x, item.span_y) > fragmentation_gap
+        and item.manhattan_diameter > fragmentation_gap
+    )
+    support = _ownership_distances(members, by_id, "support")
+    interfaces = _ownership_distances(members, by_id, "interface")
+    feedback = tuple(
+        _feedback_witness(relation, by_id, members)
+        for relation in sorted(relations, key=lambda item: item.relation_id)
+        if relation.role == "feedback"
+    )
+    shared = tuple(sorted(member.member_id for member in members if member.ownership == "shared"))
     return FunctionalBlockCompositionMetrics(
-        block_dispersion={
-            block_id: _dispersion(tuple(member.center for member in block_members))
-            for block_id, block_members in sorted(members_by_block.items())
-        },
-        block_fragmentation={
-            block_id: _fragment_count(tuple(member.bbox for member in block_members), adjacency_gap)
-            for block_id, block_members in sorted(members_by_block.items())
-        },
-        support_to_owner_distance=_ownership_distances(members, block_bboxes, role=SUPPORT_ROLE),
-        interface_to_owner_distance=_ownership_distances(
-            members, block_bboxes, role=INTERFACE_ROLE
-        ),
-        feedback_loop_span=_feedback_spans(members, block_bboxes),
-        unrelated_block_intrusions=_unrelated_intrusions(members, members_by_block),
+        block_dispersion=dispersion,
+        fragmented_blocks=fragmented,
+        support_to_owner=support,
+        interface_to_owner=interfaces,
+        feedback=feedback,
+        shared_members=shared,
     )
 
 
-def _members_by_block(
-    members: tuple[VisualBlockMember, ...],
-) -> dict[str, tuple[VisualBlockMember, ...]]:
-    grouped: dict[str, list[VisualBlockMember]] = defaultdict(list)
-    for member in members:
-        grouped[member.block_id].append(member)
-    return {block_id: tuple(items) for block_id, items in grouped.items()}
-
-
-def _dispersion(points: tuple[Point, ...]) -> int:
-    if len(points) < 2:
-        return 0
-    return max(_manhattan(first, second) for first in points for second in points)
-
-
-def _fragment_count(rects: tuple[Rect, ...], adjacency_gap: int) -> int:
-    if not rects:
-        return 0
-    remaining = set(range(len(rects)))
-    fragments = 0
-    while remaining:
-        fragments += 1
-        start = remaining.pop()
-        queue: deque[int] = deque((start,))
-        while queue:
-            current = queue.popleft()
-            for candidate in tuple(remaining):
-                if _rects_adjacent(rects[current], rects[candidate], adjacency_gap):
-                    remaining.remove(candidate)
-                    queue.append(candidate)
-    return fragments
+def _dispersion(block_id: str, members: tuple[VisualMember, ...]) -> BlockDispersion:
+    xs = [member.center[0] for member in members]
+    ys = [member.center[1] for member in members]
+    diameter = max(
+        (_manhattan(first.center, second.center) for first in members for second in members),
+        default=0,
+    )
+    return BlockDispersion(block_id, len(members), max(xs) - min(xs), max(ys) - min(ys), diameter)
 
 
 def _ownership_distances(
-    members: tuple[VisualBlockMember, ...], block_bboxes: dict[str, Rect], *, role: str
-) -> tuple[OwnershipDistanceWitness, ...]:
-    witnesses = []
-    for member in sorted(members, key=lambda item: item.ref):
-        if member.role != role or member.owner_block_id is None:
+    members: tuple[VisualMember, ...],
+    by_id: dict[str, VisualMember],
+    role: str,
+) -> tuple[OwnershipDistance, ...]:
+    witnesses: list[OwnershipDistance] = []
+    for member in sorted(members, key=lambda item: item.member_id):
+        if member.ownership != role or member.owner_id is None:
             continue
-        owner_bbox = block_bboxes.get(member.owner_block_id)
-        if owner_bbox is None:
+        owner = by_id.get(member.owner_id)
+        if owner is None:
             continue
         witnesses.append(
-            OwnershipDistanceWitness(
-                ref=member.ref,
-                owner_block_id=member.owner_block_id,
-                distance=_rect_distance(member.bbox, owner_bbox),
+            OwnershipDistance(
+                member.member_id,
+                owner.member_id,
+                role,
+                _manhattan(member.center, owner.center),
             )
         )
     return tuple(witnesses)
 
 
-def _feedback_spans(
-    members: tuple[VisualBlockMember, ...], block_bboxes: dict[str, Rect]
-) -> tuple[FeedbackSpanWitness, ...]:
-    spans = []
-    for member in sorted(members, key=lambda item: item.ref):
-        if member.role != FEEDBACK_ROLE or member.owner_block_id is None:
-            continue
-        owner_bbox = block_bboxes.get(member.owner_block_id)
-        if owner_bbox is None:
-            continue
-        span = _union_rect((member.bbox, owner_bbox))
+def _feedback_witness(
+    relation: VisualRelation,
+    by_id: dict[str, VisualMember],
+    members: tuple[VisualMember, ...],
+) -> FeedbackWitness:
+    related = [by_id[item] for item in relation.member_ids if item in by_id]
+    if related:
+        min_x = min(item.center[0] for item in related)
+        max_x = max(item.center[0] for item in related)
+        min_y = min(item.center[1] for item in related)
+        max_y = max(item.center[1] for item in related)
+        span = (max_x - min_x) + (max_y - min_y)
         intrusions = tuple(
-            other.ref
-            for other in sorted(members, key=lambda item: item.ref)
-            if other.block_id not in {member.block_id, member.owner_block_id}
-            and _rects_intersect(other.bbox, span)
-        )
-        spans.append(
-            FeedbackSpanWitness(
-                ref=member.ref,
-                owner_block_id=member.owner_block_id,
-                span_width=span[2] - span[0],
-                span_height=span[3] - span[1],
-                intrusion_refs=intrusions,
+            sorted(
+                item.member_id
+                for item in members
+                if item.member_id not in relation.member_ids
+                and item.block_id != relation.owner_block_id
+                and min_x <= item.center[0] <= max_x
+                and min_y <= item.center[1] <= max_y
             )
         )
-    return tuple(spans)
-
-
-def _unrelated_intrusions(
-    members: tuple[VisualBlockMember, ...],
-    members_by_block: dict[str, tuple[VisualBlockMember, ...]],
-) -> tuple[BlockIntrusionWitness, ...]:
-    witnesses = []
-    for member in sorted(members, key=lambda item: item.ref):
-        allowed_blocks = {member.block_id}
-        if member.owner_block_id is not None:
-            allowed_blocks.add(member.owner_block_id)
-        for block_id, block_members in sorted(members_by_block.items()):
-            if block_id in allowed_blocks:
-                continue
-            intruded_refs = tuple(
-                other.ref
-                for other in sorted(block_members, key=lambda item: item.ref)
-                if _rects_intersect(member.bbox, other.bbox)
-            )
-            if intruded_refs:
-                witnesses.append(
-                    BlockIntrusionWitness(
-                        ref=member.ref,
-                        intruded_block_id=block_id,
-                        intruded_refs=intruded_refs,
-                    )
-                )
-    return tuple(witnesses)
-
-
-def _union_rect(rects: tuple[Rect, ...]) -> Rect:
-    return (
-        min(rect[0] for rect in rects),
-        min(rect[1] for rect in rects),
-        max(rect[2] for rect in rects),
-        max(rect[3] for rect in rects),
-    )
-
-
-def _rects_adjacent(first: Rect, second: Rect, gap: int) -> bool:
-    return not (
-        first[2] + gap < second[0]
-        or second[2] + gap < first[0]
-        or first[3] + gap < second[1]
-        or second[3] + gap < first[1]
-    )
-
-
-def _rects_intersect(first: Rect, second: Rect) -> bool:
-    return not (
-        first[2] <= second[0]
-        or second[2] <= first[0]
-        or first[3] <= second[1]
-        or second[3] <= first[1]
-    )
-
-
-def _rect_distance(first: Rect, second: Rect) -> int:
-    dx = max(second[0] - first[2], first[0] - second[2], 0)
-    dy = max(second[1] - first[3], first[1] - second[3], 0)
-    return dx + dy
+    else:
+        span = 0
+        intrusions = ()
+    return FeedbackWitness(relation.relation_id, relation.owner_block_id, span, intrusions)
 
 
 def _manhattan(first: Point, second: Point) -> int:
