@@ -127,4 +127,9 @@ def _largest_internal_void_area(rects: tuple[Rect, ...], bbox: Rect) -> int:
 
 
 def _overlaps(first: Rect, second: Rect) -> bool:
-    return first[0] < second[2] and second[0] < first[2] and first[1] < second[3] and second[1] < first[3]
+    return (
+        first[0] < second[2]
+        and second[0] < first[2]
+        and first[1] < second[3]
+        and second[1] < first[3]
+    )

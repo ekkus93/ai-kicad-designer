@@ -41,7 +41,9 @@ def measure_repeated_composition(
 
     channels = tuple(by_channel.values())
     if len(channels) < 2:
-        return RepeatedCompositionMetrics(len(channels), 0, Fraction(0), Fraction(0), Fraction(0), 0, Fraction(0))
+        return RepeatedCompositionMetrics(
+            len(channels), 0, Fraction(0), Fraction(0), Fraction(0), 0, Fraction(0)
+        )
 
     common_roles = set(channels[0])
     for channel in channels[1:]:

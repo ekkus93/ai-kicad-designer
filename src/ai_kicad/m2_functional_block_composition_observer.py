@@ -81,9 +81,7 @@ def measure_functional_block_composition(
             block_id: _fragment_count(tuple(member.bbox for member in block_members), adjacency_gap)
             for block_id, block_members in sorted(members_by_block.items())
         },
-        support_to_owner_distance=_ownership_distances(
-            members, block_bboxes, role=SUPPORT_ROLE
-        ),
+        support_to_owner_distance=_ownership_distances(members, block_bboxes, role=SUPPORT_ROLE),
         interface_to_owner_distance=_ownership_distances(
             members, block_bboxes, role=INTERFACE_ROLE
         ),
@@ -93,7 +91,7 @@ def measure_functional_block_composition(
 
 
 def _members_by_block(
-    members: tuple[VisualBlockMember, ...]
+    members: tuple[VisualBlockMember, ...],
 ) -> dict[str, tuple[VisualBlockMember, ...]]:
     grouped: dict[str, list[VisualBlockMember]] = defaultdict(list)
     for member in members:
