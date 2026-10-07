@@ -117,4 +117,6 @@ def test_renamed_permuted_equivalent_keeps_same_generic_violation_distances() ->
     )
 
     assert tuple(w.distance for w in original.interface_side_violations) == (60,)
-    assert tuple(w.distance for w in renamed_permuted.interface_side_violations) == (60,)
+    assert tuple(
+        w.distance for w in renamed_permuted.interface_side_violations
+    ) == (60,)
