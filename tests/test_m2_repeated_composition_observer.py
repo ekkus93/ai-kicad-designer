@@ -57,7 +57,9 @@ def test_declaration_order_and_channel_names_do_not_change_metrics() -> None:
         RepeatedMember("amp", -7, (10, 0)),
         RepeatedMember("input", -7, (0, 0)),
     )
-    assert measure_repeated_composition(first) == measure_repeated_composition(renamed_permuted)
+    assert measure_repeated_composition(first) == measure_repeated_composition(
+        renamed_permuted
+    )
 
 
 def test_duplicate_semantic_role_in_channel_is_rejected() -> None:

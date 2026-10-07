@@ -52,7 +52,16 @@ def test_largest_internal_void_uses_empty_grid_cells_inside_content_bbox() -> No
 
 
 def test_semantic_complexity_bands_are_thresholded_by_semantic_counts() -> None:
-    assert semantic_complexity_band(block_count=1, visible_symbol_count=1, edge_count=0) == "tiny"
-    assert semantic_complexity_band(block_count=2, visible_symbol_count=6, edge_count=2) == "small"
-    assert semantic_complexity_band(block_count=5, visible_symbol_count=10, edge_count=4) == "medium"
-    assert semantic_complexity_band(block_count=8, visible_symbol_count=16, edge_count=8) == "dense"
+    assert (
+        semantic_complexity_band(block_count=1, visible_symbol_count=1, edge_count=0) == "tiny"
+    )
+    assert (
+        semantic_complexity_band(block_count=2, visible_symbol_count=6, edge_count=2) == "small"
+    )
+    assert (
+        semantic_complexity_band(block_count=5, visible_symbol_count=10, edge_count=4)
+        == "medium"
+    )
+    assert (
+        semantic_complexity_band(block_count=8, visible_symbol_count=16, edge_count=8) == "dense"
+    )
