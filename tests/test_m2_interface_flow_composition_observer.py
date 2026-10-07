@@ -26,7 +26,10 @@ def test_directed_input_and_output_frontier_violations_are_reported() -> None:
     assert [
         (w.interface_id, w.expected_side, w.owner_stage_id, w.distance)
         for w in metrics.interface_side_violations
-    ] == [("input", "left", "first", 30), ("output", "right", "final", 40)]
+    ] == [
+        ("input", "left", "first", 30),
+        ("output", "right", "final", 40),
+    ]
 
 
 def test_bidirectional_undirected_and_justified_interfaces_are_exempt() -> None:
@@ -58,7 +61,10 @@ def test_power_input_reports_grouping_distance_not_signal_side_violation() -> No
     )
 
     assert metrics.interface_side_violations == ()
-    assert [(w.interface_id, w.owner_stage_id, w.distance) for w in metrics.power_interface_distances] == [
+    assert [
+        (w.interface_id, w.owner_stage_id, w.distance)
+        for w in metrics.power_interface_distances
+    ] == [
         ("power", "supply", 30),
     ]
 
@@ -70,7 +76,10 @@ def test_stage_order_inversions_and_primary_backtracking_are_reported() -> None:
         (FlowPrecedence("early", "late", PRIMARY_FLOW_ROLE),),
     )
 
-    assert [(w.before_stage_id, w.after_stage_id, w.reversal_distance) for w in metrics.stage_order_violations] == [
+    assert [
+        (w.before_stage_id, w.after_stage_id, w.reversal_distance)
+        for w in metrics.stage_order_violations
+    ] == [
         ("early", "late", 60),
     ]
     assert metrics.primary_flow_backtracking_distance == 60
