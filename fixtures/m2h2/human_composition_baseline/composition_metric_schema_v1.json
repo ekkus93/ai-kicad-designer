@@ -1,0 +1,109 @@
+{
+  "schema": "m2h2-human-composition-metrics.v1",
+  "description": "Versioned metric vector for independent human-readable schematic composition observation. Values are evidence, not generator self-attestation.",
+  "units": {
+    "distance": "nanometers unless explicitly suffixed with _mm",
+    "ratio": "unitless floating point",
+    "count": "integer"
+  },
+  "identity": {
+    "source_sha": "required full production source SHA",
+    "observer_sha": "required observer source/content SHA",
+    "case_id": "human-readable case identifier used only as evidence key, never as production control flow",
+    "artifact_sha256": "required emitted schematic/render artifact digest"
+  },
+  "hard_preservation": {
+    "spread_gate_mm": [210, 140],
+    "local_path_gate_mm": 80,
+    "support_locality_gate_mm": 60,
+    "canonical_conductor_length_gate_mm": 250,
+    "erc_unexpected_violation_count": "must be zero",
+    "independent_artifact_observation": "must pass before composition metrics can close acceptance"
+  },
+  "semantic_flow": {
+    "stage_order_violation_count": "count",
+    "stage_order_witnesses": "array of source/target/order witness records",
+    "primary_flow_reversal_distance": "distance",
+    "incomparable_sibling_forced_order_count": "count",
+    "feedback_misclassified_as_forward_count": "count"
+  },
+  "interfaces": {
+    "input_frontier_violation_count": "count",
+    "output_frontier_violation_count": "count",
+    "power_interface_grouping_violation_count": "count",
+    "interface_to_owner_distance_max": "distance",
+    "interface_to_owner_distance_mean": "distance",
+    "unjustified_bidirectional_exemption_count": "count"
+  },
+  "functional_blocks": {
+    "block_dispersion_max": "distance",
+    "block_dispersion_mean": "distance",
+    "fragmentation_count": "count",
+    "support_to_owner_distance_max": "distance",
+    "feedback_loop_span_max": "distance",
+    "unrelated_block_intrusion_count": "count"
+  },
+  "branch_and_feedback": {
+    "branch_origin_unidentifiable_count": "count",
+    "sibling_branch_geometry_variance": "ratio",
+    "branch_detour_count": "count",
+    "feedback_unrelated_intrusion_count": "count",
+    "feedback_loop_compactness_ratio": "ratio"
+  },
+  "power_and_reference": {
+    "supply_reference_dispersion": "distance",
+    "shared_infrastructure_fragmentation_count": "count",
+    "internal_reference_coherence_distance": "distance",
+    "primary_row_domination_count": "count",
+    "fake_external_reference_count": "count"
+  },
+  "repeated_structures": {
+    "row_alignment_variance": "ratio",
+    "column_alignment_variance": "ratio",
+    "corresponding_symbol_displacement_variance": "ratio",
+    "orientation_variance_count": "count",
+    "pitch_variance": "ratio",
+    "equivalent_channel_order_is_deterministic": "boolean"
+  },
+  "page_utilization": {
+    "content_bbox_width": "distance",
+    "content_bbox_height": "distance",
+    "content_bbox_area": "distance squared",
+    "occupied_area_ratio": "ratio against 210x140 mm envelope",
+    "content_centroid_offset": "distance",
+    "horizontal_whitespace_imbalance": "ratio",
+    "vertical_whitespace_imbalance": "ratio",
+    "largest_internal_void_area": "distance squared",
+    "complexity_band": "tiny | small | medium | dense"
+  },
+  "alignment_and_fields": {
+    "meaningful_alignment_line_count": "count",
+    "active_stage_centerline_variance": "ratio",
+    "connector_row_alignment_error_max": "distance",
+    "support_alignment_error_max": "distance",
+    "field_alignment_violation_count": "count",
+    "field_orientation_inconsistency_count": "count",
+    "long_field_slot_violation_count": "count"
+  },
+  "routing_clarity": {
+    "route_bend_count": "count",
+    "normalized_bend_excess": "ratio",
+    "canonical_routed_length": "distance",
+    "normalized_routed_length_excess": "ratio",
+    "unrelated_wire_crossing_count": "count",
+    "u_shaped_detour_count": "count",
+    "unrelated_block_route_excursion_count": "count",
+    "label_mediated_local_disconnect_count": "count"
+  },
+  "candidate_search": {
+    "attempt_count": "count",
+    "deduplicated_state_count": "count",
+    "best_rejected_candidate": "optional full metric vector with rejection reason",
+    "tie_breaker_trace": "deterministic ordered trace"
+  },
+  "acceptance_semantics": {
+    "aggregate_score_is_non_authoritative": true,
+    "hard_defects_cannot_be_hidden_by_aggregate_score": true,
+    "higher_priority_invariants_are_lexicographic": true
+  }
+}
