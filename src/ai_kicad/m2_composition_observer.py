@@ -102,7 +102,9 @@ def reconstruct_semantic_flow(plan: SemanticPlan) -> SemanticFlowGraph:
 
     return SemanticFlowGraph(
         nodes=tuple(sorted(nodes)),
-        edges=tuple(sorted(edges, key=lambda edge: (edge.source, edge.target, edge.kind, edge.net))),
+        edges=tuple(
+            sorted(edges, key=lambda edge: (edge.source, edge.target, edge.kind, edge.net))
+        ),
         port_roles=tuple(sorted(port_roles, key=lambda role: (role.block, role.port, role.net))),
     )
 
