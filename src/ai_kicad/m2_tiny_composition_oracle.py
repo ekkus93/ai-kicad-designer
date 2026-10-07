@@ -109,7 +109,8 @@ def _interface_side_penalty(
 
 
 def _signal_order_penalty(
-    edges: tuple[TinyEdge, ...], positions: dict[str, Point], witnesses: list[str]) -> int:
+    edges: tuple[TinyEdge, ...], positions: dict[str, Point], witnesses: list[str]
+) -> int:
     penalty = 0
     for edge in edges:
         if edge.kind != "signal":
@@ -122,7 +123,8 @@ def _signal_order_penalty(
 
 
 def _grouping_penalty(
-    nodes: tuple[TinyNode, ...], positions: dict[str, Point], witnesses: list[str]) -> int:
+    nodes: tuple[TinyNode, ...], positions: dict[str, Point], witnesses: list[str]
+) -> int:
     by_owner: dict[str, list[str]] = {}
     for node in nodes:
         if node.owner is not None:
@@ -141,7 +143,8 @@ def _grouping_penalty(
 
 
 def _repeated_row_penalty(
-    nodes: tuple[TinyNode, ...], positions: dict[str, Point], witnesses: list[str]) -> int:
+    nodes: tuple[TinyNode, ...], positions: dict[str, Point], witnesses: list[str]
+) -> int:
     rows_by_role: dict[Role, list[int]] = {}
     for node in nodes:
         if node.role in {"stage", "support"}:
@@ -166,7 +169,7 @@ def _compactness_penalty(points: tuple[Point, ...]) -> int:
 def _non_dominated(scored: list[TinyPlacement]) -> list[TinyPlacement]:
     non_dominated: list[TinyPlacement] = []
     for candidate in scored:
-        if not any(other.score <= candidate.score for other in non_dominated):
+        if not any(other.score < candidate.score for other in non_dominated):
             non_dominated.append(candidate)
     return non_dominated
 
