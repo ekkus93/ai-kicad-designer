@@ -87,7 +87,11 @@ def functional_block_dispersion(
     witnesses: list[BlockDispersionWitness] = []
     for block in plan.blocks:
         occurrences = tuple(sorted(block.occurrences))
-        observed = [(occurrence, point_by_occurrence[occurrence]) for occurrence in occurrences if occurrence in point_by_occurrence]
+        observed = [
+            (occurrence, point_by_occurrence[occurrence])
+            for occurrence in occurrences
+            if occurrence in point_by_occurrence
+        ]
         missing = tuple(occurrence for occurrence in occurrences if occurrence not in point_by_occurrence)
         if observed:
             xs = [point[0] for _, point in observed]
@@ -146,5 +150,5 @@ def support_to_owner_distances(
 def _is_shared_block(plan: SemanticPlan, block_id: str) -> bool:
     for net in plan.presentation_nets:
         if net.role == "distributive" and block_id in net.fragments:
-            return true
-    return false
+            return True
+    return False
