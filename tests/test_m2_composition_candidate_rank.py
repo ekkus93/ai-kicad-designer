@@ -147,6 +147,7 @@ def test_compactness_penalty_is_deterministic_integer_geometry() -> None:
     assert compact_score[0] < dispersed_score[0]
     assert all(isinstance(value, int) for value in compact_score + dispersed_score)
 
+
 def test_repeated_incomparable_peers_prefer_shared_row_or_column() -> None:
     first = _block("first", "filter", ("signal_in", "signal_out"))
     second = _block("second", "filter", ("signal_in", "signal_out"))
@@ -172,6 +173,7 @@ def test_serial_equivalent_stages_are_not_repeated_peers() -> None:
         _placed(second, 8 * PITCH, 8 * PITCH),
     )
     assert semantic_composition_penalties(plan, diagonal)[9] == 0
+
 
 def test_intra_block_cohesion_penalizes_spread_internal_geometry() -> None:
     block = _block("gain", "amplifier")

@@ -113,14 +113,14 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 
 ## 5. Functional grouping and locality composition
 
-- [ ] Add generic intra-block cohesion objective.
-- [ ] Add generic inter-block separation objective.
+- [x] Add generic intra-block cohesion objective.
+- [x] Add generic inter-block separation objective.
 - [x] Keep local feedback structures with their owner.
 - [x] Keep package-local support with its owner where hard constraints permit.
 - [x] Preserve shared infrastructure as explicitly shared rather than arbitrarily attaching it to one block.
 - [ ] Prefer natural electrical ordering of passive series chains.
 - [ ] Prevent isolated stage members connected only through distant labels when a legal local arrangement exists.
-- [ ] Record exact grouping penalties in candidate evidence.
+- [x] Record exact grouping penalties in candidate evidence.
 - [x] Preserve existing 60 mm support/locality hard requirements.
 - [x] Add small synthetic exhaustive grouping cases.
 - [x] Add dominated-candidate oracle checks.
