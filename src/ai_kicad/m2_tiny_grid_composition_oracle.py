@@ -21,10 +21,17 @@ class TinyNode:
 
 
 @dataclass(frozen=True)
+class TinyBranch:
+    source_id: str
+    target_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class TinyPlacementScore:
     candidate_id: str
     node_positions: tuple[tuple[str, Point], ...]
     score_vector: ScoreVector
+    branch_geometry_penalty: int = 0
 
 
 @dataclass(frozen=True)
@@ -40,6 +47,7 @@ def exhaustive_tiny_grid_oracle(
     nodes: tuple[TinyNode, ...],
     grid_points: tuple[Point, ...],
     *,
+    branches: tuple[TinyBranch, ...] = (),
     production_positions: tuple[tuple[str, Point], ...] | None = None,
     max_candidates: int = 5040,
 ) -> TinyOracleEvidence:
@@ -57,6 +65,7 @@ def exhaustive_tiny_grid_oracle(
         raise ValueError("unknown side preference")
     if len(nodes) > len(grid_points):
         raise ValueError("grid must have at least one point per node")
+    _validate_branches(branches, set(node_ids))
     candidate_count = _permutation_count(len(grid_points), len(nodes))
     if candidate_count > max_candidates:
         raise ValueError("tiny-grid oracle candidate bound exceeded")
@@ -73,9 +82,13 @@ def exhaustive_tiny_grid_oracle(
                 key=lambda item: item[0],
             )
         )
+        score_vector, branch_penalty = _score_positions(node_order, positions, branches)
         scored.append(
             TinyPlacementScore(
-                f"oracle_{index:04d}", positions, _score_positions(node_order, positions)
+                f"oracle_{index:04d}",
+                positions,
+                score_vector,
+                branch_penalty,
             )
         )
 
@@ -90,8 +103,12 @@ def exhaustive_tiny_grid_oracle(
         if len(set(used_points)) != len(used_points) or not set(used_points) <= set(grid_points):
             raise ValueError("production positions must use distinct legal grid points")
         normalized = tuple(sorted(production_positions, key=lambda item: item[0]))
+        production_score, branch_penalty = _score_positions(node_order, normalized, branches)
         production = TinyPlacementScore(
-            "production", normalized, _score_positions(node_order, normalized)
+            "production",
+            normalized,
+            production_score,
+            branch_penalty,
         )
         dominating_ids = tuple(
             candidate.candidate_id
@@ -110,8 +127,10 @@ def exhaustive_tiny_grid_oracle(
 
 
 def _score_positions(
-    nodes: tuple[TinyNode, ...], positions: tuple[tuple[str, Point], ...]
-) -> ScoreVector:
+    nodes: tuple[TinyNode, ...],
+    positions: tuple[tuple[str, Point], ...],
+    branches: tuple[TinyBranch, ...],
+) -> tuple[ScoreVector, int]:
     by_id = dict(positions)
     xs = [point[0] for point in by_id.values()]
     ys = [point[1] for point in by_id.values()]
@@ -120,9 +139,16 @@ def _score_positions(
     side_penalty = _side_penalty(nodes, by_id, min_x, max_x)
     stage_penalty = _stage_order_penalty(nodes, by_id)
     grouping_penalty = _grouping_penalty(nodes, by_id)
+    branch_penalty = _branch_geometry_penalty(branches, by_id)
     repeated_penalty = _repeated_alignment_penalty(nodes, by_id)
     whitespace_penalty = (max_x - min_x) * (max(ys) - min(ys))
-    return (side_penalty, stage_penalty, grouping_penalty, repeated_penalty, whitespace_penalty)
+    return (
+        side_penalty,
+        stage_penalty,
+        grouping_penalty + branch_penalty,
+        repeated_penalty,
+        whitespace_penalty,
+    ), branch_penalty
 
 
 def _side_penalty(
@@ -175,6 +201,40 @@ def _repeated_alignment_penalty(nodes: tuple[TinyNode, ...], by_id: dict[str, Po
             continue
         ys = [by_id[node.node_id][1] for node in role_nodes]
         penalty += max(ys) - min(ys)
+    return penalty
+
+
+
+def _validate_branches(branches: tuple[TinyBranch, ...], node_ids: set[str]) -> None:
+    seen: set[tuple[str, tuple[str, ...]]] = set()
+    for branch in branches:
+        if branch.source_id not in node_ids:
+            raise ValueError("tiny branch source must match a node ID")
+        if len(branch.target_ids) < 2 or len(set(branch.target_ids)) != len(branch.target_ids):
+            raise ValueError("tiny branch requires at least two distinct targets")
+        if branch.source_id in branch.target_ids or not set(branch.target_ids) <= node_ids:
+            raise ValueError("tiny branch targets must be distinct existing non-source nodes")
+        identity = (branch.source_id, tuple(sorted(branch.target_ids)))
+        if identity in seen:
+            raise ValueError("duplicate tiny branch")
+        seen.add(identity)
+
+
+def _branch_geometry_penalty(
+    branches: tuple[TinyBranch, ...],
+    by_id: dict[str, Point],
+) -> int:
+    """Prefer a centered source and consistent forward sibling depth."""
+    penalty = 0
+    for branch in branches:
+        source = by_id[branch.source_id]
+        targets = [by_id[target_id] for target_id in branch.target_ids]
+        target_ys = [point[1] for point in targets]
+        target_dx = [point[0] - source[0] for point in targets]
+        vertical_midpoint = (min(target_ys) + max(target_ys)) // 2
+        penalty += abs(source[1] - vertical_midpoint)
+        penalty += max(target_dx) - min(target_dx)
+        penalty += sum(max(0, -distance) for distance in target_dx)
     return penalty
 
 

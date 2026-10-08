@@ -154,3 +154,69 @@ def test_oracle_rejects_duplicate_nodes_and_grid_points() -> None:
             (oracle.TinyNode("a", "stage"),),
             ((0, 0), (0, 0)),
         )
+
+def test_branch_geometry_accepts_centered_equal_depth_fanout() -> None:
+    nodes = (
+        oracle.TinyNode("source", "stage"),
+        oracle.TinyNode("left", "stage"),
+        oracle.TinyNode("right", "stage"),
+    )
+    branch = oracle.TinyBranch("source", ("left", "right"))
+    grid = ((0, 10), (20, 0), (20, 20))
+    evidence = oracle.exhaustive_tiny_grid_oracle(
+        nodes,
+        grid,
+        branches=(branch,),
+        production_positions=(
+            ("source", (0, 10)),
+            ("left", (20, 0)),
+            ("right", (20, 20)),
+        ),
+    )
+    assert evidence.production_candidate is not None
+    assert evidence.production_candidate.branch_geometry_penalty == 0
+
+
+def test_branch_geometry_penalizes_skewed_or_backtracking_fanout() -> None:
+    nodes = (
+        oracle.TinyNode("source", "stage"),
+        oracle.TinyNode("left", "stage"),
+        oracle.TinyNode("right", "stage"),
+    )
+    branch = oracle.TinyBranch("source", ("left", "right"))
+    grid = ((20, 20), (0, 0), (40, 10))
+    evidence = oracle.exhaustive_tiny_grid_oracle(
+        nodes,
+        grid,
+        branches=(branch,),
+        production_positions=(
+            ("source", (20, 20)),
+            ("left", (0, 0)),
+            ("right", (40, 10)),
+        ),
+    )
+    assert evidence.production_candidate is not None
+    assert evidence.production_candidate.branch_geometry_penalty > 0
+    assert evidence.production_candidate.score_vector[2] >= (
+        evidence.production_candidate.branch_geometry_penalty
+    )
+
+
+@pytest.mark.parametrize(
+    "branch",
+    (
+        oracle.TinyBranch("missing", ("a", "b")),
+        oracle.TinyBranch("a", ("b",)),
+        oracle.TinyBranch("a", ("a", "b")),
+        oracle.TinyBranch("a", ("b", "missing")),
+    ),
+)
+def test_illegal_branch_specifications_are_rejected(branch: oracle.TinyBranch) -> None:
+    nodes = (oracle.TinyNode("a", "stage"), oracle.TinyNode("b", "stage"))
+    with pytest.raises(ValueError, match="tiny branch"):
+        oracle.exhaustive_tiny_grid_oracle(
+            nodes,
+            ((0, 0), (10, 0)),
+            branches=(branch,),
+        )
+
