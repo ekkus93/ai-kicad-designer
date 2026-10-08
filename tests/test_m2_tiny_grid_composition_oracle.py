@@ -321,7 +321,10 @@ def test_tiny_oracle_rejects_dominated_production_without_exhausted_budget() -> 
     missed = (("input", (10, 0)), ("output", (0, 0)))
     with pytest.raises(ValueError, match="exhausted restrictive budget"):
         oracle.verify_tiny_search_budget_witness(
-            nodes, grid, production_positions=missed, attempted_placements=(missed,),
+            nodes,
+            grid,
+            production_positions=missed,
+            attempted_placements=(missed,),
             search_budget=2,
         )
 
@@ -336,13 +339,19 @@ def test_tiny_oracle_rejects_better_visited_candidate_and_duplicate_attempts() -
     better = (("input", (0, 0)), ("output", (10, 0)))
     with pytest.raises(ValueError, match="better attempted candidate"):
         oracle.verify_tiny_search_budget_witness(
-            nodes, grid, production_positions=missed,
-            attempted_placements=(missed, better), search_budget=2,
+            nodes,
+            grid,
+            production_positions=missed,
+            attempted_placements=(missed, better),
+            search_budget=2,
         )
     with pytest.raises(ValueError, match="repeats an attempted placement"):
         oracle.verify_tiny_search_budget_witness(
-            nodes, grid, production_positions=missed,
-            attempted_placements=(missed, tuple(reversed(missed))), search_budget=2,
+            nodes,
+            grid,
+            production_positions=missed,
+            attempted_placements=(missed, tuple(reversed(missed))),
+            search_budget=2,
         )
 
 
@@ -356,12 +365,17 @@ def test_tiny_oracle_requires_production_in_complete_legal_attempts() -> None:
     missed = (("input", (10, 0)), ("output", (0, 0)))
     with pytest.raises(ValueError, match="omits production"):
         oracle.verify_tiny_search_budget_witness(
-            nodes, grid, production_positions=better,
-            attempted_placements=(missed,), search_budget=1,
+            nodes,
+            grid,
+            production_positions=better,
+            attempted_placements=(missed,),
+            search_budget=1,
         )
     with pytest.raises(ValueError, match="illegal attempted grid positions"):
         oracle.verify_tiny_search_budget_witness(
-            nodes, grid, production_positions=better,
+            nodes,
+            grid,
+            production_positions=better,
             attempted_placements=((("input", (0, 0)), ("output", (30, 0))),),
             search_budget=1,
         )
