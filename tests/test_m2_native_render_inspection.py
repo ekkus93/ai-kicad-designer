@@ -2,9 +2,7 @@ from ai_kicad import m2_native_render_inspection as inspection
 
 
 def test_complete_inspection_requires_every_visual_assertion() -> None:
-    artifact = inspection.RenderArtifact(
-        "case-a", "feedback", "renders/a.svg", "1" * 64
-    )
+    artifact = inspection.RenderArtifact("case-a", "feedback", "renders/a.svg", "1" * 64)
     record = inspection.build_inspection(
         artifact,
         inspector="agent-engineering-inspection",
