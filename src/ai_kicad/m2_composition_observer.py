@@ -81,10 +81,24 @@ def reconstruct_semantic_flow(plan: SemanticPlan) -> SemanticFlowGraph:
     """Reconstruct composition flow roles without consulting placement state."""
     nodes = {block.id for block in plan.blocks}
     edges: list[FlowEdge] = []
+    direct_relations = set()
     for edge in plan.edges:
         nodes.add(edge.source)
         nodes.add(edge.target)
         edges.append(_flow_edge(edge))
+        if edge.kind in PRIMARY_FORWARD_KINDS:
+            direct_relations.add((edge.source, edge.target, edge.net))
+
+    # Passive connector terminals can be authored signal sources even when
+    # no directed semantic edge is emitted for their net.
+    seen = set(direct_relations)
+    for item in plan.precedence:
+        relation = (item.source_fragment, item.target_fragment, item.net)
+        if relation in seen:
+            continue
+        seen.add(relation)
+        nodes.update(relation[:2])
+        edges.append(FlowEdge("signal", "signal", *relation, tuple(sorted(item.origins))))
 
     port_roles: list[PortRoleWitness] = []
     for block in plan.blocks:
