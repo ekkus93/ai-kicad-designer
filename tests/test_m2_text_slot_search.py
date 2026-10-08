@@ -11,9 +11,7 @@ from ai_kicad.m2_semantics import BlockPlan, SemanticPlan
 
 def test_alternate_passive_text_slot_is_distinct_and_deterministic() -> None:
     design = {
-        "components": [
-            {"id": "passive", "asset": "Device:R", "refdes": "R1", "value": "10k"}
-        ]
+        "components": [{"id": "passive", "asset": "Device:R", "refdes": "R1", "value": "10k"}]
     }
 
     def make_draft() -> Draft:
@@ -42,15 +40,19 @@ def test_alternate_passive_text_slot_is_distinct_and_deterministic() -> None:
 
 def test_alternate_text_slot_falls_back_when_every_other_slot_is_blocked() -> None:
     design = {
-        "components": [
-            {"id": "passive", "asset": "Device:R", "refdes": "R1", "value": "10k"}
-        ]
+        "components": [{"id": "passive", "asset": "Device:R", "refdes": "R1", "value": "10k"}]
     }
     # A vertical conductor at every other candidate slot blocks all alternates.
     sx, sy = 30 * PITCH, 30 * PITCH
-    xs = (sx - 8 * PITCH, sx + 12 * PITCH, sx - 12 * PITCH,
-          sx + 16 * PITCH, sx - 16 * PITCH, sx + 20 * PITCH,
-          sx - 20 * PITCH)
+    xs = (
+        sx - 8 * PITCH,
+        sx + 12 * PITCH,
+        sx - 12 * PITCH,
+        sx + 16 * PITCH,
+        sx - 16 * PITCH,
+        sx + 20 * PITCH,
+        sx - 20 * PITCH,
+    )
     draft = Draft(
         design,
         {},
@@ -69,8 +71,18 @@ def test_alternate_text_slot_falls_back_when_every_other_slot_is_blocked() -> No
 def test_bounded_pack_search_retains_field_slot_variant() -> None:
     block = BlockPlan("stage", "series", (), frozenset(), ())
     base = FragmentVariant(
-        "stage.base", block, {}, {}, {}, (), (), (), (), (),
-        (0, 0, 8 * PITCH, 4 * PITCH), frozenset(),
+        "stage.base",
+        block,
+        {},
+        {},
+        {},
+        (),
+        (),
+        (),
+        (),
+        (),
+        (0, 0, 8 * PITCH, 4 * PITCH),
+        frozenset(),
     )
     alternate = replace(
         base,

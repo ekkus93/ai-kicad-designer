@@ -330,6 +330,13 @@ def test_final_beam_preserves_measured_field_slot_variant() -> None:
     assert len(kept) == CANDIDATE_BUDGET
     assert field_slot_seed in kept
     assert all(
-        len([placed for placed in packing.fragments if ".local-text-slot." in placed.fragment.rule_id]) <= 1
+        len(
+            [
+                placed
+                for placed in packing.fragments
+                if ".local-text-slot." in placed.fragment.rule_id
+            ]
+        )
+        <= 1
         for packing in kept
     )
