@@ -331,6 +331,7 @@ def _finish(
     anchors: dict[str, tuple[Point, str]],
     *,
     variant_suffix: str = "v0",
+    alternate_text_slots: bool = False,
 ) -> FragmentVariant:
     if set(draft.positions) != set(block.occurrences):
         raise InputError(
@@ -545,7 +546,7 @@ def _finish(
             )
         )
         draft.wire_nets.append(gateway.net)
-    choose_text_slots(design, draft)
+    choose_text_slots(design, draft, alternate=alternate_text_slots)
     _clear_nonpassive_text(design, resolved, draft)
     del draft.wires[emitted_wire_count:]
     del draft.wire_nets[emitted_wire_count:]
@@ -1435,6 +1436,67 @@ def _access_alternatives(
                 }
             )
         )
+    # Text placement is part of measured local geometry. Generate one
+    # independently remeasured alternate per local motif; never shift fields
+    # after packing or bypass the existing electrical/clearance proofs.
+    passive_ids = {
+        component["id"]
+        for component in design["components"]
+        if component["asset"] in {"Device:C", "Device:R"}
+    }
+    if passive_ids.intersection(occurrence[0] for occurrence in base.block.occurrences):
+        descriptor = f"family={family_index}:text-slot:alternate"
+        if len(construction_trace) >= 32:
+            uncovered.append(descriptor)
+        else:
+            trace_index = len(construction_trace)
+            construction_trace.append(("text_slot", descriptor, "attempted", ""))
+            draft = Draft(
+                design,
+                resolved,
+                dict(base.positions),
+                dict(base.angles),
+                list(base.wires[: len(base.protected_wires)]),
+                list(base.wire_nets[: len(base.protected_wires)]),
+                [item for item in base.labels if item[1] not in gateway_points],
+                list(base.junctions),
+                dict(base.text_positions),
+            )
+            anchors = {
+                suffix: (gateway.anchor, gateway.escape_direction)
+                for suffix, gateway in suffixes.items()
+            }
+            try:
+                alternate = _finish(
+                    design,
+                    resolved,
+                    base.block,
+                    draft,
+                    anchors,
+                    variant_suffix=f"{base.id.rsplit('.', 1)[-1]}_text_slot",
+                    alternate_text_slots=True,
+                )
+            except InputError as exc:
+                construction_trace[trace_index] = (
+                    "text_slot", descriptor, "rejected", str(exc)
+                )
+            else:
+                if alternate.text_positions != base.text_positions:
+                    variants.append(
+                        replace(
+                            alternate,
+                            rule_id=(
+                                f"m2g2.local-text-slot.{base.block.kind}.alternate.v1"
+                            ),
+                        )
+                    )
+                    construction_trace[trace_index] = (
+                        "text_slot", descriptor, "certified", ""
+                    )
+                else:
+                    construction_trace[trace_index] = (
+                        "text_slot", descriptor, "rejected", "no distinct clear slot"
+                    )
     distinct = {}
     for variant in variants:
         signature = tuple(
@@ -1443,7 +1505,7 @@ def _access_alternatives(
         )
         width = variant.envelope[2] - variant.envelope[0]
         height = variant.envelope[3] - variant.envelope[1]
-        key = (signature, width, height)
+        key = (signature, width, height, tuple(sorted(variant.text_positions.items())))
         distinct.setdefault(key, variant)
     available = [variant for variant in variants if variant in distinct.values()]
     retained = [base]
@@ -1470,6 +1532,15 @@ def _access_alternatives(
             retained.append(variant)
         if len(retained) == 8:
             break
+    field_variant = next(
+        (item for item in available[1:] if ".local-text-slot." in item.rule_id),
+        None,
+    )
+    if field_variant is not None and field_variant not in retained:
+        if len(retained) >= 8:
+            retained[-1] = field_variant
+        else:
+            retained.append(field_variant)
     return tuple(retained[:8])
 
 
@@ -1629,6 +1700,7 @@ def fragment_variants(
                 candidate = family[rank]
                 signature = (
                     tuple(sorted(candidate.positions.items())),
+                    tuple(sorted(candidate.text_positions.items())),
                     candidate.wires,
                     tuple(
                         (gateway.id, gateway.escape_direction, gateway.point)
@@ -1643,6 +1715,25 @@ def fragment_variants(
                     break
             if len(retained) == 8:
                 break
+
+        field_candidate = next(
+            (
+                (family_index, candidate)
+                for family_index, family in enumerate(families)
+                for candidate in family
+                if ".local-text-slot." in candidate.rule_id
+            ),
+            None,
+        )
+        if field_candidate is not None and not any(
+            candidate is field_candidate[1] for _, candidate, _ in retained
+        ):
+            family_index, candidate = field_candidate
+            entry = (None, candidate, family_index)
+            if len(retained) >= 8:
+                retained[-1] = entry
+            else:
+                retained.append(entry)
 
         if block.kind == "timer" and len(families) == 3:
             # Preserve both legacy families' diverse accesses within the same
@@ -1681,6 +1772,7 @@ def fragment_variants(
                 rule_id=(
                     f"m2g2.local-aspect.{block.kind}.{structural_name(family_index)}.v1"
                     if len(families) > 1
+                    and ".local-text-slot." not in candidate.rule_id
                     else candidate.rule_id
                 ),
             )

@@ -1081,8 +1081,12 @@ def measure(design: dict, resolved: dict[str, Asset], draft: Draft) -> dict:
     }
 
 
-def choose_text_slots(design: dict, draft: Draft) -> None:
-    """Choose a finite outside slot from actual text length and routed segments."""
+def choose_text_slots(design: dict, draft: Draft, *, alternate: bool = False) -> None:
+    """Choose a finite outside slot from actual text length and routed segments.
+
+    Alternate search tries other legal slots first, retaining the original
+    as fallback. The default ordering and existing callers are unchanged.
+    """
     for c in design["components"]:
         if c["asset"] not in ("Device:C", "Device:R"):
             continue
@@ -1114,6 +1118,9 @@ def choose_text_slots(design: dict, draft: Draft) -> None:
                 (sx - 20 * PITCH, sy - 2 * PITCH),
             ]
         )
+        if alternate:
+            original = slots[0]
+            slots = [point for point in slots[1:] if point != original] + [original]
         for x, y in slots:
             clear = True
             for value, py in ((c["refdes"], y), (c["value"], y + 2 * PITCH)):

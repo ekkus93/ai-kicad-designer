@@ -2043,6 +2043,27 @@ def pack_fragment_candidates(
         ):
             proposals.append(((-2, rank, key), {**baseline, key: choice}))
 
+    # A finite, measured text-slot variant for each affected block kind is
+    # explored before ordinary access substitutions. This keeps at least one
+    # field-only alternative visible to the bounded complete-placement beam.
+    for kind in sorted({by_block[key].kind for key in keys}):
+        field_candidate = dict(baseline)
+        for key in keys:
+            if by_block[key].kind != kind:
+                continue
+            alternate = next(
+                (
+                    choice
+                    for choice in ordered_choices[key][1:]
+                    if ".local-text-slot." in choice.rule_id
+                ),
+                None,
+            )
+            if alternate is not None:
+                field_candidate[key] = alternate
+        if any(field_candidate[key] is not baseline[key] for key in keys):
+            proposals.append(((-3, "field-slot", kind), field_candidate))
+
     # A reusable inward-facing rail-access candidate for independent shelves:
     # upper bands expose references downward and lower bands upward.  This is
     # derived solely from the signal DAG bands and port access alternatives.
