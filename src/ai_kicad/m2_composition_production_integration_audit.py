@@ -19,6 +19,7 @@ class ProductionIntegrationFinding:
 
 REQUIRED_SYMBOLS = (
     "composition_candidate_key",
+    "semantic_composition_penalty_breakdown",
     "semantic_composition_penalties",
 )
 

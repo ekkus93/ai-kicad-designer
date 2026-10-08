@@ -8,15 +8,64 @@ electrical and M2h2 invariants are established before a candidate is ranked.
 from __future__ import annotations
 
 from collections import defaultdict
+from dataclasses import dataclass
 
 from .m2a import PITCH
 from .m2_pack import BOTTOM, LEFT, RIGHT, TOP
 
 Rect = tuple[int, int, int, int]
 Point = tuple[int, int]
-SemanticPenaltyVector = tuple[int, int, int, int, int, int, int, int, int, int]
+SemanticPenaltyVector = tuple[int, int, int, int, int, int, int, int, int, int, int, int]
 CompactnessPenaltyVector = tuple[int, int, int]
 CandidateKey = tuple[int, ...]
+
+
+@dataclass(frozen=True)
+class SemanticPenaltyBreakdown:
+    missing_geometry: int
+    stage_order_violations: int
+    reversal_distance: int
+    interface_side_violations: int
+    interface_owner_distance: int
+    frontier_distance: int
+    feedback_distance: int
+    support_distance: int
+    branch_alignment: int
+    repeated_alignment: int
+    intra_block_dispersion: int
+    unrelated_block_proximity: int
+
+    def vector(self) -> SemanticPenaltyVector:
+        return (
+            self.missing_geometry,
+            self.stage_order_violations,
+            self.reversal_distance,
+            self.interface_side_violations,
+            self.interface_owner_distance,
+            self.frontier_distance,
+            self.feedback_distance,
+            self.support_distance,
+            self.branch_alignment,
+            self.repeated_alignment,
+            self.intra_block_dispersion,
+            self.unrelated_block_proximity,
+        )
+
+    def as_dict(self) -> dict[str, int]:
+        return {
+            "missing_geometry": self.missing_geometry,
+            "stage_order_violations": self.stage_order_violations,
+            "reversal_distance": self.reversal_distance,
+            "interface_side_violations": self.interface_side_violations,
+            "interface_owner_distance": self.interface_owner_distance,
+            "frontier_distance": self.frontier_distance,
+            "feedback_distance": self.feedback_distance,
+            "support_distance": self.support_distance,
+            "branch_alignment": self.branch_alignment,
+            "repeated_alignment": self.repeated_alignment,
+            "intra_block_dispersion": self.intra_block_dispersion,
+            "unrelated_block_proximity": self.unrelated_block_proximity,
+        }
 
 
 def _grid_units(distance: int) -> int:
@@ -153,7 +202,59 @@ def _repeated_alignment_penalty(plan, centers, signal_relations) -> int:
     return _grid_units(penalty)
 
 
-def semantic_composition_penalties(plan, packing) -> SemanticPenaltyVector:
+
+def _intra_block_dispersion(packing) -> int:
+    """Measure internal occurrence spread from the selected fragment geometry."""
+    penalty = 0
+    for item in packing.fragments:
+        delta = getattr(item, "delta", (0, 0))
+        points = tuple(
+            (point[0] + delta[0], point[1] + delta[1])
+            for point in getattr(item.fragment, "positions", {}).values()
+        )
+        if len(points) < 2:
+            continue
+        penalty += max(
+            abs(first[0] - second[0]) + abs(first[1] - second[1])
+            for first in points
+            for second in points
+        )
+    return _grid_units(penalty)
+
+
+def _rect_gap(first: Rect, second: Rect) -> int:
+    horizontal = max(0, max(first[0] - second[2], second[0] - first[2]))
+    vertical = max(0, max(first[1] - second[3], second[1] - first[3]))
+    return horizontal + vertical
+
+
+def _unrelated_block_proximity(plan, rects: dict[str, Rect]) -> int:
+    """Penalize unrelated functional cells that visually collapse together."""
+    by_id = {block.id: block for block in plan.blocks}
+    related: set[frozenset[str]] = set()
+    for edge in plan.edges:
+        if edge.source != edge.target:
+            related.add(frozenset((edge.source, edge.target)))
+    for item in plan.precedence:
+        if item.source_fragment != item.target_fragment:
+            related.add(frozenset((item.source_fragment, item.target_fragment)))
+
+    eligible = sorted(
+        block_id
+        for block_id in rects
+        if block_id in by_id and by_id[block_id].kind != "interface"
+    )
+    penalty = 0
+    for index, first_id in enumerate(eligible):
+        for second_id in eligible[index + 1 :]:
+            if frozenset((first_id, second_id)) in related:
+                continue
+            gap = _rect_gap(rects[first_id], rects[second_id])
+            penalty += max(0, PITCH - gap)
+    return _grid_units(penalty)
+
+
+def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBreakdown:
     """Return semantic readability penalties for one fully proved placement.
 
     The vector deliberately keeps hard-to-read semantic defects ahead of softer
@@ -229,19 +330,28 @@ def semantic_composition_penalties(plan, packing) -> SemanticPenaltyVector:
         max(values) - min(values) for values in branch_targets.values() if len(values) > 1
     )
     repeated_alignment = _repeated_alignment_penalty(plan, centers, signal_relations)
+    intra_block_dispersion = _intra_block_dispersion(packing)
+    unrelated_block_proximity = _unrelated_block_proximity(plan, rects)
 
-    return (
-        missing_geometry,
-        stage_order_violations,
-        _grid_units(reversal_distance),
-        interface_side_violations,
-        _grid_units(interface_owner_distance),
-        _grid_units(frontier_distance),
-        _grid_units(feedback_distance),
-        _grid_units(support_distance),
-        _grid_units(branch_alignment),
-        repeated_alignment,
+    return SemanticPenaltyBreakdown(
+        missing_geometry=missing_geometry,
+        stage_order_violations=stage_order_violations,
+        reversal_distance=_grid_units(reversal_distance),
+        interface_side_violations=interface_side_violations,
+        interface_owner_distance=_grid_units(interface_owner_distance),
+        frontier_distance=_grid_units(frontier_distance),
+        feedback_distance=_grid_units(feedback_distance),
+        support_distance=_grid_units(support_distance),
+        branch_alignment=_grid_units(branch_alignment),
+        repeated_alignment=repeated_alignment,
+        intra_block_dispersion=intra_block_dispersion,
+        unrelated_block_proximity=unrelated_block_proximity,
     )
+
+
+def semantic_composition_penalties(plan, packing) -> SemanticPenaltyVector:
+    """Return the stable lexicographic vector used by production ranking."""
+    return semantic_composition_penalty_breakdown(plan, packing).vector()
 
 
 def compactness_whitespace_penalties(packing) -> CompactnessPenaltyVector:

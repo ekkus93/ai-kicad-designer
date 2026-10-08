@@ -9,6 +9,7 @@ from .m2_conflicts import ConflictKind, TypedConflict
 from .m2_composition_candidate_rank import (
     compactness_whitespace_penalties,
     composition_candidate_key,
+    semantic_composition_penalty_breakdown,
     semantic_composition_penalties,
 )
 from .m2a import PITCH, Scene, certify_scene_geometry, certify_scene_inputs
@@ -1588,6 +1589,9 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
             "selected_score": list(routing_compactness),
             "selected_selection_key": list(selection_key),
             "selected_semantic_penalties": list(semantic_penalties),
+            "selected_semantic_penalty_breakdown": semantic_composition_penalty_breakdown(
+                plan, packing
+            ).as_dict(),
             "selected_compactness_penalties": list(compactness_penalties),
             "best_rejected_candidate": (
                 {
@@ -1596,6 +1600,9 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
                     "score": list(best_proved_rejected[3]),
                     "selection_key": list(best_proved_rejected[0]),
                     "semantic_penalties": list(best_proved_rejected[1]),
+                    "semantic_penalty_breakdown": semantic_composition_penalty_breakdown(
+                        plan, best_proved_rejected[7]
+                    ).as_dict(),
                     "compactness_penalties": list(best_proved_rejected[2]),
                     "structure": [list(value) for value in best_proved_rejected[4]],
                 }
@@ -1611,6 +1618,9 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
                     "score": list(item[3]),
                     "selection_key": list(item[0]),
                     "semantic_penalties": list(item[1]),
+                    "semantic_penalty_breakdown": semantic_composition_penalty_breakdown(
+                        plan, item[7]
+                    ).as_dict(),
                     "compactness_penalties": list(item[2]),
                     "structure": [list(value) for value in item[4]],
                 }

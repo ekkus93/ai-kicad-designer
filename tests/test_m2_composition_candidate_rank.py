@@ -4,6 +4,7 @@ from ai_kicad.m2a import PITCH
 from ai_kicad.m2_composition_candidate_rank import (
     compactness_whitespace_penalties,
     composition_candidate_key,
+    semantic_composition_penalty_breakdown,
     semantic_composition_penalties,
 )
 
@@ -21,10 +22,23 @@ def _edge(kind: str, source: str, target: str, net: str = "n"):
     return SimpleNamespace(kind=kind, source=source, target=target, net=net)
 
 
-def _placed(block, x: int, y: int = 0, width: int = PITCH, height: int = PITCH):
+def _placed(
+    block,
+    x: int,
+    y: int = 0,
+    width: int = PITCH,
+    height: int = PITCH,
+    *,
+    positions=None,
+):
     rect = (x, y, x + width, y + height)
-    fragment = SimpleNamespace(block=block)
-    return SimpleNamespace(fragment=fragment, content_envelope=rect, envelope=rect)
+    fragment = SimpleNamespace(block=block, positions=positions or {})
+    return SimpleNamespace(
+        fragment=fragment,
+        content_envelope=rect,
+        envelope=rect,
+        delta=(x, y),
+    )
 
 
 def _packing(*items):
@@ -158,4 +172,59 @@ def test_serial_equivalent_stages_are_not_repeated_peers() -> None:
         _placed(second, 8 * PITCH, 8 * PITCH),
     )
     assert semantic_composition_penalties(plan, diagonal)[9] == 0
+
+def test_intra_block_cohesion_penalizes_spread_internal_geometry() -> None:
+    block = _block("gain", "amplifier")
+    plan = _plan((block,))
+    compact = _packing(
+        _placed(
+            block,
+            0,
+            positions={("U", 1): (0, 0), ("R", 1): (PITCH, 0)},
+        )
+    )
+    dispersed = _packing(
+        _placed(
+            block,
+            0,
+            positions={("U", 1): (0, 0), ("R", 1): (8 * PITCH, 0)},
+        )
+    )
+    assert (
+        semantic_composition_penalty_breakdown(plan, compact).intra_block_dispersion
+        < semantic_composition_penalty_breakdown(plan, dispersed).intra_block_dispersion
+    )
+
+
+def test_unrelated_blocks_require_visual_separation() -> None:
+    amplifier = _block("amp", "amplifier")
+    controller = _block("ctrl", "controller")
+    plan = _plan((amplifier, controller))
+    touching = _packing(
+        _placed(amplifier, 0),
+        _placed(controller, PITCH),
+    )
+    separated = _packing(
+        _placed(amplifier, 0),
+        _placed(controller, 3 * PITCH),
+    )
+    assert (
+        semantic_composition_penalty_breakdown(plan, touching).unrelated_block_proximity
+        > semantic_composition_penalty_breakdown(plan, separated).unrelated_block_proximity
+    )
+    assert (
+        semantic_composition_penalty_breakdown(plan, separated).unrelated_block_proximity
+        == 0
+    )
+
+
+def test_related_blocks_are_exempt_from_inter_block_separation_penalty() -> None:
+    source = _block("source", "amplifier")
+    target = _block("target", "filter")
+    plan = _plan((source, target), (_edge("signal", "source", "target"),))
+    touching = _packing(_placed(source, 0), _placed(target, PITCH))
+    assert (
+        semantic_composition_penalty_breakdown(plan, touching).unrelated_block_proximity
+        == 0
+    )
 
