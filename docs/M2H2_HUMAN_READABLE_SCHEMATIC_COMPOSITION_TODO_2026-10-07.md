@@ -167,7 +167,7 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Add declaration-order permutation tests.
 - [x] Add mirrored naming/refdes metamorphic tests.
 - [x] Add three-amplifier one-band regression.
-- [ ] Add multi-band/repeated-channel regression.
+- [x] Add multi-band/repeated-channel regression.
 - [ ] Freeze repeated-structure acceptance tolerances from general corpus evidence.
 
 ## 9. Page utilization and whitespace
@@ -236,10 +236,11 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Add candidate metrics for repeated structures.
 - [x] Add candidate metrics for whitespace/utilization.
 - [x] Add candidate metrics for routing clarity.
-- [ ] Search meaningful interface-frontier alternatives.
-- [ ] Search meaningful semantic block-order alternatives.
+- [x] Search meaningful interface-frontier alternatives.
+- [x] Search meaningful semantic block-order alternatives.
 - [ ] Search meaningful repeated-channel row/column alternatives.
-- [ ] Search meaningful support-placement alternatives.
+  - Generated row/column candidates at current source; full-beam retention and KiCad qualification remain open.
+- [x] Search meaningful support-placement alternatives.
 - [ ] Search meaningful field-slot alternatives.
 - [ ] Search meaningful branch/route alternatives where already bounded.
 - [x] Preserve exact attempt/budget counters.
@@ -283,6 +284,8 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Pass insertion-order metamorphics.
 - [x] Pass equivalent-wire-segmentation metamorphics.
 - [x] Pass repeated-channel declaration-order metamorphics.
+
+Source-level checkpoint: `cdcfd445be09712f8a12d30068d3a23509cb7684`, fast-validation run `37829859944` (hosted contract pytest and static checks PASS; locked KiCad job queued). New functionality and authored regressions support the checked implementation items; no native-render or final-source PASS is claimed.
 
 ## 15. Targeted composition regression suite
 
