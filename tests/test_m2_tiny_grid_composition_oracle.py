@@ -95,7 +95,7 @@ def test_lexicographic_frontier_precedes_lower_tier_compactness() -> None:
     result = oracle.exhaustive_tiny_grid_oracle(
         nodes,
         grid,
-        production_positions=(("input", (10, 0)), ("output", (100, 0))),
+        production_positions=(("input", (10, 0)), ("output", (0, 0))),
     )
     # A more compact placement must not beat a strictly better side penalty.
     assert result.production_is_dominated
