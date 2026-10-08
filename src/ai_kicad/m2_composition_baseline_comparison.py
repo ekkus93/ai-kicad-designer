@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import isfinite
 
 
 @dataclass(frozen=True)
@@ -50,6 +51,10 @@ def compare_baseline(
     epsilon: float = 1e-9,
 ) -> BaselineComparison:
     """Compare exact cases without allowing aggregate scores to mask defects."""
+    if type(epsilon) not in {int, float} or not isfinite(epsilon) or epsilon < 0:
+        raise ValueError("comparison epsilon must be finite and non-negative")
+    if not before or not after:
+        raise ValueError("baseline comparison requires non-empty case evidence")
     before_by_id = _unique(before)
     after_by_id = _unique(after)
     if before_by_id.keys() != after_by_id.keys():
@@ -92,6 +97,14 @@ def compare_baseline(
 def _unique(cases: tuple[CaseMetrics, ...]) -> dict[str, CaseMetrics]:
     result: dict[str, CaseMetrics] = {}
     for case in cases:
+        if not isinstance(case.case_id, str) or not case.case_id:
+            raise ValueError("baseline comparison requires a non-empty case ID")
+        if len(set(case.hard_defects)) != len(case.hard_defects):
+            raise ValueError(f"duplicate hard defect in case: {case.case_id}")
+        for name in _METRICS:
+            value = getattr(case, name)
+            if type(value) not in {int, float} or not isfinite(value):
+                raise ValueError(f"non-finite or invalid {name} in case: {case.case_id}")
         if case.case_id in result:
             raise ValueError(f"duplicate case id: {case.case_id}")
         result[case.case_id] = case

@@ -35,7 +35,9 @@ class BaselineClosureRecord:
     @property
     def eligible_for_closure(self) -> bool:
         return (
-            self.comparison.hard_defect_free
+            bool(self.comparison.cases)
+            and bool(self.required_improvements)
+            and self.comparison.hard_defect_free
             and self.comparison.no_material_regressions
             and not self.missing_required_improvements
             and not self.failing_cases
@@ -60,6 +62,8 @@ def build_baseline_closure_record(
         (after_evidence_root, "after_evidence_root"),
     ):
         _require_sha256_like(value, label)
+    if baseline_evidence_root == after_evidence_root:
+        raise ValueError("baseline and final composition evidence roots must be distinct")
     by_case = {case.case_id: case for case in comparison.cases}
     missing = []
     for required in sorted(required_improvements, key=lambda item: (item.case_id, item.metric)):
@@ -85,8 +89,9 @@ def build_baseline_closure_record(
 
 
 def _require_sha256_like(value: str, label: str) -> None:
-    if len(value) not in {40, 64} or any(character not in _HEX for character in value):
-        raise ValueError(f"{label} must be a lowercase hex source/evidence digest")
+    required_length = 40 if label == "source_sha" else 64
+    if len(value) != required_length or any(character not in _HEX for character in value):
+        raise ValueError(f"{label} must be a lowercase {required_length}-character hex digest")
 
 
 def _record_dict(record: BaselineClosureRecord) -> dict[str, object]:

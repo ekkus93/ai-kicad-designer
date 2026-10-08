@@ -100,3 +100,20 @@ def test_case_sets_must_match_exactly() -> None:
 def test_duplicate_case_ids_are_rejected() -> None:
     with pytest.raises(ValueError, match="duplicate case id"):
         compare_baseline((_case("a"), _case("a")), (_case("a"),))
+
+
+def test_empty_comparison_cannot_be_reported_as_defect_free() -> None:
+    with pytest.raises(ValueError, match="non-empty case evidence"):
+        compare_baseline((), ())
+
+
+@pytest.mark.parametrize("invalid", (float("nan"), float("inf"), -float("inf")))
+def test_non_finite_metrics_cannot_hide_comparative_regressions(invalid: float) -> None:
+    with pytest.raises(ValueError, match="non-finite"):
+        compare_baseline((_case("a", routing=3),), (_case("a", routing=invalid),))
+
+
+@pytest.mark.parametrize("epsilon", (-1.0, float("nan"), float("inf")))
+def test_invalid_regression_epsilon_is_rejected(epsilon: float) -> None:
+    with pytest.raises(ValueError, match="comparison epsilon"):
+        compare_baseline((_case("a"),), (_case("a"),), epsilon=epsilon)
