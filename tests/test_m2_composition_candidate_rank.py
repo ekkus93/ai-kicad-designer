@@ -340,7 +340,9 @@ def test_branch_readability_ignores_non_branch_edges_and_order() -> None:
 
 
 def test_two_band_repeated_channel_stage_columns_are_semantically_aligned() -> None:
-    blocks = tuple(_block(f"{band}{stage}") for band in ("a", "b") for stage in range(3))
+    blocks = tuple(
+        _block(f"{band}{stage}") for band in ("a", "b") for stage in range(3)
+    )
     edges = tuple(
         _edge("signal", f"{band}{stage}", f"{band}{stage + 1}", f"{band}-{stage}")
         for band in ("a", "b")
@@ -349,7 +351,11 @@ def test_two_band_repeated_channel_stage_columns_are_semantically_aligned() -> N
     plan = _plan(blocks, edges)
     aligned = _packing(
         *(
-            _placed(block, (2 + 6 * int(block.id[1])) * PITCH, (2 if block.id[0] == "a" else 12) * PITCH)
+            _placed(
+                block,
+                (2 + 6 * int(block.id[1])) * PITCH,
+                (2 if block.id[0] == "a" else 12) * PITCH,
+            )
             for block in blocks
         )
     )
