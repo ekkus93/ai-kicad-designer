@@ -1227,6 +1227,79 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
     return tuple(alternatives)
 
 
+def _semantic_block_order_candidates(plan: SemanticPlan, baseline: Packing) -> tuple[Packing, ...]:
+    """Try a legal adjacent functional-stage exchange between incomparable peers.
+
+    A branch or forward-signal dependency forbids an exchange, while unrelated
+    functional stages may trade same-band positions. Final legality is checked
+    against every hard placement obligation and measured reservation envelope.
+    """
+    placed = tuple(
+        sorted(
+            (
+                item
+                for item in baseline.fragments
+                if item.fragment.block.function is not None
+                and not item.fragment.block.unused
+                and item.fragment.block.kind != "interface"
+            ),
+            key=lambda item: (
+                item.envelope[1],
+                item.envelope[0],
+                item.fragment.block.id,
+            ),
+        )
+    )
+    forward: dict[str, set[str]] = {}
+    for edge in plan.edges:
+        if edge.kind in {"signal", "branch"} and edge.source != edge.target:
+            forward.setdefault(edge.source, set()).add(edge.target)
+    for relation in plan.precedence:
+        if relation.source_fragment != relation.target_fragment:
+            forward.setdefault(relation.source_fragment, set()).add(relation.target_fragment)
+
+    def reaches(source: str, target: str) -> bool:
+        visited: set[str] = set()
+        pending = [source]
+        while pending:
+            current = pending.pop()
+            if current in visited:
+                continue
+            visited.add(current)
+            if target in forward.get(current, set()):
+                return True
+            pending.extend(sorted(forward.get(current, set()) - visited))
+        return False
+
+    proposals: list[tuple[tuple[int, str, str], Packing]] = []
+    for index, first in enumerate(placed):
+        for second in placed[index + 1 :]:
+            first_id = first.fragment.block.id
+            second_id = second.fragment.block.id
+            if first.envelope[1] != second.envelope[1]:
+                continue
+            if reaches(first_id, second_id) or reaches(second_id, first_id):
+                continue
+            if first.envelope[0] == second.envelope[0]:
+                continue
+            exchanged = _measured_repack(
+                plan,
+                baseline,
+                first,
+                second.envelope[0],
+                second.envelope[1],
+                "semantic-block-order-swap",
+                additional_moves=((second, first.envelope[0], first.envelope[1]),),
+            )
+            if exchanged is None:
+                continue
+            separation = abs(first.envelope[0] - second.envelope[0])
+            proposals.append(((separation, first_id, second_id), exchanged))
+    if not proposals:
+        return ()
+    return (min(proposals, key=lambda item: item[0])[1],)
+
+
 def _structural_repack_candidates(plan: SemanticPlan, baseline: Packing) -> tuple[Packing, ...]:
     """Try functional row compaction and precedence-bound band staggering."""
     items = baseline.fragments
@@ -1990,6 +2063,7 @@ def pack_fragment_candidates(
         # Reserve candidate space for deterministic, legally measured interface
         # moves; the subsequent route proof remains authoritative.
         extras.extend(_interface_frontier_candidates(plan, successful[0]))
+        extras.extend(_semantic_block_order_candidates(plan, successful[0]))
         distribution = _distribution_column_candidate(plan, variants, successful)
         if distribution is not None and all(
             tuple((item.fragment.id, item.delta) for item in distribution.fragments)
@@ -2028,7 +2102,9 @@ def pack_fragment_candidates(
                     (item for item in partial if _band_count(item) != baseline_bands), partial[0]
                 )
                 extras.append(diverse)
-        ordered = [successful[0], *extras, *successful[1:]]
+        # Keep two baseline variant/shelf seeds in the bounded final beam
+        # instead of allowing semantic repairs to crowd out variant diversity.
+        ordered = [successful[0], *extras[:3], *successful[1:3], *extras[3:], *successful[3:]]
         seen = set()
         deduped = []
         for item in ordered:

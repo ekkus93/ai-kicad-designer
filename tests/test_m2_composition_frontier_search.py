@@ -102,3 +102,46 @@ def test_bidirectional_interface_is_not_forced_to_a_signal_frontier() -> None:
     options = _interface_frontier_candidates(new_plan, baseline)
     assert len(options) == 1
     assert options[0].attempts[-1] == "interface-frontier-output"
+
+
+def test_independent_functional_stages_have_measured_block_order_alternative() -> None:
+    from ai_kicad.m2_pack import _semantic_block_order_candidates
+
+    left = BlockPlan("left", "filter", (), frozenset(), (), function=("filter", "a"))
+    right = BlockPlan("right", "amplifier", (), frozenset(), (), function=("gain", "b"))
+    plan = SemanticPlan((left, right), (), {}, ())
+    baseline = Packing(
+        (
+            _place(_fragment(left), LEFT + 60 * PITCH, 60 * PITCH),
+            _place(_fragment(right), LEFT + 80 * PITCH, 60 * PITCH),
+        ),
+        (),
+    )
+    alternatives = _semantic_block_order_candidates(plan, baseline)
+    assert len(alternatives) == 1
+    swapped = {item.fragment.block.id: item.envelope[0] for item in alternatives[0].fragments}
+    before = {item.fragment.block.id: item.envelope[0] for item in baseline.fragments}
+    assert swapped["left"] == before["right"]
+    assert swapped["right"] == before["left"]
+    assert alternatives[0].attempts[-1] == "semantic-block-order-swap"
+
+
+def test_forward_dependent_stages_cannot_be_swapped_by_block_search() -> None:
+    from ai_kicad.m2_pack import _semantic_block_order_candidates
+
+    first = BlockPlan("first", "filter", (), frozenset(), (), function=("stage", "a"))
+    next_stage = BlockPlan("next", "filter", (), frozenset(), (), function=("stage", "b"))
+    plan = SemanticPlan(
+        (first, next_stage),
+        (SemanticEdge("signal", "first", "next", "signal", ()),),
+        {},
+        (),
+    )
+    baseline = Packing(
+        (
+            _place(_fragment(first), LEFT + 60 * PITCH, 60 * PITCH),
+            _place(_fragment(next_stage), LEFT + 80 * PITCH, 60 * PITCH),
+        ),
+        (),
+    )
+    assert _semantic_block_order_candidates(plan, baseline) == ()
