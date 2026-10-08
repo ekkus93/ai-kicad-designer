@@ -238,8 +238,8 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Add candidate metrics for routing clarity.
 - [x] Search meaningful interface-frontier alternatives.
 - [x] Search meaningful semantic block-order alternatives.
-- [ ] Search meaningful repeated-channel row/column alternatives.
-  - Generated row/column candidates at current source; full-beam retention and KiCad qualification remain open.
+- [x] Search meaningful repeated-channel row/column alternatives.
+  - Current-source 28428470c8d4bd4672e8fe94fe24ac6577be8bbe: generic bounded row and column generation plus explicit final eight-seed retention and deduplication, with regression coverage; hosted static and contract PASS in run 37835474849. This establishes source implementation only; native KiCad qualification and render acceptance remain open.
 - [x] Search meaningful support-placement alternatives.
 - [ ] Search meaningful field-slot alternatives.
 - [ ] Search meaningful branch/route alternatives where already bounded.
