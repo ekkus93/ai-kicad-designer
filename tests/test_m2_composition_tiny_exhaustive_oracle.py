@@ -84,7 +84,7 @@ def test_exhaustive_budget_and_invalid_inventory_are_rejected() -> None:
         exhaustive_tiny_composition(
             tuple(TinyNode(str(i)) for i in range(6)),
             (),
-            tuple((i, 0) for i in range(9)),
+            tuple((i, 0) for i in range(10)),
         )
     with pytest.raises(ValueError, match="duplicate"):
         exhaustive_tiny_composition((TinyNode("x"), TinyNode("x")), (), ((0, 0), (1, 0)))
