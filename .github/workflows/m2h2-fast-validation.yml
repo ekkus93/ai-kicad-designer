@@ -262,6 +262,19 @@ jobs:
                   'stderr': probe.stderr.strip(),
               }
           print(json.dumps(report, indent=2, sort_keys=True))
+          mismatches = [
+              item['id']
+              for section in ('executables', 'libraries')
+              for item in report[section]
+              if not item['exists'] or item['actual_sha256'] != item['expected_sha256']
+          ]
+          if report['platform'] != lock['platform']:
+              mismatches.append('platform')
+          version = report.get('version_probe')
+          if not version or version['returncode'] != 0 or version['stdout'] != '10.0.6':
+              mismatches.append('version_probe')
+          if mismatches:
+              raise SystemExit('LOCKED_KICAD_TOOLCHAIN_MISMATCH: ' + ', '.join(mismatches))
           PY
 
       - name: Pytest
