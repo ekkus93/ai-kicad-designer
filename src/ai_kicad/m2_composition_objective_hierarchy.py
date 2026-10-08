@@ -43,11 +43,15 @@ def select_best_candidate(candidates: tuple[CandidateMetrics, ...]) -> Candidate
         raise ValueError("at least one candidate is required")
 
     unique = _deduplicate_repeated_states(candidates)
-    ranked = sorted(unique, key=lambda candidate: (_metric_vector(candidate), candidate.candidate_id))
+    ranked = sorted(
+        unique, key=lambda candidate: (_metric_vector(candidate), candidate.candidate_id)
+    )
     winner = ranked[0]
     winner_vector = _metric_vector(winner)
     rejected = tuple(
-        RejectedCandidate(candidate.candidate_id, _rejection_reason(winner, candidate), _metric_vector(candidate))
+        RejectedCandidate(
+            candidate.candidate_id, _rejection_reason(winner, candidate), _metric_vector(candidate)
+        )
         for candidate in ranked[1:]
     )
     best_rejected = rejected[0].candidate_id if rejected else None
@@ -62,7 +66,7 @@ def select_best_candidate(candidates: tuple[CandidateMetrics, ...]) -> Candidate
 
 
 def _deduplicate_repeated_states(
-    candidates: tuple[CandidateMetrics, ...]
+    candidates: tuple[CandidateMetrics, ...],
 ) -> tuple[CandidateMetrics, ...]:
     best_by_state: dict[str, CandidateMetrics] = {}
     for candidate in candidates:
@@ -100,7 +104,9 @@ def _rejection_reason(winner: CandidateMetrics, rejected: CandidateMetrics) -> s
     )
     winner_vector = _metric_vector(winner)
     rejected_vector = _metric_vector(rejected)
-    for label, winner_value, rejected_value in zip(labels, winner_vector, rejected_vector, strict=True):
+    for label, winner_value, rejected_value in zip(
+        labels, winner_vector, rejected_vector, strict=True
+    ):
         if winner_value != rejected_value:
             return label
     return "deterministic_candidate_id"

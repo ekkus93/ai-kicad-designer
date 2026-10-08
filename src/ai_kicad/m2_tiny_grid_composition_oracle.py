@@ -74,7 +74,9 @@ def exhaustive_tiny_grid_oracle(
             )
         )
         scored.append(
-            TinyPlacementScore(f"oracle_{index:04d}", positions, _score_positions(node_order, positions))
+            TinyPlacementScore(
+                f"oracle_{index:04d}", positions, _score_positions(node_order, positions)
+            )
         )
 
     nondominated = _nondominated(scored)
@@ -88,7 +90,9 @@ def exhaustive_tiny_grid_oracle(
         if len(set(used_points)) != len(used_points) or not set(used_points) <= set(grid_points):
             raise ValueError("production positions must use distinct legal grid points")
         normalized = tuple(sorted(production_positions, key=lambda item: item[0]))
-        production = TinyPlacementScore("production", normalized, _score_positions(node_order, normalized))
+        production = TinyPlacementScore(
+            "production", normalized, _score_positions(node_order, normalized)
+        )
         dominating_ids = tuple(
             candidate.candidate_id
             for candidate in nondominated
@@ -105,7 +109,9 @@ def exhaustive_tiny_grid_oracle(
     )
 
 
-def _score_positions(nodes: tuple[TinyNode, ...], positions: tuple[tuple[str, Point], ...]) -> ScoreVector:
+def _score_positions(
+    nodes: tuple[TinyNode, ...], positions: tuple[tuple[str, Point], ...]
+) -> ScoreVector:
     by_id = dict(positions)
     xs = [point[0] for point in by_id.values()]
     ys = [point[1] for point in by_id.values()]
@@ -137,10 +143,7 @@ def _stage_order_penalty(nodes: tuple[TinyNode, ...], by_id: dict[str, Point]) -
     channels = {node.channel_id for node in nodes}
     for channel in channels:
         staged = sorted(
-            (
-                node for node in nodes
-                if node.stage_index is not None and node.channel_id == channel
-            ),
+            (node for node in nodes if node.stage_index is not None and node.channel_id == channel),
             key=lambda item: (item.stage_index, item.node_id),
         )
         for first, second in zip(staged, staged[1:]):

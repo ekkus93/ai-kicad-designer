@@ -61,10 +61,7 @@ def enumerate_alternatives(
         if attempted >= budget:
             break
         attempted += 1
-        choices = tuple(
-            (axis.name, value)
-            for axis, value in zip(normalized, values, strict=True)
-        )
+        choices = tuple((axis.name, value) for axis, value in zip(normalized, values, strict=True))
         if choices in seen:
             duplicates += 1
             continue
@@ -93,7 +90,4 @@ def _normalize_axes(
         if axis.name in by_name:
             raise ValueError(f"duplicate composition axis: {axis.name}")
         by_name[axis.name] = tuple(sorted(set(axis.values)))
-    return tuple(
-        AlternativeAxis(name, by_name[name])
-        for name in sorted(by_name)
-    )
+    return tuple(AlternativeAxis(name, by_name[name]) for name in sorted(by_name))

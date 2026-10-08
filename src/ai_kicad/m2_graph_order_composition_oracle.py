@@ -56,7 +56,9 @@ def evaluate_graph_order(
     """Evaluate left-to-right order for semantic signal precedence only."""
     by_id = {node.node_id: node for node in nodes}
     forward_edges = tuple(edge for edge in edges if edge.role in FORWARD_SIGNAL_ROLES)
-    ignored_edges = tuple(sorted((edge for edge in edges if edge.role in NON_FORWARD_ROLES), key=_edge_key))
+    ignored_edges = tuple(
+        sorted((edge for edge in edges if edge.role in NON_FORWARD_ROLES), key=_edge_key)
+    )
     reachability = _transitive_forward_pairs(forward_edges, by_id)
     ordered_pairs = tuple(sorted(reachability))
     incomparable = _incomparable_signal_pairs(nodes, reachability)

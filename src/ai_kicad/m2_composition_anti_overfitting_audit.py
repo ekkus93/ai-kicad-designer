@@ -26,17 +26,13 @@ class AuditFinding:
 
 
 CASE_ID_RE = re.compile(r"\b[a-z]\d+__[A-Za-z0-9_]+\b")
-QUALIFICATION_GROUP_RE = re.compile(
-    r"\b(?:M2H2|V3_8|DP[1-4]|I[1-6])(?:[_-][A-Z0-9]+)*\b"
-)
+QUALIFICATION_GROUP_RE = re.compile(r"\b(?:M2H2|V3_8|DP[1-4]|I[1-6])(?:[_-][A-Z0-9]+)*\b")
 REFDES_RE = re.compile(r"\b(?:R|C|L|U|Q|D|J|P|TP|FB)\d+[A-Za-z]?\b")
 TOPOLOGY_HASH_RE = re.compile(r"\b[0-9a-f]{40,64}\b", re.IGNORECASE)
 COORDINATE_PAIR_RE = re.compile(r"\(\s*-?\d+\s*,\s*-?\d+\s*\)")
 
 _LITERAL_NET_PREFIXES = ("NET_", "N$", "/")
-_LITERAL_NET_NAMES = frozenset(
-    {"VIN", "VOUT", "VREF", "GND", "VCC", "VDD", "AGND"}
-)
+_LITERAL_NET_NAMES = frozenset({"VIN", "VOUT", "VREF", "GND", "VCC", "VDD", "AGND"})
 
 
 @dataclass(frozen=True)
@@ -61,9 +57,7 @@ def audit_composition_sources(
     for source in sorted(sources, key=lambda item: item.path):
         for line_number, line in enumerate(source.text.splitlines(), start=1):
             findings.extend(_line_findings(source.path, line_number, line))
-    return tuple(
-        sorted(findings, key=lambda item: (item.path, item.line_number, item.category))
-    )
+    return tuple(sorted(findings, key=lambda item: (item.path, item.line_number, item.category)))
 
 
 def _line_findings(path: str, line_number: int, line: str) -> list[AuditFinding]:

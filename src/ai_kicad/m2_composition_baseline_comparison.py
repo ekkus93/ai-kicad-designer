@@ -83,8 +83,7 @@ def compare_baseline(
     return BaselineComparison(
         cases=tuple(comparisons),
         hard_defect_free=all(
-            not case.unresolved_hard_defects and not case.new_hard_defects
-            for case in comparisons
+            not case.unresolved_hard_defects and not case.new_hard_defects for case in comparisons
         ),
         no_material_regressions=all(not case.regressions for case in comparisons),
     )

@@ -101,7 +101,7 @@ def measure_power_reference_composition(
 
 
 def _infrastructure_dispersion(
-    nodes: tuple[PowerReferenceNode, ...]
+    nodes: tuple[PowerReferenceNode, ...],
 ) -> tuple[InfrastructureDispersion, ...]:
     by_role: dict[str, list[PowerReferenceNode]] = defaultdict(list)
     for node in nodes:
@@ -117,7 +117,9 @@ def _dispersion(role: str, nodes: tuple[PowerReferenceNode, ...]) -> Infrastruct
         (_manhattan(first.center, second.center) for first in nodes for second in nodes),
         default=0,
     )
-    return InfrastructureDispersion(role, len(nodes), max(xs) - min(xs), max(ys) - min(ys), diameter)
+    return InfrastructureDispersion(
+        role, len(nodes), max(xs) - min(xs), max(ys) - min(ys), diameter
+    )
 
 
 def _local_support_distances(

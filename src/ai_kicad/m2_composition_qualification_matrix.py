@@ -112,8 +112,6 @@ def _matrix_dict(matrix: QualificationMatrix) -> dict[str, object]:
         "base_cases": [case.__dict__ for case in matrix.base_cases],
         "interaction_cases": [case.__dict__ for case in matrix.interaction_cases],
         "structural_cases": [case.__dict__ for case in matrix.structural_cases],
-        "targeted_composition_cases": [
-            case.__dict__ for case in matrix.targeted_composition_cases
-        ],
+        "targeted_composition_cases": [case.__dict__ for case in matrix.targeted_composition_cases],
         "preserved_negative_cases": [case.__dict__ for case in matrix.preserved_negative_cases],
     }

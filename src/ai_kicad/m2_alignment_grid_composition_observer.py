@@ -54,7 +54,9 @@ def measure_alignment_grid_composition(
     horizontal_lines = _alignment_line_count(
         tuple(item.center[1] for item in items), alignment_tolerance
     )
-    vertical_lines = _alignment_line_count(tuple(item.center[0] for item in items), alignment_tolerance)
+    vertical_lines = _alignment_line_count(
+        tuple(item.center[0] for item in items), alignment_tolerance
+    )
     stage_deviation = _row_deviation(
         tuple(item for item in items if item.role == "stage" or item.role == "active")
     )
@@ -62,7 +64,9 @@ def measure_alignment_grid_composition(
     connector_distances = _owner_distances(
         tuple(item for item in items if item.role == "connector"), by_id
     )
-    support_distances = _owner_distances(tuple(item for item in items if item.role == "support"), by_id)
+    support_distances = _owner_distances(
+        tuple(item for item in items if item.role == "support"), by_id
+    )
     grid_violations = tuple(
         sorted(
             item.item_id
@@ -138,5 +142,7 @@ def _inconsistent_by_role(items: tuple[PlacedItem, ...], *, attribute: str) -> t
             continue
         values = [getattr(item, attribute) for item in role_items]
         expected = Counter(values).most_common(1)[0][0]
-        inconsistent.extend(item.item_id for item in role_items if getattr(item, attribute) != expected)
+        inconsistent.extend(
+            item.item_id for item in role_items if getattr(item, attribute) != expected
+        )
     return tuple(sorted(inconsistent))

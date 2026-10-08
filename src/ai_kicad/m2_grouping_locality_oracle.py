@@ -78,7 +78,7 @@ def evaluate_grouping_candidate(
 
 
 def non_dominated_grouping_candidates(
-    scores: tuple[GroupingCandidateScore, ...]
+    scores: tuple[GroupingCandidateScore, ...],
 ) -> tuple[GroupingCandidateScore, ...]:
     """Return candidates not dominated by another score vector."""
     survivors = [score for score in scores if not _is_dominated(score, scores)]

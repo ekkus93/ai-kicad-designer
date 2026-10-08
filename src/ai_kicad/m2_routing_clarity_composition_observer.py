@@ -173,13 +173,9 @@ def _orthogonal_cross(first: Segment, second: Segment) -> bool:
     if set(first) & set(second):
         return False
     if a[1] == b[1] and c[0] == d[0]:
-        return min(a[0], b[0]) < c[0] < max(a[0], b[0]) and min(c[1], d[1]) < a[1] < max(
-            c[1], d[1]
-        )
+        return min(a[0], b[0]) < c[0] < max(a[0], b[0]) and min(c[1], d[1]) < a[1] < max(c[1], d[1])
     if a[0] == b[0] and c[1] == d[1]:
-        return min(c[0], d[0]) < a[0] < max(c[0], d[0]) and min(a[1], b[1]) < c[1] < max(
-            a[1], b[1]
-        )
+        return min(c[0], d[0]) < a[0] < max(c[0], d[0]) and min(a[1], b[1]) < c[1] < max(a[1], b[1])
     return False
 
 

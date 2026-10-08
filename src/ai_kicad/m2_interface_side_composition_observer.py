@@ -86,7 +86,7 @@ def measure_interface_side_composition(
 
 
 def _interface_side_penalties(
-    nodes: tuple[CompositionNode, ...]
+    nodes: tuple[CompositionNode, ...],
 ) -> tuple[InterfaceSidePenalty, ...]:
     penalties: list[InterfaceSidePenalty] = []
     for node in sorted(nodes, key=lambda item: item.node_id):

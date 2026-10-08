@@ -4,6 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from math import hypot
 
+
 @dataclass(frozen=True)
 class Node:
     key: str
@@ -11,17 +12,20 @@ class Node:
     y: float
     role: str = "signal"
 
+
 @dataclass(frozen=True)
 class Edge:
     a: str
     b: str
     role: str = "signal"
 
+
 @dataclass(frozen=True)
 class Ownership:
     member: str
     owners: tuple[str, ...]
     kind: str
+
 
 @dataclass(frozen=True)
 class Metrics:
@@ -30,10 +34,14 @@ class Metrics:
     ownership_distance: tuple[tuple[str, float], ...]
     feedback_span: float
 
+
 _SHARED = frozenset({"power", "reference", "return", "shared"})
 _LOCAL_EDGE = frozenset({"signal", "feedback", "support", "package_local"})
 
-def observe(nodes: tuple[Node, ...], edges: tuple[Edge, ...], ownership: tuple[Ownership, ...] = ()) -> Metrics:
+
+def observe(
+    nodes: tuple[Node, ...], edges: tuple[Edge, ...], ownership: tuple[Ownership, ...] = ()
+) -> Metrics:
     by_key = {node.key: node for node in nodes}
     local = {node.key for node in nodes if node.role not in _SHARED}
     adjacency = {key: set() for key in local}
@@ -46,10 +54,13 @@ def observe(nodes: tuple[Node, ...], edges: tuple[Edge, ...], ownership: tuple[O
     owner_distance = []
     for item in sorted(ownership, key=lambda value: value.member):
         owner_nodes = [by_key[key] for key in item.owners if key in by_key]
-        distance = min((_distance(by_key[item.member], owner) for owner in owner_nodes), default=float("inf"))
+        distance = min(
+            (_distance(by_key[item.member], owner) for owner in owner_nodes), default=float("inf")
+        )
         owner_distance.append((item.member, distance))
     feedback_span = sum(_distance(by_key[e.a], by_key[e.b]) for e in edges if e.role == "feedback")
     return Metrics(blocks, dispersion, tuple(owner_distance), feedback_span)
+
 
 def _components(adjacency: dict[str, set[str]]) -> tuple[tuple[str, ...], ...]:
     remaining = set(adjacency)
@@ -67,9 +78,13 @@ def _components(adjacency: dict[str, set[str]]) -> tuple[tuple[str, ...], ...]:
         result.append(tuple(sorted(seen)))
     return tuple(sorted(result))
 
+
 def _dispersion(block: tuple[str, ...], by_key: dict[str, Node]) -> float:
     points = [by_key[key] for key in block]
-    return max((_distance(a, b) for i, a in enumerate(points) for b in points[i + 1:]), default=0.0)
+    return max(
+        (_distance(a, b) for i, a in enumerate(points) for b in points[i + 1 :]), default=0.0
+    )
+
 
 def _distance(a: Node, b: Node) -> float:
     return hypot(a.x - b.x, a.y - b.y)
