@@ -129,9 +129,7 @@ class ClosureRecord:
                     "failed_runs": outcome.failed_runs,
                     "complete": outcome.complete,
                 }
-                for outcome in sorted(
-                    self.qualification_outcomes, key=lambda item: item.family
-                )
+                for outcome in sorted(self.qualification_outcomes, key=lambda item: item.family)
             ],
             "pass_eligible": self.pass_eligible,
         }

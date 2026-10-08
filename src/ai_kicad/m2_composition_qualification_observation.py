@@ -58,16 +58,16 @@ class QualificationObservationReport:
         for observation in self.observations:
             if observation.counts_as_success(self.matrix):
                 counted.setdefault(observation.case_id, set()).add(observation.repetition)
-        return tuple((case_id, len(repetitions)) for case_id, repetitions in sorted(counted.items()))
+        return tuple(
+            (case_id, len(repetitions)) for case_id, repetitions in sorted(counted.items())
+        )
 
     def gaps(self) -> tuple[tuple[str, int, int], ...]:
         return matrix_gaps(self.matrix, self.successful_repetitions())
 
     def rejected_observation_count(self) -> int:
         return sum(
-            1
-            for observation in self.observations
-            if not observation.counts_as_success(self.matrix)
+            1 for observation in self.observations if not observation.counts_as_success(self.matrix)
         )
 
     def is_complete(self) -> bool:

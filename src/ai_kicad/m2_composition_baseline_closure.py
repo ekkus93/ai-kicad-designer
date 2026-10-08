@@ -102,5 +102,7 @@ def _record_dict(record: BaselineClosureRecord) -> dict[str, object]:
             item.__dict__ for item in record.missing_required_improvements
         ],
         "failing_cases": list(record.failing_cases),
-        "cases": [case.__dict__ for case in sorted(record.comparison.cases, key=lambda item: item.case_id)],
+        "cases": [
+            case.__dict__ for case in sorted(record.comparison.cases, key=lambda item: item.case_id)
+        ],
     }

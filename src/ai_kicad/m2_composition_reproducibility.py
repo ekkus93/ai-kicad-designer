@@ -99,10 +99,7 @@ class CompositionReproducibilityEvidence:
         payload = {
             "schema_version": self.schema_version,
             "source_sha": self.source_sha,
-            "runs": [
-                asdict(run)
-                for run in sorted(self.runs, key=lambda item: item.run_id)
-            ],
+            "runs": [asdict(run) for run in sorted(self.runs, key=lambda item: item.run_id)],
             "gaps": list(self.gaps()),
             "complete": self.is_complete(),
         }

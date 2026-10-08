@@ -57,7 +57,9 @@ def audit_hard_gates(source_sha: str, observed: dict[str, object]) -> HardGateAu
 
 
 def _require_hex_sha(source_sha: str) -> None:
-    if len(source_sha) != 40 or any(character not in "0123456789abcdef" for character in source_sha):
+    if len(source_sha) != 40 or any(
+        character not in "0123456789abcdef" for character in source_sha
+    ):
         raise ValueError("source_sha must be a 40-character lowercase hex commit SHA")
 
 
