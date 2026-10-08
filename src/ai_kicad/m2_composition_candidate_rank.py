@@ -44,6 +44,9 @@ def semantic_composition_penalties(
         for port in block.ports:
             sources = sorted(producers.get(port.net, set()) & centers.keys())
             targets = sorted(consumers.get(port.net, set()) & centers.keys())
+            if sources and targets:
+                directions.update(("input", "output"))
+                continue  # shared producer/consumer net has no justified frontier
             if sources:
                 directions.add("output")
                 relations.append(("output", sources))

@@ -192,3 +192,17 @@ def test_proved_candidate_ranking_preserves_route_tiebreakers() -> None:
         packing,
         (101, 10, 0, 1, 0, 0),
     )
+
+
+def test_shared_signal_net_interface_is_not_assumed_output_only() -> None:
+    blocks = (
+        _block("driver", "stage", "shared", "signal_out"),
+        _block("load", "stage", "shared", "signal_in"),
+        _block("connector", "interface", "shared", "passive"),
+    )
+    packing = _packing(
+        {"driver": (3 * PITCH, 0), "load": (4 * PITCH, 0), "connector": (0, 0)}
+    )
+    penalties = semantic_composition_penalties(SemanticPlan(blocks, (), {}, ()), packing)
+    assert penalties[0] == 0
+    assert penalties[2] == 0
