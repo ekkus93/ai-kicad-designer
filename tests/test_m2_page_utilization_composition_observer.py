@@ -15,7 +15,11 @@ def test_reports_content_bounding_box_and_occupied_ratio() -> None:
 
 def test_detects_non_tiny_upper_left_edge_bias() -> None:
     elements = tuple(
-        obs.VisualElement(f"e{index}", (10 + index * 4, 10 + index * 3), complexity_weight=2)
+        obs.VisualElement(
+            f"e{index}",
+            (10 + index * 4, 10 + index * 3),
+            complexity_weight=2,
+        )
         for index in range(5)
     )
     metrics = obs.measure_page_utilization(elements)
@@ -51,11 +55,19 @@ def test_large_internal_void_has_exact_witness() -> None:
 
 def test_spreading_content_reduces_edge_bias_without_hard_gate_changes() -> None:
     packed = tuple(
-        obs.VisualElement(f"p{index}", (12 + index * 3, 12 + index * 2), complexity_weight=2)
+        obs.VisualElement(
+            f"p{index}",
+            (12 + index * 3, 12 + index * 2),
+            complexity_weight=2,
+        )
         for index in range(5)
     )
     spread = tuple(
-        obs.VisualElement(f"s{index}", (50 + index * 28, 45 + (index % 2) * 35), complexity_weight=2)
+        obs.VisualElement(
+            f"s{index}",
+            (50 + index * 28, 45 + (index % 2) * 35),
+            complexity_weight=2,
+        )
         for index in range(5)
     )
     packed_metrics = obs.measure_page_utilization(packed)
