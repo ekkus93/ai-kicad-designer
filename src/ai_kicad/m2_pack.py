@@ -1272,8 +1272,14 @@ def _semantic_block_order_candidates(plan: SemanticPlan, baseline: Packing) -> t
         return False
 
     proposals: list[tuple[tuple[int, str, str], Packing]] = []
+    trial_limit = CANDIDATE_BUDGET * 4
+    trials = 0
     for index, first in enumerate(placed):
+        if trials >= trial_limit:
+            break
         for second in placed[index + 1 :]:
+            if trials >= trial_limit:
+                break
             first_id = first.fragment.block.id
             second_id = second.fragment.block.id
             if first.envelope[1] != second.envelope[1]:
@@ -1282,6 +1288,7 @@ def _semantic_block_order_candidates(plan: SemanticPlan, baseline: Packing) -> t
                 continue
             if first.envelope[0] == second.envelope[0]:
                 continue
+            trials += 1
             exchanged = _measured_repack(
                 plan,
                 baseline,
@@ -1304,7 +1311,13 @@ def _support_affinity_candidates(plan: SemanticPlan, baseline: Packing) -> tuple
     """Search a legal, closer slot for an explicitly owned support fragment."""
     placed = {item.fragment.block.id: item for item in baseline.fragments}
     options: list[tuple[tuple[int, str, str, int, int], Packing]] = []
-    for edge in sorted(plan.edges, key=lambda item: (item.kind, item.source, item.target, item.net)):
+    trial_limit = CANDIDATE_BUDGET * 4
+    trials = 0
+    for edge in sorted(
+        plan.edges, key=lambda item: (item.kind, item.source, item.target, item.net)
+    ):
+        if trials >= trial_limit:
+            break
         if edge.kind not in {"support", "feedback", "package"}:
             continue
         first, second = placed.get(edge.source), placed.get(edge.target)
@@ -1329,13 +1342,19 @@ def _support_affinity_candidates(plan: SemanticPlan, baseline: Packing) -> tuple
             (owner.envelope[0] - width - CHANNEL_GAP, owner.envelope[1]),
             (owner.envelope[2] + CHANNEL_GAP, owner.envelope[1]),
         ):
+            if trials >= trial_limit:
+                break
+            trials += 1
             candidate = _measured_repack(plan, baseline, support, x, y, "semantic-support-affinity")
             if candidate is None:
                 continue
             distance = abs(x - owner.envelope[0]) + abs(y - owner.envelope[1])
             if distance < original:
                 options.append(
-                    ((distance, support.fragment.block.id, owner.fragment.block.id, x, y), candidate)
+                    (
+                        (distance, support.fragment.block.id, owner.fragment.block.id, x, y),
+                        candidate,
+                    )
                 )
     return (min(options, key=lambda item: item[0])[1],) if options else ()
 
