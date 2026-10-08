@@ -50,14 +50,8 @@ def require_bounded_search_miss_evidence(
     """
     production = oracle.production_candidate
     if production is None or not oracle.nondominated_candidates:
-        raise ValueError(
-            "production placement and independent oracle optimum required"
-        )
-    if (
-        attempt_budget < 1
-        or not attempted_scores
-        or len(attempted_scores) > attempt_budget
-    ):
+        raise ValueError("production placement and independent oracle optimum required")
+    if attempt_budget < 1 or not attempted_scores or len(attempted_scores) > attempt_budget:
         raise ValueError("invalid bounded search attempt accounting")
     if any(
         len(score) != len(production.score_vector)
@@ -78,9 +72,7 @@ def require_bounded_search_miss_evidence(
             or attempt_budget >= oracle.candidate_count
             or miss_reason != "bounded_candidate_budget"
         ):
-            raise ValueError(
-                "dominated production result requires exhausted-budget evidence"
-            )
+            raise ValueError("dominated production result requires exhausted-budget evidence")
     elif miss_reason is not None:
         raise ValueError("an optimal production result must not claim a search miss")
 
