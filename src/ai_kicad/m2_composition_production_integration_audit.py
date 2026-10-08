@@ -34,9 +34,7 @@ def audit_production_ranking_integration(source: str) -> tuple[ProductionIntegra
                     symbol,
                 )
             )
-    semantic_key_applied = bool(
-        re.search(r"composition_candidate_key\s*\(\s*plan\s*,", source)
-    )
+    semantic_key_applied = bool(re.search(r"composition_candidate_key\s*\(\s*plan\s*,", source))
     if (
         "selected = min(proved_candidates, key=lambda item: item[0])" in source
         and not semantic_key_applied
