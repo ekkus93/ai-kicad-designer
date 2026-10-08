@@ -1942,10 +1942,7 @@ def _retain_composition_seed_diversity(
         (
             candidate
             for candidate in successful
-            if any(
-                ".local-text-slot." in placed.fragment.rule_id
-                for placed in candidate.fragments
-            )
+            if any(".local-text-slot." in placed.fragment.rule_id for placed in candidate.fragments)
         ),
         None,
     )

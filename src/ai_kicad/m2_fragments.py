@@ -1477,25 +1477,22 @@ def _access_alternatives(
                     alternate_text_slots=True,
                 )
             except InputError as exc:
-                construction_trace[trace_index] = (
-                    "text_slot", descriptor, "rejected", str(exc)
-                )
+                construction_trace[trace_index] = ("text_slot", descriptor, "rejected", str(exc))
             else:
                 if alternate.text_positions != base.text_positions:
                     variants.append(
                         replace(
                             alternate,
-                            rule_id=(
-                                f"m2g2.local-text-slot.{base.block.kind}.alternate.v1"
-                            ),
+                            rule_id=(f"m2g2.local-text-slot.{base.block.kind}.alternate.v1"),
                         )
                     )
-                    construction_trace[trace_index] = (
-                        "text_slot", descriptor, "certified", ""
-                    )
+                    construction_trace[trace_index] = ("text_slot", descriptor, "certified", "")
                 else:
                     construction_trace[trace_index] = (
-                        "text_slot", descriptor, "rejected", "no distinct clear slot"
+                        "text_slot",
+                        descriptor,
+                        "rejected",
+                        "no distinct clear slot",
                     )
     distinct = {}
     for variant in variants:
@@ -1771,8 +1768,7 @@ def fragment_variants(
                 retention_uncovered=retention_uncovered,
                 rule_id=(
                     f"m2g2.local-aspect.{block.kind}.{structural_name(family_index)}.v1"
-                    if len(families) > 1
-                    and ".local-text-slot." not in candidate.rule_id
+                    if len(families) > 1 and ".local-text-slot." not in candidate.rule_id
                     else candidate.rule_id
                 ),
             )
