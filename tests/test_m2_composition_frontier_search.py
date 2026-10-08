@@ -7,6 +7,7 @@ from ai_kicad.m2_pack import (
     Packing,
     _interface_frontier_candidates,
     _place,
+    _support_affinity_candidates,
 )
 from ai_kicad.m2_semantics import BlockPlan, SemanticEdge, SemanticPlan, SemanticPort
 
@@ -145,3 +146,49 @@ def test_forward_dependent_stages_cannot_be_swapped_by_block_search() -> None:
         (),
     )
     assert _semantic_block_order_candidates(plan, baseline) == ()
+
+
+def test_support_affinity_relocates_local_bias_near_owning_stage() -> None:
+    stage = BlockPlan("gain", "amplifier", (), frozenset(), (), function=("amplifier", "gain"))
+    bias = BlockPlan("bias", "rc", (), frozenset(), ())
+    plan = SemanticPlan(
+        (stage, bias),
+        (SemanticEdge("support", "bias", "gain", "bias", ()),),
+        {},
+        (),
+    )
+    baseline = Packing(
+        (
+            _place(_fragment(stage), LEFT + 60 * PITCH, 55 * PITCH),
+            _place(_fragment(bias), LEFT + 100 * PITCH, 85 * PITCH),
+        ),
+        (),
+    )
+    options = _support_affinity_candidates(plan, baseline)
+    assert len(options) == 1
+    moved = next(item for item in options[0].fragments if item.fragment.block.id == "bias")
+    original = next(item for item in baseline.fragments if item.fragment.block.id == "bias")
+    assert moved.envelope[0] < original.envelope[0]
+    assert options[0].attempts[-1] == "semantic-support-affinity"
+    assert _support_affinity_candidates(
+        SemanticPlan(tuple(reversed(plan.blocks)), plan.edges, {}, ()), baseline
+    ) == options
+
+
+def test_support_affinity_requires_explicit_functional_ownership() -> None:
+    first = BlockPlan("first", "rc", (), frozenset(), ())
+    second = BlockPlan("second", "rc", (), frozenset(), ())
+    plan = SemanticPlan(
+        (first, second),
+        (SemanticEdge("support", "first", "second", "rail", ()),),
+        {},
+        (),
+    )
+    baseline = Packing(
+        (
+            _place(_fragment(first), LEFT + 60 * PITCH, 55 * PITCH),
+            _place(_fragment(second), LEFT + 100 * PITCH, 85 * PITCH),
+        ),
+        (),
+    )
+    assert _support_affinity_candidates(plan, baseline) == ()
