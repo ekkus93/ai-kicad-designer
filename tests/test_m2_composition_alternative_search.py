@@ -39,9 +39,7 @@ def test_search_is_bounded_with_exact_attempt_accounting() -> None:
 
 
 def test_value_duplicates_are_removed_before_budget_accounting() -> None:
-    axes = (
-        AlternativeAxis("field_slot", ("alternate", "default", "alternate")),
-    )
+    axes = (AlternativeAxis("field_slot", ("alternate", "default", "alternate")),)
 
     evidence = enumerate_alternatives(axes, budget=5)
 
