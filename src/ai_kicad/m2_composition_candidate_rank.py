@@ -14,7 +14,7 @@ from .m2_pack import BOTTOM, LEFT, RIGHT, TOP
 
 Rect = tuple[int, int, int, int]
 Point = tuple[int, int]
-SemanticPenaltyVector = tuple[int, int, int, int, int, int, int, int, int]
+SemanticPenaltyVector = tuple[int, int, int, int, int, int, int, int, int, int]
 CompactnessPenaltyVector = tuple[int, int, int]
 CandidateKey = tuple[int, ...]
 
@@ -73,6 +73,85 @@ def _interface_roles(plan, signal_relations) -> dict[str, set[str]]:
         if target in roles:
             roles[target].add("signal_out")
     return roles
+
+
+
+def _signal_reachability(plan, signal_relations) -> set[tuple[str, str]]:
+    blocks = {block.id for block in plan.blocks}
+    outgoing: dict[str, set[str]] = {block_id: set() for block_id in blocks}
+    for source, target, _net in signal_relations:
+        if source in outgoing and target in blocks and source != target:
+            outgoing[source].add(target)
+    reachable: set[tuple[str, str]] = set()
+    for source in sorted(blocks):
+        pending = list(sorted(outgoing[source]))
+        seen: set[str] = set()
+        while pending:
+            target = pending.pop()
+            if target in seen:
+                continue
+            seen.add(target)
+            reachable.add((source, target))
+            pending.extend(sorted(outgoing.get(target, ())))
+    return reachable
+
+
+def _block_semantic_signature(plan, block_id: str) -> tuple:
+    by_id = {block.id: block for block in plan.blocks}
+    block = by_id[block_id]
+    port_roles = tuple(sorted(port.role for port in block.ports))
+    incident = []
+    for edge in plan.edges:
+        if edge.source == block_id:
+            incident.append(
+                (
+                    "out",
+                    edge.kind,
+                    by_id.get(edge.target).kind if edge.target in by_id else "unknown",
+                )
+            )
+        elif edge.target == block_id:
+            incident.append(
+                (
+                    "in",
+                    edge.kind,
+                    by_id.get(edge.source).kind if edge.source in by_id else "unknown",
+                )
+            )
+    return block.kind, port_roles, tuple(sorted(incident))
+
+
+def _repeated_alignment_penalty(plan, centers, signal_relations) -> int:
+    """Penalize off-axis drift among semantically equivalent incomparable peers.
+
+    A repeated peer must share a generic semantic signature and have no directed
+    primary-flow path to the other peer. This keeps serial same-kind stages out
+    of the repeated-channel metric while allowing either row- or column-oriented
+    repeated-channel grammars.
+    """
+
+    reachable = _signal_reachability(plan, signal_relations)
+    groups: dict[tuple, list[str]] = defaultdict(list)
+    for block in plan.blocks:
+        if block.id in centers and block.kind != "interface":
+            groups[_block_semantic_signature(plan, block.id)].append(block.id)
+
+    penalty = 0
+    for members in groups.values():
+        ordered_members = sorted(members)
+        for index, first in enumerate(ordered_members):
+            for second in ordered_members[index + 1 :]:
+                if (first, second) in reachable or (second, first) in reachable:
+                    continue
+                first_point = centers[first]
+                second_point = centers[second]
+                # Either a shared row or a shared column is a valid repeated
+                # grammar. Penalize only the smaller off-axis displacement.
+                penalty += min(
+                    abs(first_point[0] - second_point[0]),
+                    abs(first_point[1] - second_point[1]),
+                )
+    return _grid_units(penalty)
 
 
 def semantic_composition_penalties(plan, packing) -> SemanticPenaltyVector:
@@ -150,6 +229,7 @@ def semantic_composition_penalties(plan, packing) -> SemanticPenaltyVector:
     branch_alignment = sum(
         max(values) - min(values) for values in branch_targets.values() if len(values) > 1
     )
+    repeated_alignment = _repeated_alignment_penalty(plan, centers, signal_relations)
 
     return (
         missing_geometry,
@@ -161,6 +241,7 @@ def semantic_composition_penalties(plan, packing) -> SemanticPenaltyVector:
         _grid_units(feedback_distance),
         _grid_units(support_distance),
         _grid_units(branch_alignment),
+        repeated_alignment,
     )
 
 

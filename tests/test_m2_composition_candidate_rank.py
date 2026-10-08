@@ -132,3 +132,30 @@ def test_compactness_penalty_is_deterministic_integer_geometry() -> None:
     dispersed_score = compactness_whitespace_penalties(dispersed)
     assert compact_score[0] < dispersed_score[0]
     assert all(isinstance(value, int) for value in compact_score + dispersed_score)
+
+def test_repeated_incomparable_peers_prefer_shared_row_or_column() -> None:
+    first = _block("first", "filter", ("signal_in", "signal_out"))
+    second = _block("second", "filter", ("signal_in", "signal_out"))
+    plan = _plan((first, second))
+    aligned = _packing(
+        _placed(first, 2 * PITCH, 2 * PITCH),
+        _placed(second, 2 * PITCH, 8 * PITCH),
+    )
+    diagonal = _packing(
+        _placed(first, 2 * PITCH, 2 * PITCH),
+        _placed(second, 8 * PITCH, 8 * PITCH),
+    )
+    assert semantic_composition_penalties(plan, aligned)[9] == 0
+    assert semantic_composition_penalties(plan, diagonal)[9] > 0
+
+
+def test_serial_equivalent_stages_are_not_repeated_peers() -> None:
+    first = _block("first", "filter", ("signal_in", "signal_out"))
+    second = _block("second", "filter", ("signal_in", "signal_out"))
+    plan = _plan((first, second), (_edge("signal", "first", "second", "chain"),))
+    diagonal = _packing(
+        _placed(first, 2 * PITCH, 2 * PITCH),
+        _placed(second, 8 * PITCH, 8 * PITCH),
+    )
+    assert semantic_composition_penalties(plan, diagonal)[9] == 0
+
