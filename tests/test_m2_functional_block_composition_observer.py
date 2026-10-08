@@ -22,10 +22,10 @@ def test_support_and_interface_owner_distances_detect_detachment() -> None:
     )
     metrics = obs.measure_functional_block_composition(members)
     assert [(w.member_id, w.owner_id, w.distance) for w in metrics.support_to_owner] == [
-        ("decouple", "stage", 60)
+        ("decouple", "stage", 60),
     ]
     assert [(w.member_id, w.owner_id, w.distance) for w in metrics.interface_to_owner] == [
-        ("output", "stage", 70)
+        ("output", "stage", 70),
     ]
 
 
@@ -73,5 +73,8 @@ def test_renaming_and_input_order_do_not_change_metric_values() -> None:
     )
     first = obs.measure_functional_block_composition(original)
     second = obs.measure_functional_block_composition(renamed)
-    assert first.block_dispersion[0].manhattan_diameter == second.block_dispersion[0].manhattan_diameter
+    assert (
+        first.block_dispersion[0].manhattan_diameter
+        == second.block_dispersion[0].manhattan_diameter
+    )
     assert first.support_to_owner[0].distance == second.support_to_owner[0].distance
