@@ -7,6 +7,7 @@ from ai_kicad.m2_pack import (
     Packing,
     _interface_frontier_candidates,
     _place,
+    _repeated_peer_alignment_candidates,
     _support_affinity_candidates,
 )
 from ai_kicad.m2_semantics import BlockPlan, SemanticEdge, SemanticPlan, SemanticPort
@@ -195,3 +196,45 @@ def test_support_affinity_requires_explicit_functional_ownership() -> None:
         (),
     )
     assert _support_affinity_candidates(plan, baseline) == ()
+
+
+def test_repeated_signal_peers_search_legal_row_or_column_arrangement() -> None:
+    first = BlockPlan("first", "filter", (), frozenset(), (), function=("stage", "first"))
+    second = BlockPlan("second", "filter", (), frozenset(), (), function=("stage", "second"))
+    plan = SemanticPlan((first, second), (), {}, ())
+    baseline = Packing(
+        (
+            _place(_fragment(first), LEFT + 60 * PITCH, 55 * PITCH),
+            _place(_fragment(second), LEFT + 85 * PITCH, 80 * PITCH),
+        ),
+        (),
+    )
+    aligned = _repeated_peer_alignment_candidates(plan, baseline)
+    assert len(aligned) == 1
+    layout = {item.fragment.block.id: item.envelope for item in aligned[0].fragments}
+    assert (
+        layout["first"][0] == layout["second"][0]
+        or layout["first"][1] == layout["second"][1]
+    )
+    assert aligned[0].attempts[-1] in {"repeated-peer-row", "repeated-peer-column"}
+    reversed_plan = SemanticPlan(tuple(reversed(plan.blocks)), plan.edges, {}, ())
+    assert _repeated_peer_alignment_candidates(reversed_plan, baseline) == aligned
+
+
+def test_repeated_alignment_search_does_not_reorder_serial_stages() -> None:
+    first = BlockPlan("first", "filter", (), frozenset(), (), function=("stage", "first"))
+    second = BlockPlan("second", "filter", (), frozenset(), (), function=("stage", "second"))
+    plan = SemanticPlan(
+        (first, second),
+        (SemanticEdge("signal", "first", "second", "signal", ()),),
+        {},
+        (),
+    )
+    baseline = Packing(
+        (
+            _place(_fragment(first), LEFT + 60 * PITCH, 55 * PITCH),
+            _place(_fragment(second), LEFT + 85 * PITCH, 80 * PITCH),
+        ),
+        (),
+    )
+    assert _repeated_peer_alignment_candidates(plan, baseline) == ()
