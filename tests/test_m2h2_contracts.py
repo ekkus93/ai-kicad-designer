@@ -571,9 +571,15 @@ def test_proved_structural_candidates_are_ranked_by_complete_tree() -> None:
     selection = evidence["candidate_selection"]
     assert selection["proved_structure_count"] >= 2
     assert selection["proved_candidate_count"] >= 2
-    assert selection["selected_score"] == min(
-        candidate["score"] for candidate in selection["proved_candidates"]
+    assert selection["selected_selection_key"] == min(
+        candidate["selection_key"] for candidate in selection["proved_candidates"]
     )
+    rejected = selection["best_rejected_candidate"]
+    if selection["proved_candidate_count"] > 1:
+        assert rejected is not None
+        assert rejected["selection_key"] == sorted(
+            candidate["selection_key"] for candidate in selection["proved_candidates"]
+        )[1]
     passes = {
         (attempt["seed"], attempt["round"])
         for attempt in evidence["layout_attempts"]

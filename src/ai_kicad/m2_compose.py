@@ -1499,7 +1499,9 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
             tuple(attempts),
             failure_evidence,
         )
-    selected = min(proved_candidates, key=lambda candidate: candidate[0])
+    ranked_candidates = sorted(proved_candidates, key=lambda candidate: candidate[0])
+    selected = ranked_candidates[0]
+    best_proved_rejected = ranked_candidates[1] if len(ranked_candidates) > 1 else None
     (
         selection_key,
         semantic_penalties,
@@ -1587,6 +1589,19 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
             "selected_selection_key": list(selection_key),
             "selected_semantic_penalties": list(semantic_penalties),
             "selected_compactness_penalties": list(compactness_penalties),
+            "best_rejected_candidate": (
+                {
+                    "seed": best_proved_rejected[5],
+                    "round": best_proved_rejected[6],
+                    "score": list(best_proved_rejected[3]),
+                    "selection_key": list(best_proved_rejected[0]),
+                    "semantic_penalties": list(best_proved_rejected[1]),
+                    "compactness_penalties": list(best_proved_rejected[2]),
+                    "structure": [list(value) for value in best_proved_rejected[4]],
+                }
+                if best_proved_rejected is not None
+                else None
+            ),
             "proved_candidate_count": len(proved_candidates),
             "proved_structure_count": len(proved_structures),
             "proved_candidates": [
