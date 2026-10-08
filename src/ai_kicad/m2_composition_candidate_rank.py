@@ -75,7 +75,6 @@ def _interface_roles(plan, signal_relations) -> dict[str, set[str]]:
     return roles
 
 
-
 def _signal_reachability(plan, signal_relations) -> set[tuple[str, str]]:
     blocks = {block.id for block in plan.blocks}
     outgoing: dict[str, set[str]] = {block_id: set() for block_id in blocks}
