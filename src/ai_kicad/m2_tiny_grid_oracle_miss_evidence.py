@@ -53,7 +53,11 @@ def require_bounded_search_miss_evidence(
         raise ValueError(
             "production placement and independent oracle optimum required"
         )
-    if attempt_budget < 1 or not attempted_scores or len(attempted_scores) > attempt_budget:
+    if (
+        attempt_budget < 1
+        or not attempted_scores
+        or len(attempted_scores) > attempt_budget
+    ):
         raise ValueError("invalid bounded search attempt accounting")
     if any(
         len(score) != len(production.score_vector)
