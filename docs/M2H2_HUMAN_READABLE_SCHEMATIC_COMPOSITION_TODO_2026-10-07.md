@@ -137,7 +137,7 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [ ] Penalize feedback routes through unrelated functional blocks.
 - [x] Add branch/fanout positive and negative oracle cases.
 - [x] Add feedback positive and negative oracle cases.
-- [ ] Add passive two-level fanout regression.
+- [x] Add passive two-level fanout regression.
 - [ ] Add amplifier/filter feedback regression.
 
 ## 7. Power and reference composition
@@ -148,10 +148,10 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Keep package-local decoupling/support local where semantics permit.
 - [x] Prevent supply/reference infrastructure from dominating primary signal rows.
 - [x] Preserve no-fake-external-reference behavior.
-- [ ] Add two-signal-chains/shared-rail regression.
+- [x] Add two-signal-chains/shared-rail regression.
 - [ ] Add V6-3 internal-reference regression.
-- [ ] Add multi-consumer supply/reference regression.
-- [ ] Add dual-regulator/mixed-load regression.
+- [x] Add multi-consumer supply/reference regression.
+- [x] Add dual-regulator/mixed-load regression.
 - [x] Verify all existing canonical graph and conductor-length gates remain unchanged.
 
 ## 8. Repeated-structure composition
@@ -166,7 +166,7 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Keep equivalent channel order deterministic.
 - [x] Add declaration-order permutation tests.
 - [x] Add mirrored naming/refdes metamorphic tests.
-- [ ] Add three-amplifier one-band regression.
+- [x] Add three-amplifier one-band regression.
 - [ ] Add multi-band/repeated-channel regression.
 - [ ] Freeze repeated-structure acceptance tolerances from general corpus evidence.
 
@@ -199,7 +199,7 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Preserve long-field alternate-slot behavior.
 - [x] Preserve existing field/body/wire/label independent checks.
 - [x] Add field-alignment metrics.
-- [ ] Add long-field regression cases.
+- [x] Add long-field regression cases.
 - [x] Add negative mutation: repeated component with inconsistent field orientation.
 
 ## 11. Routing clarity and label discipline
