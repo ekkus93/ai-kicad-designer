@@ -243,7 +243,6 @@ def test_repeated_alignment_search_does_not_reorder_serial_stages() -> None:
     assert _repeated_peer_alignment_candidates(plan, baseline) == ()
 
 
-
 def test_final_beam_retains_both_repeated_grammars_and_variant_seeds() -> None:
     from ai_kicad.m2_pack import CANDIDATE_BUDGET, _retain_composition_seed_diversity
 
