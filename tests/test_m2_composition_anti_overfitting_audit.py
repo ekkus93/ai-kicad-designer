@@ -9,10 +9,7 @@ def test_audit_detects_fixture_case_id_control_flow() -> None:
 
     findings = audit.audit_composition_sources((source,))
 
-    assert (
-        audit.AuditFinding("src/layout.py", 1, "fixture_or_case_id", "i4__b2_mixed")
-        in findings
-    )
+    assert audit.AuditFinding("src/layout.py", 1, "fixture_or_case_id", "i4__b2_mixed") in findings
 
 
 def test_audit_scans_data_tables_not_only_conditionals() -> None:
@@ -36,13 +33,8 @@ def test_audit_detects_refdes_and_literal_net_name_special_cases() -> None:
 
     findings = audit.audit_composition_sources((source,))
 
-    assert (
-        audit.AuditFinding("src/rules.py", 1, "refdes_specific_control", "R17")
-        in findings
-    )
-    assert audit.AuditFinding(
-        "src/rules.py", 1, "literal_benchmark_net_name", "VREF"
-    ) in findings
+    assert audit.AuditFinding("src/rules.py", 1, "refdes_specific_control", "R17") in findings
+    assert audit.AuditFinding("src/rules.py", 1, "literal_benchmark_net_name", "VREF") in findings
 
 
 def test_audit_detects_qualification_group_and_topology_hash_special_cases() -> None:
