@@ -44,6 +44,17 @@ def exhaustive_tiny_grid_oracle(
     max_candidates: int = 5040,
 ) -> TinyOracleEvidence:
     """Enumerate bounded placements and report non-dominated legal candidates."""
+    if not nodes:
+        raise ValueError("tiny-grid oracle requires at least one node")
+    node_ids = tuple(node.node_id for node in nodes)
+    if len(set(node_ids)) != len(node_ids):
+        raise ValueError("duplicate tiny-grid node id")
+    if len(set(grid_points)) != len(grid_points):
+        raise ValueError("duplicate grid point")
+    if max_candidates < 1:
+        raise ValueError("max_candidates must be positive")
+    if any(node.side_preference not in (None, "left", "right") for node in nodes):
+        raise ValueError("unknown side preference")
     if len(nodes) > len(grid_points):
         raise ValueError("grid must have at least one point per node")
     candidate_count = _permutation_count(len(grid_points), len(nodes))
@@ -52,7 +63,7 @@ def exhaustive_tiny_grid_oracle(
 
     node_order = tuple(sorted(nodes, key=lambda item: item.node_id))
     scored: list[TinyPlacementScore] = []
-    for index, placement_points in enumerate(permutations(grid_points, len(node_order))):
+    for index, placement_points in enumerate(permutations(sorted(grid_points), len(node_order))):
         positions = tuple(
             sorted(
                 (
@@ -71,6 +82,11 @@ def exhaustive_tiny_grid_oracle(
     dominated = False
     dominating_ids: tuple[str, ...] = ()
     if production_positions is not None:
+        if sorted(node_id for node_id, _ in production_positions) != sorted(node_ids):
+            raise ValueError("production positions must match node IDs exactly")
+        used_points = tuple(point for _, point in production_positions)
+        if len(set(used_points)) != len(used_points) or not set(used_points) <= set(grid_points):
+            raise ValueError("production positions must use distinct legal grid points")
         normalized = tuple(sorted(production_positions, key=lambda item: item[0]))
         production = TinyPlacementScore("production", normalized, _score_positions(node_order, normalized))
         dominating_ids = tuple(
@@ -117,15 +133,20 @@ def _side_penalty(
 
 
 def _stage_order_penalty(nodes: tuple[TinyNode, ...], by_id: dict[str, Point]) -> int:
-    staged = sorted(
-        (node for node in nodes if node.stage_index is not None),
-        key=lambda item: (item.stage_index, item.node_id),
-    )
     penalty = 0
-    for first, second in zip(staged, staged[1:], strict=True):
-        if first.stage_index == second.stage_index:
-            continue
-        penalty += max(0, by_id[first.node_id][0] - by_id[second.node_id][0])
+    channels = {node.channel_id for node in nodes}
+    for channel in channels:
+        staged = sorted(
+            (
+                node for node in nodes
+                if node.stage_index is not None and node.channel_id == channel
+            ),
+            key=lambda item: (item.stage_index, item.node_id),
+        )
+        for first, second in zip(staged, staged[1:]):
+            if first.stage_index == second.stage_index:
+                continue
+            penalty += max(0, by_id[first.node_id][0] - by_id[second.node_id][0])
     return penalty
 
 
@@ -155,18 +176,18 @@ def _repeated_alignment_penalty(nodes: tuple[TinyNode, ...], by_id: dict[str, Po
 
 
 def _nondominated(candidates: list[TinyPlacementScore]) -> tuple[TinyPlacementScore, ...]:
-    output: list[TinyPlacementScore] = []
-    for candidate in candidates:
-        if any(_dominates(other.score_vector, candidate.score_vector) for other in candidates):
-            continue
-        output.append(candidate)
-    return tuple(sorted(output, key=lambda item: (item.score_vector, item.candidate_id)))
+    # The governed objective is lexicographic, not a Pareto/weighted trade-off.
+    best_score = min(candidate.score_vector for candidate in candidates)
+    return tuple(
+        sorted(
+            (candidate for candidate in candidates if candidate.score_vector == best_score),
+            key=lambda item: item.candidate_id,
+        )
+    )
 
 
 def _dominates(first: ScoreVector, second: ScoreVector) -> bool:
-    return all(left <= right for left, right in zip(first, second, strict=True)) and any(
-        left < right for left, right in zip(first, second, strict=True)
-    )
+    return first < second
 
 
 def _permutation_count(total: int, selected: int) -> int:

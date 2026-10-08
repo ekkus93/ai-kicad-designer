@@ -84,3 +84,69 @@ def test_oracle_rejects_unbounded_candidate_counts() -> None:
     grid = tuple((index, 0) for index in range(8))
     with pytest.raises(ValueError, match="candidate bound exceeded"):
         oracle.exhaustive_tiny_grid_oracle(nodes, grid, max_candidates=10)
+
+
+def test_lexicographic_frontier_precedes_lower_tier_compactness() -> None:
+    nodes = (
+        oracle.TinyNode("input", "connector", side_preference="left"),
+        oracle.TinyNode("output", "connector", side_preference="right"),
+    )
+    grid = ((0, 0), (10, 0), (100, 0))
+    result = oracle.exhaustive_tiny_grid_oracle(
+        nodes,
+        grid,
+        production_positions=(("input", (10, 0)), ("output", (100, 0))),
+    )
+    # A more compact placement must not beat a strictly better side penalty.
+    assert result.production_is_dominated
+    assert result.nondominated_candidates[0].score_vector[0] == 0
+
+
+@pytest.mark.parametrize(
+    "positions",
+    (
+        (("a", (0, 0)), ("a", (10, 0))),
+        (("a", (0, 0)), ("missing", (10, 0))),
+        (("a", (0, 0)), ("b", (0, 0))),
+        (("a", (0, 0)), ("b", (20, 0))),
+    ),
+)
+def test_illegal_production_placements_cannot_be_scored(positions: tuple) -> None:
+    nodes = (oracle.TinyNode("a", "stage"), oracle.TinyNode("b", "stage"))
+    with pytest.raises(ValueError, match="production positions"):
+        oracle.exhaustive_tiny_grid_oracle(
+            nodes, ((0, 0), (10, 0)), production_positions=positions
+        )
+
+
+def test_channel_order_does_not_impose_cross_channel_precedence() -> None:
+    nodes = (
+        oracle.TinyNode("a_first", "stage", stage_index=0, channel_id="a"),
+        oracle.TinyNode("a_last", "stage", stage_index=1, channel_id="a"),
+        oracle.TinyNode("b_first", "stage", stage_index=0, channel_id="b"),
+        oracle.TinyNode("b_last", "stage", stage_index=1, channel_id="b"),
+    )
+    positions = (
+        ("a_first", (0, 0)),
+        ("a_last", (10, 0)),
+        ("b_first", (0, 10)),
+        ("b_last", (10, 10)),
+    )
+    result = oracle.exhaustive_tiny_grid_oracle(
+        nodes, tuple(point for _, point in positions), production_positions=positions
+    )
+    assert result.production_candidate is not None
+    assert result.production_candidate.score_vector[1] == 0
+
+
+def test_oracle_rejects_duplicate_nodes_and_grid_points() -> None:
+    with pytest.raises(ValueError, match="duplicate tiny-grid node id"):
+        oracle.exhaustive_tiny_grid_oracle(
+            (oracle.TinyNode("a", "stage"), oracle.TinyNode("a", "stage")),
+            ((0, 0), (10, 0)),
+        )
+    with pytest.raises(ValueError, match="duplicate grid point"):
+        oracle.exhaustive_tiny_grid_oracle(
+            (oracle.TinyNode("a", "stage"),),
+            ((0, 0), (0, 0)),
+        )
