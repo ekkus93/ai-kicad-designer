@@ -279,3 +279,61 @@ def test_supply_infrastructure_is_penalized_on_primary_signal_row() -> None:
 
     assert intruding_score.infrastructure_primary_row_intrusion > 0
     assert subordinate_score.infrastructure_primary_row_intrusion == 0
+
+
+def test_branch_fanout_prefers_centered_origin_and_equal_target_depth() -> None:
+    source = _block("source", "stage")
+    upper = _block("upper", "stage")
+    lower = _block("lower", "stage")
+    plan = _plan(
+        (source, upper, lower),
+        (_edge("branch", "source", "upper"), _edge("branch", "source", "lower")),
+    )
+    centered = _packing(
+        _placed(source, 0, 5 * PITCH),
+        _placed(upper, 10 * PITCH, 0),
+        _placed(lower, 10 * PITCH, 10 * PITCH),
+    )
+    off_center = _packing(
+        _placed(source, 0, 0),
+        _placed(upper, 10 * PITCH, 0),
+        _placed(lower, 10 * PITCH, 10 * PITCH),
+    )
+    staggered = _packing(
+        _placed(source, 0, 5 * PITCH),
+        _placed(upper, 10 * PITCH, 0),
+        _placed(lower, 15 * PITCH, 10 * PITCH),
+    )
+    assert semantic_composition_penalty_breakdown(plan, centered).branch_alignment == 0
+    assert (
+        semantic_composition_penalty_breakdown(plan, off_center).branch_alignment
+        > semantic_composition_penalty_breakdown(plan, centered).branch_alignment
+    )
+    assert (
+        semantic_composition_penalty_breakdown(plan, staggered).branch_alignment
+        > semantic_composition_penalty_breakdown(plan, centered).branch_alignment
+    )
+
+
+def test_branch_readability_ignores_non_branch_edges_and_order() -> None:
+    source = _block("source", "stage")
+    upper = _block("upper", "stage")
+    lower = _block("lower", "stage")
+    blocks = (source, upper, lower)
+    branches = (_edge("branch", "source", "upper"), _edge("branch", "source", "lower"))
+    placed = _packing(
+        _placed(source, 0, 0),
+        _placed(upper, 10 * PITCH, 0),
+        _placed(lower, 10 * PITCH, 10 * PITCH),
+    )
+    forward = semantic_composition_penalty_breakdown(_plan(blocks, branches), placed)
+    backward = semantic_composition_penalty_breakdown(
+        _plan(tuple(reversed(blocks)), tuple(reversed(branches))), placed
+    )
+    ordinary = semantic_composition_penalty_breakdown(
+        _plan(blocks, (_edge("signal", "source", "upper"), _edge("feedback", "lower", "source"))),
+        placed,
+    )
+    assert forward.branch_alignment > 0
+    assert forward.branch_alignment == backward.branch_alignment
+    assert ordinary.branch_alignment == 0

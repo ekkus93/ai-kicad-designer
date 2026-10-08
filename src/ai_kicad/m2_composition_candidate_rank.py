@@ -326,6 +326,34 @@ def _infrastructure_primary_row_intrusion(plan, centers: dict[str, Point]) -> in
     return _grid_units(penalty)
 
 
+def _branch_readability_penalty(plan, centers: dict[str, Point]) -> int:
+    """Prefer a visible, centered fanout with equally deep forward branches.
+
+    Group targets by source and net, not a case/fixture name. A source should
+    sit between its branch rows; sibling targets should occupy a consistent
+    column. Ignore single-target edges, which are not visible fanouts.
+    """
+    fanouts: dict[tuple[str, str], set[str]] = defaultdict(set)
+    for edge in plan.edges:
+        if edge.kind == "branch" and edge.source in centers and edge.target in centers:
+            fanouts[(edge.source, edge.net)].add(edge.target)
+
+    penalty = 0
+    for (source_id, _net), target_ids in sorted(fanouts.items()):
+        if len(target_ids) < 2:
+            continue
+        source_x, source_y = centers[source_id]
+        targets = [centers[target_id] for target_id in sorted(target_ids)]
+        target_ys = [point[1] for point in targets]
+        target_xs = [point[0] for point in targets]
+        # The doubled midpoint avoids truncation bias for odd grid pitches.
+        penalty += abs(2 * source_y - min(target_ys) - max(target_ys)) // 2
+        penalty += max(target_xs) - min(target_xs)
+        # The forward branch should remain visually attributable to its origin.
+        penalty += sum(max(0, source_x - target_x) for target_x in target_xs)
+    return penalty
+
+
 def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBreakdown:
     """Return semantic readability penalties for one fully proved placement.
 
@@ -391,16 +419,7 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
         elif edge.kind in {"support", "package"}:
             support_distance += distance
 
-    branch_targets: dict[tuple[str, str], list[int]] = defaultdict(list)
-    for edge in plan.edges:
-        if edge.kind != "branch":
-            continue
-        target = centers.get(edge.target)
-        if edge.source in centers and target is not None:
-            branch_targets[(edge.source, edge.net)].append(target[0])
-    branch_alignment = sum(
-        max(values) - min(values) for values in branch_targets.values() if len(values) > 1
-    )
+    branch_alignment = _branch_readability_penalty(plan, centers)
     repeated_alignment = _repeated_alignment_penalty(plan, centers, signal_relations)
     intra_block_dispersion = _intra_block_dispersion(packing)
     unrelated_block_proximity = _unrelated_block_proximity(plan, rects)
