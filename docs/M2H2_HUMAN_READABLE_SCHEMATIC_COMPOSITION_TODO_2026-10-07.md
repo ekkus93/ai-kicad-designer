@@ -136,7 +136,7 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Prefer compact feedback loops around owning stage.
 - [ ] Penalize feedback routes through unrelated functional blocks.
 - [x] Add branch/fanout positive and negative oracle cases.
-- [ ] Add feedback positive and negative oracle cases.
+- [x] Add feedback positive and negative oracle cases.
 - [ ] Add passive two-level fanout regression.
 - [ ] Add amplifier/filter feedback regression.
 
