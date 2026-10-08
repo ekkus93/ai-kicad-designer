@@ -2306,7 +2306,18 @@ def pack_fragment_candidates(
         extras = []
         # Reserve candidate space for deterministic, legally measured interface
         # moves; the subsequent route proof remains authoritative.
-        extras.extend(_interface_frontier_candidates(plan, successful[0]))
+        # A frontier move may be illegal in the first shelf arrangement but
+        # legal in another bounded packing. Keep one deterministic feasible
+        # alternative per directed interface role across the eight seeds.
+        frontier_labels: set[str] = set()
+        for baseline in successful:
+            for option in _interface_frontier_candidates(plan, baseline):
+                label = option.attempts[-1]
+                if label not in frontier_labels:
+                    frontier_labels.add(label)
+                    extras.append(option)
+            if len(frontier_labels) == 2:
+                break
         extras.extend(_semantic_block_order_candidates(plan, successful[0]))
         extras.extend(_support_affinity_candidates(plan, successful[0]))
         extras.extend(_repeated_peer_alignment_candidates(plan, successful[0]))
