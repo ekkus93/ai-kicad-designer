@@ -170,9 +170,12 @@ def test_support_affinity_relocates_local_bias_near_owning_stage() -> None:
     original = next(item for item in baseline.fragments if item.fragment.block.id == "bias")
     assert moved.envelope[0] < original.envelope[0]
     assert options[0].attempts[-1] == "semantic-support-affinity"
-    assert _support_affinity_candidates(
-        SemanticPlan(tuple(reversed(plan.blocks)), plan.edges, {}, ()), baseline
-    ) == options
+    assert (
+        _support_affinity_candidates(
+            SemanticPlan(tuple(reversed(plan.blocks)), plan.edges, {}, ()), baseline
+        )
+        == options
+    )
 
 
 def test_support_affinity_requires_explicit_functional_ownership() -> None:
