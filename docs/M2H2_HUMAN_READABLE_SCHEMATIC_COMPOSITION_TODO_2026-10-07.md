@@ -27,7 +27,7 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Confirm unchanged 60 mm support/locality gate where applicable.
 - [x] Confirm unchanged 250 mm canonical conductor-length gate.
 - [x] Confirm ERC and independent emitted-artifact observation remain authoritative.
-- [ ] Confirm DP1–DP4 topology/frozen expectations remain unchanged.
+- [x] Confirm DP1–DP4 topology/frozen expectations remain unchanged (all eight authored input/expectation Git blobs match historical production source `79a36b17`; see `fixtures/m2h2/human_composition_baseline_2026-10-08/dp_frozen_inputs_audit_2026-10-08.json`).
 - [ ] Confirm all historical blind/evaluation and M2h2 finalization evidence is preserved.
 - [x] Confirm `.local/` remains ignored.
 - [x] Confirm `research/legacy_openclaw/` is not inspected or used.
