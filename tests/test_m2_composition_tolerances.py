@@ -24,8 +24,7 @@ def test_tiny_probe_has_only_utilization_exemption() -> None:
 
 def test_non_tiny_bands_have_increasing_utilization_pressure() -> None:
     ratios = [
-        FROZEN_TOLERANCES[name].minimum_occupied_ratio
-        for name in ("small", "medium", "dense")
+        FROZEN_TOLERANCES[name].minimum_occupied_ratio for name in ("small", "medium", "dense")
     ]
     assert ratios == sorted(ratios)
     assert all(value is not None for value in ratios)
