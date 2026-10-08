@@ -1387,9 +1387,7 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
             )
             semantic_penalties = semantic_composition_penalties(plan, working_packing)
             compactness_penalties = compactness_whitespace_penalties(working_packing)
-            selection_key = composition_candidate_key(
-                plan, working_packing, routing_compactness
-            )
+            selection_key = composition_candidate_key(plan, working_packing, routing_compactness)
             structure = _structural_signature(working_packing)
             proved_candidates.append(
                 (
