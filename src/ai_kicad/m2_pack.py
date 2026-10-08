@@ -1300,6 +1300,46 @@ def _semantic_block_order_candidates(plan: SemanticPlan, baseline: Packing) -> t
     return (min(proposals, key=lambda item: item[0])[1],)
 
 
+def _support_affinity_candidates(plan: SemanticPlan, baseline: Packing) -> tuple[Packing, ...]:
+    """Search a legal, closer slot for an explicitly owned support fragment."""
+    placed = {item.fragment.block.id: item for item in baseline.fragments}
+    options: list[tuple[tuple[int, str, str, int, int], Packing]] = []
+    for edge in sorted(plan.edges, key=lambda item: (item.kind, item.source, item.target, item.net)):
+        if edge.kind not in {"support", "feedback", "package"}:
+            continue
+        first, second = placed.get(edge.source), placed.get(edge.target)
+        if first is None or second is None:
+            continue
+        if first.fragment.block.function is not None and second.fragment.block.function is None:
+            owner, support = first, second
+        elif second.fragment.block.function is not None and first.fragment.block.function is None:
+            owner, support = second, first
+        else:
+            continue
+        if support.fragment.block.kind == "interface" or support.fragment.block.unused:
+            continue
+        width = support.envelope[2] - support.envelope[0]
+        height = support.envelope[3] - support.envelope[1]
+        original = abs(support.envelope[0] - owner.envelope[0]) + abs(
+            support.envelope[1] - owner.envelope[1]
+        )
+        for x, y in (
+            (owner.envelope[0], owner.envelope[3] + CHANNEL_GAP),
+            (owner.envelope[0], owner.envelope[1] - height - CHANNEL_GAP),
+            (owner.envelope[0] - width - CHANNEL_GAP, owner.envelope[1]),
+            (owner.envelope[2] + CHANNEL_GAP, owner.envelope[1]),
+        ):
+            candidate = _measured_repack(plan, baseline, support, x, y, "semantic-support-affinity")
+            if candidate is None:
+                continue
+            distance = abs(x - owner.envelope[0]) + abs(y - owner.envelope[1])
+            if distance < original:
+                options.append(
+                    ((distance, support.fragment.block.id, owner.fragment.block.id, x, y), candidate)
+                )
+    return (min(options, key=lambda item: item[0])[1],) if options else ()
+
+
 def _structural_repack_candidates(plan: SemanticPlan, baseline: Packing) -> tuple[Packing, ...]:
     """Try functional row compaction and precedence-bound band staggering."""
     items = baseline.fragments
@@ -2064,6 +2104,7 @@ def pack_fragment_candidates(
         # moves; the subsequent route proof remains authoritative.
         extras.extend(_interface_frontier_candidates(plan, successful[0]))
         extras.extend(_semantic_block_order_candidates(plan, successful[0]))
+        extras.extend(_support_affinity_candidates(plan, successful[0]))
         distribution = _distribution_column_candidate(plan, variants, successful)
         if distribution is not None and all(
             tuple((item.fragment.id, item.delta) for item in distribution.fragments)
