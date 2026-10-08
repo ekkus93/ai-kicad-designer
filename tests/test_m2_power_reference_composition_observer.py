@@ -61,7 +61,11 @@ def test_power_and_reference_intrusions_into_primary_row_are_reported() -> None:
         obs.PowerReferenceNode("pwr", "power_interface", (90, 20)),
     )
 
-    metrics = obs.measure_power_reference_composition(nodes, primary_row_y=20, primary_row_tolerance=5)
+    metrics = obs.measure_power_reference_composition(
+        nodes,
+        primary_row_y=20,
+        primary_row_tolerance=5,
+    )
 
     assert metrics.primary_row_intrusions == (
         obs.PrimaryRowIntrusion("pwr", "power_interface", 0),
@@ -73,7 +77,11 @@ def test_fake_external_reference_without_semantic_evidence_is_flagged() -> None:
     nodes = (
         obs.PowerReferenceNode("real_ref", "reference", (20, 80), external=True),
         obs.PowerReferenceNode(
-            "fake_ref", "reference", (40, 80), external=True, semantic_evidence=False
+            "fake_ref",
+            "reference",
+            (40, 80),
+            external=True,
+            semantic_evidence=False,
         ),
     )
 
