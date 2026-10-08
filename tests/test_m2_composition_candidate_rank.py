@@ -67,10 +67,16 @@ def test_feedback_does_not_create_forward_stage_precedence() -> None:
     )
     packing = _packing({"a": (3 * PITCH, 0), "b": (0, 0)})
     forward = SemanticPlan(
-        blocks, (SemanticEdge("signal", "a", "b", "net", ()),), {}, ()
+        blocks,
+        (SemanticEdge("signal", "a", "b", "net", ()),),
+        {},
+        (),
     )
     feedback = SemanticPlan(
-        blocks, (SemanticEdge("feedback", "a", "b", "net", ()),), {}, ()
+        blocks,
+        (SemanticEdge("feedback", "a", "b", "net", ()),),
+        {},
+        (),
     )
     assert semantic_composition_penalties(forward, packing)[1] == 3
     assert semantic_composition_penalties(feedback, packing)[1] == 0
@@ -83,10 +89,16 @@ def test_support_locality_is_distinct_from_power_distribution() -> None:
     )
     packing = _packing({"stage": (0, 0), "cap": (0, 5 * PITCH)})
     support = SemanticPlan(
-        blocks, (SemanticEdge("support", "cap", "stage", "rail", ()),), {}, ()
+        blocks,
+        (SemanticEdge("support", "cap", "stage", "rail", ()),),
+        {},
+        (),
     )
     power = SemanticPlan(
-        blocks, (SemanticEdge("power", "cap", "stage", "rail", ()),), {}, ()
+        blocks,
+        (SemanticEdge("power", "cap", "stage", "rail", ()),),
+        {},
+        (),
     )
     assert semantic_composition_penalties(support, packing)[3] == 5
     assert semantic_composition_penalties(power, packing)[3] == 0
@@ -112,10 +124,12 @@ def test_rename_and_permutation_preserve_penalties() -> None:
         (),
     )
     before = semantic_composition_penalties(
-        first, _packing({"stage": (2 * PITCH, 0), "connector": (0, 0)})
+        first,
+        _packing({"stage": (2 * PITCH, 0), "connector": (0, 0)}),
     )
     after = semantic_composition_penalties(
-        second, _packing({"z": (0, 0), "a": (2 * PITCH, 0)})
+        second,
+        _packing({"z": (0, 0), "a": (2 * PITCH, 0)}),
     )
     assert before == after
 
@@ -155,14 +169,26 @@ def test_proved_candidate_ranking_prioritizes_semantics_over_shorter_wires() -> 
     )
     readable = _packing({"stage": (2 * PITCH, 0), "connector": (4 * PITCH, 0)})
     wrong_side = _packing({"stage": (2 * PITCH, 0), "connector": (0, 0)})
-    assert composition_candidate_key(plan, readable, (900, 900, 9, 9000, 1, 0)) < (
-        composition_candidate_key(plan, wrong_side, (1, 1, 0, 1, 0, 0))
+    assert composition_candidate_key(
+        plan,
+        readable,
+        (900, 900, 9, 9000, 1, 0),
+    ) < composition_candidate_key(
+        plan,
+        wrong_side,
+        (1, 1, 0, 1, 0, 0),
     )
 
 
 def test_proved_candidate_ranking_preserves_route_tiebreakers() -> None:
     plan = SemanticPlan((_block("stage", "stage", "out", "signal_out"),), (), {}, ())
     packing = _packing({"stage": (2 * PITCH, 0)})
-    assert composition_candidate_key(plan, packing, (100, 90, 3, 1000, 0, 0)) < (
-        composition_candidate_key(plan, packing, (101, 10, 0, 1, 0, 0))
+    assert composition_candidate_key(
+        plan,
+        packing,
+        (100, 90, 3, 1000, 0, 0),
+    ) < composition_candidate_key(
+        plan,
+        packing,
+        (101, 10, 0, 1, 0, 0),
     )
