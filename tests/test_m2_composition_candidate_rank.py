@@ -337,3 +337,38 @@ def test_branch_readability_ignores_non_branch_edges_and_order() -> None:
     assert forward.branch_alignment > 0
     assert forward.branch_alignment == backward.branch_alignment
     assert ordinary.branch_alignment == 0
+
+
+def test_two_band_repeated_channel_stage_columns_are_semantically_aligned() -> None:
+    blocks = tuple(_block(f"{band}{stage}") for band in ("a", "b") for stage in range(3))
+    edges = tuple(
+        _edge("signal", f"{band}{stage}", f"{band}{stage + 1}", f"{band}-{stage}")
+        for band in ("a", "b")
+        for stage in range(2)
+    )
+    plan = _plan(blocks, edges)
+    aligned = _packing(
+        *(
+            _placed(block, (2 + 6 * int(block.id[1])) * PITCH, (2 if block.id[0] == "a" else 12) * PITCH)
+            for block in blocks
+        )
+    )
+    drifted = _packing(
+        *(
+            _placed(
+                block,
+                (2 + 6 * int(block.id[1]) + (2 if block.id == "b1" else 0)) * PITCH,
+                (2 if block.id[0] == "a" else 12) * PITCH,
+            )
+            for block in blocks
+        )
+    )
+    good = semantic_composition_penalty_breakdown(plan, aligned)
+    bad = semantic_composition_penalty_breakdown(plan, drifted)
+    permuted = semantic_composition_penalty_breakdown(
+        _plan(tuple(reversed(blocks)), tuple(reversed(edges))), drifted
+    )
+    assert good.repeated_alignment == 0
+    assert bad.repeated_alignment > good.repeated_alignment
+    assert good.stage_order_violations == bad.stage_order_violations == 0
+    assert bad.repeated_alignment == permuted.repeated_alignment
