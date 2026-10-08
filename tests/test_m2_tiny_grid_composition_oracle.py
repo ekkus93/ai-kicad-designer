@@ -137,12 +137,8 @@ def test_two_band_repeated_channels_keep_corresponding_stages_aligned() -> None:
         ("b_1", (20, 10)),
         ("b_2", (10, 10)),
     )
-    good = oracle.exhaustive_tiny_grid_oracle(
-        nodes, grid, production_positions=aligned
-    )
-    bad = oracle.exhaustive_tiny_grid_oracle(
-        nodes, grid, production_positions=staggered
-    )
+    good = oracle.exhaustive_tiny_grid_oracle(nodes, grid, production_positions=aligned)
+    bad = oracle.exhaustive_tiny_grid_oracle(nodes, grid, production_positions=staggered)
     assert good.candidate_count == 720
     assert good.production_candidate is not None
     assert good.production_candidate.score_vector[1:4] == (0, 0, 0)
