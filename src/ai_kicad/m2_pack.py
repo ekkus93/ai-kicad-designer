@@ -1168,6 +1168,67 @@ def _measured_repack(
     )
 
 
+def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tuple[Packing, ...]:
+    """Explore bounded, measured input/output frontier placements.
+
+    Inputs attach immediately before their downstream signal stage and outputs
+    immediately after their producer. The same legality/geometry checks as
+    structural repair apply; neither a fixture name nor a net literal informs
+    the search. Bidirectional interfaces are deliberately not forced to a side.
+    """
+    by_id = {item.fragment.block.id: item for item in baseline.fragments}
+    alternatives: list[Packing] = []
+    for role, label in (
+        ("signal_in", "interface-frontier-input"),
+        ("signal_out", "interface-frontier-output"),
+    ):
+        options: list[tuple[tuple[int, str, int], Packing]] = []
+        for block in sorted(plan.blocks, key=lambda item: item.id):
+            if block.kind != "interface" or block.id not in by_id:
+                continue
+            roles = {port.role for port in block.ports}
+            if role not in roles or {"signal_in", "signal_out"} <= roles:
+                continue
+            interface = by_id[block.id]
+            width = interface.envelope[2] - interface.envelope[0]
+            height = interface.envelope[3] - interface.envelope[1]
+            owners = sorted(
+                {
+                    edge.target if role == "signal_in" else edge.source
+                    for edge in plan.edges
+                    if edge.kind in {"signal", "branch"}
+                    and (
+                        role == "signal_in" and edge.source == block.id
+                        or role == "signal_out" and edge.target == block.id
+                    )
+                }
+            )
+            for owner_id in owners:
+                owner = by_id.get(owner_id)
+                if owner is None or owner.fragment.block.kind == "interface":
+                    continue
+                left = (
+                    owner.envelope[0] - width - CHANNEL_GAP
+                    if role == "signal_in"
+                    else owner.envelope[2] + CHANNEL_GAP
+                )
+                # Align both centers and upper edges as separate legal choices.
+                center_top = (owner.envelope[1] + owner.envelope[3] - height) // 2
+                for top in sorted({center_top, owner.envelope[1]}):
+                    candidate = _measured_repack(
+                        plan, baseline, interface, left, top, label
+                    )
+                    if candidate is None:
+                        continue
+                    distance = abs(left - interface.envelope[0]) + abs(
+                        top - interface.envelope[1]
+                    )
+                    options.append(((distance, block.id, top), candidate))
+        if options:
+            alternatives.append(min(options, key=lambda item: item[0])[1])
+    return tuple(alternatives)
+
+
 def _structural_repack_candidates(plan: SemanticPlan, baseline: Packing) -> tuple[Packing, ...]:
     """Try functional row compaction and precedence-bound band staggering."""
     items = baseline.fragments
@@ -1928,6 +1989,9 @@ def pack_fragment_candidates(
 
     if successful:
         extras = []
+        # Reserve candidate space for deterministic, legally measured interface
+        # moves; the subsequent route proof remains authoritative.
+        extras.extend(_interface_frontier_candidates(plan, successful[0]))
         distribution = _distribution_column_candidate(plan, variants, successful)
         if distribution is not None and all(
             tuple((item.fragment.id, item.delta) for item in distribution.fragments)
