@@ -138,7 +138,7 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Add branch/fanout positive and negative oracle cases.
 - [x] Add feedback positive and negative oracle cases.
 - [x] Add passive two-level fanout regression.
-- [ ] Add amplifier/filter feedback regression.
+- [x] Add amplifier/filter feedback regression.
 
 ## 7. Power and reference composition
 
@@ -149,7 +149,7 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Prevent supply/reference infrastructure from dominating primary signal rows.
 - [x] Preserve no-fake-external-reference behavior.
 - [x] Add two-signal-chains/shared-rail regression.
-- [ ] Add V6-3 internal-reference regression.
+- [x] Add V6-3 internal-reference regression.
 - [x] Add multi-consumer supply/reference regression.
 - [x] Add dual-regulator/mixed-load regression.
 - [x] Verify all existing canonical graph and conductor-length gates remain unchanged.
