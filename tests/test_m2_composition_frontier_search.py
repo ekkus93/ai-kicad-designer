@@ -79,9 +79,7 @@ def test_frontier_alternatives_place_interfaces_next_to_signal_owner() -> None:
 
 def test_frontier_search_is_independent_of_semantic_declaration_order() -> None:
     plan, baseline = _layout()
-    reversed_plan = SemanticPlan(
-        tuple(reversed(plan.blocks)), tuple(reversed(plan.edges)), {}, ()
-    )
+    reversed_plan = SemanticPlan(tuple(reversed(plan.blocks)), tuple(reversed(plan.edges)), {}, ())
     candidates = _interface_frontier_candidates(plan, baseline)
     reordered = _interface_frontier_candidates(reversed_plan, baseline)
     assert candidates == reordered
