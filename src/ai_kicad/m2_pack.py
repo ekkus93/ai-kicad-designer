@@ -1936,13 +1936,7 @@ def _retain_composition_seed_diversity(
         for label in ("repeated-peer-row", "repeated-peer-column")
     )
     protected = tuple(candidate for candidate in repeated if candidate is not None)
-    ordered = (
-        successful[:1]
-        + protected
-        + successful[1:3]
-        + extras
-        + successful[3:]
-    )
+    ordered = successful[:1] + protected + successful[1:3] + extras + successful[3:]
     seen: set[tuple[tuple[str, Point], ...]] = set()
     retained: list[Packing] = []
     for candidate in ordered:
