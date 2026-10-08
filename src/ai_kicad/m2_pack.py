@@ -1198,8 +1198,10 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
                     for edge in plan.edges
                     if edge.kind in {"signal", "branch"}
                     and (
-                        role == "signal_in" and edge.source == block.id
-                        or role == "signal_out" and edge.target == block.id
+                        role == "signal_in"
+                        and edge.source == block.id
+                        or role == "signal_out"
+                        and edge.target == block.id
                     )
                 }
             )
@@ -1215,14 +1217,10 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
                 # Align both centers and upper edges as separate legal choices.
                 center_top = (owner.envelope[1] + owner.envelope[3] - height) // 2
                 for top in sorted({center_top, owner.envelope[1]}):
-                    candidate = _measured_repack(
-                        plan, baseline, interface, left, top, label
-                    )
+                    candidate = _measured_repack(plan, baseline, interface, left, top, label)
                     if candidate is None:
                         continue
-                    distance = abs(left - interface.envelope[0]) + abs(
-                        top - interface.envelope[1]
-                    )
+                    distance = abs(left - interface.envelope[0]) + abs(top - interface.envelope[1])
                     options.append(((distance, block.id, top), candidate))
         if options:
             alternatives.append(min(options, key=lambda item: item[0])[1])
