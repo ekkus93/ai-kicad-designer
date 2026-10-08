@@ -148,10 +148,10 @@ def _grouping_penalty(
 def _repeated_row_penalty(
     nodes: tuple[TinyNode, ...], positions: dict[str, Point], witnesses: list[str]
 ) -> int:
-    rows_by_role: dict[Role, list[int]] = {}
+    rows_by_role: dict[tuple[Role, str], list[int]] = {}
     for node in nodes:
-        if node.role in {"stage", "support"}:
-            rows_by_role.setdefault(node.role, []).append(positions[node.id][1])
+        if node.role in {"stage", "support"} and node.owner is not None:
+            rows_by_role.setdefault((node.role, node.owner), []).append(positions[node.id][1])
     penalty = 0
     for role, rows in rows_by_role.items():
         if len(rows) < 2:
@@ -159,7 +159,7 @@ def _repeated_row_penalty(
         spread = max(rows) - min(rows)
         penalty += spread
         if spread:
-            witnesses.append(f"row-variance:{role}:spread={spread}")
+            witnesses.append(f"row-variance:{role[0]}:{role[1]}:spread={spread}")
     return penalty
 
 

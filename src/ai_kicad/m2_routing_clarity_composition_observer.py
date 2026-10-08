@@ -121,7 +121,7 @@ def _bend_count(points: tuple[Point, ...]) -> int:
         return 0
     bends = 0
     previous = _direction(points[0], points[1])
-    for first, second in zip(points[1:], points[2:], strict=True):
+    for first, second in zip(points[1:], points[2:], strict=False):
         direction = _direction(first, second)
         if direction != previous:
             bends += 1
@@ -138,7 +138,7 @@ def _direction(first: Point, second: Point) -> str:
 
 
 def _path_length(points: tuple[Point, ...]) -> int:
-    return sum(_manhattan(first, second) for first, second in zip(points, points[1:], strict=True))
+    return sum(_manhattan(first, second) for first, second in zip(points, points[1:], strict=False))
 
 
 def _is_excessive_detour(route: RouteLength) -> bool:
@@ -148,7 +148,7 @@ def _is_excessive_detour(route: RouteLength) -> bool:
 
 
 def _segments(path: RoutedPath) -> tuple[Segment, ...]:
-    return tuple(zip(path.points, path.points[1:], strict=True))
+    return tuple(zip(path.points, path.points[1:], strict=False))
 
 
 def _unrelated_crossings(paths: tuple[RoutedPath, ...]) -> tuple[str, ...]:

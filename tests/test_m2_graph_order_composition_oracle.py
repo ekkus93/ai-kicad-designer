@@ -34,7 +34,10 @@ def test_power_and_reference_edges_do_not_create_forward_stage_order() -> None:
 
     assert metrics.ordered_pairs == ()
     assert metrics.incomparable_pairs == (("amp", "ref"), ("amp", "reg"), ("ref", "reg"))
-    assert metrics.ignored_non_forward_edges == edges
+    assert metrics.ignored_non_forward_edges == (
+        oracle.OrderEdge("ref", "amp", "reference"),
+        oracle.OrderEdge("reg", "amp", "power"),
+    )
 
 
 def test_feedback_cycles_are_ignored_as_forward_precedence() -> None:
