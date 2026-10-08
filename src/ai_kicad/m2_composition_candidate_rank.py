@@ -87,3 +87,16 @@ def semantic_composition_penalties(
         if edge.kind == "support" and edge.source in centers and edge.target in centers
     )
     return side_penalty, flow_backtracking, owner_distance, support_distance
+
+
+def composition_candidate_key(
+    plan: SemanticPlan,
+    packing: Packing,
+    routing_compactness: tuple[int | float, ...],
+) -> tuple[int | float, ...]:
+    """Rank only fully proved candidates, with hard electrical gates first.
+
+    Semantic direction and locality cannot be traded for shorter routing or
+    a smaller content envelope. The caller retains deterministic tie-breakers.
+    """
+    return (*semantic_composition_penalties(plan, packing), *routing_compactness)

@@ -2,7 +2,10 @@
 
 from types import SimpleNamespace
 
-from ai_kicad.m2_composition_candidate_rank import semantic_composition_penalties
+from ai_kicad.m2_composition_candidate_rank import (
+    composition_candidate_key,
+    semantic_composition_penalties,
+)
 from ai_kicad.m2_pack import PITCH
 from ai_kicad.m2_semantics import BlockPlan, SemanticEdge, SemanticPlan, SemanticPort
 
@@ -116,6 +119,7 @@ def test_rename_and_permutation_preserve_penalties() -> None:
     )
     assert before == after
 
+
 def test_mixed_direction_interface_is_semantically_exempt() -> None:
     blocks = (
         _block("producer", "stage", "out", "signal_out"),
@@ -137,3 +141,28 @@ def test_mixed_direction_interface_is_semantically_exempt() -> None:
     score = semantic_composition_penalties(SemanticPlan(blocks, (), {}, ()), packing)
     assert score[0] == 0
     assert score[2] == 0
+
+
+def test_proved_candidate_ranking_prioritizes_semantics_over_shorter_wires() -> None:
+    plan = SemanticPlan(
+        (
+            _block("stage", "stage", "out", "signal_out"),
+            _block("connector", "interface", "out", "passive"),
+        ),
+        (),
+        {},
+        (),
+    )
+    readable = _packing({"stage": (2 * PITCH, 0), "connector": (4 * PITCH, 0)})
+    wrong_side = _packing({"stage": (2 * PITCH, 0), "connector": (0, 0)})
+    assert composition_candidate_key(plan, readable, (900, 900, 9, 9000, 1, 0)) < (
+        composition_candidate_key(plan, wrong_side, (1, 1, 0, 1, 0, 0))
+    )
+
+
+def test_proved_candidate_ranking_preserves_route_tiebreakers() -> None:
+    plan = SemanticPlan((_block("stage", "stage", "out", "signal_out"),), (), {}, ())
+    packing = _packing({"stage": (2 * PITCH, 0)})
+    assert composition_candidate_key(plan, packing, (100, 90, 3, 1000, 0, 0)) < (
+        composition_candidate_key(plan, packing, (101, 10, 0, 1, 0, 0))
+    )
