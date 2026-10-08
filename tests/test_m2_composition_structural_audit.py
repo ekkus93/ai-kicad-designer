@@ -37,9 +37,7 @@ def test_rejects_refdes_net_topology_and_inventory_control() -> None:
 
 
 def test_rejects_exact_inventory_lookup() -> None:
-    facts = (
-        StructuralFact("tables.py", 7, "inventory_lookup", "2R1C1U", "compact"),
-    )
+    facts = (StructuralFact("tables.py", 7, "inventory_lookup", "2R1C1U", "compact"),)
 
     assert audit_structural_facts(facts) == (
         StructuralFinding(
