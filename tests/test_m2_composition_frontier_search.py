@@ -218,8 +218,7 @@ def test_repeated_signal_peers_search_legal_row_or_column_arrangement() -> None:
     for candidate in aligned:
         layout = {item.fragment.block.id: item.envelope for item in candidate.fragments}
         assert (
-            layout["first"][0] == layout["second"][0]
-            or layout["first"][1] == layout["second"][1]
+            layout["first"][0] == layout["second"][0] or layout["first"][1] == layout["second"][1]
         )
     reversed_plan = SemanticPlan(tuple(reversed(plan.blocks)), plan.edges, {}, ())
     assert _repeated_peer_alignment_candidates(reversed_plan, baseline) == aligned
