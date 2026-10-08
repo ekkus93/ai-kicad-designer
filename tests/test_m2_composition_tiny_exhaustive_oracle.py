@@ -17,9 +17,7 @@ def test_linear_signal_chain_prefers_left_to_right() -> None:
     assert result.evaluated == 6
     assert result.best_score[:3] == (0, 0, 0)
     assert all(
-        dict(placement)["source"][0]
-        < dict(placement)["gain"][0]
-        < dict(placement)["sink"][0]
+        dict(placement)["source"][0] < dict(placement)["gain"][0] < dict(placement)["sink"][0]
         for placement in result.best_placements
     )
 
@@ -98,14 +96,10 @@ def test_exhaustive_budget_and_invalid_inventory_are_rejected() -> None:
 
 def test_oracle_prefers_small_legal_footprint_over_needless_void() -> None:
     nodes = (TinyNode("first"), TinyNode("second"))
-    result = exhaustive_tiny_composition(
-        nodes, (), ((0, 0), (1, 0), (4, 0))
-    )
+    result = exhaustive_tiny_composition(nodes, (), ((0, 0), (1, 0), (4, 0)))
     assert result.best_score[5] == 2
     assert all(
-        max(point[0] for _, point in placement)
-        - min(point[0] for _, point in placement)
-        == 1
+        max(point[0] for _, point in placement) - min(point[0] for _, point in placement) == 1
         for placement in result.best_placements
     )
 
@@ -129,12 +123,8 @@ def test_oracle_pareto_frontier_dominates_reversed_signal_chain() -> None:
 def test_exact_one_grid_step_boundary_and_no_legal_placement() -> None:
     nodes = (TinyNode("entry", "input"), TinyNode("stage"))
     edges = (TinyEdge("entry", "stage"),)
-    correct = tiny_composition_metrics(
-        nodes, edges, {"entry": (0, 0), "stage": (1, 0)}
-    )
-    reversed_one_step = tiny_composition_metrics(
-        nodes, edges, {"entry": (1, 0), "stage": (0, 0)}
-    )
+    correct = tiny_composition_metrics(nodes, edges, {"entry": (0, 0), "stage": (1, 0)})
+    reversed_one_step = tiny_composition_metrics(nodes, edges, {"entry": (1, 0), "stage": (0, 0)})
     assert correct[:3] == (0, 0, 0)
     assert reversed_one_step[:3] == (1, 1, 1)
     with pytest.raises(ValueError, match="no placement"):

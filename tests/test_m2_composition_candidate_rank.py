@@ -126,9 +126,10 @@ def test_frontier_penalty_prefers_directed_interfaces_at_content_edges() -> None
         _placed(output_block, 3 * PITCH),
         _placed(far, 4 * PITCH, 2 * PITCH),
     )
-    assert semantic_composition_penalties(plan, frontier)[5] < semantic_composition_penalties(
-        plan, interior
-    )[5]
+    assert (
+        semantic_composition_penalties(plan, frontier)[5]
+        < semantic_composition_penalties(plan, interior)[5]
+    )
 
 
 def test_compactness_penalty_is_deterministic_integer_geometry() -> None:
@@ -214,10 +215,7 @@ def test_unrelated_blocks_require_visual_separation() -> None:
         semantic_composition_penalty_breakdown(plan, touching).unrelated_block_proximity
         > semantic_composition_penalty_breakdown(plan, separated).unrelated_block_proximity
     )
-    assert (
-        semantic_composition_penalty_breakdown(plan, separated).unrelated_block_proximity
-        == 0
-    )
+    assert semantic_composition_penalty_breakdown(plan, separated).unrelated_block_proximity == 0
 
 
 def test_related_blocks_are_exempt_from_inter_block_separation_penalty() -> None:
@@ -225,10 +223,8 @@ def test_related_blocks_are_exempt_from_inter_block_separation_penalty() -> None
     target = _block("target", "filter")
     plan = _plan((source, target), (_edge("signal", "source", "target"),))
     touching = _packing(_placed(source, 0), _placed(target, PITCH))
-    assert (
-        semantic_composition_penalty_breakdown(plan, touching).unrelated_block_proximity
-        == 0
-    )
+    assert semantic_composition_penalty_breakdown(plan, touching).unrelated_block_proximity == 0
+
 
 def test_power_input_prefers_semantically_connected_supply_infrastructure() -> None:
     power = _block("power", "interface", ("power_in",))
@@ -254,6 +250,7 @@ def test_power_input_prefers_semantically_connected_supply_infrastructure() -> N
 
     assert grouped_score.power_interface_distance < detached_score.power_interface_distance
     assert grouped_score.stage_order_violations == detached_score.stage_order_violations == 0
+
 
 def test_supply_infrastructure_is_penalized_on_primary_signal_row() -> None:
     first = _block("first", "filter", ("signal_in", "signal_out"))
@@ -282,4 +279,3 @@ def test_supply_infrastructure_is_penalized_on_primary_signal_row() -> None:
 
     assert intruding_score.infrastructure_primary_row_intrusion > 0
     assert subordinate_score.infrastructure_primary_row_intrusion == 0
-
