@@ -41,9 +41,7 @@ def test_shared_reference_preserves_multiple_owner_semantics() -> None:
         Node("b", 80, 30),
         Node("vref", 50, 10, "reference"),
     )
-    metric = dict(
-        observe(nodes, (), (Ownership("vref", ("a", "b"), "shared"),)).ownership_distance
-    )
+    metric = dict(observe(nodes, (), (Ownership("vref", ("a", "b"), "shared"),)).ownership_distance)
     assert metric["vref"] > 0
 
 
