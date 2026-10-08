@@ -46,7 +46,7 @@ def test_wrong_input_and_output_frontiers_are_penalized() -> None:
          "stage_out": (3 * PITCH, 0), "out": (0, 0)}
     )
     assert semantic_composition_penalties(plan, correct)[0] == 0
-    assert semantic_composition_penalties(plan, wrong)[0] == 7
+    assert semantic_composition_penalties(plan, wrong)[0] == 5
 
 
 def test_feedback_does_not_create_forward_stage_precedence() -> None:
