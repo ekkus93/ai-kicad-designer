@@ -38,13 +38,13 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 ## 1. Baseline freeze and composition characterization
 
 - [ ] Record current `master` SHA and hashes of behavior-affecting M2 placement/routing/composition modules.
-- [ ] Record historical M2h2 final PASS authority without modifying it.
+- [x] Record historical M2h2 final PASS authority without modifying it.
 - [ ] Preserve/hash the final native-render archive used as the composition baseline.
-- [ ] Add a new human-composition baseline evidence root.
+- [x] Add a new human-composition baseline evidence root.
 - [x] Define a versioned composition metric schema before behavior changes.
 - [ ] Evaluate current final M2h2 renders using the initial independent observer.
 - [ ] Produce a ranked per-case defect inventory.
-- [ ] Record `i4__b2_mixed` as a falsification seed.
+- [x] Record `i4__b2_mixed` as a falsification seed.
   - [ ] output interfaces on visually inappropriate frontier are detected;
   - [ ] detached interface-to-owning-stage relationships are detected;
   - [ ] weak page utilization/edge bias is detected;
@@ -61,7 +61,7 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
   - [ ] long-field text;
   - [ ] structural multi-band/one-band;
   - [ ] mixed interaction.
-- [ ] Confirm baseline failures do not alter historical M2h2 PASS status.
+- [x] Confirm baseline failures do not alter historical M2h2 PASS status.
 
 ## 2. Independent semantic-flow observer
 
