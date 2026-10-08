@@ -38,12 +38,20 @@ def test_wrong_input_and_output_frontiers_are_penalized() -> None:
         (),
     )
     correct = _packing(
-        {"in": (0, 0), "stage_in": (2 * PITCH, 0),
-         "stage_out": (3 * PITCH, 0), "out": (5 * PITCH, 0)}
+        {
+            "in": (0, 0),
+            "stage_in": (2 * PITCH, 0),
+            "stage_out": (3 * PITCH, 0),
+            "out": (5 * PITCH, 0),
+        }
     )
     wrong = _packing(
-        {"in": (4 * PITCH, 0), "stage_in": (2 * PITCH, 0),
-         "stage_out": (3 * PITCH, 0), "out": (0, 0)}
+        {
+            "in": (4 * PITCH, 0),
+            "stage_in": (2 * PITCH, 0),
+            "stage_out": (3 * PITCH, 0),
+            "out": (0, 0),
+        }
     )
     assert semantic_composition_penalties(plan, correct)[0] == 0
     assert semantic_composition_penalties(plan, wrong)[0] == 5
@@ -83,14 +91,22 @@ def test_support_locality_is_distinct_from_power_distribution() -> None:
 
 def test_rename_and_permutation_preserve_penalties() -> None:
     first = SemanticPlan(
-        (_block("stage", "stage", "out", "signal_out"),
-         _block("connector", "interface", "out", "passive")),
-        (), {}, ()
+        (
+            _block("stage", "stage", "out", "signal_out"),
+            _block("connector", "interface", "out", "passive"),
+        ),
+        (),
+        {},
+        (),
     )
     second = SemanticPlan(
-        (_block("z", "interface", "renamed", "passive"),
-         _block("a", "stage", "renamed", "signal_out")),
-        (), {}, ()
+        (
+            _block("z", "interface", "renamed", "passive"),
+            _block("a", "stage", "renamed", "signal_out"),
+        ),
+        (),
+        {},
+        (),
     )
     before = semantic_composition_penalties(
         first, _packing({"stage": (2 * PITCH, 0), "connector": (0, 0)})
@@ -99,3 +115,25 @@ def test_rename_and_permutation_preserve_penalties() -> None:
         second, _packing({"z": (0, 0), "a": (2 * PITCH, 0)})
     )
     assert before == after
+
+def test_mixed_direction_interface_is_semantically_exempt() -> None:
+    blocks = (
+        _block("producer", "stage", "out", "signal_out"),
+        _block("consumer", "stage", "in", "signal_in"),
+        BlockPlan(
+            "io",
+            "interface",
+            (),
+            frozenset(),
+            (
+                SemanticPort("io.out", "io", "out", "passive", ()),
+                SemanticPort("io.in", "io", "in", "passive", ()),
+            ),
+        ),
+    )
+    packing = _packing(
+        {"producer": (3 * PITCH, 0), "consumer": (PITCH, 0), "io": (0, 0)}
+    )
+    score = semantic_composition_penalties(SemanticPlan(blocks, (), {}, ()), packing)
+    assert score[0] == 0
+    assert score[2] == 0
