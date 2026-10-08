@@ -261,7 +261,8 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Cover whitespace/compactness.
 - [x] Cover branch geometry where tractable.
 - [x] Compare production result against non-dominated legal oracle candidates.
-- [ ] Require evidence when bounded production search legitimately misses oracle optimum.
+- [x] Require evidence when bounded production search legitimately misses oracle optimum.
+  - `m2_tiny_grid_composition_oracle.verify_tiny_search_budget_witness` and `m2_tiny_grid_oracle_miss_evidence.require_bounded_search_miss_evidence` reject an unexplained dominated candidate, disclose candidate/attempt budgets and unvisited optimum witnesses, and reject hidden better attempted candidates. Authored positive/negative/boundary controls in `test_m2_tiny_grid_composition_oracle.py` and `test_m2_tiny_grid_oracle_miss_evidence.py` passed (34 tests in local source-level validation on 2026-10-08). This source-level reconciliation does not imply locked KiCad qualification.
 - [x] Implement independent graph-order oracle.
 - [x] Falsify signal vs power/reference precedence separation.
 - [x] Add exact-boundary tests for each frozen composition tolerance.
