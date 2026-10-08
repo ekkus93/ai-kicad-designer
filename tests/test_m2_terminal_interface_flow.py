@@ -56,42 +56,42 @@ def test_two_unique_interfaces_keep_sorted_relations_across_permutations() -> No
 
 def test_ambiguous_producers_and_consumers_are_not_guessed() -> None:
     connector = _block("connector", "interface", ("n", "passive"))
-    assert _relations(
+    assert not _relations(
         connector,
         _block("first", "active", ("n", "signal_out")),
         _block("second", "active", ("n", "signal_out")),
-    ) == ()
-    assert _relations(
+    )
+    assert not _relations(
         connector,
         _block("first", "active", ("n", "signal_in")),
         _block("second", "active", ("n", "signal_in")),
-    ) == ()
-    assert _relations(
+    )
+    assert not _relations(
         connector,
         _block("producer", "active", ("n", "signal_out")),
         _block("consumer", "active", ("n", "signal_in")),
-    ) == ()
+    )
 
 
 def test_multiple_passive_connectors_do_not_claim_unique_ownership() -> None:
-    assert _relations(
+    assert not _relations(
         _block("left", "interface", ("n", "passive")),
         _block("right", "interface", ("n", "passive")),
         _block("source", "active", ("n", "signal_out")),
-    ) == ()
+    )
 
 
 def test_reference_power_and_explicit_interface_roles_are_excluded() -> None:
     for competing_role in ("power_in", "power_out", "reference"):
-        assert _relations(
+        assert not _relations(
             _block("connector", "interface", ("n", "passive")),
             _block("sink", "active", ("n", "signal_in")),
             _block("supply", "utility", ("n", competing_role)),
-        ) == ()
-    assert _relations(
+        )
+    assert not _relations(
         _block("connector", "interface", ("n", "passive"), ("n", "signal_out")),
         _block("sink", "active", ("n", "signal_in")),
-    ) == ()
+    )
 
 
 def test_renamed_net_and_block_ids_preserve_direction_and_cardinality() -> None:
