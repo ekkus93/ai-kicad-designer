@@ -531,7 +531,5 @@ def test_quality_selection_finishes_all_retained_seed_slots():
     rejected = evidence["candidate_selection"]["best_rejected_candidate"]
     if len(candidates) > 1:
         assert rejected is not None
-        assert rejected["selection_key"] == sorted(
-            item["selection_key"] for item in candidates
-        )[1]
+        assert rejected["selection_key"] == sorted(item["selection_key"] for item in candidates)[1]
     assert evidence["budgets"]["complete_attempts_used"] <= 32
