@@ -201,4 +201,3 @@ def final_signal_output_blocks(graph: SemanticFlowGraph) -> tuple[str, ...]:
         if role.port_role == "signal_out" and role.block not in forward_sources
     }
     return tuple(sorted(outputs))
-
