@@ -255,3 +255,31 @@ def test_power_input_prefers_semantically_connected_supply_infrastructure() -> N
     assert grouped_score.power_interface_distance < detached_score.power_interface_distance
     assert grouped_score.stage_order_violations == detached_score.stage_order_violations == 0
 
+def test_supply_infrastructure_is_penalized_on_primary_signal_row() -> None:
+    first = _block("first", "filter", ("signal_in", "signal_out"))
+    second = _block("second", "filter", ("signal_in", "signal_out"))
+    supply = _block("supply", "supply")
+    plan = _plan(
+        (first, second, supply),
+        (
+            _edge("signal", "first", "second", "signal"),
+            _edge("power", "supply", "first", "rail"),
+        ),
+    )
+    intruding = _packing(
+        _placed(first, 2 * PITCH, 2 * PITCH),
+        _placed(second, 5 * PITCH, 2 * PITCH),
+        _placed(supply, 4 * PITCH, 2 * PITCH),
+    )
+    subordinate = _packing(
+        _placed(first, 2 * PITCH, 2 * PITCH),
+        _placed(second, 5 * PITCH, 2 * PITCH),
+        _placed(supply, 4 * PITCH, 6 * PITCH),
+    )
+
+    intruding_score = semantic_composition_penalty_breakdown(plan, intruding)
+    subordinate_score = semantic_composition_penalty_breakdown(plan, subordinate)
+
+    assert intruding_score.infrastructure_primary_row_intrusion > 0
+    assert subordinate_score.infrastructure_primary_row_intrusion == 0
+

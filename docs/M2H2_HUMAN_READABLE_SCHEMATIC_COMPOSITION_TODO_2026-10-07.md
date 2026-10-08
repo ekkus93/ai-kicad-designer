@@ -146,7 +146,7 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Report supply/reference infrastructure dispersion.
 - [x] Keep internal reference producer/support visually coherent.
 - [x] Keep package-local decoupling/support local where semantics permit.
-- [ ] Prevent supply/reference infrastructure from dominating primary signal rows.
+- [x] Prevent supply/reference infrastructure from dominating primary signal rows.
 - [x] Preserve no-fake-external-reference behavior.
 - [ ] Add two-signal-chains/shared-rail regression.
 - [ ] Add V6-3 internal-reference regression.

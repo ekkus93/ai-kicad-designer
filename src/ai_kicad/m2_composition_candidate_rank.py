@@ -15,7 +15,7 @@ from .m2_pack import BOTTOM, LEFT, RIGHT, TOP
 
 Rect = tuple[int, int, int, int]
 Point = tuple[int, int]
-SemanticPenaltyVector = tuple[int, int, int, int, int, int, int, int, int, int, int, int, int]
+SemanticPenaltyVector = tuple[int, int, int, int, int, int, int, int, int, int, int, int, int, int]
 CompactnessPenaltyVector = tuple[int, int, int]
 CandidateKey = tuple[int, ...]
 
@@ -35,6 +35,7 @@ class SemanticPenaltyBreakdown:
     intra_block_dispersion: int
     unrelated_block_proximity: int
     power_interface_distance: int
+    infrastructure_primary_row_intrusion: int
 
     def vector(self) -> SemanticPenaltyVector:
         return (
@@ -51,6 +52,7 @@ class SemanticPenaltyBreakdown:
             self.intra_block_dispersion,
             self.unrelated_block_proximity,
             self.power_interface_distance,
+            self.infrastructure_primary_row_intrusion,
         )
 
     def as_dict(self) -> dict[str, int]:
@@ -68,6 +70,7 @@ class SemanticPenaltyBreakdown:
             "intra_block_dispersion": self.intra_block_dispersion,
             "unrelated_block_proximity": self.unrelated_block_proximity,
             "power_interface_distance": self.power_interface_distance,
+            "infrastructure_primary_row_intrusion": self.infrastructure_primary_row_intrusion,
         }
 
 
@@ -292,6 +295,37 @@ def _power_interface_distance(plan, centers: dict[str, Point]) -> int:
     return _grid_units(total)
 
 
+def _infrastructure_primary_row_intrusion(plan, centers: dict[str, Point]) -> int:
+    """Penalize supply/reference infrastructure that occupies the primary signal row."""
+    signal_ids = {
+        block_id
+        for edge in plan.edges
+        if edge.kind in {"signal", "branch"}
+        for block_id in (edge.source, edge.target)
+        if block_id in centers
+    }
+    signal_rows = sorted(
+        centers[block_id][1]
+        for block_id in signal_ids
+        if next((block for block in plan.blocks if block.id == block_id), None) is not None
+    )
+    if not signal_rows:
+        return 0
+    primary_row = signal_rows[len(signal_rows) // 2]
+    infrastructure_ids = {
+        block_id
+        for edge in plan.edges
+        if edge.kind in {"power", "reference"}
+        for block_id in (edge.source, edge.target)
+        if block_id in centers and block_id not in signal_ids
+    }
+    penalty = sum(
+        max(0, 2 * PITCH - abs(centers[block_id][1] - primary_row))
+        for block_id in sorted(infrastructure_ids)
+    )
+    return _grid_units(penalty)
+
+
 def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBreakdown:
     """Return semantic readability penalties for one fully proved placement.
 
@@ -371,6 +405,7 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
     intra_block_dispersion = _intra_block_dispersion(packing)
     unrelated_block_proximity = _unrelated_block_proximity(plan, rects)
     power_interface_distance = _power_interface_distance(plan, centers)
+    infrastructure_primary_row_intrusion = _infrastructure_primary_row_intrusion(plan, centers)
 
     return SemanticPenaltyBreakdown(
         missing_geometry=missing_geometry,
@@ -386,6 +421,7 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
         intra_block_dispersion=intra_block_dispersion,
         unrelated_block_proximity=unrelated_block_proximity,
         power_interface_distance=power_interface_distance,
+        infrastructure_primary_row_intrusion=infrastructure_primary_row_intrusion,
     )
 
 
