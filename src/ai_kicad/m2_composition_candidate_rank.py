@@ -68,8 +68,7 @@ def semantic_composition_penalties(
             owner_distance += (distance + PITCH - 1) // PITCH
 
     flow_backtracking = sum(
-        (max(0, centers[edge.source][0] - centers[edge.target][0]) + PITCH - 1)
-        // PITCH
+        (max(0, centers[edge.source][0] - centers[edge.target][0]) + PITCH - 1) // PITCH
         for edge in plan.edges
         if edge.kind in {"signal", "branch"}
         and edge.source in centers
@@ -85,8 +84,6 @@ def semantic_composition_penalties(
         )
         // PITCH
         for edge in plan.edges
-        if edge.kind == "support"
-        and edge.source in centers
-        and edge.target in centers
+        if edge.kind == "support" and edge.source in centers and edge.target in centers
     )
     return side_penalty, flow_backtracking, owner_distance, support_distance
