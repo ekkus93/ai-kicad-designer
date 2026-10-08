@@ -94,3 +94,53 @@ def test_exhaustive_budget_and_invalid_inventory_are_rejected() -> None:
             (TinyEdge("x", "missing"),),
             {"x": (0, 0)},
         )
+
+
+def test_oracle_prefers_small_legal_footprint_over_needless_void() -> None:
+    nodes = (TinyNode("first"), TinyNode("second"))
+    result = exhaustive_tiny_composition(
+        nodes, (), ((0, 0), (1, 0), (4, 0))
+    )
+    assert result.best_score[5] == 2
+    assert all(
+        max(point[0] for _, point in placement)
+        - min(point[0] for _, point in placement)
+        == 1
+        for placement in result.best_placements
+    )
+
+
+def test_oracle_pareto_frontier_dominates_reversed_signal_chain() -> None:
+    nodes = (TinyNode("entry", "input"), TinyNode("stage"), TinyNode("exit", "output"))
+    edges = (TinyEdge("entry", "stage"), TinyEdge("stage", "exit"))
+    result = exhaustive_tiny_composition(nodes, edges, ((0, 0), (1, 0), (2, 0)))
+    reversed_metrics = tiny_composition_metrics(
+        nodes,
+        edges,
+        {"entry": (2, 0), "stage": (1, 0), "exit": (0, 0)},
+    )
+    assert any(
+        all(a <= b for a, b in zip(score, reversed_metrics, strict=True))
+        and any(a < b for a, b in zip(score, reversed_metrics, strict=True))
+        for score in result.pareto_scores
+    )
+
+
+def test_exact_one_grid_step_boundary_and_no_legal_placement() -> None:
+    nodes = (TinyNode("entry", "input"), TinyNode("stage"))
+    edges = (TinyEdge("entry", "stage"),)
+    correct = tiny_composition_metrics(
+        nodes, edges, {"entry": (0, 0), "stage": (1, 0)}
+    )
+    reversed_one_step = tiny_composition_metrics(
+        nodes, edges, {"entry": (1, 0), "stage": (0, 0)}
+    )
+    assert correct[:3] == (0, 0, 0)
+    assert reversed_one_step[:3] == (1, 1, 1)
+    with pytest.raises(ValueError, match="no placement"):
+        exhaustive_tiny_composition(
+            nodes,
+            edges,
+            ((0, 0), (1, 0)),
+            hard_gate=lambda _placement: False,
+        )
