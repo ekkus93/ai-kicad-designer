@@ -1359,6 +1359,95 @@ def _support_affinity_candidates(plan: SemanticPlan, baseline: Packing) -> tuple
     return (min(options, key=lambda item: item[0])[1],) if options else ()
 
 
+def _repeated_peer_alignment_candidates(plan: SemanticPlan, baseline: Packing) -> tuple[Packing, ...]:
+    """Search both row- and column-oriented alignments of equivalent signal peers."""
+    by_block = {block.id: block for block in plan.blocks}
+    active = sorted(
+        (
+            item
+            for item in baseline.fragments
+            if item.fragment.block.function is not None
+            and not item.fragment.block.unused
+            and item.fragment.block.kind != "interface"
+        ),
+        key=lambda item: item.fragment.block.id,
+    )
+    forward: dict[str, set[str]] = {}
+    for edge in plan.edges:
+        if edge.kind in {"signal", "branch"} and edge.source != edge.target:
+            forward.setdefault(edge.source, set()).add(edge.target)
+
+    def reaches(start: str, end: str) -> bool:
+        pending = [start]
+        seen: set[str] = set()
+        while pending:
+            item = pending.pop()
+            if item in seen:
+                continue
+            seen.add(item)
+            if end in forward.get(item, set()):
+                return True
+            pending.extend(sorted(forward.get(item, set()) - seen))
+        return False
+
+    def signature(block_id: str) -> tuple:
+        block = by_block[block_id]
+        incident = []
+        for edge in plan.edges:
+            if edge.source == block_id and edge.target in by_block:
+                incident.append(("out", edge.kind, by_block[edge.target].kind))
+            elif edge.target == block_id and edge.source in by_block:
+                incident.append(("in", edge.kind, by_block[edge.source].kind))
+        return (
+            block.kind,
+            tuple(sorted(port.role for port in block.ports)),
+            tuple(sorted(incident)),
+        )
+
+    options: list[tuple[tuple[int, str, str, str], Packing]] = []
+    trials = 0
+    limit = CANDIDATE_BUDGET * 4
+    for index, first in enumerate(active):
+        if trials >= limit:
+            break
+        for second in active[index + 1 :]:
+            if trials >= limit:
+                break
+            first_id = first.fragment.block.id
+            second_id = second.fragment.block.id
+            if signature(first_id) != signature(second_id):
+                continue
+            if reaches(first_id, second_id) or reaches(second_id, first_id):
+                continue
+            first_width = first.envelope[2] - first.envelope[0]
+            first_height = first.envelope[3] - first.envelope[1]
+            second_width = second.envelope[2] - second.envelope[0]
+            second_height = second.envelope[3] - second.envelope[1]
+            for mode, x, y in (
+                (
+                    "column",
+                    first.envelope[0] + (first_width - second_width) // 2,
+                    first.envelope[3] + CHANNEL_GAP,
+                ),
+                (
+                    "row",
+                    first.envelope[2] + CHANNEL_GAP,
+                    first.envelope[1] + (first_height - second_height) // 2,
+                ),
+            ):
+                if trials >= limit:
+                    break
+                trials += 1
+                candidate = _measured_repack(
+                    plan, baseline, second, x, y, f"repeated-peer-{mode}"
+                )
+                if candidate is None:
+                    continue
+                movement = abs(x - second.envelope[0]) + abs(y - second.envelope[1])
+                options.append(((movement, first_id, second_id, mode), candidate))
+    return (min(options, key=lambda item: item[0])[1],) if options else ()
+
+
 def _structural_repack_candidates(plan: SemanticPlan, baseline: Packing) -> tuple[Packing, ...]:
     """Try functional row compaction and precedence-bound band staggering."""
     items = baseline.fragments
@@ -2124,6 +2213,7 @@ def pack_fragment_candidates(
         extras.extend(_interface_frontier_candidates(plan, successful[0]))
         extras.extend(_semantic_block_order_candidates(plan, successful[0]))
         extras.extend(_support_affinity_candidates(plan, successful[0]))
+        extras.extend(_repeated_peer_alignment_candidates(plan, successful[0]))
         distribution = _distribution_column_candidate(plan, variants, successful)
         if distribution is not None and all(
             tuple((item.fragment.id, item.delta) for item in distribution.fragments)
