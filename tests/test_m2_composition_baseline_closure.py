@@ -60,9 +60,7 @@ def test_required_targeted_improvement_must_be_present() -> None:
         baseline_evidence_root=_ROOT,
         after_evidence_root=_AFTER,
         comparison=comparison,
-        required_improvements=(
-            RequiredCaseImprovement("i4__b2_mixed", "interface_side_penalty"),
-        ),
+        required_improvements=(RequiredCaseImprovement("i4__b2_mixed", "interface_side_penalty"),),
     )
 
     assert not record.eligible_for_closure
@@ -82,18 +80,14 @@ def test_clean_per_case_closure_is_eligible_and_deterministic() -> None:
         baseline_evidence_root=_ROOT,
         after_evidence_root=_AFTER,
         comparison=comparison,
-        required_improvements=(
-            RequiredCaseImprovement("i4__b2_mixed", "interface_side_penalty"),
-        ),
+        required_improvements=(RequiredCaseImprovement("i4__b2_mixed", "interface_side_penalty"),),
     )
     second = build_baseline_closure_record(
         source_sha=_SHA,
         baseline_evidence_root=_ROOT,
         after_evidence_root=_AFTER,
         comparison=comparison,
-        required_improvements=(
-            RequiredCaseImprovement("i4__b2_mixed", "interface_side_penalty"),
-        ),
+        required_improvements=(RequiredCaseImprovement("i4__b2_mixed", "interface_side_penalty"),),
     )
 
     assert first.eligible_for_closure

@@ -29,9 +29,7 @@ def test_reports_connector_and_support_owner_offsets() -> None:
         obs.PlacedItem("decouple", "support", (55, 20), owner_id="stage"),
     )
     metrics = obs.measure_alignment_grid_composition(items)
-    assert metrics.connector_signal_row_distance == (
-        obs.OwnerDistance("out", "stage", 25),
-    )
+    assert metrics.connector_signal_row_distance == (obs.OwnerDistance("out", "stage", 25),)
     assert metrics.support_owner_offset == (obs.OwnerDistance("decouple", "stage", 30),)
 
 
@@ -47,15 +45,9 @@ def test_preserves_kicad_grid_compatibility_evidence() -> None:
 
 def test_detects_inconsistent_field_and_body_orientation_by_role() -> None:
     items = (
-        obs.PlacedItem(
-            "r1", "passive", (20, 30), orientation="east", field_orientation="east"
-        ),
-        obs.PlacedItem(
-            "r2", "passive", (45, 30), orientation="east", field_orientation="east"
-        ),
-        obs.PlacedItem(
-            "r3", "passive", (70, 30), orientation="west", field_orientation="west"
-        ),
+        obs.PlacedItem("r1", "passive", (20, 30), orientation="east", field_orientation="east"),
+        obs.PlacedItem("r2", "passive", (45, 30), orientation="east", field_orientation="east"),
+        obs.PlacedItem("r3", "passive", (70, 30), orientation="west", field_orientation="west"),
     )
     metrics = obs.measure_alignment_grid_composition(items)
     assert metrics.inconsistent_orientation_ids == ("r3",)
@@ -65,9 +57,7 @@ def test_detects_inconsistent_field_and_body_orientation_by_role() -> None:
 def test_long_field_default_slots_are_reported_without_blocking_alternates() -> None:
     items = (
         obs.PlacedItem("long_default", "stage", (20, 30), field_length=40),
-        obs.PlacedItem(
-            "long_alt", "stage", (60, 30), field_length=40, field_slot="alternate"
-        ),
+        obs.PlacedItem("long_alt", "stage", (60, 30), field_length=40, field_slot="alternate"),
     )
     metrics = obs.measure_alignment_grid_composition(items)
     assert metrics.long_field_default_slot_ids == ("long_default",)
@@ -84,11 +74,7 @@ def test_metric_values_are_refdes_and_input_order_invariant() -> None:
     )
     first = obs.measure_alignment_grid_composition(original)
     second = obs.measure_alignment_grid_composition(renamed_reordered)
+    assert first.sequential_stage_baseline_deviation == second.sequential_stage_baseline_deviation
     assert (
-        first.sequential_stage_baseline_deviation
-        == second.sequential_stage_baseline_deviation
-    )
-    assert (
-        first.meaningful_horizontal_alignment_lines
-        == second.meaningful_horizontal_alignment_lines
+        first.meaningful_horizontal_alignment_lines == second.meaningful_horizontal_alignment_lines
     )

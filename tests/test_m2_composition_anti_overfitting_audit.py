@@ -46,12 +46,14 @@ def test_audit_detects_qualification_group_and_topology_hash_special_cases() -> 
 
     findings = audit.audit_composition_sources((source,))
 
-    assert audit.AuditFinding(
-        "src/rules.py", 1, "qualification_group_control", "M2H2_FINAL"
-    ) in findings
-    assert audit.AuditFinding(
-        "src/rules.py", 1, "topology_hash_special_case", topology_hash
-    ) in findings
+    assert (
+        audit.AuditFinding("src/rules.py", 1, "qualification_group_control", "M2H2_FINAL")
+        in findings
+    )
+    assert (
+        audit.AuditFinding("src/rules.py", 1, "topology_hash_special_case", topology_hash)
+        in findings
+    )
 
 
 def test_comments_do_not_create_false_positive_findings() -> None:
