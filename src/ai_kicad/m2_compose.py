@@ -6,6 +6,11 @@ from dataclasses import dataclass, replace
 
 from .ir import InputError
 from .m2_conflicts import ConflictKind, TypedConflict
+from .m2_composition_candidate_rank import (
+    compactness_whitespace_penalties,
+    composition_candidate_key,
+    semantic_composition_penalties,
+)
 from .m2a import PITCH, Scene, certify_scene_geometry, certify_scene_inputs
 from .m2b import Draft, measure
 from .m2_geometry import label_text_rect
@@ -1371,7 +1376,7 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
             )
             canonical_trees = candidate[2]
             candidate_metrics = candidate[-1]
-            score = (
+            routing_compactness = (
                 sum(tree.length for tree in canonical_trees),
                 max((tree.length for tree in canonical_trees), default=0),
                 sum(tree.bends for tree in canonical_trees),
@@ -1380,9 +1385,24 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
                 seed_index,
                 round_index,
             )
+            semantic_penalties = semantic_composition_penalties(plan, working_packing)
+            compactness_penalties = compactness_whitespace_penalties(working_packing)
+            selection_key = composition_candidate_key(
+                plan, working_packing, routing_compactness
+            )
             structure = _structural_signature(working_packing)
             proved_candidates.append(
-                (score, structure, seed_index, round_index, working_packing, *candidate)
+                (
+                    selection_key,
+                    semantic_penalties,
+                    compactness_penalties,
+                    routing_compactness,
+                    structure,
+                    seed_index,
+                    round_index,
+                    working_packing,
+                    *candidate,
+                )
             )
             proved_structures.add(structure)
             # A proved candidate does not truncate the remaining ranked seeds.
@@ -1481,9 +1501,12 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
             tuple(attempts),
             failure_evidence,
         )
-    selected = min(proved_candidates, key=lambda item: item[0])
+    selected = min(proved_candidates, key=lambda candidate: candidate[0])
     (
-        score,
+        selection_key,
+        semantic_penalties,
+        compactness_penalties,
+        routing_compactness,
         structure,
         selected_seed,
         selected_round,
@@ -1559,18 +1582,24 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
             ],
         },
         "candidate_selection": {
-            "rule": "proved_union_length_then_worst_length_bends_area",
+            "rule": "semantic_readability_then_routing_clarity_then_compactness",
             "selected_seed": selected_seed,
             "selected_round": selected_round,
-            "selected_score": list(score),
+            "selected_score": list(routing_compactness),
+            "selected_selection_key": list(selection_key),
+            "selected_semantic_penalties": list(semantic_penalties),
+            "selected_compactness_penalties": list(compactness_penalties),
             "proved_candidate_count": len(proved_candidates),
             "proved_structure_count": len(proved_structures),
             "proved_candidates": [
                 {
-                    "seed": item[2],
-                    "round": item[3],
-                    "score": list(item[0]),
-                    "structure": [list(value) for value in item[1]],
+                    "seed": item[5],
+                    "round": item[6],
+                    "score": list(item[3]),
+                    "selection_key": list(item[0]),
+                    "semantic_penalties": list(item[1]),
+                    "compactness_penalties": list(item[2]),
+                    "structure": [list(value) for value in item[4]],
                 }
                 for item in proved_candidates
             ],

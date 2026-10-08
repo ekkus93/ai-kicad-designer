@@ -1,208 +1,117 @@
-"""Independent authored controls for semantic composition penalties."""
-
 from types import SimpleNamespace
 
 from ai_kicad.m2_composition_candidate_rank import (
+    compactness_whitespace_penalties,
     composition_candidate_key,
     semantic_composition_penalties,
 )
-from ai_kicad.m2_pack import PITCH
-from ai_kicad.m2_semantics import BlockPlan, SemanticEdge, SemanticPlan, SemanticPort
 
 
-def _block(name: str, kind: str, net: str, role: str) -> BlockPlan:
-    port = SemanticPort(name + ".p", name, net, role, ())
-    return BlockPlan(name, kind, (), frozenset(), (port,))
+def _block(block_id: str, kind: str = "stage", roles: tuple[str, ...] = ()):
+    ports = tuple(SimpleNamespace(role=role) for role in roles)
+    return SimpleNamespace(id=block_id, kind=kind, ports=ports)
 
 
-def _packing(positions: dict[str, tuple[int, int]]):
-    return SimpleNamespace(
-        fragments=tuple(
-            SimpleNamespace(
-                fragment=SimpleNamespace(block=SimpleNamespace(id=name)),
-                content_envelope=(x, y, x + PITCH, y + PITCH),
-                envelope=(x, y, x + PITCH, y + PITCH),
-            )
-            for name, (x, y) in positions.items()
-        )
-    )
+def _plan(blocks, edges=(), precedence=()):
+    return SimpleNamespace(blocks=tuple(blocks), edges=tuple(edges), precedence=tuple(precedence))
 
 
-def test_wrong_input_and_output_frontiers_are_penalized() -> None:
-    plan = SemanticPlan(
+def _edge(kind: str, source: str, target: str, net: str = "n"):
+    return SimpleNamespace(kind=kind, source=source, target=target, net=net)
+
+
+def _placed(block, x: int, y: int = 0, width: int = 10, height: int = 10):
+    rect = (x, y, x + width, y + height)
+    fragment = SimpleNamespace(block=block)
+    return SimpleNamespace(fragment=fragment, content_envelope=rect, envelope=rect)
+
+
+def _packing(*items):
+    return SimpleNamespace(fragments=tuple(items))
+
+
+def test_semantic_flow_outranks_shorter_routing() -> None:
+    input_block = _block("input", "interface", ("signal_in",))
+    stage = _block("stage")
+    output_block = _block("output", "interface", ("signal_out",))
+    plan = _plan(
+        (input_block, stage, output_block),
         (
-            _block("in", "interface", "source", "passive"),
-            _block("stage_in", "stage", "source", "signal_in"),
-            _block("stage_out", "stage", "sink", "signal_out"),
-            _block("out", "interface", "sink", "passive"),
+            _edge("signal", "input", "stage", "in"),
+            _edge("signal", "stage", "output", "out"),
         ),
-        (),
-        {},
-        (),
     )
-    correct = _packing(
-        {
-            "in": (0, 0),
-            "stage_in": (2 * PITCH, 0),
-            "stage_out": (3 * PITCH, 0),
-            "out": (5 * PITCH, 0),
-        }
+    readable = _packing(
+        _placed(input_block, 0),
+        _placed(stage, 20),
+        _placed(output_block, 40),
     )
-    wrong = _packing(
-        {
-            "in": (4 * PITCH, 0),
-            "stage_in": (2 * PITCH, 0),
-            "stage_out": (3 * PITCH, 0),
-            "out": (0, 0),
-        }
+    reversed_flow = _packing(
+        _placed(input_block, 40),
+        _placed(stage, 20),
+        _placed(output_block, 0),
     )
-    assert semantic_composition_penalties(plan, correct)[0] == 0
-    assert semantic_composition_penalties(plan, wrong)[0] == 5
+    readable_key = composition_candidate_key(plan, readable, (1000, 500, 4, 1.0, 1, 0))
+    reversed_key = composition_candidate_key(plan, reversed_flow, (1, 1, 0, 1.0, 0, 0))
+    assert readable_key < reversed_key
 
 
-def test_feedback_does_not_create_forward_stage_precedence() -> None:
-    blocks = (
-        _block("a", "stage", "net", "signal_out"),
-        _block("b", "stage", "net", "signal_in"),
-    )
-    packing = _packing({"a": (3 * PITCH, 0), "b": (0, 0)})
-    forward = SemanticPlan(
-        blocks,
-        (SemanticEdge("signal", "a", "b", "net", ()),),
-        {},
-        (),
-    )
-    feedback = SemanticPlan(
-        blocks,
-        (SemanticEdge("feedback", "a", "b", "net", ()),),
-        {},
-        (),
-    )
-    assert semantic_composition_penalties(forward, packing)[1] == 3
-    assert semantic_composition_penalties(feedback, packing)[1] == 0
-
-
-def test_support_locality_is_distinct_from_power_distribution() -> None:
-    blocks = (
-        _block("stage", "stage", "net", "signal_in"),
-        _block("cap", "support", "rail", "reference"),
-    )
-    packing = _packing({"stage": (0, 0), "cap": (0, 5 * PITCH)})
-    support = SemanticPlan(
-        blocks,
-        (SemanticEdge("support", "cap", "stage", "rail", ()),),
-        {},
-        (),
-    )
-    power = SemanticPlan(
-        blocks,
-        (SemanticEdge("power", "cap", "stage", "rail", ()),),
-        {},
-        (),
-    )
-    assert semantic_composition_penalties(support, packing)[3] == 5
-    assert semantic_composition_penalties(power, packing)[3] == 0
-
-
-def test_rename_and_permutation_preserve_penalties() -> None:
-    first = SemanticPlan(
+def test_feedback_and_support_are_locality_not_forward_precedence() -> None:
+    stage = _block("stage")
+    feedback = _block("feedback", "support")
+    support = _block("support", "support")
+    plan = _plan(
+        (stage, feedback, support),
         (
-            _block("stage", "stage", "out", "signal_out"),
-            _block("connector", "interface", "out", "passive"),
+            _edge("feedback", "feedback", "stage", "fb"),
+            _edge("support", "support", "stage", "bias"),
         ),
-        (),
-        {},
-        (),
     )
-    second = SemanticPlan(
+    near = _packing(_placed(stage, 20), _placed(feedback, 30), _placed(support, 10))
+    far = _packing(_placed(stage, 20), _placed(feedback, 300), _placed(support, 400))
+    near_penalties = semantic_composition_penalties(plan, near)
+    far_penalties = semantic_composition_penalties(plan, far)
+    assert near_penalties[1] == 0
+    assert far_penalties[1] == 0
+    assert near_penalties[6:8] < far_penalties[6:8]
+
+
+def test_frontier_penalty_prefers_directed_interfaces_at_content_edges() -> None:
+    input_block = _block("input", "interface", ("signal_in",))
+    stage = _block("stage")
+    output_block = _block("output", "interface", ("signal_out",))
+    spare = _block("spare")
+    plan = _plan(
+        (input_block, stage, output_block, spare),
         (
-            _block("z", "interface", "renamed", "passive"),
-            _block("a", "stage", "renamed", "signal_out"),
-        ),
-        (),
-        {},
-        (),
-    )
-    before = semantic_composition_penalties(
-        first,
-        _packing({"stage": (2 * PITCH, 0), "connector": (0, 0)}),
-    )
-    after = semantic_composition_penalties(
-        second,
-        _packing({"z": (0, 0), "a": (2 * PITCH, 0)}),
-    )
-    assert before == after
-
-
-def test_mixed_direction_interface_is_semantically_exempt() -> None:
-    blocks = (
-        _block("producer", "stage", "out", "signal_out"),
-        _block("consumer", "stage", "in", "signal_in"),
-        BlockPlan(
-            "io",
-            "interface",
-            (),
-            frozenset(),
-            (
-                SemanticPort("io.out", "io", "out", "passive", ()),
-                SemanticPort("io.in", "io", "in", "passive", ()),
-            ),
+            _edge("signal", "input", "stage", "in"),
+            _edge("signal", "stage", "output", "out"),
         ),
     )
-    packing = _packing(
-        {"producer": (3 * PITCH, 0), "consumer": (PITCH, 0), "io": (0, 0)}
+    frontier = _packing(
+        _placed(input_block, 0),
+        _placed(stage, 20),
+        _placed(output_block, 40),
+        _placed(spare, 20, 20),
     )
-    score = semantic_composition_penalties(SemanticPlan(blocks, (), {}, ()), packing)
-    assert score[0] == 0
-    assert score[2] == 0
+    interior = _packing(
+        _placed(spare, 0, 20),
+        _placed(input_block, 10),
+        _placed(stage, 20),
+        _placed(output_block, 30),
+        _placed(_block("far"), 40, 20),
+    )
+    assert semantic_composition_penalties(plan, frontier)[5] < semantic_composition_penalties(
+        plan, interior
+    )[5]
 
 
-def test_proved_candidate_ranking_prioritizes_semantics_over_shorter_wires() -> None:
-    plan = SemanticPlan(
-        (
-            _block("stage", "stage", "out", "signal_out"),
-            _block("connector", "interface", "out", "passive"),
-        ),
-        (),
-        {},
-        (),
-    )
-    readable = _packing({"stage": (2 * PITCH, 0), "connector": (4 * PITCH, 0)})
-    wrong_side = _packing({"stage": (2 * PITCH, 0), "connector": (0, 0)})
-    assert composition_candidate_key(
-        plan,
-        readable,
-        (900, 900, 9, 9000, 1, 0),
-    ) < composition_candidate_key(
-        plan,
-        wrong_side,
-        (1, 1, 0, 1, 0, 0),
-    )
-
-
-def test_proved_candidate_ranking_preserves_route_tiebreakers() -> None:
-    plan = SemanticPlan((_block("stage", "stage", "out", "signal_out"),), (), {}, ())
-    packing = _packing({"stage": (2 * PITCH, 0)})
-    assert composition_candidate_key(
-        plan,
-        packing,
-        (100, 90, 3, 1000, 0, 0),
-    ) < composition_candidate_key(
-        plan,
-        packing,
-        (101, 10, 0, 1, 0, 0),
-    )
-
-
-def test_shared_signal_net_interface_is_not_assumed_output_only() -> None:
-    blocks = (
-        _block("driver", "stage", "shared", "signal_out"),
-        _block("load", "stage", "shared", "signal_in"),
-        _block("connector", "interface", "shared", "passive"),
-    )
-    packing = _packing(
-        {"driver": (3 * PITCH, 0), "load": (4 * PITCH, 0), "connector": (0, 0)}
-    )
-    penalties = semantic_composition_penalties(SemanticPlan(blocks, (), {}, ()), packing)
-    assert penalties[0] == 0
-    assert penalties[2] == 0
+def test_compactness_penalty_is_deterministic_integer_geometry() -> None:
+    first = _block("first")
+    second = _block("second")
+    compact = _packing(_placed(first, 20, 20), _placed(second, 40, 20))
+    dispersed = _packing(_placed(first, 20, 20), _placed(second, 400, 200))
+    compact_score = compactness_whitespace_penalties(compact)
+    dispersed_score = compactness_whitespace_penalties(dispersed)
+    assert compact_score[0] < dispersed_score[0]
+    assert all(isinstance(value, int) for value in compact_score + dispersed_score)
