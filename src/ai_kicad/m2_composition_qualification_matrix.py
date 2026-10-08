@@ -58,6 +58,19 @@ def build_required_matrix(
     """Build the governed final-qualification run matrix."""
     if len(base_case_ids) != POSITIVE_BASE_CASE_COUNT:
         raise ValueError("expected exactly 56 positive M2h2 base cases")
+    _validate_source_sha(source_sha)
+    families = (
+        base_case_ids,
+        interaction_case_ids,
+        structural_case_ids,
+        targeted_case_ids,
+        ("V3-8",),
+    )
+    all_ids = [case_id for family in families for case_id in family]
+    if any(not isinstance(case_id, str) or not case_id.strip() for case_id in all_ids):
+        raise ValueError("qualification case IDs must be non-empty strings")
+    if len(all_ids) != len(set(all_ids)):
+        raise ValueError("qualification case IDs must be unique across all families")
     return QualificationMatrix(
         source_sha=source_sha,
         locked_toolchain=LOCKED_KICAD_VERSION,
@@ -82,13 +95,31 @@ def matrix_gaps(
     observed_successes: tuple[tuple[str, int], ...],
 ) -> tuple[tuple[str, int, int], ...]:
     """Return cases whose observed successful repetitions do not satisfy the matrix."""
-    observed = dict(observed_successes)
+    required = {case.case_id: case for case in _all_cases(matrix)}
+    observed: dict[str, int] = {}
+    for case_id, count in observed_successes:
+        if case_id not in required:
+            raise ValueError(f"unknown qualification case ID: {case_id}")
+        if case_id in observed:
+            raise ValueError(f"duplicate qualification result: {case_id}")
+        if type(count) is not int or count < 0:
+            raise ValueError(f"invalid successful repetition count for {case_id}")
+        observed[case_id] = count
     gaps: list[tuple[str, int, int]] = []
     for case in _all_cases(matrix):
         actual = observed.get(case.case_id, 0)
         if actual < case.repetitions:
             gaps.append((case.case_id, case.repetitions, actual))
     return tuple(gaps)
+
+
+def _validate_source_sha(source_sha: str) -> None:
+    if (
+        not isinstance(source_sha, str)
+        or len(source_sha) != 40
+        or any(char not in "0123456789abcdef" for char in source_sha)
+    ):
+        raise ValueError("source_sha must be a 40-character lowercase hex commit SHA")
 
 
 def _cases(family: str, case_ids: tuple[str, ...]) -> tuple[QualificationCase, ...]:

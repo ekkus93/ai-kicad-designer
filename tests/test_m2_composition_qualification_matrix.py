@@ -79,3 +79,55 @@ def test_canonical_matrix_json_is_order_deterministic() -> None:
     )
 
     assert first.canonical_json() == second.canonical_json()
+
+
+def test_matrix_rejects_duplicate_positive_and_cross_family_case_ids() -> None:
+    positive = tuple(f"base-{index:02d}" for index in range(56))
+    with pytest.raises(ValueError, match="unique across all families"):
+        matrix.build_required_matrix(
+            source_sha="a" * 40,
+            base_case_ids=(positive[0], positive[0], *positive[2:]),
+            interaction_case_ids=(),
+            structural_case_ids=(),
+            targeted_case_ids=(),
+        )
+    with pytest.raises(ValueError, match="unique across all families"):
+        matrix.build_required_matrix(
+            source_sha="a" * 40,
+            base_case_ids=positive,
+            interaction_case_ids=(positive[0],),
+            structural_case_ids=(),
+            targeted_case_ids=(),
+        )
+
+
+def test_matrix_rejects_invalid_case_identifiers_and_source_sha() -> None:
+    positive = tuple(f"base-{index:02d}" for index in range(56))
+    with pytest.raises(ValueError, match="source_sha"):
+        matrix.build_required_matrix(
+            source_sha="bad", base_case_ids=positive,
+            interaction_case_ids=(), structural_case_ids=(), targeted_case_ids=(),
+        )
+    with pytest.raises(ValueError, match="non-empty"):
+        matrix.build_required_matrix(
+            source_sha="a" * 40, base_case_ids=positive,
+            interaction_case_ids=("",), structural_case_ids=(), targeted_case_ids=(),
+        )
+
+
+def test_matrix_gaps_reject_ambiguous_unknown_and_negative_success_counts() -> None:
+    result = matrix.build_required_matrix(
+        source_sha="a" * 40,
+        base_case_ids=tuple(f"base-{index:02d}" for index in range(56)),
+        interaction_case_ids=(),
+        structural_case_ids=(),
+        targeted_case_ids=(),
+    )
+    with pytest.raises(ValueError, match="duplicate qualification result"):
+        matrix.matrix_gaps(result, (("base-00", 5), ("base-00", 4)))
+    with pytest.raises(ValueError, match="unknown qualification case"):
+        matrix.matrix_gaps(result, (("fabricated-case", 5),))
+    with pytest.raises(ValueError, match="invalid successful repetition"):
+        matrix.matrix_gaps(result, (("base-00", -1),))
+    with pytest.raises(ValueError, match="invalid successful repetition"):
+        matrix.matrix_gaps(result, (("base-00", True),))
