@@ -22,7 +22,12 @@ def _external_source_plan(*, direct_edge=False):
     connector = SemanticPort("connector.pin", "connector", "vin", "passive", (("J1", "1"),))
     input_port = SemanticPort("amp.input", "amp", "vin", "signal_in", (("U1", "3"),))
     precedence = SignalPrecedence(
-        "external-source", "connector", "amp", ("J1", "1"), ("U1", "3"), "vin",
+        "external-source",
+        "connector",
+        "amp",
+        ("J1", "1"),
+        ("U1", "3"),
+        "vin",
         ("authored",),
     )
     return SemanticPlan(
