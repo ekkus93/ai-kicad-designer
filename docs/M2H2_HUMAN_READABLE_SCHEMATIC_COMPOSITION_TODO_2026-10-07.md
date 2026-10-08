@@ -28,7 +28,8 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Confirm unchanged 250 mm canonical conductor-length gate.
 - [x] Confirm ERC and independent emitted-artifact observation remain authoritative.
 - [x] Confirm DP1–DP4 topology/frozen expectations remain unchanged (all eight authored input/expectation Git blobs match historical production source `79a36b17`; see `fixtures/m2h2/human_composition_baseline_2026-10-08/dp_frozen_inputs_audit_2026-10-08.json`).
-- [ ] Confirm all historical blind/evaluation and M2h2 finalization evidence is preserved.
+- [x] Confirm all historical blind/evaluation and M2h2 finalization evidence is preserved.
+  - Exact-head preservation audit: `docs/M2H2_COMPOSITION_PRESERVATION_AUDIT_2026-10-08.md`. Historical evidence unchanged since frozen baseline `4d892285` (complete 107-path Ralph Bridge comparison, zero protected evidence changes); no current-source qualification credit is implied.
 - [x] Confirm `.local/` remains ignored.
 - [x] Confirm `research/legacy_openclaw/` is not inspected or used.
 - [x] Confirm locked KiCad 10.0.6 remains the governed real-tool version.
