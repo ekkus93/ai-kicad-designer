@@ -34,7 +34,8 @@ def _external_source_plan(*, direct_edge=False):
         blocks=(_block("connector", (connector,)), _block("amp", (input_port,))),
         edges=(
             (SemanticEdge("signal", "connector", "amp", "vin", ("authored",)),)
-            if direct_edge else ()
+            if direct_edge
+            else ()
         ),
         owners={},
         signal_order=(),

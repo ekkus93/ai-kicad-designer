@@ -5,8 +5,7 @@ from ai_kicad.m2_pack import _signal_chains
 
 def test_passive_series_chain_follows_directed_electrical_order() -> None:
     blocks = tuple(
-        SimpleNamespace(id=block_id, kind="series")
-        for block_id in ("third", "first", "second")
+        SimpleNamespace(id=block_id, kind="series") for block_id in ("third", "first", "second")
     )
     edges = (
         SimpleNamespace(kind="signal", source="first", target="second"),

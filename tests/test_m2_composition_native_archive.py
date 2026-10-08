@@ -16,12 +16,14 @@ def _part(number, case):
         "qualification_head": "a" * 40,
         "archive_part": number,
         "archive_parts": 2,
-        "renders": [{
-            "case": case,
-            "encoding": "gzip+base64",
-            "svg_sha256": hashlib.sha256(svg).hexdigest(),
-            "data": base64.b64encode(gzip.compress(svg, mtime=0)).decode(),
-        }],
+        "renders": [
+            {
+                "case": case,
+                "encoding": "gzip+base64",
+                "svg_sha256": hashlib.sha256(svg).hexdigest(),
+                "data": base64.b64encode(gzip.compress(svg, mtime=0)).decode(),
+            }
+        ],
     }
 
 
