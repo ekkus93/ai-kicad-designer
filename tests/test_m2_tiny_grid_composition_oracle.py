@@ -115,7 +115,9 @@ def test_illegal_production_placements_cannot_be_scored(positions: tuple) -> Non
     nodes = (oracle.TinyNode("a", "stage"), oracle.TinyNode("b", "stage"))
     with pytest.raises(ValueError, match="production positions"):
         oracle.exhaustive_tiny_grid_oracle(
-            nodes, ((0, 0), (10, 0)), production_positions=positions
+            nodes,
+            ((0, 0), (10, 0)),
+            production_positions=positions,
         )
 
 
@@ -133,7 +135,9 @@ def test_channel_order_does_not_impose_cross_channel_precedence() -> None:
         ("b_last", (10, 10)),
     )
     result = oracle.exhaustive_tiny_grid_oracle(
-        nodes, tuple(point for _, point in positions), production_positions=positions
+        nodes,
+        tuple(point for _, point in positions),
+        production_positions=positions,
     )
     assert result.production_candidate is not None
     assert result.production_candidate.score_vector[1] == 0
