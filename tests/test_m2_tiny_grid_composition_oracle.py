@@ -90,8 +90,7 @@ def test_repeated_role_alignment_accepts_row_or_column_grammar(
 
 def test_repeated_role_alignment_detects_off_axis_drift() -> None:
     nodes = tuple(
-        oracle.TinyNode(f"stage_{index}", "stage", repeated_role="gain")
-        for index in range(3)
+        oracle.TinyNode(f"stage_{index}", "stage", repeated_role="gain") for index in range(3)
     )
     grid = ((0, 0), (10, 10), (20, 20), (0, 10), (0, 20))
     evidence = oracle.exhaustive_tiny_grid_oracle(
@@ -106,6 +105,52 @@ def test_repeated_role_alignment_detects_off_axis_drift() -> None:
     assert evidence.production_candidate is not None
     assert evidence.production_candidate.score_vector[3] == 20
     assert evidence.production_is_dominated
+
+
+def test_two_band_repeated_channels_keep_corresponding_stages_aligned() -> None:
+    """The tiny exhaustive oracle must distinguish a true two-band grid from a stagger."""
+    nodes = tuple(
+        oracle.TinyNode(
+            f"{channel}_{stage}",
+            "stage",
+            stage_index=stage,
+            channel_id=channel,
+            repeated_role=f"stage_{stage}",
+        )
+        for channel in ("a", "b")
+        for stage in range(3)
+    )
+    grid = tuple((x, y) for y in (0, 10) for x in (0, 10, 20))
+    aligned = (
+        ("a_0", (0, 0)),
+        ("a_1", (10, 0)),
+        ("a_2", (20, 0)),
+        ("b_0", (0, 10)),
+        ("b_1", (10, 10)),
+        ("b_2", (20, 10)),
+    )
+    staggered = (
+        ("a_0", (0, 0)),
+        ("a_1", (10, 0)),
+        ("a_2", (20, 0)),
+        ("b_0", (0, 10)),
+        ("b_1", (20, 10)),
+        ("b_2", (10, 10)),
+    )
+    good = oracle.exhaustive_tiny_grid_oracle(
+        nodes, grid, production_positions=aligned
+    )
+    bad = oracle.exhaustive_tiny_grid_oracle(
+        nodes, grid, production_positions=staggered
+    )
+    assert good.candidate_count == 720
+    assert good.production_candidate is not None
+    assert good.production_candidate.score_vector[1:4] == (0, 0, 0)
+    assert not good.production_is_dominated
+    assert bad.production_candidate is not None
+    assert bad.production_candidate.score_vector[1] == 10
+    assert bad.production_candidate.score_vector[3] == 20
+    assert bad.production_is_dominated
 
 
 def test_oracle_rejects_unbounded_candidate_counts() -> None:

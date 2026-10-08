@@ -91,9 +91,7 @@ def test_rejects_invalid_scores_and_false_miss_excuses() -> None:
     assert oracle.production_candidate is not None
     score = oracle.production_candidate.score_vector
     with pytest.raises(ValueError, match="invalid attempted"):
-        require_bounded_search_miss_evidence(
-            oracle, ((-1, *score[1:]),), attempt_budget=1
-        )
+        require_bounded_search_miss_evidence(oracle, ((-1, *score[1:]),), attempt_budget=1)
     with pytest.raises(ValueError, match="must not claim"):
         require_bounded_search_miss_evidence(
             oracle, (score,), attempt_budget=1, miss_reason="bounded_candidate_budget"
