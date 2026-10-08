@@ -37,7 +37,9 @@ def test_branch_target_permutation_preserves_penalty_and_dominance() -> None:
     permuted = _evaluate(nodes, TinyBranch("source", ("second", "first")), positions)
     assert original.production_candidate is not None
     assert permuted.production_candidate is not None
-    assert original.production_candidate.score_vector == permuted.production_candidate.score_vector
+    assert (
+        original.production_candidate.score_vector == permuted.production_candidate.score_vector
+    )
     assert (
         original.production_candidate.branch_geometry_penalty
         == permuted.production_candidate.branch_geometry_penalty
@@ -48,12 +50,20 @@ def test_branch_target_permutation_preserves_penalty_and_dominance() -> None:
 
 def test_branch_node_renaming_preserves_geometry_and_dominance() -> None:
     original = _evaluate(
-        (TinyNode("source", "stage"), TinyNode("first", "stage"), TinyNode("second", "stage")),
+        (
+            TinyNode("source", "stage"),
+            TinyNode("first", "stage"),
+            TinyNode("second", "stage"),
+        ),
         TinyBranch("source", ("first", "second")),
         (("source", (20, 20)), ("first", (0, 0)), ("second", (40, 10))),
     )
     renamed = _evaluate(
-        (TinyNode("z", "stage"), TinyNode("a", "stage"), TinyNode("b", "stage")),
+        (
+            TinyNode("z", "stage"),
+            TinyNode("a", "stage"),
+            TinyNode("b", "stage"),
+        ),
         TinyBranch("z", ("a", "b")),
         (("z", (20, 20)), ("a", (0, 0)), ("b", (40, 10))),
     )
@@ -68,7 +78,11 @@ def test_branch_node_renaming_preserves_geometry_and_dominance() -> None:
 
 
 def test_reordered_duplicate_branch_is_rejected() -> None:
-    nodes = (TinyNode("src", "stage"), TinyNode("a", "stage"), TinyNode("b", "stage"))
+    nodes = (
+        TinyNode("src", "stage"),
+        TinyNode("a", "stage"),
+        TinyNode("b", "stage"),
+    )
     with pytest.raises(ValueError, match="duplicate tiny branch"):
         exhaustive_tiny_grid_oracle(
             nodes,
