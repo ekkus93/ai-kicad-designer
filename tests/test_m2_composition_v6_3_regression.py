@@ -23,8 +23,7 @@ def test_v6_3_internal_reference_and_filter_feedback_remain_composable() -> None
         for edge in plan.edges
     )
     assert any(
-        edge.kind == "feedback"
-        and edge.source == edge.target == "function.amp.a"
+        edge.kind == "feedback" and edge.source == edge.target == "function.amp.a"
         for edge in plan.edges
     )
     assert any(

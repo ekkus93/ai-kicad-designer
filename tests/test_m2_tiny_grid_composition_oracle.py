@@ -155,6 +155,7 @@ def test_oracle_rejects_duplicate_nodes_and_grid_points() -> None:
             ((0, 0), (0, 0)),
         )
 
+
 def test_branch_geometry_accepts_centered_equal_depth_fanout() -> None:
     nodes = (
         oracle.TinyNode("source", "stage"),
@@ -219,4 +220,3 @@ def test_illegal_branch_specifications_are_rejected(branch: oracle.TinyBranch) -
             ((0, 0), (10, 0)),
             branches=(branch,),
         )
-

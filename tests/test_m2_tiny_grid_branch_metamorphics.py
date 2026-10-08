@@ -37,9 +37,7 @@ def test_branch_target_permutation_preserves_penalty_and_dominance() -> None:
     permuted = _evaluate(nodes, TinyBranch("source", ("second", "first")), positions)
     assert original.production_candidate is not None
     assert permuted.production_candidate is not None
-    assert (
-        original.production_candidate.score_vector == permuted.production_candidate.score_vector
-    )
+    assert original.production_candidate.score_vector == permuted.production_candidate.score_vector
     assert (
         original.production_candidate.branch_geometry_penalty
         == permuted.production_candidate.branch_geometry_penalty

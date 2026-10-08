@@ -88,24 +88,16 @@ def test_dominated_candidate_oracle_preserves_only_non_dominated_layouts() -> No
     survivors = oracle.non_dominated_grouping_candidates((scattered, compact))
     assert [candidate.candidate_id for candidate in survivors] == ["compact"]
 
+
 def test_feedback_owner_distance_has_positive_and_negative_controls() -> None:
     owner = oracle.GroupMember("stage", "gain", (0, 0))
-    near_feedback = oracle.GroupMember(
-        "feedback", "gain", (30, 0), "stage", "feedback"
-    )
-    far_feedback = oracle.GroupMember(
-        "feedback", "gain", (100, 0), "stage", "feedback"
-    )
+    near_feedback = oracle.GroupMember("feedback", "gain", (30, 0), "stage", "feedback")
+    far_feedback = oracle.GroupMember("feedback", "gain", (100, 0), "stage", "feedback")
 
-    near = oracle.evaluate_grouping_candidate(
-        "near", (owner, near_feedback), ownership_limit=60
-    )
-    far = oracle.evaluate_grouping_candidate(
-        "far", (owner, far_feedback), ownership_limit=60
-    )
+    near = oracle.evaluate_grouping_candidate("near", (owner, near_feedback), ownership_limit=60)
+    far = oracle.evaluate_grouping_candidate("far", (owner, far_feedback), ownership_limit=60)
 
     assert near.ownership_penalty == 0
     assert not any(witness.kind == "feedback_owner_distance" for witness in near.witnesses)
     assert far.ownership_penalty == 40
     assert any(witness.kind == "feedback_owner_distance" for witness in far.witnesses)
-

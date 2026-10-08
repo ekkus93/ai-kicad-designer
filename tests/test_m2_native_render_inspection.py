@@ -26,9 +26,7 @@ def test_missing_assertion_prevents_completion() -> None:
 
 
 def test_failed_assertion_is_a_hard_visual_defect() -> None:
-    artifact = inspection.RenderArtifact(
-        "case-c", "shared-rail", "renders/c.svg", "3" * 64
-    )
+    artifact = inspection.RenderArtifact("case-c", "shared-rail", "renders/c.svg", "3" * 64)
     record = inspection.build_inspection(
         artifact,
         inspector="agent-engineering-inspection",
@@ -60,9 +58,7 @@ def test_archive_reports_missing_required_families_and_failing_cases() -> None:
     )
     archive = inspection.InspectionArchive("a" * 40, (incomplete, complete))
 
-    assert archive.missing_required_families(("feedback", "branch", "long-field")) == (
-        "branch",
-    )
+    assert archive.missing_required_families(("feedback", "branch", "long-field")) == ("branch",)
     assert archive.failing_cases() == ("case-e",)
 
 
