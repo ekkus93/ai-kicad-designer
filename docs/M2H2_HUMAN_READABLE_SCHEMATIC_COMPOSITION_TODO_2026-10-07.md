@@ -39,7 +39,8 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 
 - [ ] Record current `master` SHA and hashes of behavior-affecting M2 placement/routing/composition modules.
 - [x] Record historical M2h2 final PASS authority without modifying it.
-- [ ] Preserve/hash the final native-render archive used as the composition baseline.
+- [x] Preserve/hash the final native-render archive used as the composition baseline.
+  - `fixtures/m2h2/human_composition_baseline_2026-10-08/native_render_archive_manifest_42ab8452.json` records the preserved ten-part archive and its individual part SHA-256 and Git blob SHA-1 digests; the immutable archive contains 90 SVGs with independently verified SHA-256s and a sorted case inventory digest `759f49bf715da357d70f4fb4ae5513594328acb3ba8612031866ac6788a21fe0`. All ten archived files are present on current `master`. This preserves historical baseline evidence only, not current-source native render acceptance.
 - [x] Add a new human-composition baseline evidence root.
 - [x] Define a versioned composition metric schema before behavior changes.
 - [ ] Evaluate current final M2h2 renders using the initial independent observer.
