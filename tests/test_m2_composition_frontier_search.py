@@ -212,10 +212,7 @@ def test_repeated_signal_peers_search_legal_row_or_column_arrangement() -> None:
     aligned = _repeated_peer_alignment_candidates(plan, baseline)
     assert len(aligned) == 1
     layout = {item.fragment.block.id: item.envelope for item in aligned[0].fragments}
-    assert (
-        layout["first"][0] == layout["second"][0]
-        or layout["first"][1] == layout["second"][1]
-    )
+    assert layout["first"][0] == layout["second"][0] or layout["first"][1] == layout["second"][1]
     assert aligned[0].attempts[-1] in {"repeated-peer-row", "repeated-peer-column"}
     reversed_plan = SemanticPlan(tuple(reversed(plan.blocks)), plan.edges, {}, ())
     assert _repeated_peer_alignment_candidates(reversed_plan, baseline) == aligned
