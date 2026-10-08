@@ -241,3 +241,56 @@ def test_repeated_alignment_search_does_not_reorder_serial_stages() -> None:
         (),
     )
     assert _repeated_peer_alignment_candidates(plan, baseline) == ()
+
+
+
+def test_final_beam_retains_both_repeated_grammars_and_variant_seeds() -> None:
+    from ai_kicad.m2_pack import CANDIDATE_BUDGET, _retain_composition_seed_diversity
+
+    block = _block("stage", "filter")
+    variant = _fragment(block)
+
+    def seed(index: int, label: str) -> Packing:
+        return Packing(
+            (_place(variant, LEFT + (20 + index * 9) * PITCH, 55 * PITCH),),
+            (label,),
+        )
+
+    baseline = tuple(seed(index, f"baseline-{index}") for index in range(8))
+    extras = (
+        seed(9, "interface-frontier-input"),
+        seed(10, "interface-frontier-output"),
+        seed(11, "semantic-block-order-swap"),
+        seed(12, "semantic-support-affinity"),
+        seed(13, "repeated-peer-row"),
+        seed(14, "repeated-peer-column"),
+        seed(15, "functional-row-compaction"),
+    )
+    retained = _retain_composition_seed_diversity(baseline, extras)
+    labels = [candidate.attempts[-1] for candidate in retained]
+    assert len(retained) == CANDIDATE_BUDGET
+    assert labels[:5] == [
+        "baseline-0",
+        "repeated-peer-row",
+        "repeated-peer-column",
+        "baseline-1",
+        "baseline-2",
+    ]
+    assert len({candidate.fragments[0].delta for candidate in retained}) == CANDIDATE_BUDGET
+
+
+def test_repeated_beam_retention_deduplicates_same_placement() -> None:
+    from ai_kicad.m2_pack import _retain_composition_seed_diversity
+
+    block = _block("stage", "filter")
+    variant = _fragment(block)
+    base = Packing((_place(variant, LEFT + 20 * PITCH, 55 * PITCH),), ("base",))
+    duplicate = Packing(base.fragments, ("repeated-peer-row",))
+    different = Packing(
+        (_place(variant, LEFT + 45 * PITCH, 55 * PITCH),),
+        ("repeated-peer-column",),
+    )
+    assert _retain_composition_seed_diversity((base,), (duplicate, different)) == (
+        base,
+        different,
+    )

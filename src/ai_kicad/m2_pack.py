@@ -1918,6 +1918,46 @@ def _partial_beam_candidates(
     return tuple(complete)
 
 
+def _retain_composition_seed_diversity(
+    successful: tuple[Packing, ...], extras: tuple[Packing, ...]
+) -> tuple[Packing, ...]:
+    """Retain bounded variant diversity and both legal repeated-peer grammars.
+
+    Later generic search alternatives must not silently crowd out row or
+    column candidates before the route-aware selector gets to evaluate them.
+    """
+    if not successful:
+        return ()
+    repeated = tuple(
+        next(
+            (candidate for candidate in extras if candidate.attempts[-1] == label),
+            None,
+        )
+        for label in ("repeated-peer-row", "repeated-peer-column")
+    )
+    protected = tuple(candidate for candidate in repeated if candidate is not None)
+    ordered = (
+        successful[:1]
+        + protected
+        + successful[1:3]
+        + extras
+        + successful[3:]
+    )
+    seen: set[tuple[tuple[str, Point], ...]] = set()
+    retained: list[Packing] = []
+    for candidate in ordered:
+        identity = tuple(
+            sorted((placed.fragment.id, placed.delta) for placed in candidate.fragments)
+        )
+        if identity in seen:
+            continue
+        seen.add(identity)
+        retained.append(candidate)
+        if len(retained) == CANDIDATE_BUDGET:
+            break
+    return tuple(retained)
+
+
 def pack_fragment_candidates(
     plan: SemanticPlan, variants: dict[str, tuple[FragmentVariant, ...]]
 ) -> tuple[Packing, ...]:
@@ -2280,19 +2320,7 @@ def pack_fragment_candidates(
                     (item for item in partial if _band_count(item) != baseline_bands), partial[0]
                 )
                 extras.append(diverse)
-        # Keep two baseline variant/shelf seeds in the bounded final beam
-        # instead of allowing semantic repairs to crowd out variant diversity.
-        ordered = [successful[0], *extras[:3], *successful[1:3], *extras[3:], *successful[3:]]
-        seen = set()
-        deduped = []
-        for item in ordered:
-            identity = tuple((placed.fragment.id, placed.delta) for placed in item.fragments)
-            if identity not in seen:
-                seen.add(identity)
-                deduped.append(item)
-            if len(deduped) == CANDIDATE_BUDGET:
-                break
-        return tuple(deduped)
+        return _retain_composition_seed_diversity(tuple(successful), tuple(extras))
 
     partial = _partial_beam_candidates(plan, variants)
     if partial:
