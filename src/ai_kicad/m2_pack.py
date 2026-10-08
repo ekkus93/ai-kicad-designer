@@ -1359,7 +1359,9 @@ def _support_affinity_candidates(plan: SemanticPlan, baseline: Packing) -> tuple
     return (min(options, key=lambda item: item[0])[1],) if options else ()
 
 
-def _repeated_peer_alignment_candidates(plan: SemanticPlan, baseline: Packing) -> tuple[Packing, ...]:
+def _repeated_peer_alignment_candidates(
+    plan: SemanticPlan, baseline: Packing
+) -> tuple[Packing, ...]:
     """Search both row- and column-oriented alignments of equivalent signal peers."""
     by_block = {block.id: block for block in plan.blocks}
     active = sorted(
@@ -1438,9 +1440,7 @@ def _repeated_peer_alignment_candidates(plan: SemanticPlan, baseline: Packing) -
                 if trials >= limit:
                     break
                 trials += 1
-                candidate = _measured_repack(
-                    plan, baseline, second, x, y, f"repeated-peer-{mode}"
-                )
+                candidate = _measured_repack(plan, baseline, second, x, y, f"repeated-peer-{mode}")
                 if candidate is None:
                     continue
                 movement = abs(x - second.envelope[0]) + abs(y - second.envelope[1])
