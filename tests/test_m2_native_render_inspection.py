@@ -2,7 +2,9 @@ from ai_kicad import m2_native_render_inspection as inspection
 
 
 def test_complete_inspection_requires_every_visual_assertion() -> None:
-    artifact = inspection.RenderArtifact("case-a", "feedback", "renders/a.svg", "1" * 64)
+    artifact = inspection.RenderArtifact(
+        "case-a", "feedback", "renders/a.svg", "1" * 64
+    )
     record = inspection.build_inspection(
         artifact,
         inspector="agent-engineering-inspection",
@@ -26,7 +28,9 @@ def test_missing_assertion_prevents_completion() -> None:
 
 
 def test_failed_assertion_is_a_hard_visual_defect() -> None:
-    artifact = inspection.RenderArtifact("case-c", "shared-rail", "renders/c.svg", "3" * 64)
+    artifact = inspection.RenderArtifact(
+        "case-c", "shared-rail", "renders/c.svg", "3" * 64
+    )
     record = inspection.build_inspection(
         artifact,
         inspector="agent-engineering-inspection",
