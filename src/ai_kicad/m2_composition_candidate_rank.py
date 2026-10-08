@@ -15,7 +15,7 @@ from .m2_pack import BOTTOM, LEFT, RIGHT, TOP
 
 Rect = tuple[int, int, int, int]
 Point = tuple[int, int]
-SemanticPenaltyVector = tuple[int, int, int, int, int, int, int, int, int, int, int, int]
+SemanticPenaltyVector = tuple[int, int, int, int, int, int, int, int, int, int, int, int, int]
 CompactnessPenaltyVector = tuple[int, int, int]
 CandidateKey = tuple[int, ...]
 
@@ -34,6 +34,7 @@ class SemanticPenaltyBreakdown:
     repeated_alignment: int
     intra_block_dispersion: int
     unrelated_block_proximity: int
+    power_interface_distance: int
 
     def vector(self) -> SemanticPenaltyVector:
         return (
@@ -49,6 +50,7 @@ class SemanticPenaltyBreakdown:
             self.repeated_alignment,
             self.intra_block_dispersion,
             self.unrelated_block_proximity,
+            self.power_interface_distance,
         )
 
     def as_dict(self) -> dict[str, int]:
@@ -65,6 +67,7 @@ class SemanticPenaltyBreakdown:
             "repeated_alignment": self.repeated_alignment,
             "intra_block_dispersion": self.intra_block_dispersion,
             "unrelated_block_proximity": self.unrelated_block_proximity,
+            "power_interface_distance": self.power_interface_distance,
         }
 
 
@@ -251,6 +254,44 @@ def _unrelated_block_proximity(plan, rects: dict[str, Rect]) -> int:
     return _grid_units(penalty)
 
 
+def _power_interface_distance(plan, centers: dict[str, Point]) -> int:
+    """Keep external power inputs near semantically connected supply/reference infrastructure."""
+    by_id = {block.id: block for block in plan.blocks}
+    power_interfaces = {
+        block.id
+        for block in plan.blocks
+        if block.kind == "interface" and any(port.role == "power_in" for port in block.ports)
+    }
+    infrastructure = {
+        block_id
+        for edge in plan.edges
+        if edge.kind in {"power", "reference"}
+        for block_id in (edge.source, edge.target)
+        if block_id in by_id and by_id[block_id].kind != "interface"
+    }
+    total = 0
+    for interface_id in sorted(power_interfaces):
+        interface = centers.get(interface_id)
+        if interface is None:
+            continue
+        connected = {
+            edge.target if edge.source == interface_id else edge.source
+            for edge in plan.edges
+            if edge.kind in {"power", "reference"}
+            and interface_id in {edge.source, edge.target}
+            and (edge.target if edge.source == interface_id else edge.source) in infrastructure
+        }
+        candidates = connected or infrastructure
+        distances = [
+            abs(interface[0] - centers[owner][0]) + abs(interface[1] - centers[owner][1])
+            for owner in sorted(candidates)
+            if owner in centers
+        ]
+        if distances:
+            total += min(distances)
+    return _grid_units(total)
+
+
 def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBreakdown:
     """Return semantic readability penalties for one fully proved placement.
 
@@ -329,6 +370,7 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
     repeated_alignment = _repeated_alignment_penalty(plan, centers, signal_relations)
     intra_block_dispersion = _intra_block_dispersion(packing)
     unrelated_block_proximity = _unrelated_block_proximity(plan, rects)
+    power_interface_distance = _power_interface_distance(plan, centers)
 
     return SemanticPenaltyBreakdown(
         missing_geometry=missing_geometry,
@@ -343,6 +385,7 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
         repeated_alignment=repeated_alignment,
         intra_block_dispersion=intra_block_dispersion,
         unrelated_block_proximity=unrelated_block_proximity,
+        power_interface_distance=power_interface_distance,
     )
 
 

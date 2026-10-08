@@ -100,7 +100,7 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Add generic semantic frontier model for external interfaces.
 - [x] Prefer directed inputs on left frontier.
 - [x] Prefer directed outputs on right frontier.
-- [ ] Place power-input interfaces with supply infrastructure rather than primary signal flow.
+- [x] Place power-input interfaces with supply infrastructure rather than primary signal flow.
 - [x] Exempt genuinely bidirectional/undirected interfaces using semantic evidence, not names.
 - [x] Add deterministic penalties for unjustified interface-side violations.
 - [x] Add deterministic penalties for primary stage-order inversions.

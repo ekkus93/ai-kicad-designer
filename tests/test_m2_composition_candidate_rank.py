@@ -230,3 +230,28 @@ def test_related_blocks_are_exempt_from_inter_block_separation_penalty() -> None
         == 0
     )
 
+def test_power_input_prefers_semantically_connected_supply_infrastructure() -> None:
+    power = _block("power", "interface", ("power_in",))
+    supply = _block("supply", "supply")
+    signal = _block("signal", "filter", ("signal_in", "signal_out"))
+    plan = _plan(
+        (power, supply, signal),
+        (_edge("power", "power", "supply", "rail"),),
+    )
+    grouped = _packing(
+        _placed(power, 2 * PITCH, 8 * PITCH),
+        _placed(supply, 4 * PITCH, 8 * PITCH),
+        _placed(signal, 4 * PITCH, 2 * PITCH),
+    )
+    detached = _packing(
+        _placed(power, 2 * PITCH, 2 * PITCH),
+        _placed(supply, 4 * PITCH, 8 * PITCH),
+        _placed(signal, 4 * PITCH, 2 * PITCH),
+    )
+
+    grouped_score = semantic_composition_penalty_breakdown(plan, grouped)
+    detached_score = semantic_composition_penalty_breakdown(plan, detached)
+
+    assert grouped_score.power_interface_distance < detached_score.power_interface_distance
+    assert grouped_score.stage_order_violations == detached_score.stage_order_violations == 0
+
