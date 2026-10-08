@@ -7,6 +7,7 @@ key before lower-priority routing compactness and whitespace tie-breakers.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 
@@ -33,7 +34,13 @@ def audit_production_ranking_integration(source: str) -> tuple[ProductionIntegra
                     symbol,
                 )
             )
-    if "selected = min(proved_candidates, key=lambda item: item[0])" in source:
+    semantic_key_applied = bool(
+        re.search(r"composition_candidate_key\s*\(\s*plan\s*,", source)
+    )
+    if (
+        "selected = min(proved_candidates, key=lambda item: item[0])" in source
+        and not semantic_key_applied
+    ):
         findings.append(
             ProductionIntegrationFinding(
                 "routing_compactness_still_primary",
@@ -47,7 +54,7 @@ def audit_production_ranking_integration(source: str) -> tuple[ProductionIntegra
                 "proved_union_length_then_worst_length_bends_area",
             )
         )
-    if "composition_candidate_key(plan," not in source:
+    if not semantic_key_applied:
         findings.append(
             ProductionIntegrationFinding(
                 "semantic_key_not_applied_to_proved_candidates",

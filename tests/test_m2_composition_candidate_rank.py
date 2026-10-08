@@ -1,5 +1,6 @@
 from types import SimpleNamespace
 
+from ai_kicad.m2a import PITCH
 from ai_kicad.m2_composition_candidate_rank import (
     compactness_whitespace_penalties,
     composition_candidate_key,
@@ -20,7 +21,7 @@ def _edge(kind: str, source: str, target: str, net: str = "n"):
     return SimpleNamespace(kind=kind, source=source, target=target, net=net)
 
 
-def _placed(block, x: int, y: int = 0, width: int = 10, height: int = 10):
+def _placed(block, x: int, y: int = 0, width: int = PITCH, height: int = PITCH):
     rect = (x, y, x + width, y + height)
     fragment = SimpleNamespace(block=block)
     return SimpleNamespace(fragment=fragment, content_envelope=rect, envelope=rect)
@@ -43,12 +44,12 @@ def test_semantic_flow_outranks_shorter_routing() -> None:
     )
     readable = _packing(
         _placed(input_block, 0),
-        _placed(stage, 20),
-        _placed(output_block, 40),
+        _placed(stage, 2 * PITCH),
+        _placed(output_block, 4 * PITCH),
     )
     reversed_flow = _packing(
-        _placed(input_block, 40),
-        _placed(stage, 20),
+        _placed(input_block, 4 * PITCH),
+        _placed(stage, 2 * PITCH),
         _placed(output_block, 0),
     )
     readable_key = composition_candidate_key(plan, readable, (1000, 500, 4, 1.0, 1, 0))
@@ -67,8 +68,16 @@ def test_feedback_and_support_are_locality_not_forward_precedence() -> None:
             _edge("support", "support", "stage", "bias"),
         ),
     )
-    near = _packing(_placed(stage, 20), _placed(feedback, 30), _placed(support, 10))
-    far = _packing(_placed(stage, 20), _placed(feedback, 300), _placed(support, 400))
+    near = _packing(
+        _placed(stage, 2 * PITCH),
+        _placed(feedback, 3 * PITCH),
+        _placed(support, PITCH),
+    )
+    far = _packing(
+        _placed(stage, 2 * PITCH),
+        _placed(feedback, 30 * PITCH),
+        _placed(support, 40 * PITCH),
+    )
     near_penalties = semantic_composition_penalties(plan, near)
     far_penalties = semantic_composition_penalties(plan, far)
     assert near_penalties[1] == 0
@@ -81,8 +90,9 @@ def test_frontier_penalty_prefers_directed_interfaces_at_content_edges() -> None
     stage = _block("stage")
     output_block = _block("output", "interface", ("signal_out",))
     spare = _block("spare")
+    far = _block("far")
     plan = _plan(
-        (input_block, stage, output_block, spare),
+        (input_block, stage, output_block, spare, far),
         (
             _edge("signal", "input", "stage", "in"),
             _edge("signal", "stage", "output", "out"),
@@ -90,16 +100,17 @@ def test_frontier_penalty_prefers_directed_interfaces_at_content_edges() -> None
     )
     frontier = _packing(
         _placed(input_block, 0),
-        _placed(stage, 20),
-        _placed(output_block, 40),
-        _placed(spare, 20, 20),
+        _placed(stage, 2 * PITCH),
+        _placed(output_block, 4 * PITCH),
+        _placed(spare, 2 * PITCH, 2 * PITCH),
+        _placed(far, 3 * PITCH, 2 * PITCH),
     )
     interior = _packing(
-        _placed(spare, 0, 20),
-        _placed(input_block, 10),
-        _placed(stage, 20),
-        _placed(output_block, 30),
-        _placed(_block("far"), 40, 20),
+        _placed(spare, 0, 2 * PITCH),
+        _placed(input_block, PITCH),
+        _placed(stage, 2 * PITCH),
+        _placed(output_block, 3 * PITCH),
+        _placed(far, 4 * PITCH, 2 * PITCH),
     )
     assert semantic_composition_penalties(plan, frontier)[5] < semantic_composition_penalties(
         plan, interior
@@ -109,8 +120,14 @@ def test_frontier_penalty_prefers_directed_interfaces_at_content_edges() -> None
 def test_compactness_penalty_is_deterministic_integer_geometry() -> None:
     first = _block("first")
     second = _block("second")
-    compact = _packing(_placed(first, 20, 20), _placed(second, 40, 20))
-    dispersed = _packing(_placed(first, 20, 20), _placed(second, 400, 200))
+    compact = _packing(
+        _placed(first, 2 * PITCH, 2 * PITCH),
+        _placed(second, 4 * PITCH, 2 * PITCH),
+    )
+    dispersed = _packing(
+        _placed(first, 2 * PITCH, 2 * PITCH),
+        _placed(second, 40 * PITCH, 20 * PITCH),
+    )
     compact_score = compactness_whitespace_penalties(compact)
     dispersed_score = compactness_whitespace_penalties(dispersed)
     assert compact_score[0] < dispersed_score[0]
