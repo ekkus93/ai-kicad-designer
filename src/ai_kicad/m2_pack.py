@@ -1445,7 +1445,35 @@ def _repeated_peer_alignment_candidates(
                     continue
                 movement = abs(x - second.envelope[0]) + abs(y - second.envelope[1])
                 options.append(((movement, first_id, second_id, mode), candidate))
-    return (min(options, key=lambda item: item[0])[1],) if options else ()
+    # Expose both grammars independently. Returning only the globally nearest
+    # proposal silently prevents the final route-aware selector from ever
+    # evaluating the other arrangement even when it is the clearer choice.
+    candidates: list[Packing] = []
+    identities: set[tuple[tuple[str, str, Point], ...]] = set()
+    for mode in ("row", "column"):
+        eligible = (
+            (key, candidate)
+            for key, candidate in options
+            if candidate.attempts[-1] == f"repeated-peer-{mode}"
+        )
+        best = min(eligible, key=lambda item: item[0], default=None)
+        if best is None:
+            continue
+        candidate = best[1]
+        identity = tuple(
+            sorted(
+                (
+                    placed.fragment.block.id,
+                    placed.fragment.id,
+                    placed.delta,
+                )
+                for placed in candidate.fragments
+            )
+        )
+        if identity not in identities:
+            identities.add(identity)
+            candidates.append(candidate)
+    return tuple(candidates)
 
 
 def _structural_repack_candidates(plan: SemanticPlan, baseline: Packing) -> tuple[Packing, ...]:
