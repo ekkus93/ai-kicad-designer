@@ -202,7 +202,6 @@ def _repeated_alignment_penalty(plan, centers, signal_relations) -> int:
     return _grid_units(penalty)
 
 
-
 def _intra_block_dispersion(packing) -> int:
     """Measure internal occurrence spread from the selected fragment geometry."""
     penalty = 0
@@ -240,9 +239,7 @@ def _unrelated_block_proximity(plan, rects: dict[str, Rect]) -> int:
             related.add(frozenset((item.source_fragment, item.target_fragment)))
 
     eligible = sorted(
-        block_id
-        for block_id in rects
-        if block_id in by_id and by_id[block_id].kind != "interface"
+        block_id for block_id in rects if block_id in by_id and by_id[block_id].kind != "interface"
     )
     penalty = 0
     for index, first_id in enumerate(eligible):

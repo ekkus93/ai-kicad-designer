@@ -204,7 +204,6 @@ def _repeated_alignment_penalty(nodes: tuple[TinyNode, ...], by_id: dict[str, Po
     return penalty
 
 
-
 def _validate_branches(branches: tuple[TinyBranch, ...], node_ids: set[str]) -> None:
     seen: set[tuple[str, tuple[str, ...]]] = set()
     for branch in branches:
