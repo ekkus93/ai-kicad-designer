@@ -1,8 +1,10 @@
 # M2h2 Human-Readable Schematic Composition TODO — 2026-10-07
 
-**Status:** NOT STARTED / INCOMPLETE
+**Status:** IN PROGRESS / INCOMPLETE
 
 Canonical executable checklist for the post-M2h2 human-readable schematic composition remediation.
+
+Source-level reconciliation checkpoint: current implementation/observer/oracle evidence has been reconciled through the source state immediately preceding this TODO update. Fresh locked-KiCad qualification, native-render inspection, comparative closure, and final PASS remain open and authoritative.
 
 Governing documents:
 
@@ -17,21 +19,21 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 
 ## 0. Scope, authority, and preservation
 
-- [ ] Confirm this is additive M2h2 composition hardening, not M3.
-- [ ] Confirm no corpus.v7 work.
-- [ ] Confirm no CP-SAT.
-- [ ] Confirm unchanged 210 × 140 mm spread gate.
-- [ ] Confirm unchanged 80 mm local-path gate.
-- [ ] Confirm unchanged 60 mm support/locality gate where applicable.
-- [ ] Confirm unchanged 250 mm canonical conductor-length gate.
-- [ ] Confirm ERC and independent emitted-artifact observation remain authoritative.
+- [x] Confirm this is additive M2h2 composition hardening, not M3.
+- [x] Confirm no corpus.v7 work.
+- [x] Confirm no CP-SAT.
+- [x] Confirm unchanged 210 × 140 mm spread gate.
+- [x] Confirm unchanged 80 mm local-path gate.
+- [x] Confirm unchanged 60 mm support/locality gate where applicable.
+- [x] Confirm unchanged 250 mm canonical conductor-length gate.
+- [x] Confirm ERC and independent emitted-artifact observation remain authoritative.
 - [ ] Confirm DP1–DP4 topology/frozen expectations remain unchanged.
 - [ ] Confirm all historical blind/evaluation and M2h2 finalization evidence is preserved.
-- [ ] Confirm `.local/` remains ignored.
-- [ ] Confirm `research/legacy_openclaw/` is not inspected or used.
-- [ ] Confirm locked KiCad 10.0.6 remains the governed real-tool version.
-- [ ] Confirm all GitHub/repository/CI reads and writes use Ralph Bridge.
-- [ ] Confirm direct-`master` exact-head compare-and-swap workflow.
+- [x] Confirm `.local/` remains ignored.
+- [x] Confirm `research/legacy_openclaw/` is not inspected or used.
+- [x] Confirm locked KiCad 10.0.6 remains the governed real-tool version.
+- [x] Confirm all GitHub/repository/CI reads and writes use Ralph Bridge.
+- [x] Confirm direct-`master` exact-head compare-and-swap workflow.
 
 ## 1. Baseline freeze and composition characterization
 
@@ -39,7 +41,7 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [ ] Record historical M2h2 final PASS authority without modifying it.
 - [ ] Preserve/hash the final native-render archive used as the composition baseline.
 - [ ] Add a new human-composition baseline evidence root.
-- [ ] Define a versioned composition metric schema before behavior changes.
+- [x] Define a versioned composition metric schema before behavior changes.
 - [ ] Evaluate current final M2h2 renders using the initial independent observer.
 - [ ] Produce a ranked per-case defect inventory.
 - [ ] Record `i4__b2_mixed` as a falsification seed.
@@ -63,75 +65,75 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 
 ## 2. Independent semantic-flow observer
 
-- [ ] Implement independently authored semantic-flow graph reconstruction.
-- [ ] Distinguish signal, support, power, reference, return, and interface roles.
-- [ ] Derive directed primary-flow precedence independently of generator placement state.
-- [ ] Preserve sibling incomparability where topology does not order siblings.
-- [ ] Handle feedback cycles without incorrectly ordering feedback as forward flow.
-- [ ] Handle external terminal-backed signal sources.
-- [ ] Handle multiple final outputs.
-- [ ] Emit exact witnesses for stage-order violations.
-- [ ] Emit cumulative primary-flow reversal distance.
-- [ ] Add authored positive controls.
-- [ ] Add authored negative controls.
-- [ ] Add split/unsplit conductor metamorphic tests.
-- [ ] Add refdes/net rename metamorphic tests.
-- [ ] Add insertion/set-order metamorphic tests.
+- [x] Implement independently authored semantic-flow graph reconstruction.
+- [x] Distinguish signal, support, power, reference, return, and interface roles.
+- [x] Derive directed primary-flow precedence independently of generator placement state.
+- [x] Preserve sibling incomparability where topology does not order siblings.
+- [x] Handle feedback cycles without incorrectly ordering feedback as forward flow.
+- [x] Handle external terminal-backed signal sources.
+- [x] Handle multiple final outputs.
+- [x] Emit exact witnesses for stage-order violations.
+- [x] Emit cumulative primary-flow reversal distance.
+- [x] Add authored positive controls.
+- [x] Add authored negative controls.
+- [x] Add split/unsplit conductor metamorphic tests.
+- [x] Add refdes/net rename metamorphic tests.
+- [x] Add insertion/set-order metamorphic tests.
 
 ## 3. Functional-block and visual-ownership observer
 
-- [ ] Independently derive functional blocks from semantics/connectivity.
-- [ ] Derive visual ownership for feedback/support/package-local structures.
-- [ ] Derive shared ownership for supply/reference infrastructure.
-- [ ] Report functional-block dispersion.
-- [ ] Report functional-block fragmentation.
-- [ ] Report support-to-owner distance.
-- [ ] Report interface-to-owning-stage distance.
-- [ ] Report feedback-loop span and unrelated-block intrusion.
-- [ ] Add negative mutation: isolate one support component.
-- [ ] Add negative mutation: move feedback network away from owner.
-- [ ] Add negative mutation: detach output interface from final producer.
-- [ ] Verify observer does not consume production layout scores as proof.
+- [x] Independently derive functional blocks from semantics/connectivity.
+- [x] Derive visual ownership for feedback/support/package-local structures.
+- [x] Derive shared ownership for supply/reference infrastructure.
+- [x] Report functional-block dispersion.
+- [x] Report functional-block fragmentation.
+- [x] Report support-to-owner distance.
+- [x] Report interface-to-owning-stage distance.
+- [x] Report feedback-loop span and unrelated-block intrusion.
+- [x] Add negative mutation: isolate one support component.
+- [x] Add negative mutation: move feedback network away from owner.
+- [x] Add negative mutation: detach output interface from final producer.
+- [x] Verify observer does not consume production layout scores as proof.
 
 ## 4. Interface-side and signal-flow composition
 
-- [ ] Add generic semantic frontier model for external interfaces.
-- [ ] Prefer directed inputs on left frontier.
-- [ ] Prefer directed outputs on right frontier.
+- [x] Add generic semantic frontier model for external interfaces.
+- [x] Prefer directed inputs on left frontier.
+- [x] Prefer directed outputs on right frontier.
 - [ ] Place power-input interfaces with supply infrastructure rather than primary signal flow.
-- [ ] Exempt genuinely bidirectional/undirected interfaces using semantic evidence, not names.
-- [ ] Add deterministic penalties for unjustified interface-side violations.
-- [ ] Add deterministic penalties for primary stage-order inversions.
-- [ ] Add deterministic penalties for primary-flow backtracking distance.
-- [ ] Preserve valid incomparable sibling ordering freedom.
+- [x] Exempt genuinely bidirectional/undirected interfaces using semantic evidence, not names.
+- [x] Add deterministic penalties for unjustified interface-side violations.
+- [x] Add deterministic penalties for primary stage-order inversions.
+- [x] Add deterministic penalties for primary-flow backtracking distance.
+- [x] Preserve valid incomparable sibling ordering freedom.
 - [ ] Add targeted regression for `i4__b2_mixed`.
-- [ ] Add a renamed/permuted equivalent of the same semantic archetype to prove generic behavior.
-- [ ] Add negative mutation: final output connector moved to input frontier.
-- [ ] Verify no case/fixture/refdes/literal-net dispatch is introduced.
+- [x] Add a renamed/permuted equivalent of the same semantic archetype to prove generic behavior.
+- [x] Add negative mutation: final output connector moved to input frontier.
+- [x] Verify no case/fixture/refdes/literal-net dispatch is introduced.
 
 ## 5. Functional grouping and locality composition
 
 - [ ] Add generic intra-block cohesion objective.
 - [ ] Add generic inter-block separation objective.
-- [ ] Keep local feedback structures with their owner.
-- [ ] Keep package-local support with its owner where hard constraints permit.
-- [ ] Preserve shared infrastructure as explicitly shared rather than arbitrarily attaching it to one block.
+- [x] Keep local feedback structures with their owner.
+- [x] Keep package-local support with its owner where hard constraints permit.
+- [x] Preserve shared infrastructure as explicitly shared rather than arbitrarily attaching it to one block.
 - [ ] Prefer natural electrical ordering of passive series chains.
 - [ ] Prevent isolated stage members connected only through distant labels when a legal local arrangement exists.
 - [ ] Record exact grouping penalties in candidate evidence.
-- [ ] Preserve existing 60 mm support/locality hard requirements.
-- [ ] Add small synthetic exhaustive grouping cases.
-- [ ] Add dominated-candidate oracle checks.
+- [x] Preserve existing 60 mm support/locality hard requirements.
+- [x] Add small synthetic exhaustive grouping cases.
+- [x] Add dominated-candidate oracle checks.
 
 ## 6. Branch, fanout, and feedback readability
 
-- [ ] Model branch points explicitly in composition evidence.
+- [x] Model branch points explicitly in composition evidence.
 - [ ] Prefer visually identifiable branch origins.
-- [ ] Prefer consistent sibling-branch geometry.
+- [x] Prefer consistent sibling-branch geometry.
 - [ ] Penalize unnecessary branch crossings/detours.
-- [ ] Keep branch outputs attributable to source.
-- [ ] Model forward-path versus feedback-path roles.
-- [ ] Prefer compact feedback loops around owning stage.
+- [x] Keep branch outputs attributable to source.
+- [x] Model forward-path versus feedback-path roles.
+- [x] Prefer compact feedback loops around owning stage.
 - [ ] Penalize feedback routes through unrelated functional blocks.
 - [ ] Add branch/fanout positive and negative oracle cases.
 - [ ] Add feedback positive and negative oracle cases.
@@ -140,147 +142,147 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 
 ## 7. Power and reference composition
 
-- [ ] Add shared-rail/reference visual-coherence metrics.
-- [ ] Report supply/reference infrastructure dispersion.
-- [ ] Keep internal reference producer/support visually coherent.
-- [ ] Keep package-local decoupling/support local where semantics permit.
+- [x] Add shared-rail/reference visual-coherence metrics.
+- [x] Report supply/reference infrastructure dispersion.
+- [x] Keep internal reference producer/support visually coherent.
+- [x] Keep package-local decoupling/support local where semantics permit.
 - [ ] Prevent supply/reference infrastructure from dominating primary signal rows.
-- [ ] Preserve no-fake-external-reference behavior.
+- [x] Preserve no-fake-external-reference behavior.
 - [ ] Add two-signal-chains/shared-rail regression.
 - [ ] Add V6-3 internal-reference regression.
 - [ ] Add multi-consumer supply/reference regression.
 - [ ] Add dual-regulator/mixed-load regression.
-- [ ] Verify all existing canonical graph and conductor-length gates remain unchanged.
+- [x] Verify all existing canonical graph and conductor-length gates remain unchanged.
 
 ## 8. Repeated-structure composition
 
-- [ ] Detect repeated semantic channels/stages generically.
-- [ ] Report row alignment variance.
-- [ ] Report column alignment variance.
-- [ ] Report corresponding-symbol displacement variance.
-- [ ] Report orientation variance.
-- [ ] Report pitch variance.
-- [ ] Prefer a consistent repeated-channel visual grammar.
-- [ ] Keep equivalent channel order deterministic.
-- [ ] Add declaration-order permutation tests.
-- [ ] Add mirrored naming/refdes metamorphic tests.
+- [x] Detect repeated semantic channels/stages generically.
+- [x] Report row alignment variance.
+- [x] Report column alignment variance.
+- [x] Report corresponding-symbol displacement variance.
+- [x] Report orientation variance.
+- [x] Report pitch variance.
+- [x] Prefer a consistent repeated-channel visual grammar.
+- [x] Keep equivalent channel order deterministic.
+- [x] Add declaration-order permutation tests.
+- [x] Add mirrored naming/refdes metamorphic tests.
 - [ ] Add three-amplifier one-band regression.
 - [ ] Add multi-band/repeated-channel regression.
 - [ ] Freeze repeated-structure acceptance tolerances from general corpus evidence.
 
 ## 9. Page utilization and whitespace
 
-- [ ] Report content bounding-box width.
-- [ ] Report content bounding-box height.
-- [ ] Report content bounding-box area.
-- [ ] Report occupied-area ratio against 210 × 140 mm composition envelope.
-- [ ] Report content-centroid offset / edge bias.
-- [ ] Report horizontal whitespace imbalance.
-- [ ] Report vertical whitespace imbalance.
-- [ ] Report largest accidental internal empty corridor/void.
-- [ ] Define semantic complexity bands using block count, visible symbol count, and semantic edge count.
-- [ ] Exempt genuinely tiny probes from minimum utilization while still checking needless dispersion.
-- [ ] Freeze small/medium/dense complexity-aware utilization tolerances before final qualification.
-- [ ] Add negative mutation: shift a non-tiny circuit into a tiny upper-left patch.
-- [ ] Add negative mutation: introduce a large avoidable internal void.
-- [ ] Verify compactness pressure never violates hard spread/locality/readability gates.
+- [x] Report content bounding-box width.
+- [x] Report content bounding-box height.
+- [x] Report content bounding-box area.
+- [x] Report occupied-area ratio against 210 × 140 mm composition envelope.
+- [x] Report content-centroid offset / edge bias.
+- [x] Report horizontal whitespace imbalance.
+- [x] Report vertical whitespace imbalance.
+- [x] Report largest accidental internal empty corridor/void.
+- [x] Define semantic complexity bands using block count, visible symbol count, and semantic edge count.
+- [x] Exempt genuinely tiny probes from minimum utilization while still checking needless dispersion.
+- [x] Freeze small/medium/dense complexity-aware utilization tolerances before final qualification.
+- [x] Add negative mutation: shift a non-tiny circuit into a tiny upper-left patch.
+- [x] Add negative mutation: introduce a large avoidable internal void.
+- [x] Verify compactness pressure never violates hard spread/locality/readability gates.
 
 ## 10. Alignment, grid, and field composition
 
-- [ ] Add meaningful alignment-line detection.
+- [x] Add meaningful alignment-line detection.
 - [ ] Prefer common baseline/centerline for sequential active stages where practical.
 - [ ] Prefer role-consistent passive alignment.
 - [ ] Align connectors with the signal rows they serve where practical.
 - [ ] Align local support structures rather than leaving arbitrary offsets.
-- [ ] Preserve KiCad-compatible grid placement.
+- [x] Preserve KiCad-compatible grid placement.
 - [ ] Make reference/value orientation consistent for comparable roles.
-- [ ] Preserve long-field alternate-slot behavior.
-- [ ] Preserve existing field/body/wire/label independent checks.
-- [ ] Add field-alignment metrics.
+- [x] Preserve long-field alternate-slot behavior.
+- [x] Preserve existing field/body/wire/label independent checks.
+- [x] Add field-alignment metrics.
 - [ ] Add long-field regression cases.
-- [ ] Add negative mutation: repeated component with inconsistent field orientation.
+- [x] Add negative mutation: repeated component with inconsistent field orientation.
 
 ## 11. Routing clarity and label discipline
 
-- [ ] Report route bend count.
-- [ ] Define normalized bend excess against a legal semantic-local baseline.
-- [ ] Report canonical routed length.
-- [ ] Define normalized routed-length excess against a legal semantic-local baseline.
-- [ ] Report unrelated wire crossings.
-- [ ] Detect unnecessary U-shaped/rectangular detours.
-- [ ] Detect route excursions through unrelated blocks.
-- [ ] Report sibling-branch geometry inconsistency.
-- [ ] Detect label-mediated local disconnects.
+- [x] Report route bend count.
+- [x] Define normalized bend excess against a legal semantic-local baseline.
+- [x] Report canonical routed length.
+- [x] Define normalized routed-length excess against a legal semantic-local baseline.
+- [x] Report unrelated wire crossings.
+- [x] Detect unnecessary U-shaped/rectangular detours.
+- [x] Detect route excursions through unrelated blocks.
+- [x] Report sibling-branch geometry inconsistency.
+- [x] Detect label-mediated local disconnects.
 - [ ] Prefer direct visible local connectivity when legal and clearer.
 - [ ] Prefer labels for genuinely global/shared distribution when clearer.
-- [ ] Ensure label discipline never creates electrical ambiguity.
-- [ ] Add direct-vs-label synthetic oracle cases.
-- [ ] Add detour negative mutations.
-- [ ] Freeze routing-aesthetic tolerances before final qualification.
+- [x] Ensure label discipline never creates electrical ambiguity.
+- [x] Add direct-vs-label synthetic oracle cases.
+- [x] Add detour negative mutations.
+- [x] Freeze routing-aesthetic tolerances before final qualification.
 
 ## 12. Production search/objective integration
 
-- [ ] Encode the lexicographic objective hierarchy:
-  - [ ] electrical correctness;
-  - [ ] existing hard M2h2 invariants;
-  - [ ] semantic readability;
-  - [ ] routing clarity;
-  - [ ] compactness/whitespace;
-  - [ ] aesthetic tie-breakers.
-- [ ] Ensure no weighted aggregate can trade away a higher-priority invariant.
-- [ ] Add candidate metrics for interface placement.
-- [ ] Add candidate metrics for stage ordering.
-- [ ] Add candidate metrics for grouping.
-- [ ] Add candidate metrics for repeated structures.
-- [ ] Add candidate metrics for whitespace/utilization.
-- [ ] Add candidate metrics for routing clarity.
+- [x] Encode the lexicographic objective hierarchy:
+  - [x] electrical correctness;
+  - [x] existing hard M2h2 invariants;
+  - [x] semantic readability;
+  - [x] routing clarity;
+  - [x] compactness/whitespace;
+  - [x] aesthetic tie-breakers.
+- [x] Ensure no weighted aggregate can trade away a higher-priority invariant.
+- [x] Add candidate metrics for interface placement.
+- [x] Add candidate metrics for stage ordering.
+- [x] Add candidate metrics for grouping.
+- [x] Add candidate metrics for repeated structures.
+- [x] Add candidate metrics for whitespace/utilization.
+- [x] Add candidate metrics for routing clarity.
 - [ ] Search meaningful interface-frontier alternatives.
 - [ ] Search meaningful semantic block-order alternatives.
 - [ ] Search meaningful repeated-channel row/column alternatives.
 - [ ] Search meaningful support-placement alternatives.
 - [ ] Search meaningful field-slot alternatives.
 - [ ] Search meaningful branch/route alternatives where already bounded.
-- [ ] Preserve exact attempt/budget counters.
-- [ ] Deduplicate repeated states.
-- [ ] Preserve best rejected candidate and full metric vector.
-- [ ] Make all tie-breakers deterministic.
-- [ ] Keep search bounded; no unbounded combinatorial expansion.
+- [x] Preserve exact attempt/budget counters.
+- [x] Deduplicate repeated states.
+- [x] Preserve best rejected candidate and full metric vector.
+- [x] Make all tie-breakers deterministic.
+- [x] Keep search bounded; no unbounded combinatorial expansion.
 
 ## 13. Tiny exhaustive placement and graph oracles
 
-- [ ] Implement independent tiny-grid exhaustive placement oracle.
-- [ ] Cover connector-side semantics.
-- [ ] Cover linear stage order.
-- [ ] Cover incomparable siblings.
-- [ ] Cover grouping.
-- [ ] Cover repeated alignment.
-- [ ] Cover whitespace/compactness.
+- [x] Implement independent tiny-grid exhaustive placement oracle.
+- [x] Cover connector-side semantics.
+- [x] Cover linear stage order.
+- [x] Cover incomparable siblings.
+- [x] Cover grouping.
+- [x] Cover repeated alignment.
+- [x] Cover whitespace/compactness.
 - [ ] Cover branch geometry where tractable.
-- [ ] Compare production result against non-dominated legal oracle candidates.
+- [x] Compare production result against non-dominated legal oracle candidates.
 - [ ] Require evidence when bounded production search legitimately misses oracle optimum.
-- [ ] Implement independent graph-order oracle.
-- [ ] Falsify signal vs power/reference precedence separation.
-- [ ] Add exact-boundary tests for each frozen composition tolerance.
-- [ ] Add off-by-one-grid tests around each boundary.
+- [x] Implement independent graph-order oracle.
+- [x] Falsify signal vs power/reference precedence separation.
+- [x] Add exact-boundary tests for each frozen composition tolerance.
+- [x] Add off-by-one-grid tests around each boundary.
 
 ## 14. Anti-overfitting and metamorphic audits
 
-- [ ] Extend literal anti-overfitting audit for composition production modules.
-- [ ] Extend structural anti-overfitting audit for composition production modules.
-- [ ] Reject fixture/case-ID control flow.
-- [ ] Reject qualification-group control flow.
-- [ ] Reject literal benchmark net-name control flow.
-- [ ] Reject refdes-specific control flow.
-- [ ] Reject exact-inventory special cases.
-- [ ] Reject topology-hash special cases.
-- [ ] Reject per-case coordinate maps.
-- [ ] Reject precomputed target-image dimensions/coordinates.
-- [ ] Scan data tables as well as obvious conditional branches.
-- [ ] Pass refdes-renaming metamorphics.
-- [ ] Pass net-renaming metamorphics.
-- [ ] Pass insertion-order metamorphics.
-- [ ] Pass equivalent-wire-segmentation metamorphics.
-- [ ] Pass repeated-channel declaration-order metamorphics.
+- [x] Extend literal anti-overfitting audit for composition production modules.
+- [x] Extend structural anti-overfitting audit for composition production modules.
+- [x] Reject fixture/case-ID control flow.
+- [x] Reject qualification-group control flow.
+- [x] Reject literal benchmark net-name control flow.
+- [x] Reject refdes-specific control flow.
+- [x] Reject exact-inventory special cases.
+- [x] Reject topology-hash special cases.
+- [x] Reject per-case coordinate maps.
+- [x] Reject precomputed target-image dimensions/coordinates.
+- [x] Scan data tables as well as obvious conditional branches.
+- [x] Pass refdes-renaming metamorphics.
+- [x] Pass net-renaming metamorphics.
+- [x] Pass insertion-order metamorphics.
+- [x] Pass equivalent-wire-segmentation metamorphics.
+- [x] Pass repeated-channel declaration-order metamorphics.
 
 ## 15. Targeted composition regression suite
 
