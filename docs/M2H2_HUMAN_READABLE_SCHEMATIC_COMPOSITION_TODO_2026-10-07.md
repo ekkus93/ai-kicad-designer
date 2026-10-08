@@ -135,7 +135,7 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Model forward-path versus feedback-path roles.
 - [x] Prefer compact feedback loops around owning stage.
 - [ ] Penalize feedback routes through unrelated functional blocks.
-- [ ] Add branch/fanout positive and negative oracle cases.
+- [x] Add branch/fanout positive and negative oracle cases.
 - [ ] Add feedback positive and negative oracle cases.
 - [ ] Add passive two-level fanout regression.
 - [ ] Add amplifier/filter feedback regression.
@@ -257,7 +257,7 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Cover grouping.
 - [x] Cover repeated alignment.
 - [x] Cover whitespace/compactness.
-- [ ] Cover branch geometry where tractable.
+- [x] Cover branch geometry where tractable.
 - [x] Compare production result against non-dominated legal oracle candidates.
 - [ ] Require evidence when bounded production search legitimately misses oracle optimum.
 - [x] Implement independent graph-order oracle.
