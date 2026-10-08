@@ -12,6 +12,7 @@ from dataclasses import dataclass
 
 from .m2a import PITCH
 from .m2_pack import BOTTOM, LEFT, RIGHT, TOP
+from .m2_terminal_interface_flow import inferred_passive_interface_signal_relations
 
 Rect = tuple[int, int, int, int]
 Point = tuple[int, int]
@@ -109,6 +110,7 @@ def _signal_relations(plan) -> tuple[tuple[str, str, str], ...]:
             relations.add((edge.source, edge.target, edge.net))
     for item in plan.precedence:
         relations.add((item.source_fragment, item.target_fragment, item.net))
+    relations.update(inferred_passive_interface_signal_relations(plan))
     return tuple(sorted(relations))
 
 
