@@ -105,13 +105,19 @@ def test_matrix_rejects_invalid_case_identifiers_and_source_sha() -> None:
     positive = tuple(f"base-{index:02d}" for index in range(56))
     with pytest.raises(ValueError, match="source_sha"):
         matrix.build_required_matrix(
-            source_sha="bad", base_case_ids=positive,
-            interaction_case_ids=(), structural_case_ids=(), targeted_case_ids=(),
+            source_sha="bad",
+            base_case_ids=positive,
+            interaction_case_ids=(),
+            structural_case_ids=(),
+            targeted_case_ids=(),
         )
     with pytest.raises(ValueError, match="non-empty"):
         matrix.build_required_matrix(
-            source_sha="a" * 40, base_case_ids=positive,
-            interaction_case_ids=("",), structural_case_ids=(), targeted_case_ids=(),
+            source_sha="a" * 40,
+            base_case_ids=positive,
+            interaction_case_ids=("",),
+            structural_case_ids=(),
+            targeted_case_ids=(),
         )
 
 
