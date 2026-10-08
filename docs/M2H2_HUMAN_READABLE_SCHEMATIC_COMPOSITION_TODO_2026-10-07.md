@@ -241,7 +241,8 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Search meaningful repeated-channel row/column alternatives.
   - Current-source 28428470c8d4bd4672e8fe94fe24ac6577be8bbe: generic bounded row and column generation plus explicit final eight-seed retention and deduplication, with regression coverage; hosted static and contract PASS in run 37835474849. This establishes source implementation only; native KiCad qualification and render acceptance remain open.
 - [x] Search meaningful support-placement alternatives.
-- [ ] Search meaningful field-slot alternatives.
+- [x] Search meaningful field-slot alternatives.
+  - Current-source `eff40b3e4f6d4bf0e34e28cbf106ab65095a8550`: independent measured text-slot variants, bounded field-kind variant proposals, explicit final eight-seed retention, and dedicated generic regressions. Hosted static/contract validation PASS in run `37840687842`; native KiCad qualification remains open because the self-hosted runner lacks pinned `/tmp/AppDir` files.
 - [ ] Search meaningful branch/route alternatives where already bounded.
 - [x] Preserve exact attempt/budget counters.
 - [x] Deduplicate repeated states.
