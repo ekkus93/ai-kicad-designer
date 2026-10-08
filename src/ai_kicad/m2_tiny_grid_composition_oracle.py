@@ -193,14 +193,18 @@ def _grouping_penalty(nodes: tuple[TinyNode, ...], by_id: dict[str, Point]) -> i
 
 
 def _repeated_alignment_penalty(nodes: tuple[TinyNode, ...], by_id: dict[str, Point]) -> int:
+    # A repeated stage may use a shared row or a shared column. Penalize
+    # off-axis drift in the better of those two legal visual grammars; never
+    # require horizontal rows for a vertically composed repeated structure.
     penalty = 0
     roles = sorted({node.repeated_role for node in nodes if node.repeated_role is not None})
     for role in roles:
         role_nodes = [node for node in nodes if node.repeated_role == role]
         if len(role_nodes) < 2:
             continue
+        xs = [by_id[node.node_id][0] for node in role_nodes]
         ys = [by_id[node.node_id][1] for node in role_nodes]
-        penalty += max(ys) - min(ys)
+        penalty += min(max(xs) - min(xs), max(ys) - min(ys))
     return penalty
 
 

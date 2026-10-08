@@ -64,19 +64,48 @@ def test_grouping_penalty_prefers_cohesive_functional_block() -> None:
     assert evidence.production_candidate.score_vector[2] == 100
 
 
-def test_repeated_role_alignment_penalty_detects_row_inconsistency() -> None:
+@pytest.mark.parametrize(
+    "grid",
+    (
+        ((0, 0), (0, 20)),
+        ((0, 0), (20, 0)),
+    ),
+)
+def test_repeated_role_alignment_accepts_row_or_column_grammar(
+    grid: tuple[oracle.Point, ...],
+) -> None:
     nodes = (
         oracle.TinyNode("a_in", "stage", repeated_role="input"),
         oracle.TinyNode("b_in", "stage", repeated_role="input"),
     )
-    grid = ((0, 0), (0, 20))
     evidence = oracle.exhaustive_tiny_grid_oracle(
         nodes,
         grid,
-        production_positions=(("a_in", (0, 0)), ("b_in", (0, 20))),
+        production_positions=(("a_in", grid[0]), ("b_in", grid[1])),
+    )
+    assert evidence.production_candidate is not None
+    assert evidence.production_candidate.score_vector[3] == 0
+    assert not evidence.production_is_dominated
+
+
+def test_repeated_role_alignment_detects_off_axis_drift() -> None:
+    nodes = tuple(
+        oracle.TinyNode(f"stage_{index}", "stage", repeated_role="gain")
+        for index in range(3)
+    )
+    grid = ((0, 0), (10, 10), (20, 20), (0, 10), (0, 20))
+    evidence = oracle.exhaustive_tiny_grid_oracle(
+        nodes,
+        grid,
+        production_positions=(
+            ("stage_0", (0, 0)),
+            ("stage_1", (10, 10)),
+            ("stage_2", (20, 20)),
+        ),
     )
     assert evidence.production_candidate is not None
     assert evidence.production_candidate.score_vector[3] == 20
+    assert evidence.production_is_dominated
 
 
 def test_oracle_rejects_unbounded_candidate_counts() -> None:
