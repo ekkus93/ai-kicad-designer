@@ -293,3 +293,43 @@ def test_repeated_beam_retention_deduplicates_same_placement() -> None:
         base,
         different,
     )
+
+
+def test_final_beam_preserves_measured_field_slot_variant() -> None:
+    from dataclasses import replace
+
+    from ai_kicad.m2_pack import CANDIDATE_BUDGET, _retain_composition_seed_diversity
+
+    block = _block("stage", "filter")
+    plain = _fragment(block)
+    alternate = replace(
+        plain,
+        id="stage.local-text-slot",
+        rule_id="m2g2.local-text-slot.filter.alternate.v1",
+    )
+
+    def make_seed(index: int, fragment: FragmentVariant = plain) -> Packing:
+        return Packing(
+            (_place(fragment, LEFT + (20 + index * 9) * PITCH, 55 * PITCH),),
+            (f"baseline-{index}",),
+        )
+
+    baseline = tuple(make_seed(index) for index in range(8))
+    # A legally measured field-slot choice in a late successful seed must
+    # remain in the final eight-candidate route-aware search.
+    field_slot_seed = make_seed(9, alternate)
+    seeds = baseline + (field_slot_seed,)
+    extras = tuple(
+        Packing(
+            (_place(plain, LEFT + (140 + index * 9) * PITCH, 55 * PITCH),),
+            (f"other-{index}",),
+        )
+        for index in range(4)
+    )
+    kept = _retain_composition_seed_diversity(seeds, extras)
+    assert len(kept) == CANDIDATE_BUDGET
+    assert field_slot_seed in kept
+    assert all(
+        len([placed for placed in packing.fragments if ".local-text-slot." in placed.fragment.rule_id]) <= 1
+        for packing in kept
+    )

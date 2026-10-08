@@ -1935,7 +1935,23 @@ def _retain_composition_seed_diversity(
         )
         for label in ("repeated-peer-row", "repeated-peer-column")
     )
+    # Field-slot variants are independently constructed measured alternatives,
+    # not mere shelf shifts. Preserve one legal distinct choice when the
+    # eight-seed cap would otherwise discard it after repeated-peer repairs.
+    field_slot = next(
+        (
+            candidate
+            for candidate in successful
+            if any(
+                ".local-text-slot." in placed.fragment.rule_id
+                for placed in candidate.fragments
+            )
+        ),
+        None,
+    )
     protected = tuple(candidate for candidate in repeated if candidate is not None)
+    if field_slot is not None:
+        protected += (field_slot,)
     ordered = successful[:1] + protected + successful[1:3] + extras + successful[3:]
     seen: set[tuple[tuple[str, Point], ...]] = set()
     retained: list[Packing] = []
