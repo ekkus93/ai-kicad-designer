@@ -13,7 +13,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Literal
 
-from .m2_semantics import EdgeKind, PortRole, SemanticEdge, SemanticPlan
+from .m2_semantics import EdgeKind, PortRole, SemanticPlan
 
 CompositionRole = Literal["signal", "support", "power", "reference", "return", "interface"]
 
@@ -80,17 +80,18 @@ class StageOrderWitness:
 def reconstruct_semantic_flow(plan: SemanticPlan) -> SemanticFlowGraph:
     """Reconstruct composition flow roles without consulting placement state."""
     nodes = {block.id for block in plan.blocks}
-    edges: list[FlowEdge] = []
-    direct_relations = set()
+    # Canonicalize relations independently of conductor segmentation and
+    # authored insertion order, preserving the union of provenance witnesses.
+    edge_origins: dict[tuple[EdgeKind, str, str, str], set[str]] = defaultdict(set)
+    direct_relations: set[tuple[str, str, str]] = set()
     for edge in plan.edges:
         nodes.add(edge.source)
         nodes.add(edge.target)
-        edges.append(_flow_edge(edge))
+        edge_origins[(edge.kind, edge.source, edge.target, edge.net)].update(edge.origins)
         if edge.kind in PRIMARY_FORWARD_KINDS:
             direct_relations.add((edge.source, edge.target, edge.net))
 
-    # Passive connector terminals can be authored signal sources even when
-    # no directed semantic edge is emitted for their net.
+    # Passive external connector pins can be primary signal sources.
     seen = set(direct_relations)
     for item in plan.precedence:
         relation = (item.source_fragment, item.target_fragment, item.net)
@@ -98,7 +99,11 @@ def reconstruct_semantic_flow(plan: SemanticPlan) -> SemanticFlowGraph:
             continue
         seen.add(relation)
         nodes.update(relation[:2])
-        edges.append(FlowEdge("signal", "signal", *relation, tuple(sorted(item.origins))))
+        edge_origins[("signal", *relation)].update(item.origins)
+    edges = [
+        FlowEdge(kind, ROLE_BY_EDGE_KIND[kind], source, target, net, tuple(sorted(origins)))
+        for (kind, source, target, net), origins in sorted(edge_origins.items())
+    ]
 
     port_roles: list[PortRoleWitness] = []
     for block in plan.blocks:
@@ -197,13 +202,3 @@ def final_signal_output_blocks(graph: SemanticFlowGraph) -> tuple[str, ...]:
     }
     return tuple(sorted(outputs))
 
-
-def _flow_edge(edge: SemanticEdge) -> FlowEdge:
-    return FlowEdge(
-        kind=edge.kind,
-        role=ROLE_BY_EDGE_KIND[edge.kind],
-        source=edge.source,
-        target=edge.target,
-        net=edge.net,
-        origins=tuple(sorted(edge.origins)),
-    )
