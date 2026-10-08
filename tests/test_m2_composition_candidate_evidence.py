@@ -67,6 +67,4 @@ def test_invalid_candidate_inventory_is_rejected() -> None:
     with pytest.raises(ValueError, match="duplicate"):
         select_candidate_with_evidence((candidate, candidate))
     with pytest.raises(ValueError, match="non-negative"):
-        select_candidate_with_evidence(
-            (CandidateDecision("bad-attempt", True, (), (), -1),)
-        )
+        select_candidate_with_evidence((CandidateDecision("bad-attempt", True, (), (), -1),))
