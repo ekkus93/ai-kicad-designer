@@ -75,7 +75,9 @@ def build_source_hash_manifest(
     source_files: Mapping[str, str],
 ) -> SourceHashManifest:
     """Build a deterministic source-hash manifest from UTF-8 source text."""
-    if len(source_sha) != 40 or any(character not in "0123456789abcdef" for character in source_sha):
+    if len(source_sha) != 40 or any(
+        character not in "0123456789abcdef" for character in source_sha
+    ):
         raise ValueError("source_sha must be a lowercase 40-character hex SHA")
     artifacts = tuple(
         SourceArtifactHash(
