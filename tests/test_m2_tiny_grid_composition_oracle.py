@@ -290,3 +290,78 @@ def test_illegal_branch_specifications_are_rejected(branch: oracle.TinyBranch) -
             ((0, 0), (10, 0)),
             branches=(branch,),
         )
+
+
+def test_tiny_oracle_accepts_exhausted_budget_witness_for_unseen_optimum() -> None:
+    nodes = (
+        oracle.TinyNode("input", "connector", side_preference="left"),
+        oracle.TinyNode("output", "connector", side_preference="right"),
+    )
+    grid = ((0, 0), (10, 0))
+    missed = (("input", (10, 0)), ("output", (0, 0)))
+    evidence = oracle.verify_tiny_search_budget_witness(
+        nodes,
+        grid,
+        production_positions=missed,
+        attempted_placements=(tuple(reversed(missed)),),
+        search_budget=1,
+    )
+    assert evidence.oracle.production_is_dominated
+    assert evidence.budget_exhausted
+    assert evidence.attempted_count == 1
+    assert evidence.unvisited_optimal_candidate_ids == evidence.oracle.dominating_candidate_ids
+
+
+def test_tiny_oracle_rejects_dominated_production_without_exhausted_budget() -> None:
+    nodes = (
+        oracle.TinyNode("input", "connector", side_preference="left"),
+        oracle.TinyNode("output", "connector", side_preference="right"),
+    )
+    grid = ((0, 0), (10, 0))
+    missed = (("input", (10, 0)), ("output", (0, 0)))
+    with pytest.raises(ValueError, match="exhausted restrictive budget"):
+        oracle.verify_tiny_search_budget_witness(
+            nodes, grid, production_positions=missed, attempted_placements=(missed,),
+            search_budget=2,
+        )
+
+
+def test_tiny_oracle_rejects_better_visited_candidate_and_duplicate_attempts() -> None:
+    nodes = (
+        oracle.TinyNode("input", "connector", side_preference="left"),
+        oracle.TinyNode("output", "connector", side_preference="right"),
+    )
+    grid = ((0, 0), (10, 0))
+    missed = (("input", (10, 0)), ("output", (0, 0)))
+    better = (("input", (0, 0)), ("output", (10, 0)))
+    with pytest.raises(ValueError, match="better attempted candidate"):
+        oracle.verify_tiny_search_budget_witness(
+            nodes, grid, production_positions=missed,
+            attempted_placements=(missed, better), search_budget=2,
+        )
+    with pytest.raises(ValueError, match="repeats an attempted placement"):
+        oracle.verify_tiny_search_budget_witness(
+            nodes, grid, production_positions=missed,
+            attempted_placements=(missed, tuple(reversed(missed))), search_budget=2,
+        )
+
+
+def test_tiny_oracle_requires_production_in_complete_legal_attempts() -> None:
+    nodes = (
+        oracle.TinyNode("input", "connector", side_preference="left"),
+        oracle.TinyNode("output", "connector", side_preference="right"),
+    )
+    grid = ((0, 0), (10, 0))
+    better = (("input", (0, 0)), ("output", (10, 0)))
+    missed = (("input", (10, 0)), ("output", (0, 0)))
+    with pytest.raises(ValueError, match="omits production"):
+        oracle.verify_tiny_search_budget_witness(
+            nodes, grid, production_positions=better,
+            attempted_placements=(missed,), search_budget=1,
+        )
+    with pytest.raises(ValueError, match="illegal attempted grid positions"):
+        oracle.verify_tiny_search_budget_witness(
+            nodes, grid, production_positions=better,
+            attempted_placements=((("input", (0, 0)), ("output", (30, 0))),),
+            search_budget=1,
+        )

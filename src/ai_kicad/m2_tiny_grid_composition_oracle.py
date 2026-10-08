@@ -43,6 +43,17 @@ class TinyOracleEvidence:
     dominating_candidate_ids: tuple[str, ...]
 
 
+@dataclass(frozen=True)
+class TinySearchBudgetEvidence:
+    """Witness that a bounded search did not encounter a better legal candidate."""
+
+    oracle: TinyOracleEvidence
+    attempted_count: int
+    search_budget: int
+    budget_exhausted: bool
+    unvisited_optimal_candidate_ids: tuple[str, ...]
+
+
 def exhaustive_tiny_grid_oracle(
     nodes: tuple[TinyNode, ...],
     grid_points: tuple[Point, ...],
@@ -123,6 +134,81 @@ def exhaustive_tiny_grid_oracle(
         production,
         dominated,
         dominating_ids,
+    )
+
+
+def verify_tiny_search_budget_witness(
+    nodes: tuple[TinyNode, ...],
+    grid_points: tuple[Point, ...],
+    *,
+    production_positions: tuple[tuple[str, Point], ...],
+    attempted_placements: tuple[tuple[tuple[str, Point], ...], ...],
+    search_budget: int,
+    branches: tuple[TinyBranch, ...] = (),
+    max_candidates: int = 5040,
+) -> TinySearchBudgetEvidence:
+    """Validate bounded-search provenance against the independent exhaustive oracle.
+
+    A dominated production result is permitted only when an exhausted budget
+    excludes every strictly superior candidate. All attempted legal placements
+    must be disclosed, and production must be the best scored attempt.
+    """
+    oracle = exhaustive_tiny_grid_oracle(
+        nodes,
+        grid_points,
+        branches=branches,
+        production_positions=production_positions,
+        max_candidates=max_candidates,
+    )
+    if search_budget < 1 or len(attempted_placements) > search_budget:
+        raise ValueError("tiny search witness has invalid attempt budget")
+    if not attempted_placements:
+        raise ValueError("tiny search witness requires recorded attempts")
+
+    node_ids = {node.node_id for node in nodes}
+    available = set(grid_points)
+    normalized_attempts: set[tuple[tuple[str, Point], ...]] = set()
+    ordered_nodes = tuple(sorted(nodes, key=lambda node: node.node_id))
+    for placement in attempted_placements:
+        ids = [node_id for node_id, _point in placement]
+        points = [point for _node_id, point in placement]
+        if set(ids) != node_ids or len(ids) != len(nodes):
+            raise ValueError("tiny search witness has invalid attempted node IDs")
+        if len(set(points)) != len(points) or not set(points) <= available:
+            raise ValueError("tiny search witness has illegal attempted grid positions")
+        normalized = tuple(sorted(placement, key=lambda item: item[0]))
+        if normalized in normalized_attempts:
+            raise ValueError("tiny search witness repeats an attempted placement")
+        normalized_attempts.add(normalized)
+
+    production = oracle.production_candidate
+    assert production is not None
+    if production.node_positions not in normalized_attempts:
+        raise ValueError("tiny search witness omits production placement")
+
+    for placement in normalized_attempts:
+        score, _branch_penalty = _score_positions(ordered_nodes, placement, branches)
+        if score < production.score_vector:
+            raise ValueError("tiny search witness skipped a better attempted candidate")
+
+    exhausted = len(attempted_placements) == search_budget
+    if oracle.production_is_dominated and (
+        not exhausted or search_budget >= oracle.candidate_count
+    ):
+        raise ValueError("dominated tiny production requires exhausted restrictive budget")
+    unvisited = tuple(
+        candidate.candidate_id
+        for candidate in oracle.nondominated_candidates
+        if candidate.node_positions not in normalized_attempts
+    )
+    if oracle.production_is_dominated and not unvisited:
+        raise ValueError("dominated tiny production already visited an oracle optimum")
+    return TinySearchBudgetEvidence(
+        oracle=oracle,
+        attempted_count=len(attempted_placements),
+        search_budget=search_budget,
+        budget_exhausted=exhausted,
+        unvisited_optimal_candidate_ids=unvisited,
     )
 
 
