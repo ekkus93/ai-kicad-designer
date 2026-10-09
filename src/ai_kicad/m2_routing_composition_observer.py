@@ -258,8 +258,10 @@ def _endpoint_components(segments: tuple[Segment, ...]) -> dict[Point, int]:
     # two segments crossing only at their interiors remain unrelated.
     for point in tuple(sorted(adjacency)):
         for first, second in segments:
-            if point != first and point != second and _point_on_orthogonal_segment(
-                point, (first, second)
+            if (
+                point != first
+                and point != second
+                and _point_on_orthogonal_segment(point, (first, second))
             ):
                 adjacency[point].update((first, second))
                 adjacency[first].add(point)
