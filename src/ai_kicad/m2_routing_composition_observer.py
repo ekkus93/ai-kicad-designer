@@ -89,11 +89,37 @@ def _bend_count(segments: tuple[Segment, ...]) -> int:
 
 
 def _branch_points(segments: tuple[Segment, ...]) -> tuple[Point, ...]:
-    by_point: dict[Point, int] = defaultdict(int)
-    for segment in segments:
-        by_point[segment[0]] += 1
-        by_point[segment[1]] += 1
-    return tuple(sorted(point for point, count in by_point.items() if count > 2))
+    """Report distinct visible arms at explicit junctions, regardless of wire splits.
+
+    Only emitted endpoints are junction candidates. Interior/interior crossings
+    are never promoted to junctions, while endpoints on trunk interiors form
+    genuine T-junctions. Duplicate and overlapping segments cannot invent arms.
+    """
+    endpoints = {point for segment in segments for point in segment}
+    branches: list[Point] = []
+    for point in sorted(endpoints):
+        x, y = point
+        arms: set[str] = set()
+        for first, second in segments:
+            if first == second:
+                continue
+            if first[1] == second[1] == y:
+                left, right = sorted((first[0], second[0]))
+                if left <= x <= right:
+                    if left < x:
+                        arms.add("left")
+                    if x < right:
+                        arms.add("right")
+            elif first[0] == second[0] == x:
+                top, bottom = sorted((first[1], second[1]))
+                if top <= y <= bottom:
+                    if top < y:
+                        arms.add("up")
+                    if y < bottom:
+                        arms.add("down")
+        if len(arms) > 2:
+            branches.append(point)
+    return tuple(branches)
 
 
 def _normalized_excess(actual: int, baseline: int) -> float:

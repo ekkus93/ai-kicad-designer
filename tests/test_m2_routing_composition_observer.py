@@ -196,3 +196,29 @@ def test_pure_wire_interior_crossing_stays_disconnected() -> None:
             direct_distance_limit=40,
         )
         assert metrics.label_mediated_local_disconnects == ("not_a_junction",)
+
+
+def test_visible_t_junction_branch_witness_is_split_order_invariant() -> None:
+    # A single trunk and a split trunk must produce the same junction witness.
+    trunk = ((0, 0), (20, 0))
+    branch = ((10, 0), (10, 10))
+    for segments in (
+        (trunk, branch),
+        (((0, 0), (10, 0)), ((10, 0), (20, 0)), branch),
+        (branch, ((20, 0), (0, 0))),
+        ((branch[1], branch[0]), ((20, 0), (10, 0)), ((10, 0), (0, 0))),
+    ):
+        metrics = measure_routing_readability(segments, semantic_local_length=30)
+        assert metrics.branch_points == ((10, 0),)
+
+
+def test_pure_crossing_or_duplicate_stroke_never_invents_branch() -> None:
+    horizontal = ((0, 0), (20, 0))
+    vertical = ((10, -10), (10, 10))
+    for segments in (
+        (horizontal, vertical),
+        (horizontal, horizontal, vertical),
+        (horizontal, ((5, 0), (15, 0))),
+    ):
+        metrics = measure_routing_readability(segments, semantic_local_length=50)
+        assert metrics.branch_points == ()
