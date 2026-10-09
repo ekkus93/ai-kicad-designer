@@ -13,6 +13,7 @@ CASES = {
     "v6-6": "fixtures/m2blind_v6/ir/V6-6.json",
     "v6-8": "fixtures/m2blind_v6/ir/V6-8.json",
     "dp4": "fixtures/m2h2/development/dp4.json",
+    "i4__b2_mixed": "fixtures/m2h2/interaction/i4/b2_mixed.json",
 }
 resolved = assets()
 for case, relative in CASES.items():
