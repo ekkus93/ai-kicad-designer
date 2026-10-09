@@ -19,6 +19,7 @@ KICAD_VERSION = "10.0.6"
 CASES = {
     "v6-3": ROOT / "fixtures/m2blind_v6/ir/V6-3.json",
     "dp2": ROOT / "fixtures/m2h2/development/dp2.json",
+    "i4__b2_mixed": ROOT / "fixtures/m2h2/interaction/i4/b2_mixed.json",
 }
 
 
@@ -46,7 +47,9 @@ def _reference_nets(design: dict[str, Any]) -> list[str]:
             if relationship.get("kind") == "reference_divider" and relationship.get("local")
         }
     )
-    return generated or ["VREF"]
+    if generated:
+        return generated
+    return ["VREF"] if any(net.get("id") == "VREF" for net in design.get("nets", [])) else []
 
 
 def _connector_ids(design: dict[str, Any]) -> set[str]:
