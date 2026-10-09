@@ -22,7 +22,7 @@ def test_reference_free_design_does_not_invent_vref() -> None:
     assert _reference_nets(design) == []
     signature = {
         "electrical": {"status": "pass", "diagnostics": []},
-        "erc": {"violations": []},
+        "erc": {"sheets": [{"violations": []}]},
         "composition": {
             "obligation_certificate": {
                 "serialized_scene_verified": "pass",
