@@ -211,7 +211,8 @@ def _local_label_disconnects(
 ) -> tuple[str, ...]:
     # Labels may attach anywhere along a wire, not only at an emitted endpoint.
     # A crossing of two unrelated segment interiors is ambiguous and must not
-    # invent a junction. Only shared emitted endpoints join wire components.
+    # invent a junction. Shared endpoints and explicit endpoint-on-wire T-junctions
+    # join components; pure interior crossings never do.
     components = _endpoint_components(segments)
     disconnected = []
     for label_id, first, second in local_label_pairs:
@@ -251,6 +252,18 @@ def _endpoint_components(segments: tuple[Segment, ...]) -> dict[Point, int]:
     for first, second in segments:
         adjacency[first].add(second)
         adjacency[second].add(first)
+
+    # Serialized orthogonal wires can terminate on the interior of a longer
+    # segment. Their exact endpoint provides the explicit T-junction witness;
+    # two segments crossing only at their interiors remain unrelated.
+    for point in tuple(sorted(adjacency)):
+        for first, second in segments:
+            if point != first and point != second and _point_on_orthogonal_segment(
+                point, (first, second)
+            ):
+                adjacency[point].update((first, second))
+                adjacency[first].add(point)
+                adjacency[second].add(point)
 
     components: dict[Point, int] = {}
     for start in sorted(adjacency):

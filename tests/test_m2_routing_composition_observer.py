@@ -162,3 +162,37 @@ def test_local_label_disconnect_witnesses_deduplicate_and_sort() -> None:
         ),
     )
     assert metrics.label_mediated_local_disconnects == ("a", "z")
+
+
+def test_explicit_t_junction_endpoint_joins_visible_wire_components() -> None:
+    # An emitted branch endpoint lies on a trunk interior: this is a visible
+    # T-junction even when the trunk was serialized as a single long segment.
+    trunk = ((0, 0), (20, 0))
+    branch = ((10, 0), (10, 10))
+    labels = (("t_junction", (0, 0), (10, 10)),)
+    for segments in (
+        (trunk, branch),
+        (branch, trunk),
+        ((trunk[1], trunk[0]), (branch[1], branch[0])),
+    ):
+        metrics = measure_routing_readability(
+            segments,
+            semantic_local_length=30,
+            local_label_pairs=labels,
+            direct_distance_limit=30,
+        )
+        assert metrics.label_mediated_local_disconnects == ()
+
+
+def test_pure_wire_interior_crossing_stays_disconnected() -> None:
+    # Interior/interior intersections must never invent a KiCad junction.
+    trunk = ((0, 0), (20, 0))
+    crossing = ((10, -10), (10, 10))
+    for segments in ((trunk, crossing), (crossing, trunk)):
+        metrics = measure_routing_readability(
+            segments,
+            semantic_local_length=40,
+            local_label_pairs=(("not_a_junction", (0, 0), (10, 10)),),
+            direct_distance_limit=40,
+        )
+        assert metrics.label_mediated_local_disconnects == ("not_a_junction",)
