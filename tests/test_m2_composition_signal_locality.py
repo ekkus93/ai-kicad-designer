@@ -167,14 +167,41 @@ def test_local_signal_search_skips_already_local_pair() -> None:
     assert _local_signal_proximity_candidates(plan, nearby_layout) == ()
 
 
-def test_local_signal_search_does_not_displace_unrelated_block() -> None:
+def test_local_signal_search_avoids_blocked_aligned_corridor() -> None:
     plan, baseline = _local_layout()
     source, target, extra = baseline.fragments
-    # Occupy both aligned slots to make the preferred move illegal. The
-    # search must never overlap the unrelated block or relax hard geometry.
+    # A safe nearby lane should be preferred to a distant label-only island
+    # when unrelated geometry obstructs the aligned corridor.
     obstructing = _place(extra.fragment, source.envelope[2] + PITCH, source.envelope[1])
     layout = Packing((source, target, obstructing), ())
-    assert _local_signal_proximity_candidates(plan, layout) == ()
+    options = _local_signal_proximity_candidates(plan, layout)
+    assert len(options) == 1
+    placed = {item.fragment.block.id: item.envelope for item in options[0].fragments}
+    assert placed["source"] == source.envelope
+    assert placed["extra"] == obstructing.envelope
+    assert placed["target"][0] > placed["source"][2]
+    assert placed["target"][0] < target.envelope[0]
+    assert (
+        placed["target"][3] <= placed["extra"][1]
+        or placed["target"][1] >= placed["extra"][3]
+    )
+
+
+def test_vertical_local_signal_alternative_is_semantically_order_invariant() -> None:
+    plan, baseline = _local_layout()
+    source, target, extra = baseline.fragments
+    obstructing = _place(extra.fragment, source.envelope[2] + PITCH, source.envelope[1])
+    layout = Packing((source, target, obstructing), ())
+    reordered = SemanticPlan(
+        tuple(reversed(plan.blocks)),
+        plan.edges,
+        {},
+        (),
+        presentation_nets=plan.presentation_nets,
+    )
+    assert _local_signal_proximity_candidates(reordered, layout) == (
+        _local_signal_proximity_candidates(plan, layout)
+    )
 
 
 def test_local_signal_candidate_survives_eight_seed_retention_cap() -> None:

@@ -1289,12 +1289,15 @@ def _local_signal_proximity_candidates(
         width = moving.envelope[2] - moving.envelope[0]
         height = moving.envelope[3] - moving.envelope[1]
         # Respect directed primary flow. Undirected pairs may use either side.
+        # Try the direction-preserving local corridor first, then a nearby
+        # upper/lower lane when unrelated geometry obstructs the aligned slot.
+        # Every candidate still passes the measured hard placement gates.
+        right = anchor.envelope[2] + CHANNEL_GAP
         slots = [
-            (anchor.envelope[2] + CHANNEL_GAP, anchor.envelope[1]),
-            (
-                anchor.envelope[2] + CHANNEL_GAP,
-                (anchor.envelope[1] + anchor.envelope[3] - height) // 2,
-            ),
+            (right, anchor.envelope[1]),
+            (right, (anchor.envelope[1] + anchor.envelope[3] - height) // 2),
+            (right, anchor.envelope[3] + CHANNEL_GAP),
+            (right, anchor.envelope[1] - height - CHANNEL_GAP),
         ]
         if not (forward != backward):
             slots.extend(
@@ -1304,7 +1307,7 @@ def _local_signal_proximity_candidates(
                     (anchor.envelope[0], anchor.envelope[1] - height - CHANNEL_GAP),
                 )
             )
-        for x, y in slots:
+        for x, y in dict.fromkeys(slots):
             if trials >= CANDIDATE_BUDGET * 4:
                 break
             trials += 1
