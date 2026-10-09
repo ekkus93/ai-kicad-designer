@@ -55,8 +55,7 @@ def load_native_baseline(
     if (
         inventory.qualification_head != manifest.get("historical_qualification_sha")
         or inventory.render_count != manifest.get("native_svg_count")
-        or inventory.inventory_sha256
-        != manifest.get("sorted_case_svg_sha256_inventory_sha256")
+        or inventory.inventory_sha256 != manifest.get("sorted_case_svg_sha256_inventory_sha256")
     ):
         raise ValueError("native-render manifest inventory does not match verified parts")
     return inventory, tuple(parts)
