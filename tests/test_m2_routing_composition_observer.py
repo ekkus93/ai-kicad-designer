@@ -118,3 +118,49 @@ def test_unordered_reversed_u_detour() -> None:
     for variant in (route, reordered, reversed_route):
         metrics = measure_routing_readability(variant, semantic_local_length=30)
         assert metrics.u_shaped_detours == 1
+
+
+def test_labels_on_wire_interiors_are_visibly_connected() -> None:
+    segments = (
+        ((0, 0), (20, 0)),
+        ((20, 0), (20, 20)),
+        ((20, 20), (40, 20)),
+    )
+    labels = (
+        ("interior_same", (5, 0), (15, 0)),
+        ("interior_multi", (5, 0), (30, 20)),
+        ("endpoint_to_interior", (0, 0), (20, 12)),
+    )
+    for variant in (segments, tuple((b, a) for a, b in reversed(segments))):
+        metrics = measure_routing_readability(
+            variant, semantic_local_length=60, local_label_pairs=labels
+        )
+        assert metrics.label_mediated_local_disconnects == ()
+
+
+def test_labels_at_unjoined_orthogonal_crossings_do_not_invent_junction() -> None:
+    segments = (((0, 10), (20, 10)), ((10, 0), (10, 20)))
+    labels = (
+        ("ambiguous_crossing", (10, 10), (20, 10)),
+        ("different_wires", (5, 10), (10, 5)),
+        ("same_horizontal", (5, 10), (15, 10)),
+    )
+    metrics = measure_routing_readability(
+        segments, semantic_local_length=40, local_label_pairs=labels
+    )
+    assert metrics.label_mediated_local_disconnects == (
+        "ambiguous_crossing", "different_wires"
+    )
+
+
+def test_local_label_disconnect_witnesses_deduplicate_and_sort() -> None:
+    metrics = measure_routing_readability(
+        (),
+        semantic_local_length=0,
+        local_label_pairs=(
+            ("z", (0, 0), (10, 0)),
+            ("a", (0, 0), (10, 0)),
+            ("z", (0, 0), (10, 0)),
+        ),
+    )
+    assert metrics.label_mediated_local_disconnects == ("a", "z")

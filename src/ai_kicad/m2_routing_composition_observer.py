@@ -209,17 +209,41 @@ def _local_label_disconnects(
     local_label_pairs: tuple[LabelPair, ...],
     direct_distance_limit: int,
 ) -> tuple[str, ...]:
-    # A visible local connection can span multiple orthogonal wire segments.
-    # Treat only shared emitted endpoints as connected: a geometric crossing
-    # without an explicit endpoint/junction must not join unrelated wires.
+    # Labels may attach anywhere along a wire, not only at an emitted endpoint.
+    # A crossing of two unrelated segment interiors is ambiguous and must not
+    # invent a junction. Only shared emitted endpoints join wire components.
     components = _endpoint_components(segments)
     disconnected = []
     for label_id, first, second in local_label_pairs:
         if _manhattan(first, second) > direct_distance_limit:
             continue
-        if first not in components or components[first] != components.get(second):
+        first_component = _label_component(first, segments, components)
+        second_component = _label_component(second, segments, components)
+        if first_component is None or first_component != second_component:
             disconnected.append(label_id)
-    return tuple(disconnected)
+    return tuple(sorted(set(disconnected)))
+
+
+def _label_component(
+    point: Point, segments: tuple[Segment, ...], components: dict[Point, int]
+) -> int | None:
+    """Resolve an interior wire label without joining a crossing by proximity."""
+    if point in components:
+        return components[point]
+    touched = {
+        components[first]
+        for first, second in segments
+        if first in components and _point_on_orthogonal_segment(point, (first, second))
+    }
+    return next(iter(touched)) if len(touched) == 1 else None
+
+
+def _point_on_orthogonal_segment(point: Point, segment: Segment) -> bool:
+    (ax, ay), (bx, by) = segment
+    x, y = point
+    return (ax == bx == x and min(ay, by) <= y <= max(ay, by)) or (
+        ay == by == y and min(ax, bx) <= x <= max(ax, bx)
+    )
 
 
 def _endpoint_components(segments: tuple[Segment, ...]) -> dict[Point, int]:
