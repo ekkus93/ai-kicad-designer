@@ -148,9 +148,7 @@ def test_labels_at_unjoined_orthogonal_crossings_do_not_invent_junction() -> Non
     metrics = measure_routing_readability(
         segments, semantic_local_length=40, local_label_pairs=labels
     )
-    assert metrics.label_mediated_local_disconnects == (
-        "ambiguous_crossing", "different_wires"
-    )
+    assert metrics.label_mediated_local_disconnects == ("ambiguous_crossing", "different_wires")
 
 
 def test_local_label_disconnect_witnesses_deduplicate_and_sort() -> None:

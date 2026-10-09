@@ -81,6 +81,7 @@ def test_local_signal_gap_deduplicates_renamed_nets() -> None:
 
 # Measured alternatives retain the ordinary placement and routing proofs.
 
+
 def _local_fragment(name: str, kind: str = "filter") -> FragmentVariant:
     block = BlockPlan(name, kind, (), frozenset(), ())
     return FragmentVariant(
@@ -136,16 +137,19 @@ def test_local_signal_search_moves_downstream_stage_next_to_producer() -> None:
     assert after["target"][0] > after["source"][2]
     assert after["target"][0] - after["source"][2] <= 2 * PITCH
     assert after["target"][0] < before["target"][0]
-    assert _local_signal_proximity_candidates(
-        SemanticPlan(
-            tuple(reversed(plan.blocks)),
-            plan.edges,
-            {},
-            (),
-            presentation_nets=plan.presentation_nets,
-        ),
-        baseline,
-    ) == proposals
+    assert (
+        _local_signal_proximity_candidates(
+            SemanticPlan(
+                tuple(reversed(plan.blocks)),
+                plan.edges,
+                {},
+                (),
+                presentation_nets=plan.presentation_nets,
+            ),
+            baseline,
+        )
+        == proposals
+    )
 
 
 def test_local_signal_search_exempts_shared_explicit_and_interface_cases() -> None:
