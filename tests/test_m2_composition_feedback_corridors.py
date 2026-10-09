@@ -153,6 +153,7 @@ def test_feedback_intrusion_cannot_reverse_semantic_precedence() -> None:
         composition_candidate_key(plan, reversed_placement, (10, 5, 0, 0, 0, 0))
     )
 
+
 def test_feedback_intrusion_is_direction_invariant() -> None:
     source, owner, intruder = (_block(name) for name in ("source", "owner", "intruder"))
     placed = _packing(
