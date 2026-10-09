@@ -1918,6 +1918,122 @@ def _partial_beam_candidates(
     return tuple(complete)
 
 
+def _branch_fanout_repack_candidates(plan: SemanticPlan, baseline: Packing) -> tuple[Packing, ...]:
+    """Search two bounded, proved alternatives for a directed signal fanout.
+
+    One alternative centers the source between its consumers; the other
+    equalizes the sibling target depths. Every proposed move passes the same
+    measured envelope, spread, collision, and exact-terminal hard constraints
+    as other composition repairs. No route is assumed to be legal here.
+    """
+    by_id = {item.fragment.block.id: item for item in baseline.fragments}
+    fanouts: dict[tuple[str, str], set[str]] = {}
+    for edge in plan.edges:
+        if edge.kind not in {"signal", "branch"} or edge.source == edge.target:
+            continue
+        if edge.source in by_id and edge.target in by_id:
+            fanouts.setdefault((edge.source, edge.net), set()).add(edge.target)
+
+    candidates: dict[str, list[tuple[tuple[int, int, str, str], Packing]]] = {
+        "branch-fanout-origin-centered": [],
+        "branch-fanout-sibling-depth": [],
+    }
+    trials = 0
+    limit = CANDIDATE_BUDGET * 4
+    for (source_id, _net), target_ids in sorted(fanouts.items()):
+        if trials >= limit:
+            break
+        source = by_id[source_id]
+        if source.fragment.block.kind == "interface":
+            continue
+        targets = tuple(
+            by_id[target_id]
+            for target_id in sorted(target_ids)
+            if by_id[target_id].fragment.block.kind != "interface"
+        )
+        if len(targets) < 2:
+            continue
+
+        def center(item: PlacedFragment) -> Point:
+            return (
+                (item.envelope[0] + item.envelope[2]) // 2,
+                (item.envelope[1] + item.envelope[3]) // 2,
+            )
+
+        target_rows = [center(target)[1] for target in targets]
+        midpoint = (min(target_rows) + max(target_rows)) // 2
+        source_y = center(source)[1]
+        if source_y != midpoint:
+            height = source.envelope[3] - source.envelope[1]
+            new_top = ((midpoint - height // 2) // PITCH) * PITCH
+            trials += 1
+            proposal = _measured_repack(
+                plan,
+                baseline,
+                source,
+                source.envelope[0],
+                new_top,
+                "branch-fanout-origin-centered",
+            )
+            if proposal is not None:
+                moved = next(
+                    item for item in proposal.fragments if item.fragment.block.id == source_id
+                )
+                improvement = abs(source_y - midpoint) - abs(center(moved)[1] - midpoint)
+                if improvement > 0:
+                    candidates["branch-fanout-origin-centered"].append(
+                        ((-improvement, abs(new_top - source.envelope[1]), source_id, ""), proposal)
+                    )
+
+        sibling_xs = sorted(center(target)[0] for target in targets)
+        median_x = sibling_xs[(len(sibling_xs) - 1) // 2]
+        for target in targets:
+            if trials >= limit:
+                break
+            old_x = center(target)[0]
+            if old_x == median_x:
+                continue
+            width = target.envelope[2] - target.envelope[0]
+            new_left = ((median_x - width // 2) // PITCH) * PITCH
+            trials += 1
+            proposal = _measured_repack(
+                plan,
+                baseline,
+                target,
+                new_left,
+                target.envelope[1],
+                "branch-fanout-sibling-depth",
+            )
+            if proposal is None:
+                continue
+            moved = next(
+                item
+                for item in proposal.fragments
+                if item.fragment.block.id == target.fragment.block.id
+            )
+            improvement = abs(old_x - median_x) - abs(center(moved)[0] - median_x)
+            if improvement > 0:
+                candidates["branch-fanout-sibling-depth"].append(
+                    (
+                        (
+                            -improvement,
+                            abs(new_left - target.envelope[0]),
+                            source_id,
+                            target.fragment.block.id,
+                        ),
+                        proposal,
+                    )
+                )
+    return tuple(
+        min(options, key=lambda item: item[0])[1]
+        for label in (
+            "branch-fanout-origin-centered",
+            "branch-fanout-sibling-depth",
+        )
+        if (options := candidates[label])
+    )
+
+
 def _retain_composition_seed_diversity(
     successful: tuple[Packing, ...], extras: tuple[Packing, ...]
 ) -> tuple[Packing, ...]:
@@ -1938,6 +2054,13 @@ def _retain_composition_seed_diversity(
     # Field-slot variants are independently constructed measured alternatives,
     # not mere shelf shifts. Preserve one legal distinct choice when the
     # eight-seed cap would otherwise discard it after repeated-peer repairs.
+    branch = tuple(
+        next(
+            (candidate for candidate in extras if candidate.attempts[-1] == label),
+            None,
+        )
+        for label in ("branch-fanout-origin-centered", "branch-fanout-sibling-depth")
+    )
     field_slot = next(
         (
             candidate
@@ -1946,7 +2069,7 @@ def _retain_composition_seed_diversity(
         ),
         None,
     )
-    protected = tuple(candidate for candidate in repeated if candidate is not None)
+    protected = tuple(candidate for candidate in (*repeated, *branch) if candidate is not None)
     if field_slot is not None:
         protected += (field_slot,)
     ordered = successful[:1] + protected + successful[1:3] + extras + successful[3:]
@@ -2320,6 +2443,7 @@ def pack_fragment_candidates(
                 break
         extras.extend(_semantic_block_order_candidates(plan, successful[0]))
         extras.extend(_support_affinity_candidates(plan, successful[0]))
+        extras.extend(_branch_fanout_repack_candidates(plan, successful[0]))
         extras.extend(_repeated_peer_alignment_candidates(plan, successful[0]))
         distribution = _distribution_column_candidate(plan, variants, successful)
         if distribution is not None and all(
