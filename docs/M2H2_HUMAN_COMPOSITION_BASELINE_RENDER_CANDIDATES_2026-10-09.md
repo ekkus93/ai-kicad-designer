@@ -46,3 +46,22 @@ the proposed archetype.
 **Do not mark baseline characterization, targeted acceptance, five-run
 qualification, or final closure PASS from this navigation aid.** Historical
 electrical PASS remains untouched.
+
+## Verified local extraction for engineering inspection
+
+Run from the repository root:
+
+```bash
+python tools/extract_m2h2_baseline_renders.py \
+  --output-dir /tmp/m2h2-historical-renders \
+  --case i4__b2_mixed
+```
+
+Omit `--case` to extract and hash-check all 90 historical native SVGs. The
+extractor verifies each original archive-part SHA-256 and each decompressed
+SVG SHA-256, rejects unsafe case identifiers, and emits a deterministic
+`index.json` with archive provenance and native canvas metadata. Archived
+case names are *navigation identifiers only*, never production dispatch.
+It deliberately does **not** assert a recovered visual defect, observer
+metric, aesthetic PASS, or current-source native KiCad qualification; those
+require independent geometry/semantic observation and engineering inspection.
