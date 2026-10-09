@@ -39,7 +39,12 @@ from .m2_pack import (
     _worksheet_clearance_packing,
     pack_fragment_candidates,
 )
-from .m2_route import RouteBlockedConflict, _crosses, _routable_edges, route_between_fragments
+from .m2_route import (
+    RouteBlockedConflict,
+    _crosses,
+    _routable_edges,
+    route_between_fragments,
+)
 from .m2_semantics import PlacementConflict, check_placement_constraints, semantic_plan
 
 
