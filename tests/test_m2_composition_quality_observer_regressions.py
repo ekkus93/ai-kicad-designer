@@ -37,9 +37,7 @@ def _plan(edges=(), precedence=()):
 
 def test_duplicate_signal_branch_and_precedence_are_one_observed_relation():
     reversed_geometry = {"input": (50, 0, 60, 10), "stage": (0, 0, 10, 10)}
-    base = observe_human_composition(
-        _plan((_edge("input", "stage"),)), reversed_geometry
-    )
+    base = observe_human_composition(_plan((_edge("input", "stage"),)), reversed_geometry)
     annotated = observe_human_composition(
         _plan(
             (
