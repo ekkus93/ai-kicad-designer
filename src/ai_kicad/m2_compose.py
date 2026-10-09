@@ -39,7 +39,7 @@ from .m2_pack import (
     _worksheet_clearance_packing,
     pack_fragment_candidates,
 )
-from .m2_route import RouteBlockedConflict, _crosses, route_between_fragments
+from .m2_route import RouteBlockedConflict, _crosses, _routable_edges, route_between_fragments
 from .m2_semantics import PlacementConflict, check_placement_constraints, semantic_plan
 
 
@@ -490,7 +490,7 @@ def _substitution_repack(
     current = {item.fragment.block.id: item.fragment for item in packing.fragments}
     incident = {
         block_id
-        for edge in plan.edges
+        for edge in _routable_edges(plan)
         if edge.net == net
         for block_id in (edge.source, edge.target)
     }
@@ -1225,8 +1225,25 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
                         working_packing, substitution = _structural_repack(
                             design, resolved, plan, working_packing, last_conflict
                         )
+                    elif round_index == 2 and isinstance(last_conflict, RouteBlockedConflict):
+                        # A blocked uniquely inferred passive interface may need
+                        # the mirrored local gateway family rather than a global
+                        # placement move. Prefer the bounded certified access
+                        # substitution, then fall back to distribution repacking.
+                        try:
+                            working_packing, substitution = _substitution_repack(
+                                plan,
+                                variants,
+                                working_packing,
+                                last_conflict,
+                                seed_index,
+                            )
+                        except InputError:
+                            working_packing, substitution = _distribution_repack(
+                                design, resolved, plan, working_packing, last_conflict
+                            )
                     elif round_index == 2 and isinstance(
-                        last_conflict, (ConductorLengthConflict, RouteBlockedConflict)
+                        last_conflict, ConductorLengthConflict
                     ):
                         working_packing, substitution = _distribution_repack(
                             design, resolved, plan, working_packing, last_conflict
