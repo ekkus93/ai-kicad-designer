@@ -203,7 +203,8 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Align local support structures rather than leaving arbitrary offsets.
   - Source-level alignment checkpoint: generic sequential signal and directed connector-row penalties in `src/ai_kicad/m2_composition_candidate_rank.py` and explicit support/package ownership axis penalty were exercised by authored positive, negative, fanout, feedback, and ordering controls in `tests/test_m2_composition_candidate_rank.py`. Hosted contract tests and complete static checks PASS on exact source `de219e0129d7814326517de1f71cb49c73ab0da5`, run `37906474016`. This supports the three checked source preferences only; locked KiCad 10.0.6, native route/render evidence, and final composition acceptance remain unchecked.
 - [x] Preserve KiCad-compatible grid placement.
-- [ ] Make reference/value orientation consistent for comparable roles.
+- [x] Make reference/value orientation consistent for comparable roles.
+  - Generic symbol-relative reference/value field-slot consistency is now a late aesthetic tie-breaker in `m2_composition_candidate_rank._field_slot_consistency_penalty`. It compares matching functional kinds, terminal-role footprints and symbol rotations; exempts interfaces, different orientations, and missing text geometry; and never outranks routing or whitespace. Four authored controls cover preference, routing priority, renaming/declaration order, role/rotation exclusions and missing fields. Source `4a4c2d4742ddaa2ffa100caf87b5ef25f593281b`; hosted contract/static PASS in run `37909980631`. This source-level preference is not native-render field acceptance.
 - [x] Preserve long-field alternate-slot behavior.
 - [x] Preserve existing field/body/wire/label independent checks.
 - [x] Add field-alignment metrics.
@@ -251,7 +252,8 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Search meaningful support-placement alternatives.
 - [x] Search meaningful field-slot alternatives.
   - Current-source `eff40b3e4f6d4bf0e34e28cbf106ab65095a8550`: independent measured text-slot variants, bounded field-kind variant proposals, explicit final eight-seed retention, and dedicated generic regressions. Hosted static/contract validation PASS in run `37840687842`; native KiCad qualification remains open because the self-hosted runner lacks pinned `/tmp/AppDir` files.
-- [ ] Search meaningful branch/route alternatives where already bounded.
+- [x] Search meaningful branch/route alternatives where already bounded.
+  - Bounded `m2_pack._branch_fanout_repack_candidates` searches a source-centered fanout and sibling-depth alignment, checks all candidates through `_measured_repack` hard placement/terminal constraints, and protects both legal variants from the final eight-seed retention cap. Five authored controls cover centering, sibling-depth correction, net rename/declaration permutation, retention, and unrelated-net exemption; these are included in hosted contract CI. Source `d4752e40855d64e15fcc0f383b480b4375d5f20c`; hosted contract/static PASS in run `37911027488`. Actual emitted-wire route clarity and native KiCad qualification remain unchecked in sections 6, 11, 15–21.
 - [x] Preserve exact attempt/budget counters.
 - [x] Deduplicate repeated states.
 - [x] Preserve best rejected candidate and full metric vector.
