@@ -319,6 +319,7 @@ def test_collinear_wire_merge_retains_explicit_t_junction() -> None:
         assert metrics.branch_points == reference.branch_points
         assert metrics.u_shaped_detours == reference.u_shaped_detours
 
+
 def test_bend_count_is_duplicate_and_collinear_split_invariant() -> None:
     elbow = (((0, 0), (10, 0)), ((10, 0), (10, 10)))
     variants = (
@@ -353,7 +354,7 @@ def test_unrelated_crossing_count_deduplicates_reversed_strokes() -> None:
     variants = (
         ((horizontal,), (vertical,)),
         ((horizontal, horizontal), (vertical, vertical)),
-        (((20, 0), (0, 0)), horizontal), (vertical, ((10, 10), (10, -10))),
+        ((((20, 0), (0, 0)), horizontal), (vertical, ((10, 10), (10, -10)))),
     )
     for primary, unrelated in variants:
         metrics = measure_routing_readability(
