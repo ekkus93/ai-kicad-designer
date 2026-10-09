@@ -131,13 +131,15 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 ## 6. Branch, fanout, and feedback readability
 
 - [x] Model branch points explicitly in composition evidence.
-- [ ] Prefer visually identifiable branch origins.
+- [x] Prefer visually identifiable branch origins.
+  - Production `m2_composition_candidate_rank._branch_readability_penalty` now groups ordinary signal and explicit branch fanout by semantic source/net, deduplicates targets, and penalizes off-center origins, uneven sibling depth, and backwards branches. Authored controls in `tests/test_m2_composition_candidate_rank.py` cover centered vs detached origins, signal-edge equivalence, renames/permutations, and unrelated-net exclusions; hosted contract and static checks passed for source `74f5d59b4f62b1e55dd46e078431e07dd02ee419`. Native render acceptance remains separately unchecked.
 - [x] Prefer consistent sibling-branch geometry.
 - [ ] Penalize unnecessary branch crossings/detours.
 - [x] Keep branch outputs attributable to source.
 - [x] Model forward-path versus feedback-path roles.
 - [x] Prefer compact feedback loops around owning stage.
 - [ ] Penalize feedback routes through unrelated functional blocks.
+  - Source-level partial implementation at `19303f27a71861fd4b3070a88268b38c862d4f50`: conservative two-shortest-elbow placement proxy in `m2_composition_candidate_rank._feedback_corridor_intrusions`, with seven authored tests, including reversed direction and protected support relatives. This **does not** measure actual emitted routing; leave unchecked until current-source native route evidence supports it.
 - [x] Add branch/fanout positive and negative oracle cases.
 - [x] Add feedback positive and negative oracle cases.
 - [x] Add passive two-level fanout regression.

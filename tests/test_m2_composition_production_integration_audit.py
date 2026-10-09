@@ -49,6 +49,7 @@ def test_audit_accepts_semantic_first_candidate_selection() -> None:
     source = """
 from .m2_composition_candidate_rank import (
     composition_candidate_key,
+    semantic_composition_penalty_breakdown,
     semantic_composition_penalties,
 )
 routing_compactness = (wire_length, worst_length, bends, area, seed_index, round_index)
