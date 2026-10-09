@@ -195,10 +195,11 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 ## 10. Alignment, grid, and field composition
 
 - [x] Add meaningful alignment-line detection.
-- [ ] Prefer common baseline/centerline for sequential active stages where practical.
+- [x] Prefer common baseline/centerline for sequential active stages where practical.
 - [ ] Prefer role-consistent passive alignment.
-- [ ] Align connectors with the signal rows they serve where practical.
-- [ ] Align local support structures rather than leaving arbitrary offsets.
+- [x] Align connectors with the signal rows they serve where practical.
+- [x] Align local support structures rather than leaving arbitrary offsets.
+  - Source-level alignment checkpoint: generic sequential signal and directed connector-row penalties in `src/ai_kicad/m2_composition_candidate_rank.py` and explicit support/package ownership axis penalty were exercised by authored positive, negative, fanout, feedback, and ordering controls in `tests/test_m2_composition_candidate_rank.py`. Hosted contract tests and complete static checks PASS on exact source `de219e0129d7814326517de1f71cb49c73ab0da5`, run `37906474016`. This supports the three checked source preferences only; locked KiCad 10.0.6, native route/render evidence, and final composition acceptance remain unchecked.
 - [x] Preserve KiCad-compatible grid placement.
 - [ ] Make reference/value orientation consistent for comparable roles.
 - [x] Preserve long-field alternate-slot behavior.
