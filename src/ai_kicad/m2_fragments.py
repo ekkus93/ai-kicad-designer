@@ -1689,9 +1689,7 @@ def fragment_variants(
         elif block.kind == "interface":
             bases = [construct(_interface_fragment, design, resolved, block)]
             try:
-                bases.append(
-                    construct(_interface_fragment, design, resolved, block, mirrored=True)
-                )
+                bases.append(construct(_interface_fragment, design, resolved, block, mirrored=True))
             except InputError:
                 pass
         else:
