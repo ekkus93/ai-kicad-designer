@@ -53,7 +53,9 @@ def test_straight_feedback_corridor_prefers_no_unrelated_intrusion() -> None:
     assert unblocked.feedback_intrusion == 0
     assert blocked.feedback_distance == unblocked.feedback_distance
     assert blocked.as_dict()["feedback_intrusion"] == 1
-    assert blocked.vector()[-1] == 1
+    # The vector must remain aligned with the named metric mapping as new
+    # semantic tie-breakers are appended after feedback intrusion.
+    assert blocked.vector() == tuple(blocked.as_dict().values())
 
 
 def test_one_clear_shortest_elbow_does_not_claim_an_intrusion() -> None:
