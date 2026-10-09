@@ -10,7 +10,10 @@ import subprocess
 
 from ai_kicad.m2a import ROOT, observe
 from ai_kicad.m2b import assets, validate
-from ai_kicad.m2_composition_qualification_observation import observe_composition_evidence
+from ai_kicad.m2_composition_qualification_observation import (
+    observe_composition_evidence,
+    observe_native_pin_composition,
+)
 from ai_kicad.m2_semantics import semantic_plan
 from run_m2g2_qualification import _build, _erc_violations, _json, _sha, _signature
 
@@ -172,6 +175,7 @@ def verify(run: Path, design: dict, expected: dict) -> dict:
     composition_observer = observe_composition_evidence(plan, signature["composition"]).as_dict()
     schematic = next((run / "project").glob("*.kicad_sch"))
     observed = observe(schematic, run / "reports/netlist.xml")
+    native_pin_diagnostic = observe_native_pin_composition(plan, design, observed).as_dict()
     physical_components = {part["id"] for part in design["components"]}
     reference = {part["id"]: part["refdes"] for part in design["components"]}
     reference.update(
@@ -277,6 +281,7 @@ def verify(run: Path, design: dict, expected: dict) -> dict:
         "signature": signature,
         "observed_structural_class": observed_structural_class(signature),
         "composition_observer": composition_observer,
+        "native_pin_composition_diagnostic": native_pin_diagnostic,
         "partition_match": actual_partitions == expected_partitions,
         "terminal_match": actual_terminals == expected_terminals,
         "paths": path_results,

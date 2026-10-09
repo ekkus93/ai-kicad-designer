@@ -9,9 +9,12 @@ import subprocess
 import sys
 import time
 
-from ai_kicad.m2a import ROOT
+from ai_kicad.m2a import ROOT, observe
 from ai_kicad.m2b import assets, validate
-from ai_kicad.m2_composition_qualification_observation import observe_composition_evidence
+from ai_kicad.m2_composition_qualification_observation import (
+    observe_composition_evidence,
+    observe_native_pin_composition,
+)
 from ai_kicad.m2_semantics import semantic_plan
 from run_m2g2_qualification import (
     _anti_overfitting_audit,
@@ -73,6 +76,13 @@ def main() -> None:
                 composition_observer = observe_composition_evidence(
                     plan, signature["composition"]
                 ).as_dict()
+                native = observe(
+                    next((actual / "project").glob("*.kicad_sch")),
+                    actual / "reports/netlist.xml",
+                )
+                native_pin_diagnostic = observe_native_pin_composition(
+                    plan, json.loads(design.read_text()), native
+                ).as_dict()
                 record.update(
                     electrical_status=signature["electrical"]["status"],
                     electrical_diagnostics=signature["electrical"]["diagnostics"],
@@ -81,6 +91,7 @@ def main() -> None:
                         "serialized_scene_verified"
                     ],
                     composition_observer=composition_observer,
+                    native_pin_composition_diagnostic=native_pin_diagnostic,
                     layout=signature["layout"],
                 )
             else:
