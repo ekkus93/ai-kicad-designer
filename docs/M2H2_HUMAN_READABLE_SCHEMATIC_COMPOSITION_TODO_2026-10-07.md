@@ -109,7 +109,8 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Add deterministic penalties for primary stage-order inversions.
 - [x] Add deterministic penalties for primary-flow backtracking distance.
 - [x] Preserve valid incomparable sibling ordering freedom.
-- [ ] Add targeted regression for `i4__b2_mixed`.
+- [x] Add targeted regression for `i4__b2_mixed`.
+  - Exact-head source `fec1a3f0c6ac54d7ce278c7b64a23f964abce8d4`: `tools/run_m2h2_current_regressions.py` includes the original mixed-branch design, with a lock/version check, independent electrical/ERC and serialized-scene verification, and independent human-composition observation. `tests/test_m2h2_current_regressions.py` prevents accidental loss of coverage. Locked KiCad 10.0.6 one-build case accepted (fast-validation run `37970772914`; `655 passed` in full pytest; all three CI jobs PASS). This checks inclusion and the single-run source regression only, **not** section 15's native-render aesthetic acceptance or section 17's five-run final qualification.
 - [x] Add a renamed/permuted equivalent of the same semantic archetype to prove generic behavior.
 - [x] Add negative mutation: final output connector moved to input frontier.
 - [x] Verify no case/fixture/refdes/literal-net dispatch is introduced.
