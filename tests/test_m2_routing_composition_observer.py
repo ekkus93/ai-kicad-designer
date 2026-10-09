@@ -237,3 +237,33 @@ def test_t_junction_sibling_arm_metric_is_split_and_direction_invariant() -> Non
         metrics = measure_routing_readability(segments, semantic_local_length=38)
         assert metrics.branch_points == ((10, 0),)
         assert metrics.sibling_branch_geometry_inconsistency == 8
+
+
+def test_sibling_branch_geometry_ignores_collinear_wire_segmentation() -> None:
+    # A trunk and arm split into extra collinear strokes are the same geometry.
+    unsplit = (((0, 0), (20, 0)), ((10, 0), (10, 10)))
+    split = (
+        ((0, 0), (5, 0)),
+        ((5, 0), (10, 0)),
+        ((10, 0), (15, 0)),
+        ((15, 0), (20, 0)),
+        ((10, 0), (10, 5)),
+        ((10, 5), (10, 10)),
+    )
+    for segments in (unsplit, split, tuple((b, a) for a, b in reversed(split))):
+        metrics = measure_routing_readability(segments, semantic_local_length=30)
+        assert metrics.branch_points == ((10, 0),)
+        assert metrics.sibling_branch_geometry_inconsistency == 0
+
+
+def test_branch_arm_stops_at_next_explicit_junction() -> None:
+    # A long trunk contains two distinguishable branch owners, not one
+    # artificially long sibling arm for the first branch.
+    segments = (
+        ((0, 0), (30, 0)),
+        ((10, 0), (10, 5)),
+        ((20, 0), (20, 20)),
+    )
+    metrics = measure_routing_readability(segments, semantic_local_length=55)
+    assert metrics.branch_points == ((10, 0), (20, 0))
+    assert metrics.sibling_branch_geometry_inconsistency == 10

@@ -88,38 +88,42 @@ def _bend_count(segments: tuple[Segment, ...]) -> int:
     return bends
 
 
-def _branch_points(segments: tuple[Segment, ...]) -> tuple[Point, ...]:
-    """Report distinct visible arms at explicit junctions, regardless of wire splits.
+def _incident_cardinal_arms(point: Point, segments: tuple[Segment, ...]) -> set[str]:
+    """Derive distinct visible directions, including at endpoint-on-wire tees."""
+    x, y = point
+    arms: set[str] = set()
+    for first, second in segments:
+        if first == second:
+            continue
+        if first[1] == second[1] == y:
+            left, right = sorted((first[0], second[0]))
+            if left <= x <= right:
+                if left < x:
+                    arms.add("left")
+                if x < right:
+                    arms.add("right")
+        elif first[0] == second[0] == x:
+            top, bottom = sorted((first[1], second[1]))
+            if top <= y <= bottom:
+                if top < y:
+                    arms.add("up")
+                if y < bottom:
+                    arms.add("down")
+    return arms
 
-    Only emitted endpoints are junction candidates. Interior/interior crossings
-    are never promoted to junctions, while endpoints on trunk interiors form
-    genuine T-junctions. Duplicate and overlapping segments cannot invent arms.
+
+def _branch_points(segments: tuple[Segment, ...]) -> tuple[Point, ...]:
+    """Report junctions invariant to splitting and duplicate wire strokes.
+
+    Only emitted endpoints are junction candidates. Two wire interiors
+    crossing without a shared endpoint cannot create a false branch.
     """
     endpoints = {point for segment in segments for point in segment}
-    branches: list[Point] = []
-    for point in sorted(endpoints):
-        x, y = point
-        arms: set[str] = set()
-        for first, second in segments:
-            if first == second:
-                continue
-            if first[1] == second[1] == y:
-                left, right = sorted((first[0], second[0]))
-                if left <= x <= right:
-                    if left < x:
-                        arms.add("left")
-                    if x < right:
-                        arms.add("right")
-            elif first[0] == second[0] == x:
-                top, bottom = sorted((first[1], second[1]))
-                if top <= y <= bottom:
-                    if top < y:
-                        arms.add("up")
-                    if y < bottom:
-                        arms.add("down")
-        if len(arms) > 2:
-            branches.append(point)
-    return tuple(branches)
+    return tuple(
+        point
+        for point in sorted(endpoints)
+        if len(_incident_cardinal_arms(point, segments)) > 2
+    )
 
 
 def _normalized_excess(actual: int, baseline: int) -> float:
@@ -192,21 +196,60 @@ def _opposite_parallel(first: Segment, second: Segment) -> bool:
     return False
 
 
-def _branch_inconsistency(segments: tuple[Segment, ...], branch_points: tuple[Point, ...]) -> int:
-    """Measure each incident arm, including both halves of an unsplit trunk.
+def _straight_arm_length(
+    point: Point,
+    direction: str,
+    segments: tuple[Segment, ...],
+    endpoints: set[Point],
+) -> int:
+    """Trace a straight branch arm to its next terminal, bend, or junction.
 
-    At a T-junction, an emitted trunk may be one long wire or two wires
-    terminating at the branch. Both representations must contribute the same
-    three arm lengths. An interior/interior crossing is never a branch point.
+    Collinear wire-segment seams do not end an arm. No unrelated crossing is
+    treated as a junction because only actual emitted endpoints may stop it.
     """
+    axis = 0 if direction in {"left", "right"} else 1
+    start = point[axis]
+    forward = direction in {"right", "down"}
+    intervals = [
+        tuple(sorted((first[axis], second[axis])))
+        for first, second in segments
+        if first[1 - axis] == second[1 - axis] == point[1 - axis]
+    ]
+    reach = start
+    while True:
+        if forward:
+            farther = max((high for low, high in intervals if low <= reach < high), default=reach)
+        else:
+            farther = min((low for low, high in intervals if low < reach <= high), default=reach)
+        if farther == reach:
+            break
+        reach = farther
+    if reach == start:
+        return 0
+
+    straight = {"left", "right"} if axis == 0 else {"up", "down"}
+    stops = [
+        abs(other[axis] - start)
+        for other in endpoints
+        if other[1 - axis] == point[1 - axis]
+        and (
+            (start < other[axis] <= reach)
+            if forward
+            else (reach <= other[axis] < start)
+        )
+        and _incident_cardinal_arms(other, segments) != straight
+    ]
+    return min(stops, default=abs(reach - start))
+
+
+def _branch_inconsistency(segments: tuple[Segment, ...], branch_points: tuple[Point, ...]) -> int:
+    endpoints = {point for segment in segments for point in segment}
     worst = 0
     for point in branch_points:
-        lengths = []
-        for first, second in segments:
-            if point == first or point == second:
-                lengths.append(_manhattan(first, second))
-            elif _point_on_orthogonal_segment(point, (first, second)):
-                lengths.extend((_manhattan(point, first), _manhattan(point, second)))
+        lengths = [
+            _straight_arm_length(point, direction, segments, endpoints)
+            for direction in sorted(_incident_cardinal_arms(point, segments))
+        ]
         if lengths:
             worst = max(worst, max(lengths) - min(lengths))
     return worst
