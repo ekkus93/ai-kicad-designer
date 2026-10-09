@@ -125,13 +125,17 @@ def test_failed_local_constructor_preserves_rejected_proposal_evidence(monkeypat
     from ai_kicad.m2_semantics import semantic_plan
 
     original = fragments._interface_fragment
-    calls = 0
+    primary_calls = 0
 
     def reject_constructor(*args, **kwargs):
-        nonlocal calls
-        calls += 1
-        if calls == 2:
-            raise InputError("injected local geometry rejection")
+        nonlocal primary_calls
+        # Optional mirrored-interface variants may be rejected without
+        # invalidating the required primary fragment. Fail the second required
+        # construction instead so the error-evidence contract remains tested.
+        if not kwargs.get("mirrored", False):
+            primary_calls += 1
+            if primary_calls == 2:
+                raise InputError("injected local geometry rejection")
         return original(*args, **kwargs)
 
     monkeypatch.setattr(fragments, "_interface_fragment", reject_constructor)
