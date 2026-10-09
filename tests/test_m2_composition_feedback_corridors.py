@@ -152,3 +152,15 @@ def test_feedback_intrusion_cannot_reverse_semantic_precedence() -> None:
     assert composition_candidate_key(plan, ordered, (100, 50, 0, 0, 0, 0)) < (
         composition_candidate_key(plan, reversed_placement, (10, 5, 0, 0, 0, 0))
     )
+
+def test_feedback_intrusion_is_direction_invariant() -> None:
+    source, owner, intruder = (_block(name) for name in ("source", "owner", "intruder"))
+    placed = _packing(
+        (source, 0, 5 * PITCH),
+        (owner, 10 * PITCH, 5 * PITCH),
+        (intruder, 5 * PITCH, 5 * PITCH),
+    )
+    forward = _plan(source, owner, intruder, edges=(_edge("feedback", "source", "owner"),))
+    reversed_plan = _plan(owner, source, intruder, edges=(_edge("feedback", "owner", "source"),))
+    assert semantic_composition_penalty_breakdown(forward, placed).feedback_intrusion == 1
+    assert semantic_composition_penalty_breakdown(reversed_plan, placed).feedback_intrusion == 1

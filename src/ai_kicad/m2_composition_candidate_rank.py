@@ -364,9 +364,13 @@ def _branch_readability_penalty(plan, centers: dict[str, Point]) -> int:
 def _segment_crosses_block(start: Point, end: Point, rect: Rect) -> bool:
     """Return whether a rectilinear centerline crosses a block's interior."""
     if start[0] == end[0]:
-        return rect[0] < start[0] < rect[2] and min(end[1], rect[3]) > max(start[1], rect[1])
+        low_y, high_y = sorted((start[1], end[1]))
+        overlaps_y = min(high_y, rect[3]) > max(low_y, rect[1])
+        return rect[0] < start[0] < rect[2] and overlaps_y
     if start[1] == end[1]:
-        return rect[1] < start[1] < rect[3] and min(end[0], rect[2]) > max(start[0], rect[0])
+        low_x, high_x = sorted((start[0], end[0]))
+        overlaps_x = min(high_x, rect[2]) > max(low_x, rect[0])
+        return rect[1] < start[1] < rect[3] and overlaps_x
     raise ValueError("feedback corridor segments must be orthogonal")
 
 
