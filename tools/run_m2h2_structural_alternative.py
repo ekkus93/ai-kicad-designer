@@ -21,7 +21,10 @@ from ai_kicad.m2a import (
 )
 from ai_kicad.m2b import assets, check_observed_layout, compare, validate
 from ai_kicad.m2_compose import _assemble_candidate
-from ai_kicad.m2_composition_qualification_observation import observe_composition_packing
+from ai_kicad.m2_composition_qualification_observation import (
+    observe_composition_packing,
+    observe_native_pin_composition,
+)
 from ai_kicad.m2_fragments import fragment_variants
 from ai_kicad.m2_pack import (
     MAX_CONTENT_HEIGHT,
@@ -462,6 +465,7 @@ def main() -> None:
         frozen = frozen_obligations(observed, design, expected)
         erc = json.loads(erc_path.read_text())
         composition_observer = observe_composition_packing(plan, packing).as_dict()
+        native_pin_diagnostic = observe_native_pin_composition(plan, design, observed).as_dict()
         report = {
             "run": run,
             "pass": electrical["status"] == "pass"
@@ -492,6 +496,7 @@ def main() -> None:
             "erc_violation_count": _erc_violations(erc),
             "frozen_obligations": frozen,
             "composition_observer": composition_observer,
+            "native_pin_composition_diagnostic": native_pin_diagnostic,
             "layout": layout,
             "scene_sha256": scene.certificate_digest,
             "candidate_input_policy_sha256": scene.certificate_input_digest,

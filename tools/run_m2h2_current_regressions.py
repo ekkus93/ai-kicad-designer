@@ -10,9 +10,12 @@ import sys
 import time
 from typing import Any
 
-from ai_kicad.m2a import ROOT
+from ai_kicad.m2a import ROOT, observe
 from ai_kicad.m2b import assets, validate
-from ai_kicad.m2_composition_qualification_observation import observe_composition_evidence
+from ai_kicad.m2_composition_qualification_observation import (
+    observe_composition_evidence,
+    observe_native_pin_composition,
+)
 from ai_kicad.m2_semantics import semantic_plan
 from run_m2g2_qualification import _build, _erc_violations, _json, _sha, _signature
 
@@ -151,6 +154,13 @@ def _run_case(case_id: str, design_path: Path, output: Path) -> dict[str, Any]:
 
     signature = _signature(actual)
     composition_observer = _composition_observer(design, signature)
+    resolved = assets()
+    plan = semantic_plan(validate(design, resolved), resolved)
+    native = observe(
+        next((actual / "project").glob("*.kicad_sch")),
+        actual / "reports/netlist.xml",
+    )
+    native_pin_diagnostic = observe_native_pin_composition(plan, design, native).as_dict()
     errors = _case_errors(case_id, design, signature)
     if not composition_observer["passed"]:
         errors.append("independent human-composition observer did not pass")
@@ -173,6 +183,7 @@ def _run_case(case_id: str, design_path: Path, output: Path) -> dict[str, Any]:
             "serialized_scene_verified"
         ],
         composition_observer=composition_observer,
+        native_pin_composition_diagnostic=native_pin_diagnostic,
         reference_metrics=reference_metrics,
         layout=signature["layout"],
     )
