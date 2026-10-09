@@ -708,3 +708,98 @@ def test_branch_corridor_exempts_local_owned_support_as_unrelated_obstacles() ->
     assert (
         semantic_composition_penalty_breakdown(_plan(blocks, edges), placed).branch_alignment == 0
     )
+
+
+def _passive_with_reference(main_id: str = "main", ref_id: str = "shunt"):
+    return SimpleNamespace(
+        id="passive-stage",
+        kind="rc",
+        ports=(
+            SimpleNamespace(role="signal_in", terminals=((main_id, "1"),)),
+            SimpleNamespace(role="signal_out", terminals=((main_id, "2"),)),
+            SimpleNamespace(role="reference", terminals=((ref_id, "2"),)),
+        ),
+    )
+
+
+def test_local_passive_reference_leg_prefers_vertical_axis() -> None:
+    block = _passive_with_reference()
+    plan = _plan((block,))
+    aligned = _packing(
+        _placed(
+            block,
+            0,
+            positions={("main", 1): (0, 0), ("shunt", 1): (0, 4 * PITCH)},
+        )
+    )
+    diagonal = _packing(
+        _placed(
+            block,
+            0,
+            positions={("main", 1): (0, 0), ("shunt", 1): (3 * PITCH, 4 * PITCH)},
+        )
+    )
+    good = semantic_composition_penalty_breakdown(plan, aligned)
+    bad = semantic_composition_penalty_breakdown(plan, diagonal)
+    assert good.passive_reference_axis_drift == 0
+    assert bad.passive_reference_axis_drift == 3
+    assert bad.as_dict()["passive_reference_axis_drift"] == 3
+    assert bad.vector()[-1] == 3
+
+
+def test_passive_reference_axis_is_rename_and_order_invariant() -> None:
+    first = _passive_with_reference("input-resistor", "capacitor")
+    renamed = _passive_with_reference("other-main", "other-ref")
+    renamed.ports = tuple(reversed(renamed.ports))
+    first_placed = _packing(
+        _placed(
+            first,
+            0,
+            positions={
+                ("input-resistor", 1): (0, 0),
+                ("capacitor", 1): (2 * PITCH, 4 * PITCH),
+            },
+        )
+    )
+    renamed_placed = _packing(
+        _placed(
+            renamed,
+            0,
+            positions={
+                ("other-ref", 1): (2 * PITCH, 4 * PITCH),
+                ("other-main", 1): (0, 0),
+            },
+        )
+    )
+    original_score = semantic_composition_penalty_breakdown(
+        _plan((first,)), first_placed
+    ).passive_reference_axis_drift
+    renamed_score = semantic_composition_penalty_breakdown(
+        _plan((renamed,)), renamed_placed
+    ).passive_reference_axis_drift
+    assert original_score == renamed_score == 2
+
+
+def test_passive_reference_axis_exempts_shared_or_missing_ownership() -> None:
+    shared = SimpleNamespace(
+        id="shared",
+        kind="rc",
+        ports=(
+            SimpleNamespace(role="signal_in", terminals=(("main", "1"),)),
+            SimpleNamespace(role="signal_out", terminals=(("main", "2"),)),
+            SimpleNamespace(role="reference", terminals=(("ref-a", "2"), ("ref-b", "2"))),
+        ),
+    )
+    placed = _packing(
+        _placed(
+            shared,
+            0,
+            positions={
+                ("main", 1): (0, 0),
+                ("ref-a", 1): (3 * PITCH, 4 * PITCH),
+                ("ref-b", 1): (4 * PITCH, 4 * PITCH),
+            },
+        )
+    )
+    score = semantic_composition_penalty_breakdown(_plan((shared,)), placed)
+    assert score.passive_reference_axis_drift == 0

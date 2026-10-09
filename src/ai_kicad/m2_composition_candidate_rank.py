@@ -41,6 +41,7 @@ class SemanticPenaltyBreakdown:
     sequential_stage_row_drift: int
     directed_interface_row_drift: int
     support_axis_drift: int
+    passive_reference_axis_drift: int
 
     def vector(self) -> SemanticPenaltyVector:
         return (
@@ -62,6 +63,7 @@ class SemanticPenaltyBreakdown:
             self.sequential_stage_row_drift,
             self.directed_interface_row_drift,
             self.support_axis_drift,
+            self.passive_reference_axis_drift,
         )
 
     def as_dict(self) -> dict[str, int]:
@@ -84,6 +86,7 @@ class SemanticPenaltyBreakdown:
             "sequential_stage_row_drift": self.sequential_stage_row_drift,
             "directed_interface_row_drift": self.directed_interface_row_drift,
             "support_axis_drift": self.support_axis_drift,
+            "passive_reference_axis_drift": self.passive_reference_axis_drift,
         }
 
 
@@ -556,6 +559,43 @@ def _support_axis_alignment_penalty(plan, centers: dict[str, Point]) -> int:
     return _grid_units(drift)
 
 
+def _passive_reference_axis_alignment_penalty(packing) -> int:
+    """Align locally owned reference legs by terminal roles, not component names.
+
+    If a signal-through stage has one distinct reference/shunt component,
+    prefer that leg vertically aligned with the primary signal component.
+    Shared, missing, multi-unit, or ambiguous ownership is exempt.
+    """
+    drift = 0
+    for item in packing.fragments:
+        block = item.fragment.block
+        ports = getattr(block, "ports", ())
+
+        def component_ids(role: str) -> set[str]:
+            return {
+                terminal[0]
+                for port in ports
+                if port.role == role
+                for terminal in getattr(port, "terminals", ())
+            }
+
+        main_ids = component_ids("signal_in") & component_ids("signal_out")
+        reference_ids = component_ids("reference") - main_ids
+        if len(main_ids) != 1 or len(reference_ids) != 1:
+            continue
+        main_id = next(iter(main_ids))
+        reference_id = next(iter(reference_ids))
+        positions = getattr(item.fragment, "positions", {})
+        main = [point for occurrence, point in positions.items() if occurrence[0] == main_id]
+        reference = [
+            point for occurrence, point in positions.items() if occurrence[0] == reference_id
+        ]
+        if len(main) != 1 or len(reference) != 1:
+            continue
+        drift += abs(main[0][0] - reference[0][0])
+    return _grid_units(drift)
+
+
 def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBreakdown:
     """Return semantic readability penalties for one fully proved placement.
 
@@ -632,6 +672,7 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
         plan, centers, signal_relations
     )
     support_axis_drift = _support_axis_alignment_penalty(plan, centers)
+    passive_reference_axis_drift = _passive_reference_axis_alignment_penalty(packing)
 
     return SemanticPenaltyBreakdown(
         missing_geometry=missing_geometry,
@@ -652,6 +693,7 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
         sequential_stage_row_drift=sequential_stage_row_drift,
         directed_interface_row_drift=directed_interface_row_drift,
         support_axis_drift=support_axis_drift,
+        passive_reference_axis_drift=passive_reference_axis_drift,
     )
 
 
