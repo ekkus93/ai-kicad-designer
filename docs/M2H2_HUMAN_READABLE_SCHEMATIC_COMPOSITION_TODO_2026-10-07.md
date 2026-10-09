@@ -135,6 +135,7 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
   - Production `m2_composition_candidate_rank._branch_readability_penalty` now groups ordinary signal and explicit branch fanout by semantic source/net, deduplicates targets, and penalizes off-center origins, uneven sibling depth, and backwards branches. Authored controls in `tests/test_m2_composition_candidate_rank.py` cover centered vs detached origins, signal-edge equivalence, renames/permutations, and unrelated-net exclusions; hosted contract and static checks passed for source `74f5d59b4f62b1e55dd46e078431e07dd02ee419`. Native render acceptance remains separately unchecked.
 - [x] Prefer consistent sibling-branch geometry.
 - [ ] Penalize unnecessary branch crossings/detours.
+  - Source-level partial implementation: generic fanout candidate ranking penalizes unrelated obstacles intersecting both shortest Manhattan elbows, deduplicates mixed signal/branch edges, and excludes owned support/package members. Four authored tests PASS with hosted static and contract checks at `dec2b79937deedaa7c4587227c78e5698a3f2798`, run `37907563890`. This is a placement/corridor proxy, **not** emitted-wire crossing or detour evidence; retain unchecked pending current-source locked-KiCad routing observation.
 - [x] Keep branch outputs attributable to source.
 - [x] Model forward-path versus feedback-path roles.
 - [x] Prefer compact feedback loops around owning stage.
@@ -196,7 +197,8 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 
 - [x] Add meaningful alignment-line detection.
 - [x] Prefer common baseline/centerline for sequential active stages where practical.
-- [ ] Prefer role-consistent passive alignment.
+- [x] Prefer role-consistent passive alignment.
+  - Source-level semantic terminal-role alignment for local reference/shunt legs is implemented in `m2_composition_candidate_rank._passive_reference_axis_alignment_penalty`, including explicit exemptions for ambiguous/shared ownership. Three authored controls verify axis preference, refdes/port-order invariance, and shared-leg exclusions. Exact source `f1e9392efec0569c05e5a89f1446fa82bbc25f19`, hosted contract and complete static PASS in run `37908086300`. Native-render acceptance remains unchecked.
 - [x] Align connectors with the signal rows they serve where practical.
 - [x] Align local support structures rather than leaving arbitrary offsets.
   - Source-level alignment checkpoint: generic sequential signal and directed connector-row penalties in `src/ai_kicad/m2_composition_candidate_rank.py` and explicit support/package ownership axis penalty were exercised by authored positive, negative, fanout, feedback, and ordering controls in `tests/test_m2_composition_candidate_rank.py`. Hosted contract tests and complete static checks PASS on exact source `de219e0129d7814326517de1f71cb49c73ab0da5`, run `37906474016`. This supports the three checked source preferences only; locked KiCad 10.0.6, native route/render evidence, and final composition acceptance remain unchecked.
