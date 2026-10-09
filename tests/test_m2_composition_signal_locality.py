@@ -21,5 +21,11 @@ def test_local_signal_pair_gap_prefers_proximity() -> None:
             items.append(SimpleNamespace(fragment=fragment, content_envelope=rect, envelope=rect))
         return SimpleNamespace(fragments=tuple(items))
 
-    assert semantic_composition_penalty_breakdown(plan, packing(3 * PITCH)).local_signal_neighbor_gap == 0
-    assert semantic_composition_penalty_breakdown(plan, packing(18 * PITCH)).local_signal_neighbor_gap == 15
+    assert (
+        semantic_composition_penalty_breakdown(plan, packing(3 * PITCH)).local_signal_neighbor_gap
+        == 0
+    )
+    assert (
+        semantic_composition_penalty_breakdown(plan, packing(18 * PITCH)).local_signal_neighbor_gap
+        == 15
+    )
