@@ -171,31 +171,27 @@ def test_runtime_observer_reads_measured_packing_without_candidate_scores() -> N
     assert report.metrics.visible_block_count == 2
 
 
-def test_native_pin_observer_uses_emitted_geometry_not_production_envelopes() -> None:
-    from ai_kicad.m2_semantics import PhysicalTerminalObligation
-
-    original = _composition_plan()
-    plan = SemanticPlan(
-        blocks=original.blocks,
-        edges=original.edges,
+def _native_pin_plan() -> SemanticPlan:
+    baseline = _composition_plan()
+    return SemanticPlan(
+        blocks=baseline.blocks,
+        edges=baseline.edges,
         owners={},
         signal_order=(),
         terminals=(
-            PhysicalTerminalObligation(
-                ("source-pin", "1"), ("source-pin", 1), "input",
-                "Connector_Generic:Conn_01x01", 1, "P", 0, 0, "signal",
-            ),
-            PhysicalTerminalObligation(
-                ("sink-pin", "2"), ("sink-pin", 1), "stage",
-                "Device:R", 1, "P", 0, 0, "signal",
-            ),
+            SimpleNamespace(terminal=("source-pin", "1"), owner="input"),
+            SimpleNamespace(terminal=("sink-pin", "2"), owner="stage"),
         ),
     )
+
+
+def test_native_pin_observer_uses_emitted_geometry_not_production_envelopes() -> None:
+    plan = _native_pin_plan()
     design = {
         "components": [
             {"id": "source-pin", "refdes": "J1"},
             {"id": "sink-pin", "refdes": "R1"},
-        ],
+        ]
     }
     native = {"pin_positions": {("J1", "1"): (0, 0), ("R1", "2"): (20, 0)}}
     observed = observe_native_pin_composition(plan, design, native)
@@ -218,21 +214,7 @@ def test_native_pin_observer_uses_emitted_geometry_not_production_envelopes() ->
 
 
 def test_native_pin_observer_marks_missing_block_geometry() -> None:
-    from ai_kicad.m2_semantics import PhysicalTerminalObligation
-
-    original = _composition_plan()
-    plan = SemanticPlan(
-        blocks=original.blocks,
-        edges=original.edges,
-        owners={},
-        signal_order=(),
-        terminals=(
-            PhysicalTerminalObligation(
-                ("source-pin", "1"), ("source-pin", 1), "input",
-                "Connector_Generic:Conn_01x01", 1, "P", 0, 0, "signal",
-            ),
-        ),
-    )
+    plan = _native_pin_plan()
     design = {"components": [{"id": "source-pin", "refdes": "J1"}]}
     native = {"pin_positions": {("J1", "1"): (0, 0)}}
     report = observe_native_pin_composition(plan, design, native)

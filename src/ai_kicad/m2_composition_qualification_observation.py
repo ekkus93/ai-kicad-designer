@@ -111,9 +111,7 @@ def observe_native_pin_composition(
     or candidate scores. Its terminal-only bounds are not full symbol/page
     envelopes, so utilization and whitespace remain preliminary diagnostics.
     """
-    reference_by_component = {
-        item["id"]: item["refdes"] for item in design["components"]
-    }
+    reference_by_component = {item["id"]: item["refdes"] for item in design["components"]}
     pins = observed_schematic["pin_positions"]
     positions: dict[str, list[tuple[int, int]]] = defaultdict(list)
     for obligation in plan.terminals:
