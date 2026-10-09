@@ -657,18 +657,10 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
         target_x = centers[target][0]
         source_roles = roles.get(source, set())
         target_roles = roles.get(target, set())
-        if (
-            "signal_in" in source_roles
-            and "signal_out" not in source_roles
-            and source_x > target_x
-        ):
+        if "signal_in" in source_roles and "signal_out" not in source_roles and source_x > target_x:
             interface_side_violations += 1
             interface_owner_distance += source_x - target_x
-        if (
-            "signal_out" in target_roles
-            and "signal_in" not in target_roles
-            and target_x < source_x
-        ):
+        if "signal_out" in target_roles and "signal_in" not in target_roles and target_x < source_x:
             interface_side_violations += 1
             interface_owner_distance += source_x - target_x
 
