@@ -811,6 +811,7 @@ def test_passive_reference_axis_exempts_shared_or_missing_ownership() -> None:
     score = semantic_composition_penalty_breakdown(_plan((shared,)), placed)
     assert score.passive_reference_axis_drift == 0
 
+
 def _field_role_stage(block_id: str, component_id: str, *, role: str = "signal_in"):
     return SimpleNamespace(
         id=block_id,
@@ -858,9 +859,7 @@ def test_comparable_field_slots_are_aesthetic_tiebreakers_not_routing_overrides(
     assert drifted_key[-3] == 3
     assert aligned_key < drifted_key
     # Better real routing must outrank a prettier field slot.
-    shorter_route = composition_candidate_key(
-        plan, inconsistent, (99, 100, 1, 1.0, 0, 0)
-    )
+    shorter_route = composition_candidate_key(plan, inconsistent, (99, 100, 1, 1.0, 0, 0))
     assert shorter_route < aligned_key
 
 
@@ -879,9 +878,9 @@ def test_field_slot_tiebreaker_ignores_refdes_and_insertion_order() -> None:
     )
     routing = (100, 100, 1, 1.0, 0, 0)
     assert composition_candidate_key(_plan((first, second)), base, routing)[-3] == 2
-    assert composition_candidate_key(
-        _plan((renamed_second, renamed_first)), renamed, routing
-    )[-3] == 2
+    assert (
+        composition_candidate_key(_plan((renamed_second, renamed_first)), renamed, routing)[-3] == 2
+    )
 
 
 def test_field_slot_tiebreaker_exempts_different_roles_or_rotations() -> None:
@@ -905,6 +904,4 @@ def test_field_slot_tiebreaker_uses_median_and_exempts_missing_text() -> None:
         _field_role_placed(blocks[2], "R2", 20 * PITCH, slot=(6 * PITCH, -3 * PITCH)),
         _placed(blocks[3], 30 * PITCH, positions={("R3", 1): (0, 0)}),
     )
-    assert composition_candidate_key(
-        _plan(blocks), packed, (100, 100, 1, 1.0, 0, 0)
-    )[-3] == 6
+    assert composition_candidate_key(_plan(blocks), packed, (100, 100, 1, 1.0, 0, 0))[-3] == 6
