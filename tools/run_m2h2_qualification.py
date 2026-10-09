@@ -92,14 +92,18 @@ def main() -> None:
             run.get("composition_observer") == runs[0].get("composition_observer")
             for run in runs[1:]
         )
-        accepted = reproducible and observer_reproducible and all(
-            run["returncode"] == 0
-            and run["electrical_status"] == "pass"
-            and not run["electrical_diagnostics"]
-            and run["erc_violation_count"] == 0
-            and run["serialized_scene_verified"] == "pass"
-            and run["composition_observer"]["passed"]
-            for run in runs
+        accepted = (
+            reproducible
+            and observer_reproducible
+            and all(
+                run["returncode"] == 0
+                and run["electrical_status"] == "pass"
+                and not run["electrical_diagnostics"]
+                and run["erc_violation_count"] == 0
+                and run["serialized_scene_verified"] == "pass"
+                and run["composition_observer"]["passed"]
+                for run in runs
+            )
         )
         results.append(
             {
@@ -122,8 +126,7 @@ def main() -> None:
                     "accepted": accepted,
                     "reproducible": reproducible,
                     "composition_observer_passed": all(
-                        run.get("composition_observer", {}).get("passed", False)
-                        for run in runs
+                        run.get("composition_observer", {}).get("passed", False) for run in runs
                     ),
                     "runs": [run["path"] for run in runs],
                     "failures": [run.get("failure") for run in runs if run["returncode"]],

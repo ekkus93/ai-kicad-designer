@@ -169,9 +169,7 @@ def verify(run: Path, design: dict, expected: dict) -> dict:
     signature = _signature(run)
     resolved = assets()
     plan = semantic_plan(validate(design, resolved), resolved)
-    composition_observer = observe_composition_evidence(
-        plan, signature["composition"]
-    ).as_dict()
+    composition_observer = observe_composition_evidence(plan, signature["composition"]).as_dict()
     schematic = next((run / "project").glob("*.kicad_sch"))
     observed = observe(schematic, run / "reports/netlist.xml")
     physical_components = {part["id"] for part in design["components"]}
