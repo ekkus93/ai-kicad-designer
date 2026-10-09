@@ -36,6 +36,7 @@ class QualificationObservation:
     composition_observer_passed: bool
     electrical_passed: bool
     serialized_scene_verified: bool
+    rejection_witness: str | None = None
 
     def counts_as_success(self, matrix: QualificationMatrix) -> bool:
         case = _case_by_id(matrix).get(self.case_id)
@@ -45,11 +46,22 @@ class QualificationObservation:
             return False
         if self.toolchain != LOCKED_KICAD_VERSION or self.toolchain != matrix.locked_toolchain:
             return False
-        if self.status != "passed":
-            return False
         if self.repetition < 1 or self.repetition > case.repetitions:
             return False
         if case.requires_native_kicad and not self.native_kicad:
+            return False
+        if case.family == "preserved_negative":
+            # Negative controls prove continued rejection, not acceptance.
+            # A normal positive PASS, a failed CI job, or a missing artifact
+            # cannot stand in for a witnessed expected rejection.
+            return (
+                self.status == "expected_rejection"
+                and isinstance(self.rejection_witness, str)
+                and bool(self.rejection_witness.strip())
+                and not self.electrical_passed
+                and not self.serialized_scene_verified
+            )
+        if self.status != "passed":
             return False
         if case.requires_composition_observer and not self.composition_observer_passed:
             return False

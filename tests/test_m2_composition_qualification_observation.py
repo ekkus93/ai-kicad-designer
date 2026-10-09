@@ -90,14 +90,76 @@ def test_required_native_kicad_observer_electrical_and_serialization_gates() -> 
     assert report.rejected_observation_count() == 4
 
 
-def test_preserved_negative_does_not_require_composition_observer() -> None:
+def test_preserved_negative_requires_explicit_witnessed_rejection() -> None:
     matrix = _matrix()
-    observation = _observation("V3-8", 1, composition_observer_passed=False)
-
-    report = build_observation_report(matrix, (observation,))
+    accepted = _observation(
+        "V3-8",
+        1,
+        status="expected_rejection",
+        electrical_passed=False,
+        serialized_scene_verified=False,
+        composition_observer_passed=False,
+        rejection_witness="governed validation rejected historical V3-8",
+    )
+    report = build_observation_report(matrix, (accepted,))
 
     assert ("V3-8", 1) in report.successful_repetitions()
     assert all(case_id != "V3-8" for case_id, _, _ in report.gaps())
+
+
+def test_preserved_negative_cannot_pass_from_positive_success_or_unwitnessed_failure() -> None:
+    matrix = _matrix()
+    cases = (
+        _observation("V3-8", 1),
+        _observation("V3-8", 1, status="failed"),
+        _observation("V3-8", 1, status="expected_rejection"),
+        _observation(
+            "V3-8",
+            1,
+            status="expected_rejection",
+            electrical_passed=False,
+            serialized_scene_verified=False,
+            rejection_witness="  ",
+        ),
+        _observation(
+            "V3-8",
+            1,
+            status="expected_rejection",
+            electrical_passed=True,
+            serialized_scene_verified=False,
+            rejection_witness="negative observed",
+        ),
+        _observation(
+            "V3-8",
+            1,
+            status="expected_rejection",
+            electrical_passed=False,
+            serialized_scene_verified=True,
+            rejection_witness="negative observed",
+        ),
+        _observation(
+            "V3-8",
+            1,
+            status="expected_rejection",
+            electrical_passed=False,
+            serialized_scene_verified=False,
+            native_kicad=False,
+            rejection_witness="negative observed",
+        ),
+        _observation(
+            "V3-8",
+            1,
+            status="expected_rejection",
+            electrical_passed=False,
+            serialized_scene_verified=False,
+            source_sha="b" * 40,
+            rejection_witness="negative observed",
+        ),
+    )
+    report = build_observation_report(matrix, cases)
+
+    assert ("V3-8", 1, 0) in report.gaps()
+    assert report.rejected_observation_count() == len(cases)
 
 
 def test_unknown_case_and_out_of_range_repetition_are_rejected() -> None:
