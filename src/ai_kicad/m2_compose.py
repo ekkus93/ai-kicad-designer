@@ -517,6 +517,19 @@ def _substitution_repack(
     ]
     if not options:
         raise InputError(f"VARIANT_REPAIR_EXHAUSTED: {net}")
+    if isinstance(conflict, RouteBlockedConflict):
+        blocked_gateway_ids = set(conflict.gateways)
+        blocked_options = [
+            option
+            for option in options
+            if any(
+                gateway.id in blocked_gateway_ids
+                for gateway in current[option[0]].gateways
+                if gateway.net == net
+            )
+        ]
+        if blocked_options:
+            options = blocked_options
     block_id, choice = options[ordinal % len(options)]
     restricted = {
         key: ((choice,) if key == block_id else (current[key],)) for key in sorted(current)
