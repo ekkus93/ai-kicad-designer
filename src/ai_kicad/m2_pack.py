@@ -2081,11 +2081,7 @@ def _retain_composition_seed_diversity(
         None,
     )
     partial = next(
-        (
-            candidate
-            for candidate in extras
-            if candidate.attempts[0] == "partial-beam"
-        ),
+        (candidate for candidate in extras if candidate.attempts[0] == "partial-beam"),
         None,
     )
     protected = tuple(
