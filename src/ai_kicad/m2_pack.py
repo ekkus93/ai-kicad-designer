@@ -1227,7 +1227,6 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
     return tuple(alternatives)
 
 
-
 def _envelope_manhattan_gap(first: Rect, second: Rect) -> int:
     """Measure the axis-separated free gap between two measured reservations."""
     return max(0, first[0] - second[2], second[0] - first[2]) + max(
