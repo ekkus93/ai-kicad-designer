@@ -9,6 +9,7 @@ from ai_kicad.m2_composition_qualification_observation import (
     build_observation_report,
     observe_composition_evidence,
     observe_composition_packing,
+    observe_native_pin_composition,
 )
 from ai_kicad.m2_semantics import BlockPlan, SemanticEdge, SemanticPlan
 
@@ -168,3 +169,73 @@ def test_runtime_observer_reads_measured_packing_without_candidate_scores() -> N
     report = observe_composition_packing(_composition_plan(), packing)
     assert report.passed
     assert report.metrics.visible_block_count == 2
+
+
+def test_native_pin_observer_uses_emitted_geometry_not_production_envelopes() -> None:
+    from ai_kicad.m2_semantics import PhysicalTerminalObligation
+
+    original = _composition_plan()
+    plan = SemanticPlan(
+        blocks=original.blocks,
+        edges=original.edges,
+        owners={},
+        signal_order=(),
+        terminals=(
+            PhysicalTerminalObligation(
+                ("source-pin", "1"), ("source-pin", 1), "input",
+                "Connector_Generic:Conn_01x01", 1, "P", 0, 0, "signal",
+            ),
+            PhysicalTerminalObligation(
+                ("sink-pin", "2"), ("sink-pin", 1), "stage",
+                "Device:R", 1, "P", 0, 0, "signal",
+            ),
+        ),
+    )
+    design = {
+        "components": [
+            {"id": "source-pin", "refdes": "J1"},
+            {"id": "sink-pin", "refdes": "R1"},
+        ],
+    }
+    native = {"pin_positions": {("J1", "1"): (0, 0), ("R1", "2"): (20, 0)}}
+    observed = observe_native_pin_composition(plan, design, native)
+    assert observed.passed
+    assert observed.metrics.visible_block_count == 2
+
+    tampered_production = {
+        "variants": [
+            {"fragment": "input", "placed_envelope": [100, 0, 110, 10]},
+            {"fragment": "stage", "placed_envelope": [0, 0, 10, 10]},
+        ]
+    }
+    assert not observe_composition_evidence(plan, tampered_production).passed
+    assert observe_native_pin_composition(plan, design, native) == observed
+
+    reversed_native = {"pin_positions": {("J1", "1"): (30, 0), ("R1", "2"): (0, 0)}}
+    reversed_report = observe_native_pin_composition(plan, design, reversed_native)
+    assert not reversed_report.passed
+    assert reversed_report.metrics.primary_stage_order_inversions == 1
+
+
+def test_native_pin_observer_marks_missing_block_geometry() -> None:
+    from ai_kicad.m2_semantics import PhysicalTerminalObligation
+
+    original = _composition_plan()
+    plan = SemanticPlan(
+        blocks=original.blocks,
+        edges=original.edges,
+        owners={},
+        signal_order=(),
+        terminals=(
+            PhysicalTerminalObligation(
+                ("source-pin", "1"), ("source-pin", 1), "input",
+                "Connector_Generic:Conn_01x01", 1, "P", 0, 0, "signal",
+            ),
+        ),
+    )
+    design = {"components": [{"id": "source-pin", "refdes": "J1"}]}
+    native = {"pin_positions": {("J1", "1"): (0, 0)}}
+    report = observe_native_pin_composition(plan, design, native)
+    assert not report.passed
+    assert report.metrics.visible_block_count == 1
+    assert any(item.kind == "missing_block_geometry" for item in report.violations)

@@ -8,7 +8,9 @@ counted as successful qualification evidence.
 
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import dataclass
+from typing import Mapping
 
 from .m2_composition_quality import (
     CompositionReport,
@@ -96,6 +98,40 @@ def observe_composition_evidence(
         plan,
         block_envelopes_from_composition_evidence(composition_evidence),
     )
+
+
+def observe_native_pin_composition(
+    plan: SemanticPlan,
+    design: Mapping,
+    observed_schematic: Mapping,
+) -> CompositionReport:
+    """Measure semantic block centers from parsed native KiCad pin positions.
+
+    This independent diagnostic never consumes the generator's composition JSON
+    or candidate scores. Its terminal-only bounds are not full symbol/page
+    envelopes, so utilization and whitespace remain preliminary diagnostics.
+    """
+    reference_by_component = {
+        item["id"]: item["refdes"] for item in design["components"]
+    }
+    pins = observed_schematic["pin_positions"]
+    positions: dict[str, list[tuple[int, int]]] = defaultdict(list)
+    for obligation in plan.terminals:
+        component_id, pin = obligation.terminal
+        refdes = reference_by_component.get(component_id)
+        point = pins.get((refdes, pin))
+        if point is not None:
+            positions[obligation.owner].append((int(point[0]), int(point[1])))
+    boxes = {
+        block_id: (
+            min(point[0] for point in points),
+            min(point[1] for point in points),
+            max(point[0] for point in points),
+            max(point[1] for point in points),
+        )
+        for block_id, points in positions.items()
+    }
+    return observe_human_composition(plan, boxes)
 
 
 def observe_composition_packing(plan: SemanticPlan, packing) -> CompositionReport:
