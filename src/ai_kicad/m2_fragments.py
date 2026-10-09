@@ -1320,18 +1320,31 @@ def _passive_fragment(
 
 
 def _interface_fragment(
-    design: dict, resolved: dict[str, Asset], block: BlockPlan
+    design: dict,
+    resolved: dict[str, Asset],
+    block: BlockPlan,
+    *,
+    mirrored: bool = False,
 ) -> FragmentVariant:
+    """Build a measured connector motif with an outward horizontal gateway.
+
+    The mirrored family gives passive signal interfaces a generic inward-facing
+    alternative when a direct visible route is legal. Both orientations remain
+    independently certified and participate in the same bounded local-variant
+    budget; no remote topology or fixture identity is inspected here.
+    """
     component_id = next(iter(block.occurrences))[0]
     d = _new_draft(design, resolved)
-    d.add(component_id, 12 * PITCH, 16 * PITCH)
+    d.add(component_id, 12 * PITCH, 16 * PITCH, angle=180 if mirrored else 0)
     anchors = {}
+    direction = "right" if mirrored else "left"
+    offset = 2 * PITCH if mirrored else -2 * PITCH
     for port in block.ports:
         pin = port.terminals[0][1]
         point = d.point(component_id, pin)
-        end = (point[0] - 2 * PITCH, point[1])
+        end = (point[0] + offset, point[1])
         d.route(port.net, point, end)
-        anchors[port.id.rsplit(".", 1)[-1]] = (end, "left")
+        anchors[port.id.rsplit(".", 1)[-1]] = (end, direction)
     return _finish(design, resolved, block, d, anchors)
 
 
@@ -1675,6 +1688,12 @@ def fragment_variants(
                     pass
         elif block.kind == "interface":
             bases = [construct(_interface_fragment, design, resolved, block)]
+            try:
+                bases.append(
+                    construct(_interface_fragment, design, resolved, block, mirrored=True)
+                )
+            except InputError:
+                pass
         else:
             raise InputError(f"FRAGMENT_KIND_UNSUPPORTED: {block.id}:{block.kind}")
         families = [
@@ -1750,6 +1769,8 @@ def fragment_variants(
                 )
             if block.kind == "package_power":
                 return "compact" if ".compact_" in bases[index].id else "expanded"
+            if block.kind == "interface":
+                return "right_escape" if index else "left_escape"
             return "above" if index else "below"
 
         retained_candidates = [candidate for _, candidate, _ in retained]

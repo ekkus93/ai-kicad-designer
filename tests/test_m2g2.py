@@ -600,3 +600,18 @@ def test_invalid_gateway_terminal_identity_is_rejected():
             frozenset({"right"}),
             (),
         ).validate({("u", "3"): "N"})
+
+def test_passive_interfaces_offer_both_horizontal_gateway_orientations() -> None:
+    design = validate(json.loads((PROBES / "passive_two_level_fanout.json").read_text()), assets())
+    plan = semantic_plan(design, assets())
+    inventory = fragment_variants(design, assets(), plan)
+    interfaces = [block for block in plan.blocks if block.kind == "interface"]
+    assert interfaces
+    for block in interfaces:
+        horizontal = {
+            gateway.escape_direction
+            for variant in inventory[block.id]
+            for gateway in variant.gateways
+            if gateway.escape_direction in {"left", "right"}
+        }
+        assert horizontal == {"left", "right"}
