@@ -163,6 +163,33 @@ def observe_composition_packing(plan: SemanticPlan, packing) -> CompositionRepor
     return observe_human_composition(plan, envelopes)
 
 
+def witnessed_invalid_build_rejection(
+    *, returncode: int, failure: Mapping[str, object] | None, expected_input_sha256: str
+) -> bool:
+    """Accept a preserved negative only from a real invalid-design build witness.
+
+    A nonzero process exit alone may mean missing tooling, infrastructure
+    failure, or stale artifacts. The locked builder returns 2 for a typed
+    InputError and writes a design-bound invalid failure report; tool failures
+    return 4 and cannot demonstrate that the negative design was rejected.
+    """
+    if type(returncode) is not int or returncode != 2 or not isinstance(failure, Mapping):
+        return False
+    message = failure.get("message")
+    failure_class = failure.get("failure_class")
+    return (
+        failure.get("status") == "invalid"
+        and isinstance(expected_input_sha256, str)
+        and len(expected_input_sha256) == 64
+        and all(character in "0123456789abcdef" for character in expected_input_sha256)
+        and failure.get("input_sha256") == expected_input_sha256
+        and isinstance(message, str)
+        and bool(message.strip())
+        and isinstance(failure_class, str)
+        and bool(failure_class.strip())
+    )
+
+
 def _case_by_id(matrix: QualificationMatrix) -> dict[str, object]:
     cases = (
         matrix.base_cases

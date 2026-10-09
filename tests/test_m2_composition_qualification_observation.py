@@ -10,6 +10,7 @@ from ai_kicad.m2_composition_qualification_observation import (
     observe_composition_evidence,
     observe_composition_packing,
     observe_native_pin_composition,
+    witnessed_invalid_build_rejection,
 )
 from ai_kicad.m2_semantics import BlockPlan, SemanticEdge, SemanticPlan
 
@@ -283,3 +284,35 @@ def test_native_pin_observer_marks_missing_block_geometry() -> None:
     assert not report.passed
     assert report.metrics.visible_block_count == 1
     assert any(item.kind == "missing_block_geometry" for item in report.violations)
+
+def test_preserved_negative_builder_rejection_requires_input_bound_invalid_report() -> None:
+    expected = "a" * 64
+    report = {
+        "status": "invalid",
+        "message": "ROUTE_REQUIRED_GATEWAY_MISSING: failed to satisfy input",
+        "failure_class": "connectivity/protection",
+        "input_sha256": expected,
+    }
+    assert witnessed_invalid_build_rejection(
+        returncode=2, failure=report, expected_input_sha256=expected
+    )
+    assert not witnessed_invalid_build_rejection(
+        returncode=4, failure=report, expected_input_sha256=expected
+    )
+    assert not witnessed_invalid_build_rejection(
+        returncode=0, failure=report, expected_input_sha256=expected
+    )
+    assert not witnessed_invalid_build_rejection(
+        returncode=2, failure=None, expected_input_sha256=expected
+    )
+    for changed in (
+        {"status": "tool_failed"},
+        {"input_sha256": "b" * 64},
+        {"message": ""},
+        {"failure_class": ""},
+    ):
+        assert not witnessed_invalid_build_rejection(
+            returncode=2,
+            failure={**report, **changed},
+            expected_input_sha256=expected,
+        )

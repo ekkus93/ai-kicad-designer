@@ -14,6 +14,7 @@ from ai_kicad.m2b import assets, validate
 from ai_kicad.m2_composition_qualification_observation import (
     observe_composition_evidence,
     observe_native_pin_composition,
+    witnessed_invalid_build_rejection,
 )
 from ai_kicad.m2_semantics import semantic_plan
 from run_m2g2_qualification import (
@@ -157,6 +158,15 @@ def main() -> None:
     invalid = ROOT / "fixtures/m2blind_v3/ir/V3-8.json"
     invalid_path = output / "v3-8-invalid/run1"
     invalid_rc = _build(invalid, invalid_path)
+    invalid_report_path = (
+        invalid_path.with_name(invalid_path.name + ".failed") / "reports/failure.json"
+    )
+    invalid_failure = _json(invalid_report_path) if invalid_report_path.is_file() else None
+    negative_v3_8_accepted = witnessed_invalid_build_rejection(
+        returncode=invalid_rc,
+        failure=invalid_failure,
+        expected_input_sha256=_sha(invalid),
+    )
     preservation = _preservation_audit()
     anti_overfitting = _anti_overfitting_audit()
     payload = {
@@ -179,7 +189,9 @@ def main() -> None:
         "accepted": sum(item["accepted"] for item in results),
         "total": len(results),
         "builds": len(results) * 5 + 1,
-        "negative_v3_8_accepted": invalid_rc != 0,
+        "negative_v3_8_accepted": negative_v3_8_accepted,
+        "negative_v3_8_returncode": invalid_rc,
+        "negative_v3_8_failure": invalid_failure,
         "historical_preservation": preservation,
         "anti_overfitting": anti_overfitting,
     }
@@ -197,7 +209,7 @@ def main() -> None:
         ),
         flush=True,
     )
-    if payload["accepted"] != payload["total"] or invalid_rc == 0:
+    if payload["accepted"] != payload["total"] or not negative_v3_8_accepted:
         raise SystemExit(1)
 
 
