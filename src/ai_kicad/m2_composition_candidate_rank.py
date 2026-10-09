@@ -38,6 +38,8 @@ class SemanticPenaltyBreakdown:
     power_interface_distance: int
     infrastructure_primary_row_intrusion: int
     feedback_intrusion: int
+    sequential_stage_row_drift: int
+    directed_interface_row_drift: int
 
     def vector(self) -> SemanticPenaltyVector:
         return (
@@ -56,6 +58,8 @@ class SemanticPenaltyBreakdown:
             self.power_interface_distance,
             self.infrastructure_primary_row_intrusion,
             self.feedback_intrusion,
+            self.sequential_stage_row_drift,
+            self.directed_interface_row_drift,
         )
 
     def as_dict(self) -> dict[str, int]:
@@ -75,6 +79,8 @@ class SemanticPenaltyBreakdown:
             "power_interface_distance": self.power_interface_distance,
             "infrastructure_primary_row_intrusion": self.infrastructure_primary_row_intrusion,
             "feedback_intrusion": self.feedback_intrusion,
+            "sequential_stage_row_drift": self.sequential_stage_row_drift,
+            "directed_interface_row_drift": self.directed_interface_row_drift,
         }
 
 
@@ -422,6 +428,70 @@ def _feedback_corridor_intrusions(plan, rects: dict[str, Rect], centers: dict[st
     return penalty
 
 
+def _signal_row_alignment_penalties(
+    plan, centers: dict[str, Point], signal_relations: tuple[tuple[str, str, str], ...]
+) -> tuple[int, int]:
+    """Prefer legible serial signal rows and connector-to-owner row alignment.
+
+    Only a one-to-one directed relation between signal-processing blocks is
+    treated as a serial stage alignment. Branches and convergences may occupy
+    different rows; supply, feedback and support edges do not define signal
+    baselines. An interface with multiple consumers needs to align with at
+    least one connected signal row, not all fanout rows simultaneously.
+    """
+    blocks = {block.id: block for block in plan.blocks}
+    outgoing: dict[str, set[str]] = defaultdict(set)
+    incoming: dict[str, set[str]] = defaultdict(set)
+    for source, target, _net in signal_relations:
+        if source == target or source not in centers or target not in centers:
+            continue
+        outgoing[source].add(target)
+        incoming[target].add(source)
+
+    def is_signal_stage(block_id: str) -> bool:
+        block = blocks.get(block_id)
+        return bool(
+            block is not None
+            and block.kind != "interface"
+            and {"signal_in", "signal_out"}.issubset(
+                {port.role for port in block.ports}
+            )
+        )
+
+    stage_drift = 0
+    for source_id, targets in sorted(outgoing.items()):
+        if len(targets) != 1 or not is_signal_stage(source_id):
+            continue
+        target_id = next(iter(targets))
+        if len(incoming[target_id]) != 1 or not is_signal_stage(target_id):
+            continue
+        stage_drift += abs(centers[source_id][1] - centers[target_id][1])
+
+    interface_drift = 0
+    for block_id, block in sorted(blocks.items()):
+        if block.kind != "interface" or block_id not in centers:
+            continue
+        roles = {port.role for port in block.ports}
+        # A genuinely bidirectional or ambiguous interface has no prescribed
+        # signal-row polarity.
+        if "signal_in" in roles and "signal_out" in roles:
+            continue
+        if "signal_in" in roles:
+            neighbors = outgoing[block_id]
+        elif "signal_out" in roles:
+            neighbors = incoming[block_id]
+        else:
+            continue
+        rows = [
+            centers[neighbor][1]
+            for neighbor in sorted(neighbors)
+            if neighbor in centers and blocks[neighbor].kind != "interface"
+        ]
+        if rows:
+            interface_drift += min(abs(centers[block_id][1] - row) for row in rows)
+    return _grid_units(stage_drift), _grid_units(interface_drift)
+
+
 def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBreakdown:
     """Return semantic readability penalties for one fully proved placement.
 
@@ -494,6 +564,9 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
     power_interface_distance = _power_interface_distance(plan, centers)
     infrastructure_primary_row_intrusion = _infrastructure_primary_row_intrusion(plan, centers)
     feedback_intrusion = _feedback_corridor_intrusions(plan, rects, centers)
+    sequential_stage_row_drift, directed_interface_row_drift = _signal_row_alignment_penalties(
+        plan, centers, signal_relations
+    )
 
     return SemanticPenaltyBreakdown(
         missing_geometry=missing_geometry,
@@ -511,6 +584,8 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
         power_interface_distance=power_interface_distance,
         infrastructure_primary_row_intrusion=infrastructure_primary_row_intrusion,
         feedback_intrusion=feedback_intrusion,
+        sequential_stage_row_drift=sequential_stage_row_drift,
+        directed_interface_row_drift=directed_interface_row_drift,
     )
 
 
