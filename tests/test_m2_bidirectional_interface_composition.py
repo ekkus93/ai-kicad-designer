@@ -37,9 +37,7 @@ def _case(
     packing = SimpleNamespace(
         fragments=tuple(
             SimpleNamespace(
-                fragment=SimpleNamespace(
-                    block=block, positions={}, text_positions={}, angles={}
-                ),
+                fragment=SimpleNamespace(block=block, positions={}, text_positions={}, angles={}),
                 content_envelope=boxes[block.id],
                 envelope=boxes[block.id],
                 delta=(0, 0),
@@ -99,6 +97,8 @@ def test_explicit_directed_interfaces_still_require_correct_visual_side() -> Non
     )
     assert observe_human_composition(output_plan, output_boxes).metrics.output_side_violations == 1
     assert (
-        semantic_composition_penalty_breakdown(output_plan, output_packing).interface_side_violations
+        semantic_composition_penalty_breakdown(
+            output_plan, output_packing
+        ).interface_side_violations
         == 1
     )
