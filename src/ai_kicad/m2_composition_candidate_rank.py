@@ -340,20 +340,29 @@ def _infrastructure_primary_row_intrusion(plan, centers: dict[str, Point]) -> in
     return _grid_units(penalty)
 
 
-def _branch_readability_penalty(plan, centers: dict[str, Point]) -> int:
+def _branch_readability_penalty(plan, centers: dict[str, Point], rects: dict[str, Rect]) -> int:
     """Prefer a visible, centered fanout with equally deep forward branches.
 
     Group targets by source and net, not a case/fixture name. Explicit branch
     edges and ordinary directed signal edges can both describe a real fanout;
     deduplicate their targets so mixed annotations do not double count. A
     source should sit between its branch rows; sibling targets should occupy
-    a consistent column. Ignore single-target edges and non-signal roles.
+    a consistent column. Penalize unrelated obstacles intersecting both short
+    orthogonal corridors to a branch target. This is a *placement proxy*, not
+    evidence of actual routed-wire crossings. Single-target and non-signal
+    connections are exempt.
     """
     fanouts: dict[tuple[str, str], set[str]] = defaultdict(set)
     for edge in plan.edges:
-        if edge.kind in {"branch", "signal"} and edge.source in centers and edge.target in centers:
+        if (
+            edge.kind in {"branch", "signal"}
+            and edge.source != edge.target
+            and edge.source in centers
+            and edge.target in centers
+        ):
             fanouts[(edge.source, edge.net)].add(edge.target)
 
+    known_blocks = {block.id for block in plan.blocks if block.kind != "interface"}
     penalty = 0
     for (source_id, _net), target_ids in sorted(fanouts.items()):
         if len(target_ids) < 2:
@@ -367,6 +376,25 @@ def _branch_readability_penalty(plan, centers: dict[str, Point]) -> int:
         penalty += max(target_xs) - min(target_xs)
         # The forward branch should remain visually attributable to its origin.
         penalty += sum(max(0, source_x - target_x) for target_x in target_xs)
+
+        # Sibling branch targets and explicitly local support/package cells
+        # belong to the fanout family, not to the unrelated-obstacle set.
+        family = {source_id, *target_ids}
+        related = set(family)
+        for edge in plan.edges:
+            if edge.kind in {"support", "package"} and (
+                edge.source in family or edge.target in family
+            ):
+                related.update((edge.source, edge.target))
+        obstacles = tuple(
+            rect
+            for block_id, rect in sorted(rects.items())
+            if block_id not in related and block_id in known_blocks
+        )
+        for target_id in sorted(target_ids):
+            penalty += PITCH * _shortest_elbow_intrusion_count(
+                centers[source_id], centers[target_id], obstacles
+            )
     return penalty
 
 
@@ -381,6 +409,24 @@ def _segment_crosses_block(start: Point, end: Point, rect: Rect) -> bool:
         overlaps_x = min(high_x, rect[2]) > max(low_x, rect[0])
         return rect[1] < start[1] < rect[3] and overlaps_x
     raise ValueError("feedback corridor segments must be orthogonal")
+
+
+def _shortest_elbow_intrusion_count(
+    source: Point, target: Point, obstacles: tuple[Rect, ...]
+) -> int:
+    """Conservative minimum unrelated obstacles across two Manhattan elbows."""
+    if not obstacles:
+        return 0
+    elbow_at_target_x = (target[0], source[1])
+    elbow_at_source_x = (source[0], target[1])
+    alternative_paths = (
+        ((source, elbow_at_target_x), (elbow_at_target_x, target)),
+        ((source, elbow_at_source_x), (elbow_at_source_x, target)),
+    )
+    return min(
+        sum(any(_segment_crosses_block(a, b, rect) for a, b in segments) for rect in obstacles)
+        for segments in alternative_paths
+    )
 
 
 def _feedback_corridor_intrusions(plan, rects: dict[str, Rect], centers: dict[str, Point]) -> int:
@@ -418,16 +464,7 @@ def _feedback_corridor_intrusions(plan, rects: dict[str, Rect], centers: dict[st
         )
         if not obstacles:
             continue
-        elbow_at_target_x = (target[0], source[1])
-        elbow_at_source_x = (source[0], target[1])
-        alternative_paths = (
-            ((source, elbow_at_target_x), (elbow_at_target_x, target)),
-            ((source, elbow_at_source_x), (elbow_at_source_x, target)),
-        )
-        penalty += min(
-            sum(any(_segment_crosses_block(a, b, rect) for a, b in segments) for rect in obstacles)
-            for segments in alternative_paths
-        )
+        penalty += _shortest_elbow_intrusion_count(source, target, obstacles)
     return penalty
 
 
@@ -584,7 +621,7 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
         elif edge.kind in {"support", "package"}:
             support_distance += distance
 
-    branch_alignment = _branch_readability_penalty(plan, centers)
+    branch_alignment = _branch_readability_penalty(plan, centers, rects)
     repeated_alignment = _repeated_alignment_penalty(plan, centers, signal_relations)
     intra_block_dispersion = _intra_block_dispersion(packing)
     unrelated_block_proximity = _unrelated_block_proximity(plan, rects)

@@ -595,3 +595,113 @@ def test_connector_fanout_aligns_with_any_owned_row_not_all_rows() -> None:
     )
     assert semantic_composition_penalty_breakdown(plan, aligned).directed_interface_row_drift == 0
     assert semantic_composition_penalty_breakdown(plan, detached).directed_interface_row_drift == 3
+
+def test_branch_corridor_penalizes_only_unavoidable_short_elbow_obstacles() -> None:
+    source = _block("source", "stage")
+    upper = _block("upper", "stage")
+    lower = _block("lower", "stage")
+    blocker_a = _block("obstacle-a", "controller")
+    blocker_b = _block("obstacle-b", "controller")
+    plan = _plan(
+        (source, upper, lower, blocker_a, blocker_b),
+        (
+            _edge("signal", "source", "upper", "fan"),
+            _edge("signal", "source", "lower", "fan"),
+        ),
+    )
+    # Both minimum Manhattan elbows from source to upper are obstructed.
+    obstructed = _packing(
+        _placed(source, 0, 5 * PITCH),
+        _placed(upper, 10 * PITCH, 0),
+        _placed(lower, 10 * PITCH, 10 * PITCH),
+        _placed(blocker_a, 4 * PITCH, 5 * PITCH),
+        _placed(blocker_b, 4 * PITCH, 0),
+    )
+    # Same branch geometry and components; neither short elbow is blocked.
+    unobstructed = _packing(
+        _placed(source, 0, 5 * PITCH),
+        _placed(upper, 10 * PITCH, 0),
+        _placed(lower, 10 * PITCH, 10 * PITCH),
+        _placed(blocker_a, 4 * PITCH, 16 * PITCH),
+        _placed(blocker_b, 4 * PITCH, 19 * PITCH),
+    )
+    blocked_score = semantic_composition_penalty_breakdown(plan, obstructed)
+    clear_score = semantic_composition_penalty_breakdown(plan, unobstructed)
+    assert clear_score.branch_alignment == 0
+    assert blocked_score.branch_alignment == 1
+
+
+def test_branch_corridor_accepts_one_clear_short_elbow() -> None:
+    source = _block("source", "stage")
+    upper = _block("upper", "stage")
+    lower = _block("lower", "stage")
+    blocker = _block("blocker", "controller")
+    plan = _plan(
+        (source, upper, lower, blocker),
+        (
+            _edge("branch", "source", "upper", "n"),
+            _edge("branch", "source", "lower", "n"),
+        ),
+    )
+    placed = _packing(
+        _placed(source, 0, 5 * PITCH),
+        _placed(upper, 10 * PITCH, 0),
+        _placed(lower, 10 * PITCH, 10 * PITCH),
+        _placed(blocker, 4 * PITCH, 5 * PITCH),
+    )
+    assert semantic_composition_penalty_breakdown(plan, placed).branch_alignment == 0
+
+
+def test_branch_corridor_is_deduplicated_and_rename_order_invariant() -> None:
+    source = _block("source", "stage")
+    upper = _block("upper", "stage")
+    lower = _block("lower", "stage")
+    first_obstacle = _block("obstacle-a", "controller")
+    second_obstacle = _block("obstacle-b", "controller")
+    blocks = (source, upper, lower, first_obstacle, second_obstacle)
+    placements = _packing(
+        _placed(source, 0, 5 * PITCH),
+        _placed(upper, 10 * PITCH, 0),
+        _placed(lower, 10 * PITCH, 10 * PITCH),
+        _placed(first_obstacle, 4 * PITCH, 5 * PITCH),
+        _placed(second_obstacle, 4 * PITCH, 0),
+    )
+    edges = (
+        _edge("signal", "source", "upper", "original"),
+        _edge("branch", "source", "upper", "original"),
+        _edge("signal", "source", "lower", "original"),
+    )
+    canonical = _plan(blocks, edges)
+    renamed = _plan(
+        tuple(reversed(blocks)),
+        (
+            _edge("signal", "source", "lower", "renamed"),
+            _edge("signal", "source", "upper", "renamed"),
+        ),
+    )
+    assert semantic_composition_penalty_breakdown(canonical, placements).branch_alignment == (
+        semantic_composition_penalty_breakdown(renamed, placements).branch_alignment
+    )
+
+
+def test_branch_corridor_exempts_local_owned_support_as_unrelated_obstacles() -> None:
+    source = _block("source", "stage")
+    upper = _block("upper", "stage")
+    lower = _block("lower", "stage")
+    support_a = _block("support-a", "support")
+    support_b = _block("support-b", "support")
+    blocks = (source, upper, lower, support_a, support_b)
+    edges = (
+        _edge("branch", "source", "upper", "fan"),
+        _edge("branch", "source", "lower", "fan"),
+        _edge("support", "upper", "support-a", "bias"),
+        _edge("package", "upper", "support-b", "package"),
+    )
+    placed = _packing(
+        _placed(source, 0, 5 * PITCH),
+        _placed(upper, 10 * PITCH, 0),
+        _placed(lower, 10 * PITCH, 10 * PITCH),
+        _placed(support_a, 4 * PITCH, 5 * PITCH),
+        _placed(support_b, 4 * PITCH, 0),
+    )
+    assert semantic_composition_penalty_breakdown(_plan(blocks, edges), placed).branch_alignment == 0
