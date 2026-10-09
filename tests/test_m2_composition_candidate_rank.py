@@ -906,6 +906,7 @@ def test_field_slot_tiebreaker_uses_median_and_exempts_missing_text() -> None:
     )
     assert composition_candidate_key(_plan(blocks), packed, (100, 100, 1, 1.0, 0, 0))[-3] == 6
 
+
 def _presentation_net(
     role: str, fragments: tuple[str, ...], *, explicit_geometry_required: bool = False
 ):
@@ -951,9 +952,7 @@ def test_local_label_gap_exempts_interfaces_shared_and_explicit_geometry() -> No
     )
     for net in exempt_nets:
         plan.presentation_nets = (net,)
-        assert (
-            semantic_composition_penalty_breakdown(plan, detached).local_signal_neighbor_gap == 0
-        )
+        assert semantic_composition_penalty_breakdown(plan, detached).local_signal_neighbor_gap == 0
     plan.presentation_nets = (_presentation_net("signal", ("first", "second")),)
     assert semantic_composition_penalty_breakdown(plan, detached).local_signal_neighbor_gap > 0
 
@@ -978,6 +977,8 @@ def test_local_label_gap_is_net_name_order_and_duplicate_invariant() -> None:
     renamed_plan.presentation_nets = (reversed_net, reversed_net)
     assert original == 8
     assert (
-        semantic_composition_penalty_breakdown(renamed_plan, renamed_placed).local_signal_neighbor_gap
+        semantic_composition_penalty_breakdown(
+            renamed_plan, renamed_placed
+        ).local_signal_neighbor_gap
         == original
     )
