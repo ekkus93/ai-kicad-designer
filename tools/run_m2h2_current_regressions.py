@@ -141,12 +141,9 @@ def _native_route_diagnostic(observed: dict[str, Any]) -> dict[str, Any]:
     crossings or independent minimum-route baselines unavailable from this
     first-order diagnostic. Final per-net and visual acceptance remain open.
     """
-    segments = tuple(
-        (tuple(first), tuple(second)) for first, second in observed["wires"]
-    )
+    segments = tuple((tuple(first), tuple(second)) for first, second in observed["wires"])
     observed_length = sum(
-        abs(first[0] - second[0]) + abs(first[1] - second[1])
-        for first, second in segments
+        abs(first[0] - second[0]) + abs(first[1] - second[1]) for first, second in segments
     )
     metrics = measure_routing_readability(
         segments,
