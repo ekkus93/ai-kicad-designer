@@ -20,6 +20,7 @@ from .m2_geometry import (
 )
 from .m2_pack import BOTTOM, LEFT, RIGHT, TOP, PlacedFragment
 from .m2_semantics import SemanticEdge, SemanticPlan
+from .m2_terminal_interface_flow import inferred_passive_interface_signal_relations
 
 
 MAX_TRACKS_PER_SIDE = 8
@@ -557,6 +558,48 @@ def _distribution_initial_trees(
     return tuple(result[:8])
 
 
+def _routable_edges(plan: SemanticPlan) -> tuple[SemanticEdge, ...]:
+    """Return generic cross-fragment routes, including unique passive interfaces.
+
+    Passive connector pins are electrically typed as passive, so some external
+    signal boundaries are represented by terminal-backed precedence rather than
+    authored signal edges. When semantic inference identifies exactly one
+    unambiguous producer/consumer relationship, require the same visible route
+    tree as an authored signal edge. Ambiguous, power, and reference interfaces
+    remain label/distribution governed and are never guessed.
+    """
+    edges = [
+        edge
+        for edge in plan.edges
+        if edge.net and edge.kind in {"signal", "power", "branch"}
+    ]
+    existing = {(edge.source, edge.target, edge.net) for edge in edges}
+    for source, target, net in inferred_passive_interface_signal_relations(plan):
+        if (source, target, net) in existing:
+            continue
+        edges.append(
+            SemanticEdge(
+                "signal",
+                source,
+                target,
+                net,
+                ("inferred_passive_interface",),
+            )
+        )
+    return tuple(
+        sorted(
+            edges,
+            key=lambda edge: (
+                edge.net,
+                edge.source,
+                edge.target,
+                edge.kind,
+                edge.origins,
+            ),
+        )
+    )
+
+
 def route_between_fragments(
     plan: SemanticPlan,
     placed: tuple[PlacedFragment, ...],
@@ -566,9 +609,8 @@ def route_between_fragments(
     """Attach all required gateways with one obstacle-checked tree per net/island."""
     by_id = {item.fragment.block.id: item for item in placed}
     grouped: dict[str, list[SemanticEdge]] = {}
-    for edge in plan.edges:
-        if edge.net and edge.kind in {"signal", "power", "branch"}:
-            grouped.setdefault(edge.net, []).append(edge)
+    for edge in _routable_edges(plan):
+        grouped.setdefault(edge.net, []).append(edge)
     # A shared internal reference has no connector and may have no directed
     # edge at all. Its terminal inventory still demands a physical distribution.
     for net in plan.presentation_nets:

@@ -1,6 +1,7 @@
 """Mutation and metamorphic controls for passive external interface flow inference."""
 
-from ai_kicad.m2_semantics import BlockPlan, SemanticPlan, SemanticPort
+from ai_kicad.m2_route import _routable_edges
+from ai_kicad.m2_semantics import BlockPlan, SemanticEdge, SemanticPlan, SemanticPort
 from ai_kicad.m2_terminal_interface_flow import inferred_passive_interface_signal_relations
 
 
@@ -105,3 +106,49 @@ def test_renamed_net_and_block_ids_preserve_direction_and_cardinality() -> None:
     )
     assert original == (("connector", "stage", "a"),)
     assert renamed == (("zeta", "omega", "renamed"),)
+
+
+def test_unique_passive_interface_relation_becomes_required_visible_signal_route() -> None:
+    connector = _block("connector", "interface", ("signal", "passive"))
+    stage = _block("stage", "active", ("signal", "signal_in"))
+    plan = SemanticPlan(blocks=(connector, stage), edges=(), owners={}, signal_order=())
+
+    edges = _routable_edges(plan)
+
+    assert edges == (
+        SemanticEdge(
+            "signal",
+            "connector",
+            "stage",
+            "signal",
+            ("inferred_passive_interface",),
+        ),
+    )
+
+
+def test_existing_authored_interface_route_is_not_duplicated() -> None:
+    connector = _block("connector", "interface", ("signal", "passive"))
+    stage = _block("stage", "active", ("signal", "signal_in"))
+    authored = SemanticEdge("signal", "connector", "stage", "signal", ("authored",))
+    plan = SemanticPlan(
+        blocks=(connector, stage),
+        edges=(authored,),
+        owners={},
+        signal_order=(),
+    )
+
+    assert _routable_edges(plan) == (authored,)
+
+
+def test_ambiguous_passive_interface_relationship_does_not_force_route() -> None:
+    connector = _block("connector", "interface", ("signal", "passive"))
+    first = _block("first", "active", ("signal", "signal_in"))
+    second = _block("second", "active", ("signal", "signal_in"))
+    plan = SemanticPlan(
+        blocks=(connector, first, second),
+        edges=(),
+        owners={},
+        signal_order=(),
+    )
+
+    assert _routable_edges(plan) == ()
