@@ -74,13 +74,19 @@ class QualificationObservationReport:
     observations: tuple[QualificationObservation, ...]
 
     def successful_repetitions(self) -> tuple[tuple[str, int], ...]:
-        counted: dict[str, set[int]] = {}
+        # A conflicting failure for the same case/repetition must not be
+        # erased by another success record. Identical positive receipts may
+        # be duplicated without inflating the required repetition count.
+        status_by_repetition: dict[tuple[str, int], bool] = {}
         for observation in self.observations:
-            if observation.counts_as_success(self.matrix):
-                counted.setdefault(observation.case_id, set()).add(observation.repetition)
-        return tuple(
-            (case_id, len(repetitions)) for case_id, repetitions in sorted(counted.items())
-        )
+            identity = (observation.case_id, observation.repetition)
+            success = observation.counts_as_success(self.matrix)
+            status_by_repetition[identity] = status_by_repetition.get(identity, True) and success
+        counted: dict[str, int] = defaultdict(int)
+        for (case_id, _repetition), success in status_by_repetition.items():
+            if success:
+                counted[case_id] += 1
+        return tuple(sorted(counted.items()))
 
     def gaps(self) -> tuple[tuple[str, int, int], ...]:
         return matrix_gaps(self.matrix, self.successful_repetitions())

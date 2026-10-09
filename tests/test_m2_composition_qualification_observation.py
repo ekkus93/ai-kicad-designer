@@ -163,6 +163,39 @@ def test_preserved_negative_cannot_pass_from_positive_success_or_unwitnessed_fai
     assert report.rejected_observation_count() == len(cases)
 
 
+def test_conflicting_duplicate_repetition_cannot_mask_a_failure() -> None:
+    matrix = _matrix()
+    observations = (
+        _observation("base-00", 1),
+        _observation("base-00", 1, status="failed"),
+        _observation("base-00", 2),
+        _observation("base-00", 2),
+        _observation("base-00", 3, source_sha="b" * 40),
+        _observation("base-00", 3),
+    )
+
+    report = build_observation_report(matrix, observations)
+
+    assert ("base-00", 1) in report.successful_repetitions()
+    assert ("base-00", 5, 1) in report.gaps()
+    assert report.rejected_observation_count() == 2
+
+
+def test_conflicting_preserved_negative_repetition_cannot_mask_acceptance() -> None:
+    matrix = _matrix()
+    rejection = _observation(
+        "V3-8",
+        1,
+        status="expected_rejection",
+        electrical_passed=False,
+        serialized_scene_verified=False,
+        rejection_witness="observed design-specific invalid failure",
+    )
+    report = build_observation_report(matrix, (rejection, _observation("V3-8", 1)))
+
+    assert ("V3-8", 1, 0) in report.gaps()
+
+
 def test_unknown_case_and_out_of_range_repetition_are_rejected() -> None:
     matrix = _matrix()
     observations = (
