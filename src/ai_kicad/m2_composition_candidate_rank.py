@@ -16,7 +16,7 @@ from .m2_terminal_interface_flow import inferred_passive_interface_signal_relati
 
 Rect = tuple[int, int, int, int]
 Point = tuple[int, int]
-SemanticPenaltyVector = tuple[int, int, int, int, int, int, int, int, int, int, int, int, int, int]
+SemanticPenaltyVector = tuple[int, ...]
 CompactnessPenaltyVector = tuple[int, int, int]
 CandidateKey = tuple[int, ...]
 
@@ -37,6 +37,7 @@ class SemanticPenaltyBreakdown:
     unrelated_block_proximity: int
     power_interface_distance: int
     infrastructure_primary_row_intrusion: int
+    feedback_intrusion: int
 
     def vector(self) -> SemanticPenaltyVector:
         return (
@@ -54,6 +55,7 @@ class SemanticPenaltyBreakdown:
             self.unrelated_block_proximity,
             self.power_interface_distance,
             self.infrastructure_primary_row_intrusion,
+            self.feedback_intrusion,
         )
 
     def as_dict(self) -> dict[str, int]:
@@ -72,6 +74,7 @@ class SemanticPenaltyBreakdown:
             "unrelated_block_proximity": self.unrelated_block_proximity,
             "power_interface_distance": self.power_interface_distance,
             "infrastructure_primary_row_intrusion": self.infrastructure_primary_row_intrusion,
+            "feedback_intrusion": self.feedback_intrusion,
         }
 
 
@@ -358,6 +361,71 @@ def _branch_readability_penalty(plan, centers: dict[str, Point]) -> int:
     return penalty
 
 
+def _segment_crosses_block(start: Point, end: Point, rect: Rect) -> bool:
+    """Return whether a rectilinear centerline crosses a block's interior."""
+    if start[0] == end[0]:
+        return (
+            rect[0] < start[0] < rect[2]
+            and min(end[1], rect[3]) > max(start[1], rect[1])
+        )
+    if start[1] == end[1]:
+        return (
+            rect[1] < start[1] < rect[3]
+            and min(end[0], rect[2]) > max(start[0], rect[0])
+        )
+    raise ValueError("feedback corridor segments must be orthogonal")
+
+
+def _feedback_corridor_intrusions(plan, rects: dict[str, Rect], centers: dict[str, Point]) -> int:
+    """Score unrelated obstacles that intersect both shortest feedback elbows.
+
+    This conservative pre-route proxy never assumes a wire was routed through a
+    block. If either shortest Manhattan elbow is clear, the penalty is zero;
+    actual routed intrusions remain the independent observer's responsibility.
+    Support/package/feedback relatives of either endpoint are not unrelated.
+    """
+    by_id = {block.id: block for block in plan.blocks}
+    edges = {
+        (edge.source, edge.target, edge.net)
+        for edge in plan.edges
+        if edge.kind == "feedback" and edge.source != edge.target
+    }
+    penalty = 0
+    for source_id, target_id, _net in sorted(edges):
+        source = centers.get(source_id)
+        target = centers.get(target_id)
+        if source is None or target is None:
+            continue
+        related = {source_id, target_id}
+        for edge in plan.edges:
+            if edge.kind not in {"feedback", "support", "package"}:
+                continue
+            if edge.source in {source_id, target_id}:
+                related.add(edge.target)
+            if edge.target in {source_id, target_id}:
+                related.add(edge.source)
+        obstacles = tuple(
+            rect
+            for block_id, rect in sorted(rects.items())
+            if block_id not in related
+            and block_id in by_id
+            and by_id[block_id].kind != "interface"
+        )
+        if not obstacles:
+            continue
+        elbow_at_target_x = (target[0], source[1])
+        elbow_at_source_x = (source[0], target[1])
+        alternative_paths = (
+            ((source, elbow_at_target_x), (elbow_at_target_x, target)),
+            ((source, elbow_at_source_x), (elbow_at_source_x, target)),
+        )
+        penalty += min(
+            sum(any(_segment_crosses_block(a, b, rect) for a, b in segments) for rect in obstacles)
+            for segments in alternative_paths
+        )
+    return penalty
+
+
 def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBreakdown:
     """Return semantic readability penalties for one fully proved placement.
 
@@ -429,6 +497,7 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
     unrelated_block_proximity = _unrelated_block_proximity(plan, rects)
     power_interface_distance = _power_interface_distance(plan, centers)
     infrastructure_primary_row_intrusion = _infrastructure_primary_row_intrusion(plan, centers)
+    feedback_intrusion = _feedback_corridor_intrusions(plan, rects, centers)
 
     return SemanticPenaltyBreakdown(
         missing_geometry=missing_geometry,
@@ -445,6 +514,7 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
         unrelated_block_proximity=unrelated_block_proximity,
         power_interface_distance=power_interface_distance,
         infrastructure_primary_row_intrusion=infrastructure_primary_row_intrusion,
+        feedback_intrusion=feedback_intrusion,
     )
 
 
