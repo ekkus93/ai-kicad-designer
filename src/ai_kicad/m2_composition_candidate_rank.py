@@ -730,6 +730,50 @@ def compactness_whitespace_penalties(packing) -> CompactnessPenaltyVector:
     return area_units, _grid_units(edge_bias), _grid_units(whitespace_imbalance)
 
 
+def _field_slot_consistency_penalty(packing) -> int:
+    """Prefer consistent reference/value slots for semantically comparable cells.
+
+    Only compare symbol-relative field offsets with matching functional kind,
+    terminal-role footprint and symbol rotation. Do not compare differently
+    rotated symbols, unrelated functional roles or unmeasured field locations.
+    This is a soft *aesthetic* tie-breaker, below routing and whitespace in the
+    candidate key; legal field clearance always takes precedence.
+    """
+    groups: dict[tuple[str, tuple[str, ...], int], list[Point]] = defaultdict(list)
+    for item in packing.fragments:
+        fragment = item.fragment
+        block = fragment.block
+        if block.kind == "interface":
+            continue
+        roles_by_component: dict[str, set[str]] = defaultdict(set)
+        for port in block.ports:
+            for terminal in getattr(port, "terminals", ()):
+                roles_by_component[terminal[0]].add(port.role)
+        positions = getattr(fragment, "positions", {})
+        text_positions = getattr(fragment, "text_positions", {})
+        angles = getattr(fragment, "angles", {})
+        for occurrence, center in sorted(positions.items()):
+            text = text_positions.get(occurrence)
+            roles = roles_by_component.get(occurrence[0])
+            if text is None or not roles:
+                continue
+            angle = angles.get(occurrence, 0) % 360
+            if angle not in {0, 90, 180, 270}:
+                continue
+            signature = (block.kind, tuple(sorted(roles)), angle)
+            groups[signature].append((text[0] - center[0], text[1] - center[1]))
+
+    drift = 0
+    for offsets in groups.values():
+        if len(offsets) < 2:
+            continue
+        midpoint = (len(offsets) - 1) // 2
+        target_x = sorted(point[0] for point in offsets)[midpoint]
+        target_y = sorted(point[1] for point in offsets)[midpoint]
+        drift += sum(abs(x - target_x) + abs(y - target_y) for x, y in offsets)
+    return _grid_units(drift)
+
+
 def composition_candidate_key(plan, packing, routing_compactness) -> CandidateKey:
     """Build the production lexicographic key for a fully proved candidate."""
 
@@ -746,6 +790,7 @@ def composition_candidate_key(plan, packing, routing_compactness) -> CandidateKe
         int(worst_length),
         int(bend_count),
         *compactness,
+        _field_slot_consistency_penalty(packing),
         int(seed_index),
         int(round_index),
     )

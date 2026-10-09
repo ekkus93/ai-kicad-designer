@@ -30,9 +30,16 @@ def _placed(
     height: int = PITCH,
     *,
     positions=None,
+    text_positions=None,
+    angles=None,
 ):
     rect = (x, y, x + width, y + height)
-    fragment = SimpleNamespace(block=block, positions=positions or {})
+    fragment = SimpleNamespace(
+        block=block,
+        positions=positions or {},
+        text_positions=text_positions or {},
+        angles=angles or {},
+    )
     return SimpleNamespace(
         fragment=fragment,
         content_envelope=rect,
@@ -803,3 +810,101 @@ def test_passive_reference_axis_exempts_shared_or_missing_ownership() -> None:
     )
     score = semantic_composition_penalty_breakdown(_plan((shared,)), placed)
     assert score.passive_reference_axis_drift == 0
+
+def _field_role_stage(block_id: str, component_id: str, *, role: str = "signal_in"):
+    return SimpleNamespace(
+        id=block_id,
+        kind="filter",
+        ports=(SimpleNamespace(role=role, terminals=((component_id, "1"),)),),
+    )
+
+
+def _field_role_placed(
+    block,
+    component_id: str,
+    x: int,
+    *,
+    slot: tuple[int, int],
+    angle: int = 0,
+):
+    occurrence = (component_id, 1)
+    return _placed(
+        block,
+        x,
+        positions={occurrence: (0, 0)},
+        text_positions={occurrence: slot},
+        angles={occurrence: angle},
+    )
+
+
+def test_comparable_field_slots_are_aesthetic_tiebreakers_not_routing_overrides() -> None:
+    first = _field_role_stage("a", "Rfirst")
+    second = _field_role_stage("b", "Rsecond")
+    plan = _plan((first, second))
+    first_item = _field_role_placed(first, "Rfirst", 0, slot=(2 * PITCH, -3 * PITCH))
+    matching = _packing(
+        first_item,
+        _field_role_placed(second, "Rsecond", 10 * PITCH, slot=(2 * PITCH, -3 * PITCH)),
+    )
+    inconsistent = _packing(
+        first_item,
+        _field_role_placed(second, "Rsecond", 10 * PITCH, slot=(5 * PITCH, -3 * PITCH)),
+    )
+    routing = (100, 100, 1, 1.0, 0, 0)
+    aligned_key = composition_candidate_key(plan, matching, routing)
+    drifted_key = composition_candidate_key(plan, inconsistent, routing)
+    assert aligned_key[:-3] == drifted_key[:-3]
+    assert aligned_key[-3] == 0
+    assert drifted_key[-3] == 3
+    assert aligned_key < drifted_key
+    # Better real routing must outrank a prettier field slot.
+    shorter_route = composition_candidate_key(
+        plan, inconsistent, (99, 100, 1, 1.0, 0, 0)
+    )
+    assert shorter_route < aligned_key
+
+
+def test_field_slot_tiebreaker_ignores_refdes_and_insertion_order() -> None:
+    first = _field_role_stage("a", "Rfirst")
+    second = _field_role_stage("b", "Rsecond")
+    base = _packing(
+        _field_role_placed(first, "Rfirst", 0, slot=(0, -3 * PITCH)),
+        _field_role_placed(second, "Rsecond", 10 * PITCH, slot=(2 * PITCH, -3 * PITCH)),
+    )
+    renamed_first = _field_role_stage("renamed-a", "new-A")
+    renamed_second = _field_role_stage("renamed-b", "new-B")
+    renamed = _packing(
+        _field_role_placed(renamed_second, "new-B", 10 * PITCH, slot=(2 * PITCH, -3 * PITCH)),
+        _field_role_placed(renamed_first, "new-A", 0, slot=(0, -3 * PITCH)),
+    )
+    routing = (100, 100, 1, 1.0, 0, 0)
+    assert composition_candidate_key(_plan((first, second)), base, routing)[-3] == 2
+    assert composition_candidate_key(
+        _plan((renamed_second, renamed_first)), renamed, routing
+    )[-3] == 2
+
+
+def test_field_slot_tiebreaker_exempts_different_roles_or_rotations() -> None:
+    first = _field_role_stage("a", "Rfirst")
+    second = _field_role_stage("b", "Rsecond", role="reference")
+    third = _field_role_stage("c", "Rthird")
+    plan = _plan((first, second, third))
+    packed = _packing(
+        _field_role_placed(first, "Rfirst", 0, slot=(0, -3 * PITCH)),
+        _field_role_placed(second, "Rsecond", 10 * PITCH, slot=(4 * PITCH, 3 * PITCH)),
+        _field_role_placed(third, "Rthird", 20 * PITCH, slot=(4 * PITCH, 3 * PITCH), angle=180),
+    )
+    assert composition_candidate_key(plan, packed, (100, 100, 1, 1.0, 0, 0))[-3] == 0
+
+
+def test_field_slot_tiebreaker_uses_median_and_exempts_missing_text() -> None:
+    blocks = tuple(_field_role_stage(f"stage-{i}", f"R{i}") for i in range(4))
+    packed = _packing(
+        _field_role_placed(blocks[0], "R0", 0, slot=(0, -3 * PITCH)),
+        _field_role_placed(blocks[1], "R1", 10 * PITCH, slot=(0, -3 * PITCH)),
+        _field_role_placed(blocks[2], "R2", 20 * PITCH, slot=(6 * PITCH, -3 * PITCH)),
+        _placed(blocks[3], 30 * PITCH, positions={("R3", 1): (0, 0)}),
+    )
+    assert composition_candidate_key(
+        _plan(blocks), packed, (100, 100, 1, 1.0, 0, 0)
+    )[-3] == 6
