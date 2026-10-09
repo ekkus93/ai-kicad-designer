@@ -18,8 +18,10 @@ def _archive(tmp_path):
     qualification_head = "a" * 40
     parts = []
     for number, (case, svg) in enumerate(
-        (("base__linear", b'<svg xmlns="http://www.w3.org/2000/svg"></svg>'),
-         ("i4__mixed", b'<svg xmlns="http://www.w3.org/2000/svg"><g/></svg>')),
+        (
+            ("base__linear", b'<svg xmlns="http://www.w3.org/2000/svg"></svg>'),
+            ("i4__mixed", b'<svg xmlns="http://www.w3.org/2000/svg"><g/></svg>'),
+        ),
         start=1,
     ):
         parts.append(
@@ -60,9 +62,7 @@ def _archive(tmp_path):
 def test_extracts_selected_verified_svg_and_non_acceptance_manifest(tmp_path):
     manifest, _ = _archive(tmp_path)
     output = tmp_path / "extracted"
-    inventory = materialize_native_baseline(
-        tmp_path, manifest, output, cases=("i4__mixed",)
-    )
+    inventory = materialize_native_baseline(tmp_path, manifest, output, cases=("i4__mixed",))
     assert inventory.render_count == 2
     assert sorted(path.name for path in output.iterdir()) == [
         "i4__mixed.svg",
@@ -116,8 +116,7 @@ def test_real_preserved_archive_can_extract_mixed_falsification_seed(tmp_path):
 
     root = Path(__file__).resolve().parents[1]
     manifest = (
-        root
-        / "fixtures/m2h2/human_composition_baseline_2026-10-08/"
+        root / "fixtures/m2h2/human_composition_baseline_2026-10-08/"
         "native_render_archive_manifest_42ab8452.json"
     )
     inventory, parts = load_native_baseline(root, manifest)
