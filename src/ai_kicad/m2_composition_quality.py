@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Iterable, Mapping, Literal
 
-from .m2_pack import MAX_CONTENT_HEIGHT, MAX_CONTENT_WIDTH
+from .m2_pack import LEFT, MAX_CONTENT_HEIGHT, MAX_CONTENT_WIDTH, TOP
 from .m2_semantics import SemanticPlan
 
 Rect = tuple[int, int, int, int]
@@ -122,11 +122,26 @@ def _content_envelope(rects: Iterable[Rect]) -> Rect:
 
 
 def _signal_edges(plan: SemanticPlan):
+    """Observe each directed semantic relation once, independent of annotations.
+
+    An authored precedence obligation and a signal/branch edge may describe
+    the same producer, consumer and net. Counting both would inflate the
+    observer's violations and reversal distance without a second defect.
+    Distinct nets remain independently observable.
+    """
+    seen: set[tuple[str, str, str]] = set()
     for edge in plan.edges:
-        if edge.kind in {"signal", "branch"}:
-            yield edge.source, edge.target, edge.net, f"semantic-edge:{edge.kind}"
+        if edge.kind not in {"signal", "branch"}:
+            continue
+        identity = (edge.source, edge.target, edge.net)
+        if identity not in seen:
+            seen.add(identity)
+            yield *identity, f"semantic-edge:{edge.kind}"
     for item in plan.precedence:
-        yield item.source_fragment, item.target_fragment, item.net, f"precedence:{item.id}"
+        identity = (item.source_fragment, item.target_fragment, item.net)
+        if identity not in seen:
+            seen.add(identity)
+            yield *identity, f"precedence:{item.id}"
 
 
 def _interface_signal_roles(plan: SemanticPlan) -> dict[str, set[str]]:
@@ -233,6 +248,11 @@ def observe_human_composition(
     area = width * height
     allowed_area = envelope_width_nm * envelope_height_nm
     centroid = _center(content)
+    # Placed fragments use absolute KiCad sheet coordinates, not a
+    # zero-origin composition plane. Compare against the anchored governed
+    # envelope; otherwise a centered schematic is falsely reported as biased.
+    envelope_center_x = LEFT + envelope_width_nm // 2
+    envelope_center_y = TOP + envelope_height_nm // 2
     metrics = CompositionMetrics(
         block_count=len(plan.blocks),
         visible_block_count=len(visible),
@@ -241,8 +261,8 @@ def observe_human_composition(
         content_height_nm=height,
         content_area_nm2=area,
         utilization_ratio_ppm=0 if allowed_area == 0 else (area * 1_000_000) // allowed_area,
-        centroid_offset_x_nm=centroid[0] - envelope_width_nm // 2,
-        centroid_offset_y_nm=centroid[1] - envelope_height_nm // 2,
+        centroid_offset_x_nm=centroid[0] - envelope_center_x,
+        centroid_offset_y_nm=centroid[1] - envelope_center_y,
         primary_stage_order_inversions=sum(
             1 for violation in violations if violation.kind == "primary_stage_order_inversion"
         ),
