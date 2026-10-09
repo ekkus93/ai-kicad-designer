@@ -119,3 +119,38 @@ def test_branch_search_ignores_nonfanout_and_unrelated_nets() -> None:
         signal_order=(),
     )
     assert _branch_fanout_repack_candidates(one_each, baseline) == ()
+
+
+def test_distribution_and_partial_beam_survive_aesthetic_seed_pressure() -> None:
+    plan, baseline = _fanout()
+    del plan
+
+    def shifted(index: int, label: str) -> Packing:
+        # Distinct measured placement identities, not just different labels.
+        moved = _place(
+            baseline.fragments[0].fragment,
+            LEFT + (2 + index) * PITCH,
+            TOP + 5 * PITCH,
+        )
+        return Packing((moved, *baseline.fragments[1:]), (label,))
+
+    successful = tuple(shifted(index, f"shelf-{index}") for index in range(8))
+    extras = (
+        shifted(10, "branch-fanout-origin-centered"),
+        shifted(11, "branch-fanout-sibling-depth"),
+        shifted(12, "repeated-peer-row"),
+        shifted(13, "repeated-peer-column"),
+        shifted(14, "distribution-column:generated:pass:measured=100x100"),
+        Packing(shifted(15, "ignored").fragments, ("partial-beam", "partial-beam:pass")),
+    )
+    retained = _retain_composition_seed_diversity(successful, extras)
+    assert len(retained) == 8
+    assert retained[0] == successful[0]
+    assert {
+        "distribution-column:generated:pass:measured=100x100",
+        "partial-beam:pass",
+        "repeated-peer-row",
+        "repeated-peer-column",
+        "branch-fanout-origin-centered",
+        "branch-fanout-sibling-depth",
+    } <= {candidate.attempts[-1] for candidate in retained}

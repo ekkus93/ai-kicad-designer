@@ -2069,9 +2069,30 @@ def _retain_composition_seed_diversity(
         ),
         None,
     )
-    protected = tuple(candidate for candidate in (*repeated, *branch) if candidate is not None)
-    if field_slot is not None:
-        protected += (field_slot,)
+    # Distribution and partial-beam seeds are independent measured geometry
+    # classes. Keep one of each when available: new aesthetic variants must not
+    # displace the only candidate able to satisfy a global conductor bound.
+    distribution = next(
+        (
+            candidate
+            for candidate in extras
+            if candidate.attempts[-1].startswith("distribution-column:")
+        ),
+        None,
+    )
+    partial = next(
+        (
+            candidate
+            for candidate in extras
+            if candidate.attempts[0] == "partial-beam"
+        ),
+        None,
+    )
+    protected = tuple(
+        candidate
+        for candidate in (distribution, partial, *repeated, *branch, field_slot)
+        if candidate is not None
+    )
     ordered = successful[:1] + protected + successful[1:3] + extras + successful[3:]
     seen: set[tuple[tuple[str, Point], ...]] = set()
     retained: list[Packing] = []
