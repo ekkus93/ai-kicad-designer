@@ -469,3 +469,43 @@ def test_signal_fanout_does_not_conflate_unrelated_or_non_signal_edges() -> None
     )
     assert semantic_composition_penalty_breakdown(separate_nets, placed).branch_alignment == 0
     assert semantic_composition_penalty_breakdown(mixed_roles, placed).branch_alignment == 0
+
+
+def test_owned_support_prefers_axis_alignment_at_equal_manhattan_distance() -> None:
+    owner = _block("owner", "stage")
+    local = _block("local", "support")
+    plan = _plan((owner, local), (_edge("support", "owner", "local"),))
+    aligned = _packing(_placed(owner, 0), _placed(local, 6 * PITCH))
+    diagonal = _packing(_placed(owner, 0), _placed(local, 4 * PITCH, 2 * PITCH))
+    good = semantic_composition_penalty_breakdown(plan, aligned)
+    bad = semantic_composition_penalty_breakdown(plan, diagonal)
+
+    assert good.support_distance == bad.support_distance
+    assert good.support_axis_drift == 0
+    assert bad.support_axis_drift == 2
+    assert composition_candidate_key(plan, aligned, (1000, 500, 8, 1, 0, 0)) < (
+        composition_candidate_key(plan, diagonal, (1, 1, 0, 1, 0, 0))
+    )
+
+
+def test_package_support_alignment_is_deduplicated_and_order_independent() -> None:
+    owner = _block("owner", "stage")
+    local = _block("local", "support")
+    placed = _packing(_placed(owner, 0), _placed(local, 4 * PITCH, 2 * PITCH))
+    support = _edge("support", "owner", "local")
+    package = _edge("package", "local", "owner")
+    single = semantic_composition_penalty_breakdown(_plan((owner, local), (support,)), placed)
+    duplicated = semantic_composition_penalty_breakdown(
+        _plan((local, owner), (package, support, support)), placed
+    )
+    assert single.support_axis_drift == duplicated.support_axis_drift == 2
+    assert single.as_dict()["support_axis_drift"] == 2
+
+
+def test_unowned_feedback_and_shared_infrastructure_do_not_claim_support_axis() -> None:
+    owner = _block("owner", "stage")
+    other = _block("other", "stage")
+    placed = _packing(_placed(owner, 0), _placed(other, 4 * PITCH, 2 * PITCH))
+    for kind in ("signal", "branch", "feedback", "power", "reference"):
+        plan = _plan((owner, other), (_edge(kind, "owner", "other"),))
+        assert semantic_composition_penalty_breakdown(plan, placed).support_axis_drift == 0

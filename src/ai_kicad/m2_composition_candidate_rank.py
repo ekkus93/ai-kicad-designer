@@ -40,6 +40,7 @@ class SemanticPenaltyBreakdown:
     feedback_intrusion: int
     sequential_stage_row_drift: int
     directed_interface_row_drift: int
+    support_axis_drift: int
 
     def vector(self) -> SemanticPenaltyVector:
         return (
@@ -60,6 +61,7 @@ class SemanticPenaltyBreakdown:
             self.feedback_intrusion,
             self.sequential_stage_row_drift,
             self.directed_interface_row_drift,
+            self.support_axis_drift,
         )
 
     def as_dict(self) -> dict[str, int]:
@@ -81,6 +83,7 @@ class SemanticPenaltyBreakdown:
             "feedback_intrusion": self.feedback_intrusion,
             "sequential_stage_row_drift": self.sequential_stage_row_drift,
             "directed_interface_row_drift": self.directed_interface_row_drift,
+            "support_axis_drift": self.support_axis_drift,
         }
 
 
@@ -490,6 +493,33 @@ def _signal_row_alignment_penalties(
     return _grid_units(stage_drift), _grid_units(interface_drift)
 
 
+
+def _support_axis_alignment_penalty(plan, centers: dict[str, Point]) -> int:
+    """Prefer a shared row or column for explicitly owned local support.
+
+    Support and package links encode local visual ownership. Shared supply and
+    reference edges, feedback paths, and ordinary signal flow do not imply this
+    alignment. Deduplicate equivalent edges to keep the score independent of
+    semantic annotation order and repeated declarations.
+    """
+    pairs = {
+        tuple(sorted((edge.source, edge.target)))
+        for edge in plan.edges
+        if edge.kind in {"support", "package"}
+        and edge.source != edge.target
+        and edge.source in centers
+        and edge.target in centers
+    }
+    drift = sum(
+        min(
+            abs(centers[source][0] - centers[target][0]),
+            abs(centers[source][1] - centers[target][1]),
+        )
+        for source, target in sorted(pairs)
+    )
+    return _grid_units(drift)
+
+
 def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBreakdown:
     """Return semantic readability penalties for one fully proved placement.
 
@@ -565,6 +595,7 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
     sequential_stage_row_drift, directed_interface_row_drift = _signal_row_alignment_penalties(
         plan, centers, signal_relations
     )
+    support_axis_drift = _support_axis_alignment_penalty(plan, centers)
 
     return SemanticPenaltyBreakdown(
         missing_geometry=missing_geometry,
@@ -584,6 +615,7 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
         feedback_intrusion=feedback_intrusion,
         sequential_stage_row_drift=sequential_stage_row_drift,
         directed_interface_row_drift=directed_interface_row_drift,
+        support_axis_drift=support_axis_drift,
     )
 
 
