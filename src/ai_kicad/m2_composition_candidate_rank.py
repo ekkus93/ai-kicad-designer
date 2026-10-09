@@ -64,8 +64,8 @@ class SemanticPenaltyBreakdown:
             self.sequential_stage_row_drift,
             self.directed_interface_row_drift,
             self.support_axis_drift,
-            self.passive_reference_axis_drift,
             self.local_signal_neighbor_gap,
+            self.passive_reference_axis_drift,
         )
 
     def as_dict(self) -> dict[str, int]:
