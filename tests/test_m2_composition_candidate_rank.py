@@ -376,3 +376,90 @@ def test_two_band_repeated_channel_stage_columns_are_semantically_aligned() -> N
     assert bad.repeated_alignment > good.repeated_alignment
     assert good.stage_order_violations == bad.stage_order_violations == 0
     assert bad.repeated_alignment == permuted.repeated_alignment
+
+
+def test_ordinary_signal_fanout_prefers_a_centered_visible_origin() -> None:
+    source = _block("origin", "stage")
+    upper = _block("upper", "stage")
+    lower = _block("lower", "stage")
+    plan = _plan(
+        (source, upper, lower),
+        (_edge("signal", "origin", "upper", "shared"),
+         _edge("signal", "origin", "lower", "shared")),
+    )
+    centered = _packing(
+        _placed(source, 0, 5 * PITCH),
+        _placed(upper, 10 * PITCH, 0),
+        _placed(lower, 10 * PITCH, 10 * PITCH),
+    )
+    detached = _packing(
+        _placed(source, 0, 0),
+        _placed(upper, 10 * PITCH, 0),
+        _placed(lower, 10 * PITCH, 10 * PITCH),
+    )
+    good = semantic_composition_penalty_breakdown(plan, centered)
+    bad = semantic_composition_penalty_breakdown(plan, detached)
+    assert good.branch_alignment == 0
+    assert bad.branch_alignment > good.branch_alignment
+    assert good.stage_order_violations == bad.stage_order_violations == 0
+    assert composition_candidate_key(plan, centered, (1000, 100, 8, 1, 1, 0)) < (
+        composition_candidate_key(plan, detached, (1, 1, 0, 1, 0, 0))
+    )
+
+
+def test_signal_fanout_deduplicates_mixed_branch_annotations_and_renames() -> None:
+    source = _block("origin")
+    upper = _block("upper")
+    lower = _block("lower")
+    blocks = (source, upper, lower)
+    placed = _packing(
+        _placed(source, 0, 0),
+        _placed(upper, 10 * PITCH, 0),
+        _placed(lower, 10 * PITCH, 10 * PITCH),
+    )
+    canonical = _plan(
+        blocks,
+        (_edge("branch", "origin", "upper", "net"),
+         _edge("branch", "origin", "lower", "net")),
+    )
+    mixed = _plan(
+        tuple(reversed(blocks)),
+        (_edge("signal", "origin", "lower", "net"),
+         _edge("branch", "origin", "upper", "net"),
+         _edge("signal", "origin", "upper", "net")),
+    )
+    assert semantic_composition_penalty_breakdown(canonical, placed).branch_alignment == (
+        semantic_composition_penalty_breakdown(mixed, placed).branch_alignment
+    )
+    renamed = _plan(
+        blocks,
+        (_edge("signal", "origin", "upper", "different"),
+         _edge("signal", "origin", "lower", "different")),
+    )
+    assert semantic_composition_penalty_breakdown(renamed, placed).branch_alignment == (
+        semantic_composition_penalty_breakdown(canonical, placed).branch_alignment
+    )
+
+
+def test_signal_fanout_does_not_conflate_unrelated_or_non_signal_edges() -> None:
+    source = _block("origin")
+    upper = _block("upper")
+    lower = _block("lower")
+    placed = _packing(
+        _placed(source, 0, 0),
+        _placed(upper, 10 * PITCH, 0),
+        _placed(lower, 10 * PITCH, 10 * PITCH),
+    )
+    separate_nets = _plan(
+        (source, upper, lower),
+        (_edge("signal", "origin", "upper", "a"),
+         _edge("signal", "origin", "lower", "b")),
+    )
+    mixed_roles = _plan(
+        (source, upper, lower),
+        (_edge("signal", "origin", "upper", "same"),
+         _edge("feedback", "origin", "lower", "same"),
+         _edge("power", "origin", "lower", "same")),
+    )
+    assert semantic_composition_penalty_breakdown(separate_nets, placed).branch_alignment == 0
+    assert semantic_composition_penalty_breakdown(mixed_roles, placed).branch_alignment == 0

@@ -331,13 +331,15 @@ def _infrastructure_primary_row_intrusion(plan, centers: dict[str, Point]) -> in
 def _branch_readability_penalty(plan, centers: dict[str, Point]) -> int:
     """Prefer a visible, centered fanout with equally deep forward branches.
 
-    Group targets by source and net, not a case/fixture name. A source should
-    sit between its branch rows; sibling targets should occupy a consistent
-    column. Ignore single-target edges, which are not visible fanouts.
+    Group targets by source and net, not a case/fixture name. Explicit branch
+    edges and ordinary directed signal edges can both describe a real fanout;
+    deduplicate their targets so mixed annotations do not double count. A
+    source should sit between its branch rows; sibling targets should occupy
+    a consistent column. Ignore single-target edges and non-signal roles.
     """
     fanouts: dict[tuple[str, str], set[str]] = defaultdict(set)
     for edge in plan.edges:
-        if edge.kind == "branch" and edge.source in centers and edge.target in centers:
+        if edge.kind in {"branch", "signal"} and edge.source in centers and edge.target in centers:
             fanouts[(edge.source, edge.net)].add(edge.target)
 
     penalty = 0
