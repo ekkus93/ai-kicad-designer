@@ -601,6 +601,7 @@ def test_invalid_gateway_terminal_identity_is_rejected():
             (),
         ).validate({("u", "3"): "N"})
 
+
 def test_passive_interfaces_offer_both_horizontal_gateway_orientations() -> None:
     design = validate(json.loads((PROBES / "passive_two_level_fanout.json").read_text()), assets())
     plan = semantic_plan(design, assets())
