@@ -596,6 +596,7 @@ def test_connector_fanout_aligns_with_any_owned_row_not_all_rows() -> None:
     assert semantic_composition_penalty_breakdown(plan, aligned).directed_interface_row_drift == 0
     assert semantic_composition_penalty_breakdown(plan, detached).directed_interface_row_drift == 3
 
+
 def test_branch_corridor_penalizes_only_unavoidable_short_elbow_obstacles() -> None:
     source = _block("source", "stage")
     upper = _block("upper", "stage")
@@ -704,4 +705,6 @@ def test_branch_corridor_exempts_local_owned_support_as_unrelated_obstacles() ->
         _placed(support_a, 4 * PITCH, 5 * PITCH),
         _placed(support_b, 4 * PITCH, 0),
     )
-    assert semantic_composition_penalty_breakdown(_plan(blocks, edges), placed).branch_alignment == 0
+    assert (
+        semantic_composition_penalty_breakdown(_plan(blocks, edges), placed).branch_alignment == 0
+    )
