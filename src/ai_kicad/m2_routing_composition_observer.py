@@ -193,9 +193,20 @@ def _opposite_parallel(first: Segment, second: Segment) -> bool:
 
 
 def _branch_inconsistency(segments: tuple[Segment, ...], branch_points: tuple[Point, ...]) -> int:
+    """Measure each incident arm, including both halves of an unsplit trunk.
+
+    At a T-junction, an emitted trunk may be one long wire or two wires
+    terminating at the branch. Both representations must contribute the same
+    three arm lengths. An interior/interior crossing is never a branch point.
+    """
     worst = 0
     for point in branch_points:
-        lengths = [_segment_length(segment) for segment in segments if point in segment]
+        lengths = []
+        for first, second in segments:
+            if point == first or point == second:
+                lengths.append(_manhattan(first, second))
+            elif _point_on_orthogonal_segment(point, (first, second)):
+                lengths.extend((_manhattan(point, first), _manhattan(point, second)))
         if lengths:
             worst = max(worst, max(lengths) - min(lengths))
     return worst

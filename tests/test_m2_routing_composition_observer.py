@@ -222,3 +222,18 @@ def test_pure_crossing_or_duplicate_stroke_never_invents_branch() -> None:
     ):
         metrics = measure_routing_readability(segments, semantic_local_length=50)
         assert metrics.branch_points == ()
+
+
+def test_t_junction_sibling_arm_metric_is_split_and_direction_invariant() -> None:
+    # The 10/10/18 arm lengths must not become 18/18 when the trunk is unsplit.
+    trunk = ((0, 0), (20, 0))
+    branch = ((10, 0), (10, 18))
+    for segments in (
+        (trunk, branch),
+        (((0, 0), (10, 0)), ((10, 0), (20, 0)), branch),
+        (branch, ((20, 0), (0, 0))),
+        ((branch[1], branch[0]), ((20, 0), (10, 0)), ((10, 0), (0, 0))),
+    ):
+        metrics = measure_routing_readability(segments, semantic_local_length=38)
+        assert metrics.branch_points == ((10, 0),)
+        assert metrics.sibling_branch_geometry_inconsistency == 8
