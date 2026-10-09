@@ -905,3 +905,79 @@ def test_field_slot_tiebreaker_uses_median_and_exempts_missing_text() -> None:
         _placed(blocks[3], 30 * PITCH, positions={("R3", 1): (0, 0)}),
     )
     assert composition_candidate_key(_plan(blocks), packed, (100, 100, 1, 1.0, 0, 0))[-3] == 6
+
+def _presentation_net(
+    role: str, fragments: tuple[str, ...], *, explicit_geometry_required: bool = False
+):
+    return SimpleNamespace(
+        role=role,
+        fragments=fragments,
+        explicit_geometry_required=explicit_geometry_required,
+    )
+
+
+def test_local_label_eligible_signal_neighbors_prefer_proximity() -> None:
+    source = _block("source", "filter")
+    target = _block("target", "amplifier")
+    plan = _plan((source, target))
+    plan.presentation_nets = (_presentation_net("signal", ("source", "target")),)
+    nearby = _packing(_placed(source, 0), _placed(target, 3 * PITCH))
+    detached = _packing(_placed(source, 0), _placed(target, 11 * PITCH))
+    nearby_score = semantic_composition_penalty_breakdown(plan, nearby)
+    detached_score = semantic_composition_penalty_breakdown(plan, detached)
+    assert nearby_score.local_signal_neighbor_gap == 0
+    assert detached_score.local_signal_neighbor_gap == 8
+    assert detached_score.as_dict()["local_signal_neighbor_gap"] == 8
+
+
+def test_local_label_gap_exempts_interfaces_shared_and_explicit_geometry() -> None:
+    first = _block("first", "filter")
+    second = _block("second", "amplifier")
+    third = _block("third", "filter")
+    output = _block("output", "interface", ("signal_out",))
+    plan = _plan((first, second, third, output))
+    detached = _packing(
+        _placed(first, 0),
+        _placed(second, 12 * PITCH),
+        _placed(third, 24 * PITCH),
+        _placed(output, 36 * PITCH),
+    )
+    exempt_nets = (
+        _presentation_net("signal", ("first", "second"), explicit_geometry_required=True),
+        _presentation_net("signal", ("first", "second", "third")),
+        _presentation_net("signal", ("third", "output")),
+        _presentation_net("power", ("first", "second")),
+        _presentation_net("reference", ("second", "third")),
+    )
+    for net in exempt_nets:
+        plan.presentation_nets = (net,)
+        assert (
+            semantic_composition_penalty_breakdown(plan, detached).local_signal_neighbor_gap == 0
+        )
+    plan.presentation_nets = (_presentation_net("signal", ("first", "second")),)
+    assert semantic_composition_penalty_breakdown(plan, detached).local_signal_neighbor_gap > 0
+
+
+def test_local_label_gap_is_net_name_order_and_duplicate_invariant() -> None:
+    first = _block("alpha", "filter")
+    second = _block("beta", "amplifier")
+    placed = _packing(_placed(first, 0), _placed(second, 11 * PITCH))
+    plan = _plan((first, second))
+    pair = _presentation_net("signal", ("alpha", "beta"))
+    plan.presentation_nets = (pair,)
+    original = semantic_composition_penalty_breakdown(plan, placed).local_signal_neighbor_gap
+
+    renamed_first = _block("renamed-a", "filter")
+    renamed_second = _block("renamed-b", "amplifier")
+    renamed_placed = _packing(
+        _placed(renamed_second, 11 * PITCH),
+        _placed(renamed_first, 0),
+    )
+    renamed_plan = _plan((renamed_second, renamed_first))
+    reversed_net = _presentation_net("signal", ("renamed-b", "renamed-a"))
+    renamed_plan.presentation_nets = (reversed_net, reversed_net)
+    assert original == 8
+    assert (
+        semantic_composition_penalty_breakdown(renamed_plan, renamed_placed).local_signal_neighbor_gap
+        == original
+    )
