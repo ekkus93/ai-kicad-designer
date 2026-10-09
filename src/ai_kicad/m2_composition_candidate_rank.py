@@ -364,15 +364,9 @@ def _branch_readability_penalty(plan, centers: dict[str, Point]) -> int:
 def _segment_crosses_block(start: Point, end: Point, rect: Rect) -> bool:
     """Return whether a rectilinear centerline crosses a block's interior."""
     if start[0] == end[0]:
-        return (
-            rect[0] < start[0] < rect[2]
-            and min(end[1], rect[3]) > max(start[1], rect[1])
-        )
+        return rect[0] < start[0] < rect[2] and min(end[1], rect[3]) > max(start[1], rect[1])
     if start[1] == end[1]:
-        return (
-            rect[1] < start[1] < rect[3]
-            and min(end[0], rect[2]) > max(start[0], rect[0])
-        )
+        return rect[1] < start[1] < rect[3] and min(end[0], rect[2]) > max(start[0], rect[0])
     raise ValueError("feedback corridor segments must be orthogonal")
 
 
@@ -407,9 +401,7 @@ def _feedback_corridor_intrusions(plan, rects: dict[str, Rect], centers: dict[st
         obstacles = tuple(
             rect
             for block_id, rect in sorted(rects.items())
-            if block_id not in related
-            and block_id in by_id
-            and by_id[block_id].kind != "interface"
+            if block_id not in related and block_id in by_id and by_id[block_id].kind != "interface"
         )
         if not obstacles:
             continue
