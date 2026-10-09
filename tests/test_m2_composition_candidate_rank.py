@@ -384,8 +384,10 @@ def test_ordinary_signal_fanout_prefers_a_centered_visible_origin() -> None:
     lower = _block("lower", "stage")
     plan = _plan(
         (source, upper, lower),
-        (_edge("signal", "origin", "upper", "shared"),
-         _edge("signal", "origin", "lower", "shared")),
+        (
+            _edge("signal", "origin", "upper", "shared"),
+            _edge("signal", "origin", "lower", "shared"),
+        ),
     )
     centered = _packing(
         _placed(source, 0, 5 * PITCH),
@@ -419,22 +421,25 @@ def test_signal_fanout_deduplicates_mixed_branch_annotations_and_renames() -> No
     )
     canonical = _plan(
         blocks,
-        (_edge("branch", "origin", "upper", "net"),
-         _edge("branch", "origin", "lower", "net")),
+        (_edge("branch", "origin", "upper", "net"), _edge("branch", "origin", "lower", "net")),
     )
     mixed = _plan(
         tuple(reversed(blocks)),
-        (_edge("signal", "origin", "lower", "net"),
-         _edge("branch", "origin", "upper", "net"),
-         _edge("signal", "origin", "upper", "net")),
+        (
+            _edge("signal", "origin", "lower", "net"),
+            _edge("branch", "origin", "upper", "net"),
+            _edge("signal", "origin", "upper", "net"),
+        ),
     )
     assert semantic_composition_penalty_breakdown(canonical, placed).branch_alignment == (
         semantic_composition_penalty_breakdown(mixed, placed).branch_alignment
     )
     renamed = _plan(
         blocks,
-        (_edge("signal", "origin", "upper", "different"),
-         _edge("signal", "origin", "lower", "different")),
+        (
+            _edge("signal", "origin", "upper", "different"),
+            _edge("signal", "origin", "lower", "different"),
+        ),
     )
     assert semantic_composition_penalty_breakdown(renamed, placed).branch_alignment == (
         semantic_composition_penalty_breakdown(canonical, placed).branch_alignment
@@ -452,14 +457,15 @@ def test_signal_fanout_does_not_conflate_unrelated_or_non_signal_edges() -> None
     )
     separate_nets = _plan(
         (source, upper, lower),
-        (_edge("signal", "origin", "upper", "a"),
-         _edge("signal", "origin", "lower", "b")),
+        (_edge("signal", "origin", "upper", "a"), _edge("signal", "origin", "lower", "b")),
     )
     mixed_roles = _plan(
         (source, upper, lower),
-        (_edge("signal", "origin", "upper", "same"),
-         _edge("feedback", "origin", "lower", "same"),
-         _edge("power", "origin", "lower", "same")),
+        (
+            _edge("signal", "origin", "upper", "same"),
+            _edge("feedback", "origin", "lower", "same"),
+            _edge("power", "origin", "lower", "same"),
+        ),
     )
     assert semantic_composition_penalty_breakdown(separate_nets, placed).branch_alignment == 0
     assert semantic_composition_penalty_breakdown(mixed_roles, placed).branch_alignment == 0
