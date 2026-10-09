@@ -15,8 +15,7 @@ def main() -> None:
     parser.add_argument(
         "--manifest",
         type=Path,
-        default=ROOT
-        / "fixtures/m2h2/human_composition_baseline_2026-10-08/"
+        default=ROOT / "fixtures/m2h2/human_composition_baseline_2026-10-08/"
         "native_render_archive_manifest_42ab8452.json",
     )
     parser.add_argument("--case", action="append", dest="cases", default=None)
