@@ -128,16 +128,35 @@ def _crosses_without_shared_endpoint(first: Segment, second: Segment) -> bool:
 
 
 def _u_shaped_detours(segments: tuple[Segment, ...]) -> int:
+    """Detect U-turns from connected geometry, not segment list order."""
+    edges = tuple(
+        sorted(
+            {
+                tuple(sorted(edge))
+                for edge in segments
+                if edge[0] != edge[1] and _direction(edge) != "diagonal"
+            }
+        )
+    )
+    incident: dict[Point, list[Segment]] = defaultdict(list)
+    for edge in edges:
+        for point in edge:
+            incident[point].append(edge)
     count = 0
-    for first, second, third in zip(segments, segments[1:], segments[2:], strict=False):
-        if first[1] != second[0] or second[1] != third[0]:
-            continue
-        if _direction(first) != _direction(third) or _direction(second) == _direction(first):
-            continue
-        if _opposite_parallel(first, third):
-            count += 1
+    for middle in edges:
+        for before in incident[middle[0]]:
+            if before == middle or _direction(before) == _direction(middle):
+                continue
+            first = (before[1], before[0]) if before[0] == middle[0] else before
+            for after in incident[middle[1]]:
+                if after == middle or after == before:
+                    continue
+                third = after if after[0] == middle[1] else (after[1], after[0])
+                if _direction(first) == _direction(third) and _opposite_parallel(
+                    first, third
+                ):
+                    count += 1
     return count
-
 
 def _opposite_parallel(first: Segment, second: Segment) -> bool:
     direction = _direction(first)
