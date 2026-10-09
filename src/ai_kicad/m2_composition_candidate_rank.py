@@ -493,7 +493,6 @@ def _signal_row_alignment_penalties(
     return _grid_units(stage_drift), _grid_units(interface_drift)
 
 
-
 def _support_axis_alignment_penalty(plan, centers: dict[str, Point]) -> int:
     """Prefer a shared row or column for explicitly owned local support.
 

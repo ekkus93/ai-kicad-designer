@@ -509,3 +509,88 @@ def test_unowned_feedback_and_shared_infrastructure_do_not_claim_support_axis() 
     for kind in ("signal", "branch", "feedback", "power", "reference"):
         plan = _plan((owner, other), (_edge(kind, "owner", "other"),))
         assert semantic_composition_penalty_breakdown(plan, placed).support_axis_drift == 0
+
+def test_serial_signal_stages_prefer_a_shared_row_with_equal_forward_progress() -> None:
+    first = _block("a", "filter", ("signal_in", "signal_out"))
+    second = _block("b", "amplifier", ("signal_in", "signal_out"))
+    plan = _plan((first, second), (_edge("signal", "a", "b", "data"),))
+    aligned = _packing(_placed(first, 0), _placed(second, 8 * PITCH))
+    drifting = _packing(_placed(first, 0), _placed(second, 8 * PITCH, 3 * PITCH))
+    good = semantic_composition_penalty_breakdown(plan, aligned)
+    bad = semantic_composition_penalty_breakdown(plan, drifting)
+    assert good.sequential_stage_row_drift == 0
+    assert bad.sequential_stage_row_drift == 3
+    assert good.stage_order_violations == bad.stage_order_violations == 0
+
+
+def test_fanout_and_feedback_do_not_impose_one_serial_baseline() -> None:
+    source = _block("source", "filter", ("signal_in", "signal_out"))
+    upper = _block("upper", "filter", ("signal_in", "signal_out"))
+    lower = _block("lower", "filter", ("signal_in", "signal_out"))
+    plan = _plan(
+        (source, upper, lower),
+        (
+            _edge("signal", "source", "upper", "split"),
+            _edge("signal", "source", "lower", "split"),
+            _edge("feedback", "lower", "source", "loop"),
+        ),
+    )
+    spread = _packing(
+        _placed(source, 0, 5 * PITCH),
+        _placed(upper, 8 * PITCH),
+        _placed(lower, 8 * PITCH, 10 * PITCH),
+    )
+    assert semantic_composition_penalty_breakdown(plan, spread).sequential_stage_row_drift == 0
+
+
+def test_directed_connector_prefers_its_owned_signal_row() -> None:
+    input_port = _block("input", "interface", ("signal_in",))
+    stage = _block("stage", "filter", ("signal_in", "signal_out"))
+    output_port = _block("output", "interface", ("signal_out",))
+    plan = _plan(
+        (input_port, stage, output_port),
+        (
+            _edge("signal", "input", "stage", "in"),
+            _edge("signal", "stage", "output", "out"),
+        ),
+    )
+    aligned = _packing(
+        _placed(input_port, 0),
+        _placed(stage, 4 * PITCH),
+        _placed(output_port, 8 * PITCH),
+    )
+    drifting = _packing(
+        _placed(input_port, 0, 2 * PITCH),
+        _placed(stage, 4 * PITCH),
+        _placed(output_port, 8 * PITCH, 3 * PITCH),
+    )
+    good = semantic_composition_penalty_breakdown(plan, aligned)
+    bad = semantic_composition_penalty_breakdown(plan, drifting)
+    assert good.directed_interface_row_drift == 0
+    assert bad.directed_interface_row_drift == 5
+    assert good.stage_order_violations == bad.stage_order_violations == 0
+
+
+def test_connector_fanout_aligns_with_any_owned_row_not_all_rows() -> None:
+    interface = _block("input", "interface", ("signal_in",))
+    upper = _block("upper", "filter", ("signal_in", "signal_out"))
+    lower = _block("lower", "filter", ("signal_in", "signal_out"))
+    plan = _plan(
+        (interface, upper, lower),
+        (
+            _edge("signal", "input", "upper", "a"),
+            _edge("signal", "input", "lower", "b"),
+        ),
+    )
+    aligned = _packing(
+        _placed(interface, 0),
+        _placed(upper, 8 * PITCH),
+        _placed(lower, 8 * PITCH, 6 * PITCH),
+    )
+    detached = _packing(
+        _placed(interface, 0, 3 * PITCH),
+        _placed(upper, 8 * PITCH),
+        _placed(lower, 8 * PITCH, 6 * PITCH),
+    )
+    assert semantic_composition_penalty_breakdown(plan, aligned).directed_interface_row_drift == 0
+    assert semantic_composition_penalty_breakdown(plan, detached).directed_interface_row_drift == 3
