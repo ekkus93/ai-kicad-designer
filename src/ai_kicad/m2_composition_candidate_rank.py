@@ -291,9 +291,7 @@ def _local_signal_neighbor_gap(plan, rects: dict[str, Rect]) -> int:
         and not net.explicit_geometry_required
         and len(set(net.fragments)) == 2
         and all(
-            fragment in rects
-            and fragment in blocks
-            and blocks[fragment].kind != "interface"
+            fragment in rects and fragment in blocks and blocks[fragment].kind != "interface"
             for fragment in net.fragments
         )
     }
@@ -348,6 +346,7 @@ def _infrastructure_primary_row_intrusion(plan, centers: dict[str, Point]) -> in
         for edge in plan.edges
         if edge.kind in {"signal", "branch"}
         for block_id in (edge.source, edge.target)
+
         if block_id in centers
     }
     signal_rows = sorted(
@@ -698,6 +697,7 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
     infrastructure_primary_row_intrusion = _infrastructure_primary_row_intrusion(plan, centers)
     feedback_intrusion = _feedback_corridor_intrusions(plan, rects, centers)
     sequential_stage_row_drift, directed_interface_row_drift = _signal_row_alignment_penalties(
+
         plan, centers, signal_relations
     )
     support_axis_drift = _support_axis_alignment_penalty(plan, centers)
