@@ -123,7 +123,8 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Keep package-local support with its owner where hard constraints permit.
 - [x] Preserve shared infrastructure as explicitly shared rather than arbitrarily attaching it to one block.
 - [x] Prefer natural electrical ordering of passive series chains.
-- [ ] Prevent isolated stage members connected only through distant labels when a legal local arrangement exists.
+- [x] Prevent isolated stage members connected only through distant labels when a legal local arrangement exists.
+  - Current-source exact-head evidence: `src/ai_kicad/m2_pack.py::_local_signal_proximity_candidates` searches direction-preserving adjacent vertical corridors when the aligned local slot is obstructed, while retaining measured hard-placement gates and bounded deterministic search. `tests/test_m2_composition_signal_locality.py` covers blocked-corridor recovery and semantic-order invariance. On exact source `fca44525387837ef869a891d9b0fcbab68e52518`, Fast Validation run `38005894006` completed full pytest plus locked-KiCad 10.0.6 V6-3/DP2, connector-label/selected-triple five-run, whole-band five-run, and fresh regression-build steps successfully; the workflow failure is solely the later artifact-upload quota failure and does not invalidate those completed steps. Native-render/final qualification remains open.
 - [x] Record exact grouping penalties in candidate evidence.
 - [x] Preserve existing 60 mm support/locality hard requirements.
 - [x] Add small synthetic exhaustive grouping cases.
