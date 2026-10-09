@@ -67,12 +67,16 @@ def measure_repeated_composition(
             orientations.extend(member.orientation % 360 for member in selected)
 
     for role in roles:
-        points = [channel[role].position for channel in channels]
+        points = sorted((channel[role].position for channel in channels), key=lambda p: (p[1], p[0]))
         origin = points[0]
         displacement_samples.extend(
             abs(point[0] - origin[0]) + abs(point[1] - origin[1]) for point in points[1:]
         )
 
+    # Physical center ordering keeps channel pitch independent of user-facing
+    # names and the declaration sequence. Use y then x so a horizontal row of
+    # channels remains ordered by its physical x coordinate.
+    channel_centers.sort(key=lambda p: (p[1], p[0]))
     pitches = [
         abs(second[0] - first[0]) + abs(second[1] - first[1])
         for first, second in zip(channel_centers, channel_centers[1:], strict=False)

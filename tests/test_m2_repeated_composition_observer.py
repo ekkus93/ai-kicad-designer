@@ -82,3 +82,28 @@ def test_displacement_variance_detects_inconsistent_correspondence() -> None:
         )
     )
     assert metrics.corresponding_displacement_variance == Fraction(100)
+
+def test_three_channel_metrics_are_permutation_and_rename_invariant() -> None:
+    members = (
+        RepeatedMember("amp", "z", (5, 60)),
+        RepeatedMember("amp", "x", (5, 0)),
+        RepeatedMember("amp", "y", (5, 20)),
+    )
+    renamed = (
+        RepeatedMember("amp", 42, (5, 20)),
+        RepeatedMember("amp", 3, (5, 60)),
+        RepeatedMember("amp", 9, (5, 0)),
+    )
+    first = measure_repeated_composition(members)
+    assert first == measure_repeated_composition(renamed)
+    assert first.pitch_variance == Fraction(100)
+    assert first.corresponding_displacement_variance == Fraction(400)
+
+
+def test_repeated_channel_order_follows_horizontal_geometry_too() -> None:
+    members = (
+        RepeatedMember("amp", "far", (60, 5)),
+        RepeatedMember("amp", "left", (0, 5)),
+        RepeatedMember("amp", "middle", (20, 5)),
+    )
+    assert measure_repeated_composition(members).pitch_variance == Fraction(100)

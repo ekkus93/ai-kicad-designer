@@ -35,14 +35,14 @@ def measure_repeated_structure(members: tuple[RepeatedMember, ...]) -> RepeatedS
         slots[member.semantic_slot].append(member)
     row = sum(_spread(m.center[1] for m in group) for group in channels.values())
     column = sum(_spread(m.center[0] for m in group) for group in slots.values())
-    orientation = sum(_spread(m.orientation for m in group) for group in slots.values())
+    orientation = sum(_spread(m.orientation % 360 for m in group) for group in slots.values())
     displacement = []
     for group in slots.values():
-        ordered = sorted(group, key=lambda m: m.channel_id)
+        ordered = sorted(group, key=lambda m: (m.center[1], m.center[0]))
         displacement += [abs(b.center[1] - a.center[1]) for a, b in zip(ordered, ordered[1:])]
     pitches = []
     for group in channels.values():
-        ordered = sorted(group, key=lambda m: (m.semantic_slot, m.member_id))
+        ordered = sorted(group, key=lambda m: (m.center[0], m.center[1]))
         pitches += [abs(b.center[0] - a.center[0]) for a, b in zip(ordered, ordered[1:])]
     return RepeatedStructureMetrics(
         row, column, _spread(displacement), orientation, _spread(pitches)
