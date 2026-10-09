@@ -9,6 +9,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass
+from heapq import heapify, heappop, heappush
 from math import isclose
 
 Point = tuple[int, int]
@@ -155,17 +156,50 @@ def _crosses_without_shared_endpoint(first: Segment, second: Segment) -> bool:
     return hx1 < vertical[0][0] < hx2 and vy1 < horizontal[0][1] < vy2
 
 
+def _coalesced_route_edges(segments: tuple[Segment, ...]) -> tuple[Segment, ...]:
+    """Remove collinear segmentation seams without erasing actual junctions."""
+    edges = {
+        tuple(sorted(edge))
+        for edge in segments
+        if edge[0] != edge[1] and _direction(edge) != "diagonal"
+    }
+    incident: dict[Point, set[Segment]] = defaultdict(set)
+    for edge in edges:
+        for point in edge:
+            incident[point].add(edge)
+    pending = list(incident)
+    heapify(pending)
+    while pending:
+        point = heappop(pending)
+        connected = incident[point]
+        if len(connected) != 2:
+            continue
+        first, second = sorted(connected)
+        direction = _direction(first)
+        if direction != _direction(second):
+            continue
+        straight = {"left", "right"} if direction == "horizontal" else {"up", "down"}
+        if _incident_cardinal_arms(point, tuple(edges)) != straight:
+            continue
+        other_first = first[1] if first[0] == point else first[0]
+        other_second = second[1] if second[0] == point else second[0]
+        if other_first == other_second:
+            continue
+        merged = tuple(sorted((other_first, other_second)))
+        for edge in (first, second):
+            edges.remove(edge)
+            for endpoint in edge:
+                incident[endpoint].discard(edge)
+        edges.add(merged)
+        for endpoint in merged:
+            incident[endpoint].add(merged)
+            heappush(pending, endpoint)
+    return tuple(sorted(edges))
+
+
 def _u_shaped_detours(segments: tuple[Segment, ...]) -> int:
-    """Detect U-turns from connected geometry, not segment list order."""
-    edges = tuple(
-        sorted(
-            {
-                tuple(sorted(edge))
-                for edge in segments
-                if edge[0] != edge[1] and _direction(edge) != "diagonal"
-            }
-        )
-    )
+    """Detect U-turns regardless of edge order, direction, or wire splitting."""
+    edges = _coalesced_route_edges(segments)
     incident: dict[Point, list[Segment]] = defaultdict(list)
     for edge in edges:
         for point in edge:

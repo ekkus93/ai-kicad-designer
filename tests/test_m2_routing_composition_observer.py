@@ -267,3 +267,41 @@ def test_branch_arm_stops_at_next_explicit_junction() -> None:
     metrics = measure_routing_readability(segments, semantic_local_length=55)
     assert metrics.branch_points == ((10, 0), (20, 0))
     assert metrics.sibling_branch_geometry_inconsistency == 10
+
+
+def test_u_detour_metric_ignores_collinear_wire_splitting() -> None:
+    unsplit = (
+        ((0, 0), (10, 0)),
+        ((10, 0), (10, 10)),
+        ((10, 10), (0, 10)),
+    )
+    split = (
+        ((0, 0), (5, 0)),
+        ((5, 0), (10, 0)),
+        ((10, 0), (10, 5)),
+        ((10, 5), (10, 10)),
+        ((10, 10), (5, 10)),
+        ((5, 10), (0, 10)),
+    )
+    for route in (
+        unsplit,
+        split,
+        tuple(reversed(split)),
+        tuple((end, start) for start, end in reversed(split)),
+    ):
+        metrics = measure_routing_readability(route, semantic_local_length=30)
+        assert metrics.u_shaped_detours == 1
+
+
+def test_collinear_wire_merge_retains_explicit_t_junction() -> None:
+    # A real intermediate branch must never be simplified into a plain seam.
+    route = (
+        ((0, 0), (5, 0)),
+        ((5, 0), (10, 0)),
+        ((5, 0), (5, 8)),
+        ((10, 0), (10, 10)),
+        ((10, 10), (0, 10)),
+    )
+    metrics = measure_routing_readability(route, semantic_local_length=38)
+    assert (5, 0) in metrics.branch_points
+    assert metrics.u_shaped_detours == 1
