@@ -45,7 +45,9 @@ def _fanout(*, reverse: bool = False, net: str = "fanout"):
         SemanticEdge("signal", "source", "upper", net, ()),
     )
     plan = SemanticPlan(
-        blocks=tuple(item.fragment.block for item in (reversed(fragments) if reverse else fragments)),
+        blocks=tuple(
+            item.fragment.block for item in (reversed(fragments) if reverse else fragments)
+        ),
         edges=tuple(reversed(edges)) if reverse else edges,
         owners={},
         signal_order=(),
@@ -55,8 +57,7 @@ def _fanout(*, reverse: bool = False, net: str = "fanout"):
 
 def _coordinates(candidate: Packing):
     return {
-        item.fragment.block.id: (item.envelope[0], item.envelope[1])
-        for item in candidate.fragments
+        item.fragment.block.id: (item.envelope[0], item.envelope[1]) for item in candidate.fragments
     }
 
 
@@ -103,9 +104,7 @@ def test_branch_search_retains_both_alternatives_under_seed_cap() -> None:
     extras = _branch_fanout_repack_candidates(plan, baseline)
     retained = _retain_composition_seed_diversity((baseline,) * 8, extras)
     assert len(retained) <= 8
-    assert {item.attempts[-1] for item in extras} <= {
-        item.attempts[-1] for item in retained
-    }
+    assert {item.attempts[-1] for item in extras} <= {item.attempts[-1] for item in retained}
 
 
 def test_branch_search_ignores_nonfanout_and_unrelated_nets() -> None:
