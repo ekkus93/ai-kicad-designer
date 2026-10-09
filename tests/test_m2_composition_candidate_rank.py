@@ -510,6 +510,7 @@ def test_unowned_feedback_and_shared_infrastructure_do_not_claim_support_axis() 
         plan = _plan((owner, other), (_edge(kind, "owner", "other"),))
         assert semantic_composition_penalty_breakdown(plan, placed).support_axis_drift == 0
 
+
 def test_serial_signal_stages_prefer_a_shared_row_with_equal_forward_progress() -> None:
     first = _block("a", "filter", ("signal_in", "signal_out"))
     second = _block("b", "amplifier", ("signal_in", "signal_out"))
