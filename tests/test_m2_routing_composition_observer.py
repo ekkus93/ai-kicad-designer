@@ -110,6 +110,7 @@ def test_shared_endpoint_joins_visible_segments() -> None:
     )
     assert metrics.label_mediated_local_disconnects == ()
 
+
 def test_unordered_reversed_u_detour() -> None:
     route = (((0, 0), (10, 0)), ((10, 0), (10, 10)), ((10, 10), (0, 10)))
     reordered = (route[2], route[0], route[1])
