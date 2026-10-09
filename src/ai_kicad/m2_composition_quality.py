@@ -217,7 +217,13 @@ def observe_human_composition(
                     origin,
                 )
             )
-        if "signal_in" in roles.get(source, set()) and source_x > target_x:
+        source_roles = roles.get(source, set())
+        target_roles = roles.get(target, set())
+        if (
+            "signal_in" in source_roles
+            and "signal_out" not in source_roles
+            and source_x > target_x
+        ):
             violations.append(
                 CompositionViolation(
                     "input_side_violation",
@@ -229,7 +235,11 @@ def observe_human_composition(
                     f"{origin}: directed input interface is right of its consumer",
                 )
             )
-        if "signal_out" in roles.get(target, set()) and target_x < source_x:
+        if (
+            "signal_out" in target_roles
+            and "signal_in" not in target_roles
+            and target_x < source_x
+        ):
             violations.append(
                 CompositionViolation(
                     "output_side_violation",
