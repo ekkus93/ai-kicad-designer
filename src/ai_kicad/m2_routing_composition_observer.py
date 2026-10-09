@@ -152,11 +152,10 @@ def _u_shaped_detours(segments: tuple[Segment, ...]) -> int:
                 if after == middle or after == before:
                     continue
                 third = after if after[0] == middle[1] else (after[1], after[0])
-                if _direction(first) == _direction(third) and _opposite_parallel(
-                    first, third
-                ):
+                if _direction(first) == _direction(third) and _opposite_parallel(first, third):
                     count += 1
     return count
+
 
 def _opposite_parallel(first: Segment, second: Segment) -> bool:
     direction = _direction(first)
