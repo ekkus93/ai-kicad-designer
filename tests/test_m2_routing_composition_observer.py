@@ -60,3 +60,52 @@ def test_route_readability_reports_local_label_disconnects_only_when_direct_is_c
     )
 
     assert metrics.label_mediated_local_disconnects == ("near_missing",)
+
+
+def test_multisegment_visible_path_is_not_a_label_disconnect() -> None:
+    segments = (
+        ((0, 0), (10, 0)),
+        ((10, 0), (10, 10)),
+        ((10, 10), (20, 10)),
+    )
+    pairs = (
+        ("connected", (0, 0), (20, 10)),
+        ("missing", (0, 0), (20, 0)),
+        ("distant", (0, 0), (100, 0)),
+    )
+    for candidate in (segments, tuple((end, start) for start, end in reversed(segments))):
+        metrics = measure_routing_readability(
+            candidate,
+            semantic_local_length=30,
+            local_label_pairs=pairs,
+            direct_distance_limit=40,
+        )
+        assert metrics.label_mediated_local_disconnects == ("missing",)
+
+
+def test_crossing_without_shared_endpoint_is_not_a_visible_connection() -> None:
+    metrics = measure_routing_readability(
+        (
+            ((0, 5), (10, 5)),
+            ((5, 0), (5, 10)),
+        ),
+        semantic_local_length=20,
+        local_label_pairs=(("crossing", (0, 5), (5, 10)),),
+        direct_distance_limit=20,
+    )
+    assert metrics.label_mediated_local_disconnects == ("crossing",)
+
+
+def test_shared_endpoint_joins_visible_segments() -> None:
+    metrics = measure_routing_readability(
+        (
+            ((0, 0), (10, 0)),
+            ((10, 0), (10, 10)),
+            ((10, 10), (20, 10)),
+            ((20, 10), (20, 0)),
+        ),
+        semantic_local_length=40,
+        local_label_pairs=(("connected", (0, 0), (20, 0)),),
+        direct_distance_limit=40,
+    )
+    assert metrics.label_mediated_local_disconnects == ()

@@ -191,17 +191,38 @@ def _local_label_disconnects(
     local_label_pairs: tuple[LabelPair, ...],
     direct_distance_limit: int,
 ) -> tuple[str, ...]:
+    # A visible local connection can span multiple orthogonal wire segments.
+    # Treat only shared emitted endpoints as connected: a geometric crossing
+    # without an explicit endpoint/junction must not join unrelated wires.
+    components = _endpoint_components(segments)
     disconnected = []
     for label_id, first, second in local_label_pairs:
         if _manhattan(first, second) > direct_distance_limit:
             continue
-        if not any(_segment_connects(segment, first, second) for segment in segments):
+        if first not in components or components[first] != components.get(second):
             disconnected.append(label_id)
     return tuple(disconnected)
 
 
-def _segment_connects(segment: Segment, first: Point, second: Point) -> bool:
-    return first in segment and second in segment
+def _endpoint_components(segments: tuple[Segment, ...]) -> dict[Point, int]:
+    adjacency: dict[Point, set[Point]] = defaultdict(set)
+    for first, second in segments:
+        adjacency[first].add(second)
+        adjacency[second].add(first)
+
+    components: dict[Point, int] = {}
+    for start in sorted(adjacency):
+        if start in components:
+            continue
+        component_id = len(components)
+        pending = [start]
+        while pending:
+            point = pending.pop()
+            if point in components:
+                continue
+            components[point] = component_id
+            pending.extend(adjacency[point] - components.keys())
+    return components
 
 
 def _manhattan(first: Point, second: Point) -> int:
