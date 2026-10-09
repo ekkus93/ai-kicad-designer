@@ -47,6 +47,7 @@ def test_existing_reference_fallback_is_preserved() -> None:
         }
     ) == ["BIAS"]
 
+
 def test_native_route_diagnostic_reads_emitted_wire_geometry_without_acceptance() -> None:
     route = (((0, 0), (10, 0)), ((10, 0), (10, 10)), ((10, 10), (0, 10)))
     report = _native_route_diagnostic({"wires": route})
