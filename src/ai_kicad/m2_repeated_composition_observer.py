@@ -67,7 +67,9 @@ def measure_repeated_composition(
             orientations.extend(member.orientation % 360 for member in selected)
 
     for role in roles:
-        points = sorted((channel[role].position for channel in channels), key=lambda p: (p[1], p[0]))
+        points = sorted(
+            (channel[role].position for channel in channels), key=lambda p: (p[1], p[0])
+        )
         origin = points[0]
         displacement_samples.extend(
             abs(point[0] - origin[0]) + abs(point[1] - origin[1]) for point in points[1:]
