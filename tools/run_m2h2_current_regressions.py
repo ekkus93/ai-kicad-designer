@@ -16,6 +16,7 @@ from ai_kicad.m2_composition_qualification_observation import (
     observe_composition_evidence,
     observe_native_pin_composition,
 )
+from ai_kicad.m2_routing_composition_observer import measure_routing_readability
 from ai_kicad.m2_semantics import semantic_plan
 from run_m2g2_qualification import _build, _erc_violations, _json, _sha, _signature
 
@@ -133,6 +134,35 @@ def _composition_observer(design: dict[str, Any], signature: dict[str, Any]) -> 
     return observe_composition_evidence(plan, signature["composition"]).as_dict()
 
 
+def _native_route_diagnostic(observed: dict[str, Any]) -> dict[str, Any]:
+    """Non-gating wire geometry observed from native KiCad schematic bytes.
+
+    This reports physical wire bends and U-turns, without asserting net-scoped
+    crossings or independent minimum-route baselines unavailable from this
+    first-order diagnostic. Final per-net and visual acceptance remain open.
+    """
+    segments = tuple(
+        (tuple(first), tuple(second)) for first, second in observed["wires"]
+    )
+    observed_length = sum(
+        abs(first[0] - second[0]) + abs(first[1] - second[1])
+        for first, second in segments
+    )
+    metrics = measure_routing_readability(
+        segments,
+        semantic_local_length=observed_length,
+    )
+    return {
+        "schema_version": "m2h2.native-route-diagnostic.1",
+        "provenance": "parsed_native_kicad_schematic_wires",
+        "acceptance": "diagnostic_only",
+        "wire_segment_count": len(segments),
+        "routed_length_nm": metrics.route_length,
+        "bend_count": metrics.bend_count,
+        "u_shaped_detours": metrics.u_shaped_detours,
+    }
+
+
 def _run_case(case_id: str, design_path: Path, output: Path) -> dict[str, Any]:
     design = _json(design_path)
     destination = output / case_id / "run1"
@@ -184,6 +214,7 @@ def _run_case(case_id: str, design_path: Path, output: Path) -> dict[str, Any]:
         ],
         composition_observer=composition_observer,
         native_pin_composition_diagnostic=native_pin_diagnostic,
+        native_route_diagnostic=_native_route_diagnostic(native),
         reference_metrics=reference_metrics,
         layout=signature["layout"],
     )

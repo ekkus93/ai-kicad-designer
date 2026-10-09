@@ -8,7 +8,12 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
-from run_m2h2_current_regressions import CASES, _case_errors, _reference_nets  # noqa: E402
+from run_m2h2_current_regressions import (  # noqa: E402
+    CASES,
+    _case_errors,
+    _native_route_diagnostic,
+    _reference_nets,
+)
 
 
 def test_mixed_branch_is_in_locked_current_source_regressions() -> None:
@@ -41,3 +46,22 @@ def test_existing_reference_fallback_is_preserved() -> None:
             "nets": [{"id": "BIAS"}],
         }
     ) == ["BIAS"]
+
+def test_native_route_diagnostic_reads_emitted_wire_geometry_without_acceptance() -> None:
+    route = (((0, 0), (10, 0)), ((10, 0), (10, 10)), ((10, 10), (0, 10)))
+    report = _native_route_diagnostic({"wires": route})
+    reordered = _native_route_diagnostic({"wires": (route[2], route[0], route[1])})
+    assert report == reordered
+    assert report["routed_length_nm"] == 30
+    assert report["wire_segment_count"] == 3
+    assert report["bend_count"] == 2
+    assert report["u_shaped_detours"] >= 1
+    assert report["acceptance"] == "diagnostic_only"
+    assert report["provenance"] == "parsed_native_kicad_schematic_wires"
+
+
+def test_native_route_diagnostic_identifies_straight_wires() -> None:
+    report = _native_route_diagnostic({"wires": [((0, 0), (10, 0))]})
+    assert report["routed_length_nm"] == 10
+    assert report["bend_count"] == 0
+    assert report["u_shaped_detours"] == 0
