@@ -108,3 +108,27 @@ def test_unknown_selection_does_not_create_output(tmp_path):
     with pytest.raises(ValueError, match="requested native-render case"):
         materialize_native_baseline(tmp_path, manifest, out, cases=("unknown",))
     assert not out.exists()
+
+
+def test_real_preserved_archive_can_extract_mixed_falsification_seed(tmp_path):
+    """Exercise the actual frozen ten-part archive, not just a synthetic fixture."""
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[1]
+    manifest = (
+        root
+        / "fixtures/m2h2/human_composition_baseline_2026-10-08/"
+        "native_render_archive_manifest_42ab8452.json"
+    )
+    inventory, parts = load_native_baseline(root, manifest)
+    assert inventory.render_count == 90
+    assert len(parts) == 10
+    assert "i4__b2_mixed" in dict(inventory.case_hashes)
+
+    output = tmp_path / "mixed"
+    materialize_native_baseline(root, manifest, output, cases=("i4__b2_mixed",))
+    svg = output.joinpath("i4__b2_mixed.svg").read_bytes()
+    assert b"<svg" in svg[:4096]
+    receipt = json.loads(output.joinpath("inspection_inventory.json").read_text())
+    assert receipt["complete_archive_svg_count"] == 90
+    assert receipt["native_render_engineering_inspection_completed"] is False

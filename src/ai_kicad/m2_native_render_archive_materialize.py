@@ -11,7 +11,6 @@ import hashlib
 import json
 from pathlib import Path
 import re
-from typing import Mapping
 from xml.etree import ElementTree
 
 from .m2_composition_native_archive import NativeRenderInventory, verify_native_render_parts
