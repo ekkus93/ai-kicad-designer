@@ -1260,9 +1260,7 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
                             working_packing, substitution = _distribution_repack(
                                 design, resolved, plan, working_packing, last_conflict
                             )
-                    elif round_index == 2 and isinstance(
-                        last_conflict, ConductorLengthConflict
-                    ):
+                    elif round_index == 2 and isinstance(last_conflict, ConductorLengthConflict):
                         working_packing, substitution = _distribution_repack(
                             design, resolved, plan, working_packing, last_conflict
                         )

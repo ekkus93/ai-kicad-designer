@@ -604,9 +604,15 @@ def route_between_fragments(
 ) -> tuple[RouteTree, ...]:
     """Attach all required gateways with one obstacle-checked tree per net/island."""
     by_id = {item.fragment.block.id: item for item in placed}
+    # Keep emitted routing on the historically proved semantic edge inventory.
+    # Inferred passive-interface relations are observer evidence only until
+    # their additional conductor length and gateway feasibility are qualified.
+    # Eagerly routing every inferred pair broke existing dual-buffer and V5/V6
+    # cases by exhausting the bounded planner or exceeding the 250 mm gate.
     grouped: dict[str, list[SemanticEdge]] = {}
-    for edge in _routable_edges(plan):
-        grouped.setdefault(edge.net, []).append(edge)
+    for edge in plan.edges:
+        if edge.net and edge.kind in {"signal", "power", "branch"}:
+            grouped.setdefault(edge.net, []).append(edge)
     # A shared internal reference has no connector and may have no directed
     # edge at all. Its terminal inventory still demands a physical distribution.
     for net in plan.presentation_nets:
