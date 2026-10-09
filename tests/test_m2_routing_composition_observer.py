@@ -294,7 +294,8 @@ def test_u_detour_metric_ignores_collinear_wire_splitting() -> None:
 
 
 def test_collinear_wire_merge_retains_explicit_t_junction() -> None:
-    # A real intermediate branch must never be simplified into a plain seam.
+    # A real branch must survive collinear simplification; adding a seam
+    # cannot change its U-detour witnesses or branch topology.
     route = (
         ((0, 0), (5, 0)),
         ((5, 0), (10, 0)),
@@ -302,6 +303,18 @@ def test_collinear_wire_merge_retains_explicit_t_junction() -> None:
         ((10, 0), (10, 10)),
         ((10, 10), (0, 10)),
     )
-    metrics = measure_routing_readability(route, semantic_local_length=38)
-    assert (5, 0) in metrics.branch_points
-    assert metrics.u_shaped_detours == 1
+    segmented = (
+        route[0],
+        route[1],
+        route[2],
+        ((10, 0), (10, 5)),
+        ((10, 5), (10, 10)),
+        route[4],
+    )
+    reference = measure_routing_readability(route, semantic_local_length=38)
+    assert reference.branch_points == ((5, 0),)
+    assert reference.u_shaped_detours == 2
+    for candidate in (segmented, tuple((b, a) for a, b in reversed(segmented))):
+        metrics = measure_routing_readability(candidate, semantic_local_length=38)
+        assert metrics.branch_points == reference.branch_points
+        assert metrics.u_shaped_detours == reference.u_shaped_detours
