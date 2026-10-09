@@ -42,6 +42,7 @@ class SemanticPenaltyBreakdown:
     directed_interface_row_drift: int
     support_axis_drift: int
     passive_reference_axis_drift: int
+    local_signal_neighbor_gap: int
 
     def vector(self) -> SemanticPenaltyVector:
         return (
@@ -64,6 +65,7 @@ class SemanticPenaltyBreakdown:
             self.directed_interface_row_drift,
             self.support_axis_drift,
             self.passive_reference_axis_drift,
+            self.local_signal_neighbor_gap,
         )
 
     def as_dict(self) -> dict[str, int]:
@@ -87,6 +89,7 @@ class SemanticPenaltyBreakdown:
             "directed_interface_row_drift": self.directed_interface_row_drift,
             "support_axis_drift": self.support_axis_drift,
             "passive_reference_axis_drift": self.passive_reference_axis_drift,
+            "local_signal_neighbor_gap": self.local_signal_neighbor_gap,
         }
 
 
@@ -272,6 +275,32 @@ def _unrelated_block_proximity(plan, rects: dict[str, Rect]) -> int:
             gap = _rect_gap(rects[first_id], rects[second_id])
             penalty += max(0, PITCH - gap)
     return _grid_units(penalty)
+
+
+def _local_signal_neighbor_gap(plan, rects: dict[str, Rect]) -> int:
+    """Prefer nearby members of label-eligible two-fragment signal nets.
+
+    Shared distribution, mandatory explicit geometry, interfaces, and fanout
+    are excluded. This is placement preference, not emitted-route proof.
+    """
+    blocks = {block.id: block for block in plan.blocks}
+    pairs = {
+        tuple(sorted(set(net.fragments)))
+        for net in getattr(plan, "presentation_nets", ())
+        if net.role == "signal"
+        and not net.explicit_geometry_required
+        and len(set(net.fragments)) == 2
+        and all(
+            fragment in rects
+            and fragment in blocks
+            and blocks[fragment].kind != "interface"
+            for fragment in net.fragments
+        )
+    }
+    return sum(
+        _grid_units(max(0, _rect_gap(rects[first], rects[second]) - 2 * PITCH))
+        for first, second in sorted(pairs)
+    )
 
 
 def _power_interface_distance(plan, centers: dict[str, Point]) -> int:
@@ -673,6 +702,7 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
     )
     support_axis_drift = _support_axis_alignment_penalty(plan, centers)
     passive_reference_axis_drift = _passive_reference_axis_alignment_penalty(packing)
+    local_signal_neighbor_gap = _local_signal_neighbor_gap(plan, rects)
 
     return SemanticPenaltyBreakdown(
         missing_geometry=missing_geometry,
@@ -694,6 +724,7 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
         directed_interface_row_drift=directed_interface_row_drift,
         support_axis_drift=support_axis_drift,
         passive_reference_axis_drift=passive_reference_axis_drift,
+        local_signal_neighbor_gap=local_signal_neighbor_gap,
     )
 
 
