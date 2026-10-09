@@ -568,11 +568,7 @@ def _routable_edges(plan: SemanticPlan) -> tuple[SemanticEdge, ...]:
     tree as an authored signal edge. Ambiguous, power, and reference interfaces
     remain label/distribution governed and are never guessed.
     """
-    edges = [
-        edge
-        for edge in plan.edges
-        if edge.net and edge.kind in {"signal", "power", "branch"}
-    ]
+    edges = [edge for edge in plan.edges if edge.net and edge.kind in {"signal", "power", "branch"}]
     existing = {(edge.source, edge.target, edge.net) for edge in edges}
     for source, target, net in inferred_passive_interface_signal_relations(plan):
         if (source, target, net) in existing:
