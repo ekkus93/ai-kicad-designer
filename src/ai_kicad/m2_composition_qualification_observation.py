@@ -97,7 +97,9 @@ class QualificationObservationReport:
         )
 
     def is_complete(self) -> bool:
-        return not self.gaps()
+        # All selected runs passing is insufficient if required case families
+        # were omitted from the matrix altogether.
+        return not self.matrix.scope_gaps() and not self.gaps()
 
 
 def build_observation_report(

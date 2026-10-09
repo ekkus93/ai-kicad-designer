@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import json
+import re
 
 LOCKED_KICAD_VERSION = "KiCad 10.0.6"
 REQUIRED_REPETITIONS = 5
@@ -45,6 +46,10 @@ class QualificationMatrix:
 
     def canonical_json(self) -> str:
         return json.dumps(_matrix_dict(self), sort_keys=True, separators=(",", ":"))
+
+    def scope_gaps(self) -> tuple[str, ...]:
+        """Identify omitted governed families before claiming final qualification."""
+        return matrix_scope_gaps(self)
 
 
 def build_required_matrix(
@@ -90,6 +95,30 @@ def build_required_matrix(
     )
 
 
+def matrix_scope_gaps(matrix: QualificationMatrix) -> tuple[str, ...]:
+    """Conservative minimum scope preflight, independent of run success.
+
+    A small synthetic matrix is useful for unit tests but is not a valid final
+    qualification matrix. Require coverage of all I1-I6 interaction families,
+    more than one structural class, and targeted regression evidence. This does
+    not replace the exact frozen case-inventory audit or native inspection.
+    """
+    gaps: list[str] = []
+    seen_interactions: set[int] = set()
+    for case in matrix.interaction_cases:
+        match = re.match(r"i([1-6])(?:$|__|[-_])", case.case_id, re.IGNORECASE)
+        if match:
+            seen_interactions.add(int(match.group(1)))
+    for index in range(1, 7):
+        if index not in seen_interactions:
+            gaps.append(f"interaction:I{index}")
+    if len(matrix.structural_cases) < 2:
+        gaps.append("structural:at_least_two_classes")
+    if not matrix.targeted_composition_cases:
+        gaps.append("targeted:nonempty")
+    return tuple(gaps)
+
+
 def matrix_gaps(
     matrix: QualificationMatrix,
     observed_successes: tuple[tuple[str, int], ...],
@@ -102,7 +131,7 @@ def matrix_gaps(
             raise ValueError(f"unknown qualification case ID: {case_id}")
         if case_id in observed:
             raise ValueError(f"duplicate qualification result: {case_id}")
-        if type(count) is not int or count < 0:
+        if type(count) is not int or not 0 <= count <= required[case_id].repetitions:
             raise ValueError(f"invalid successful repetition count for {case_id}")
         observed[case_id] = count
     gaps: list[tuple[str, int, int]] = []
