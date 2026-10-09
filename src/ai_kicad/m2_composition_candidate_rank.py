@@ -453,9 +453,7 @@ def _signal_row_alignment_penalties(
         return bool(
             block is not None
             and block.kind != "interface"
-            and {"signal_in", "signal_out"}.issubset(
-                {port.role for port in block.ports}
-            )
+            and {"signal_in", "signal_out"}.issubset({port.role for port in block.ports})
         )
 
     stage_drift = 0
