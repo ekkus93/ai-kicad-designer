@@ -120,9 +120,7 @@ def _branch_points(segments: tuple[Segment, ...]) -> tuple[Point, ...]:
     """
     endpoints = {point for segment in segments for point in segment}
     return tuple(
-        point
-        for point in sorted(endpoints)
-        if len(_incident_cardinal_arms(point, segments)) > 2
+        point for point in sorted(endpoints) if len(_incident_cardinal_arms(point, segments)) > 2
     )
 
 
@@ -232,11 +230,7 @@ def _straight_arm_length(
         abs(other[axis] - start)
         for other in endpoints
         if other[1 - axis] == point[1 - axis]
-        and (
-            (start < other[axis] <= reach)
-            if forward
-            else (reach <= other[axis] < start)
-        )
+        and ((start < other[axis] <= reach) if forward else (reach <= other[axis] < start))
         and _incident_cardinal_arms(other, segments) != straight
     ]
     return min(stops, default=abs(reach - start))
