@@ -285,6 +285,7 @@ def test_native_pin_observer_marks_missing_block_geometry() -> None:
     assert report.metrics.visible_block_count == 1
     assert any(item.kind == "missing_block_geometry" for item in report.violations)
 
+
 def test_preserved_negative_builder_rejection_requires_input_bound_invalid_report() -> None:
     expected = "a" * 64
     report = {
