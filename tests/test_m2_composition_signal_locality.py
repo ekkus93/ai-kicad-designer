@@ -54,3 +54,16 @@ def test_local_signal_gap_exempts_shared_explicit_and_interface_nets() -> None:
         )
         plan = SimpleNamespace(blocks=blocks, presentation_nets=(net,))
         assert _local_signal_neighbor_gap(plan, rects) == 0
+
+
+def test_local_signal_gap_deduplicates_renamed_nets() -> None:
+    blocks = tuple(SimpleNamespace(id=name, kind="stage") for name in ("a", "b"))
+    rects = {"a": (0, 0, PITCH, PITCH), "b": (18 * PITCH, 0, 19 * PITCH, PITCH)}
+    net = SimpleNamespace(
+        id="old", role="signal", fragments=("a", "b"), explicit_geometry_required=False
+    )
+    renamed = SimpleNamespace(
+        id="new", role="signal", fragments=("b", "a"), explicit_geometry_required=False
+    )
+    plan = SimpleNamespace(blocks=blocks, presentation_nets=(net, renamed))
+    assert _local_signal_neighbor_gap(plan, rects) == 15
