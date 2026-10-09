@@ -109,3 +109,11 @@ def test_shared_endpoint_joins_visible_segments() -> None:
         direct_distance_limit=40,
     )
     assert metrics.label_mediated_local_disconnects == ()
+
+def test_unordered_reversed_u_detour() -> None:
+    route = (((0, 0), (10, 0)), ((10, 0), (10, 10)), ((10, 10), (0, 10)))
+    reordered = (route[2], route[0], route[1])
+    reversed_route = tuple((end, start) for start, end in reversed(route))
+    for variant in (route, reordered, reversed_route):
+        metrics = measure_routing_readability(variant, semantic_local_length=30)
+        assert metrics.u_shaped_detours == 1
