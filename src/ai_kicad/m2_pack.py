@@ -1227,6 +1227,119 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
     return tuple(alternatives)
 
 
+
+def _envelope_manhattan_gap(first: Rect, second: Rect) -> int:
+    """Measure the axis-separated free gap between two measured reservations."""
+    return max(0, first[0] - second[2], second[0] - first[2]) + max(
+        0, first[1] - second[3], second[1] - first[3]
+    )
+
+
+def _local_signal_proximity_candidates(
+    plan: SemanticPlan, baseline: Packing
+) -> tuple[Packing, ...]:
+    """Try a legal direct-connection-friendly position for a local signal pair.
+
+    A two-fragment signal presentation net is eligible only when it has no
+    mandatory global distribution geometry and neither endpoint is an external
+    interface. This is a *placement* alternative, not proof that a direct wire
+    can be routed: the downstream route and electrical gates remain mandatory.
+    Shared nets and power/reference distribution are never pulled together.
+    """
+    by_id = {item.fragment.block.id: item for item in baseline.fragments}
+    directed = {
+        (edge.source, edge.target, edge.net)
+        for edge in plan.edges
+        if edge.kind in {"signal", "branch"}
+    }
+    directed.update(
+        (item.source_fragment, item.target_fragment, item.net) for item in plan.precedence
+    )
+    options: list[tuple[tuple[int, int, str, str, int, int], Packing]] = []
+    trials = 0
+    for net in sorted(plan.presentation_nets, key=lambda item: item.id):
+        if net.role != "signal" or net.explicit_geometry_required or len(set(net.fragments)) != 2:
+            continue
+        first_id, second_id = sorted(set(net.fragments))
+        first, second = by_id.get(first_id), by_id.get(second_id)
+        if first is None or second is None:
+            continue
+        if any(
+            item.fragment.block.kind == "interface" or item.fragment.block.unused
+            for item in (first, second)
+        ):
+            continue
+        forward = (first_id, second_id, net.id) in directed
+        backward = (second_id, first_id, net.id) in directed
+        if forward != backward:
+            anchor, moving = (first, second) if forward else (second, first)
+        elif len(set(net.producer_fragments)) == 1:
+            producer = net.producer_fragments[0]
+            anchor, moving = (first, second) if producer == first_id else (second, first)
+            if producer not in {first_id, second_id}:
+                continue
+        else:
+            anchor, moving = sorted(
+                (first, second), key=lambda item: (item.envelope[0], item.fragment.block.id)
+            )
+        # Gap is measured between reserved envelopes, not an arbitrary refdes
+        # or net-label anchor. Skip already-local pairs and identical states.
+        old_gap = _envelope_manhattan_gap(anchor.envelope, moving.envelope)
+        if old_gap <= 2 * PITCH:
+            continue
+        width = moving.envelope[2] - moving.envelope[0]
+        height = moving.envelope[3] - moving.envelope[1]
+        # Respect directed primary flow. Undirected pairs may use either side.
+        slots = [
+            (anchor.envelope[2] + CHANNEL_GAP, anchor.envelope[1]),
+            (
+                anchor.envelope[2] + CHANNEL_GAP,
+                (anchor.envelope[1] + anchor.envelope[3] - height) // 2,
+            ),
+        ]
+        if not (forward != backward):
+            slots.extend(
+                (
+                    (anchor.envelope[0] - width - CHANNEL_GAP, anchor.envelope[1]),
+                    (anchor.envelope[0], anchor.envelope[3] + CHANNEL_GAP),
+                    (anchor.envelope[0], anchor.envelope[1] - height - CHANNEL_GAP),
+                )
+            )
+        for x, y in slots:
+            if trials >= CANDIDATE_BUDGET * 4:
+                break
+            trials += 1
+            proposal = _measured_repack(
+                plan, baseline, moving, x, y, "local-signal-direct-proximity"
+            )
+            if proposal is None:
+                continue
+            moved = next(
+                item
+                for item in proposal.fragments
+                if item.fragment.block.id == moving.fragment.block.id
+            )
+            new_gap = _envelope_manhattan_gap(anchor.envelope, moved.envelope)
+            if new_gap >= old_gap:
+                continue
+            options.append(
+                (
+                    (
+                        new_gap,
+                        -(old_gap - new_gap),
+                        anchor.fragment.block.id,
+                        moving.fragment.block.id,
+                        x,
+                        y,
+                    ),
+                    proposal,
+                )
+            )
+        if trials >= CANDIDATE_BUDGET * 4:
+            break
+    return (min(options, key=lambda item: item[0])[1],) if options else ()
+
+
 def _semantic_block_order_candidates(plan: SemanticPlan, baseline: Packing) -> tuple[Packing, ...]:
     """Try a legal adjacent functional-stage exchange between incomparable peers.
 
@@ -2069,6 +2182,14 @@ def _retain_composition_seed_diversity(
         ),
         None,
     )
+    local_signal = next(
+        (
+            candidate
+            for candidate in extras
+            if candidate.attempts[-1] == "local-signal-direct-proximity"
+        ),
+        None,
+    )
     # Distribution and partial-beam seeds are independent measured geometry
     # classes. Keep one of each when available: new aesthetic variants must not
     # displace the only candidate able to satisfy a global conductor bound.
@@ -2086,7 +2207,7 @@ def _retain_composition_seed_diversity(
     )
     protected = tuple(
         candidate
-        for candidate in (distribution, partial, *repeated, *branch, field_slot)
+        for candidate in (distribution, partial, *repeated, *branch, field_slot, local_signal)
         if candidate is not None
     )
     ordered = successful[:1] + protected + successful[1:3] + extras + successful[3:]
@@ -2460,6 +2581,7 @@ def pack_fragment_candidates(
                 break
         extras.extend(_semantic_block_order_candidates(plan, successful[0]))
         extras.extend(_support_affinity_candidates(plan, successful[0]))
+        extras.extend(_local_signal_proximity_candidates(plan, successful[0]))
         extras.extend(_branch_fanout_repack_candidates(plan, successful[0]))
         extras.extend(_repeated_peer_alignment_candidates(plan, successful[0]))
         distribution = _distribution_column_candidate(plan, variants, successful)
