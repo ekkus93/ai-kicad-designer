@@ -10,6 +10,9 @@ import sys
 import time
 
 from ai_kicad.m2a import ROOT
+from ai_kicad.m2b import assets, validate
+from ai_kicad.m2_composition_qualification_observation import observe_composition_evidence
+from ai_kicad.m2_semantics import semantic_plan
 from run_m2g2_qualification import (
     _anti_overfitting_audit,
     _build,
@@ -48,7 +51,9 @@ def main() -> None:
         raise SystemExit(f"refusing to overwrite evidence: {output}")
     output.mkdir(parents=True, exist_ok=True)
     results = []
+    resolved = assets()
     for case_id, design, classification in cases():
+        plan = semantic_plan(validate(json.loads(design.read_text()), resolved), resolved)
         signatures = []
         runs = []
         for index in range(1, 6):
@@ -65,6 +70,9 @@ def main() -> None:
             if rc == 0:
                 signature = _signature(actual)
                 signatures.append(signature)
+                composition_observer = observe_composition_evidence(
+                    plan, signature["composition"]
+                ).as_dict()
                 record.update(
                     electrical_status=signature["electrical"]["status"],
                     electrical_diagnostics=signature["electrical"]["diagnostics"],
@@ -72,6 +80,7 @@ def main() -> None:
                     serialized_scene_verified=signature["composition"]["obligation_certificate"][
                         "serialized_scene_verified"
                     ],
+                    composition_observer=composition_observer,
                     layout=signature["layout"],
                 )
             else:
@@ -79,12 +88,17 @@ def main() -> None:
             runs.append(record)
             print(json.dumps({"case": case_id, "run": index, "returncode": rc}), flush=True)
         reproducible = len(signatures) == 5 and all(s == signatures[0] for s in signatures[1:])
-        accepted = reproducible and all(
+        observer_reproducible = len(runs) == 5 and all(
+            run.get("composition_observer") == runs[0].get("composition_observer")
+            for run in runs[1:]
+        )
+        accepted = reproducible and observer_reproducible and all(
             run["returncode"] == 0
             and run["electrical_status"] == "pass"
             and not run["electrical_diagnostics"]
             and run["erc_violation_count"] == 0
             and run["serialized_scene_verified"] == "pass"
+            and run["composition_observer"]["passed"]
             for run in runs
         )
         results.append(
@@ -95,6 +109,7 @@ def main() -> None:
                 "design_sha256": _sha(design),
                 "accepted": accepted,
                 "reproducible": reproducible,
+                "composition_observer_reproducible": observer_reproducible,
                 "runs": runs,
                 "signature": signatures[0] if signatures else None,
             }
@@ -106,6 +121,10 @@ def main() -> None:
                     "id": case_id,
                     "accepted": accepted,
                     "reproducible": reproducible,
+                    "composition_observer_passed": all(
+                        run.get("composition_observer", {}).get("passed", False)
+                        for run in runs
+                    ),
                     "runs": [run["path"] for run in runs],
                     "failures": [run.get("failure") for run in runs if run["returncode"]],
                     "layout": signatures[0]["layout"] if signatures else None,

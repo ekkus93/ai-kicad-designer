@@ -2,10 +2,15 @@ from ai_kicad.m2_composition_qualification_matrix import (
     LOCKED_KICAD_VERSION,
     build_required_matrix,
 )
+from types import SimpleNamespace
+
 from ai_kicad.m2_composition_qualification_observation import (
     QualificationObservation,
     build_observation_report,
+    observe_composition_evidence,
+    observe_composition_packing,
 )
+from ai_kicad.m2_semantics import BlockPlan, SemanticEdge, SemanticPlan
 
 SOURCE = "a" * 40
 BASE_CASES = tuple(f"base-{index:02d}" for index in range(56))
@@ -106,3 +111,60 @@ def test_unknown_case_and_out_of_range_repetition_are_rejected() -> None:
 
     assert report.successful_repetitions() == ()
     assert report.rejected_observation_count() == 3
+
+
+def _composition_plan() -> SemanticPlan:
+    return SemanticPlan(
+        blocks=(
+            BlockPlan("input", "interface", (), frozenset(), ()),
+            BlockPlan("stage", "filter", (), frozenset(), ()),
+        ),
+        edges=(SemanticEdge("signal", "input", "stage", "signal", ()),),
+        owners={},
+        signal_order=(),
+    )
+
+
+def test_runtime_observer_reads_emitted_block_envelopes_independently() -> None:
+    report = observe_composition_evidence(
+        _composition_plan(),
+        {
+            "variants": [
+                {"fragment": "input", "placed_envelope": [0, 0, 10, 10]},
+                {"fragment": "stage", "placed_envelope": [20, 0, 30, 10]},
+            ]
+        },
+    )
+    assert report.passed
+    assert report.metrics.primary_stage_order_inversions == 0
+
+    reversed_report = observe_composition_evidence(
+        _composition_plan(),
+        {
+            "variants": [
+                {"fragment": "input", "placed_envelope": [30, 0, 40, 10]},
+                {"fragment": "stage", "placed_envelope": [0, 0, 10, 10]},
+            ]
+        },
+    )
+    assert not reversed_report.passed
+    assert reversed_report.metrics.primary_stage_order_inversions == 1
+
+
+def test_runtime_observer_reads_measured_packing_without_candidate_scores() -> None:
+    def placed(block_id: str, rect: tuple[int, int, int, int]):
+        return SimpleNamespace(
+            fragment=SimpleNamespace(block=SimpleNamespace(id=block_id)),
+            content_envelope=rect,
+            envelope=rect,
+        )
+
+    packing = SimpleNamespace(
+        fragments=(
+            placed("input", (0, 0, 10, 10)),
+            placed("stage", (20, 0, 30, 10)),
+        )
+    )
+    report = observe_composition_packing(_composition_plan(), packing)
+    assert report.passed
+    assert report.metrics.visible_block_count == 2

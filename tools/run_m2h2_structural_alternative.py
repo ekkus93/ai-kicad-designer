@@ -21,6 +21,7 @@ from ai_kicad.m2a import (
 )
 from ai_kicad.m2b import assets, check_observed_layout, compare, validate
 from ai_kicad.m2_compose import _assemble_candidate
+from ai_kicad.m2_composition_qualification_observation import observe_composition_packing
 from ai_kicad.m2_fragments import fragment_variants
 from ai_kicad.m2_pack import (
     MAX_CONTENT_HEIGHT,
@@ -419,6 +420,7 @@ def main() -> None:
     launcher = validate_toolchain(
         ROOT / "fixtures/m1a/toolchain.lock.json", ROOT / "requirements.lock"
     )
+    plan = semantic_plan(design, emitted_assets)
     results = []
     for run in range(1, 6):
         stage = args.out / f"run{run}"
@@ -459,12 +461,14 @@ def main() -> None:
         layout = {**scene.metrics, **check_observed_layout(schematic, observed, design)}
         frozen = frozen_obligations(observed, design, expected)
         erc = json.loads(erc_path.read_text())
+        composition_observer = observe_composition_packing(plan, packing).as_dict()
         report = {
             "run": run,
             "pass": electrical["status"] == "pass"
             and not electrical["diagnostics"]
             and _erc_violations(erc) == 0
-            and frozen["pass"],
+            and frozen["pass"]
+            and composition_observer["passed"],
             "serialized_scene_verified": "pass",
             "selected_candidate": index,
             "selected_retry": retry,
@@ -487,6 +491,7 @@ def main() -> None:
             "electrical": electrical,
             "erc_violation_count": _erc_violations(erc),
             "frozen_obligations": frozen,
+            "composition_observer": composition_observer,
             "layout": layout,
             "scene_sha256": scene.certificate_digest,
             "candidate_input_policy_sha256": scene.certificate_input_digest,

@@ -10,11 +10,17 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .m2_composition_quality import (
+    CompositionReport,
+    block_envelopes_from_composition_evidence,
+    observe_human_composition,
+)
 from .m2_composition_qualification_matrix import (
     LOCKED_KICAD_VERSION,
     QualificationMatrix,
     matrix_gaps,
 )
+from .m2_semantics import SemanticPlan
 
 
 @dataclass(frozen=True)
@@ -79,6 +85,36 @@ def build_observation_report(
     observations: tuple[QualificationObservation, ...],
 ) -> QualificationObservationReport:
     return QualificationObservationReport(matrix, observations)
+
+
+def observe_composition_evidence(
+    plan: SemanticPlan,
+    composition_evidence: dict,
+) -> CompositionReport:
+    """Run the independent human-composition observer over emitted evidence."""
+    return observe_human_composition(
+        plan,
+        block_envelopes_from_composition_evidence(composition_evidence),
+    )
+
+
+def observe_composition_packing(plan: SemanticPlan, packing) -> CompositionReport:
+    """Run the same observer over an independently selected measured packing."""
+    envelopes: dict[str, tuple[int, int, int, int]] = {}
+    for item in packing.fragments:
+        block_id = item.fragment.block.id
+        rect = item.content_envelope or item.envelope
+        if block_id in envelopes:
+            prior = envelopes[block_id]
+            envelopes[block_id] = (
+                min(prior[0], rect[0]),
+                min(prior[1], rect[1]),
+                max(prior[2], rect[2]),
+                max(prior[3], rect[3]),
+            )
+        else:
+            envelopes[block_id] = rect
+    return observe_human_composition(plan, envelopes)
 
 
 def _case_by_id(matrix: QualificationMatrix) -> dict[str, object]:

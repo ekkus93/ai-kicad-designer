@@ -9,6 +9,9 @@ import re
 import subprocess
 
 from ai_kicad.m2a import ROOT, observe
+from ai_kicad.m2b import assets, validate
+from ai_kicad.m2_composition_qualification_observation import observe_composition_evidence
+from ai_kicad.m2_semantics import semantic_plan
 from run_m2g2_qualification import _build, _erc_violations, _json, _sha, _signature
 
 LAYOUT_FAILURE_WITNESS_KEYS = frozenset(
@@ -164,6 +167,11 @@ def validate_coverage_ledger_impossibilities(ledger: dict) -> None:
 
 def verify(run: Path, design: dict, expected: dict) -> dict:
     signature = _signature(run)
+    resolved = assets()
+    plan = semantic_plan(validate(design, resolved), resolved)
+    composition_observer = observe_composition_evidence(
+        plan, signature["composition"]
+    ).as_dict()
     schematic = next((run / "project").glob("*.kicad_sch"))
     observed = observe(schematic, run / "reports/netlist.xml")
     physical_components = {part["id"] for part in design["components"]}
@@ -253,6 +261,7 @@ def verify(run: Path, design: dict, expected: dict) -> dict:
         and _erc_violations(signature["erc"]) == 0
         and signature["composition"]["obligation_certificate"]["serialized_scene_verified"]
         == "pass"
+        and composition_observer["passed"]
         and actual_partitions == expected_partitions
         and actual_terminals == expected_terminals
         and all(item["pass"] for item in path_results + order_results)
@@ -269,6 +278,7 @@ def verify(run: Path, design: dict, expected: dict) -> dict:
         "pass": passed,
         "signature": signature,
         "observed_structural_class": observed_structural_class(signature),
+        "composition_observer": composition_observer,
         "partition_match": actual_partitions == expected_partitions,
         "terminal_match": actual_terminals == expected_terminals,
         "paths": path_results,
@@ -322,7 +332,9 @@ def main() -> None:
                 flush=True,
             )
         reproducible = len(runs) == 5 and all(
-            run.get("signature") == runs[0].get("signature") for run in runs[1:]
+            run.get("signature") == runs[0].get("signature")
+            and run.get("composition_observer") == runs[0].get("composition_observer")
+            for run in runs[1:]
         )
         observed_structures = [
             run.get("observed_structural_class")

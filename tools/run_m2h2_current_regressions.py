@@ -11,6 +11,9 @@ import time
 from typing import Any
 
 from ai_kicad.m2a import ROOT
+from ai_kicad.m2b import assets, validate
+from ai_kicad.m2_composition_qualification_observation import observe_composition_evidence
+from ai_kicad.m2_semantics import semantic_plan
 from run_m2g2_qualification import _build, _erc_violations, _json, _sha, _signature
 
 CANONICAL_LIMIT_NM = 250_000_000
@@ -121,6 +124,12 @@ def _case_errors(case_id: str, design: dict[str, Any], signature: dict[str, Any]
     return errors
 
 
+def _composition_observer(design: dict[str, Any], signature: dict[str, Any]) -> dict[str, Any]:
+    resolved = assets()
+    plan = semantic_plan(validate(design, resolved), resolved)
+    return observe_composition_evidence(plan, signature["composition"]).as_dict()
+
+
 def _run_case(case_id: str, design_path: Path, output: Path) -> dict[str, Any]:
     design = _json(design_path)
     destination = output / case_id / "run1"
@@ -141,7 +150,10 @@ def _run_case(case_id: str, design_path: Path, output: Path) -> dict[str, Any]:
         return record
 
     signature = _signature(actual)
+    composition_observer = _composition_observer(design, signature)
     errors = _case_errors(case_id, design, signature)
+    if not composition_observer["passed"]:
+        errors.append("independent human-composition observer did not pass")
     reference_metrics = {
         net: {
             "canonical_length_nm": witness.get("canonical_length_nm"),
@@ -160,6 +172,7 @@ def _run_case(case_id: str, design_path: Path, output: Path) -> dict[str, Any]:
         serialized_scene_verified=signature["composition"]["obligation_certificate"][
             "serialized_scene_verified"
         ],
+        composition_observer=composition_observer,
         reference_metrics=reference_metrics,
         layout=signature["layout"],
     )
