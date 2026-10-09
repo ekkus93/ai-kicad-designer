@@ -318,3 +318,47 @@ def test_collinear_wire_merge_retains_explicit_t_junction() -> None:
         metrics = measure_routing_readability(candidate, semantic_local_length=38)
         assert metrics.branch_points == reference.branch_points
         assert metrics.u_shaped_detours == reference.u_shaped_detours
+
+def test_bend_count_is_duplicate_and_collinear_split_invariant() -> None:
+    elbow = (((0, 0), (10, 0)), ((10, 0), (10, 10)))
+    variants = (
+        elbow,
+        elbow + (elbow[0], elbow[1]),
+        (((0, 0), (5, 0)), ((5, 0), (10, 0)), elbow[1]),
+        tuple((end, start) for start, end in reversed(elbow + (elbow[0],))),
+    )
+    for route in variants:
+        metrics = measure_routing_readability(route, semantic_local_length=20)
+        assert metrics.bend_count == 1
+
+
+def test_bend_count_does_not_count_three_arm_tee_as_a_corner() -> None:
+    trunk = ((0, 0), (20, 0))
+    branch = ((10, 0), (10, 10))
+    corner = ((10, 10), (20, 10))
+    variants = (
+        (trunk, branch, corner),
+        (((0, 0), (10, 0)), ((10, 0), (20, 0)), branch, corner),
+        (corner, branch, trunk, trunk),
+    )
+    for route in variants:
+        metrics = measure_routing_readability(route, semantic_local_length=40)
+        assert metrics.branch_points == ((10, 0),)
+        assert metrics.bend_count == 1
+
+
+def test_unrelated_crossing_count_deduplicates_reversed_strokes() -> None:
+    horizontal = ((0, 0), (20, 0))
+    vertical = ((10, -10), (10, 10))
+    variants = (
+        ((horizontal,), (vertical,)),
+        ((horizontal, horizontal), (vertical, vertical)),
+        (((20, 0), (0, 0)), horizontal), (vertical, ((10, 10), (10, -10))),
+    )
+    for primary, unrelated in variants:
+        metrics = measure_routing_readability(
+            primary,
+            semantic_local_length=20,
+            unrelated_segments=unrelated,
+        )
+        assert metrics.unrelated_crossings == 1

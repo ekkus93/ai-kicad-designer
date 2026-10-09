@@ -77,14 +77,20 @@ def _direction(segment: Segment) -> str:
 
 
 def _bend_count(segments: tuple[Segment, ...]) -> int:
-    by_point: dict[Point, list[str]] = defaultdict(list)
-    for segment in segments:
-        direction = _direction(segment)
-        by_point[segment[0]].append(direction)
-        by_point[segment[1]].append(direction)
+    """Count orthogonal two-arm corners, not seams, crossings, or tee branches.
+
+    Counting raw incident strokes is not invariant to duplicate strokes or
+    collinear wire segmentation. Visible cardinal arms encode the geometry
+    independently of those serialization details.
+    """
     bends = 0
-    for directions in by_point.values():
-        if len(directions) == 2 and len(set(directions)) == 2:
+    for point in {endpoint for segment in segments for endpoint in segment}:
+        arms = _incident_cardinal_arms(point, segments)
+        if (
+            len(arms) == 2
+            and arms & {"left", "right"}
+            and arms & {"up", "down"}
+        ):
             bends += 1
     return bends
 
@@ -135,10 +141,16 @@ def _normalized_excess(actual: int, baseline: int) -> float:
 def _unrelated_crossing_count(
     segments: tuple[Segment, ...], unrelated_segments: tuple[Segment, ...]
 ) -> int:
+    # A repeated or reversed serialized stroke is one geometric crossing,
+    # not additional evidence of unrelated-net interference.
+    primary = {tuple(sorted(edge)) for edge in segments if edge[0] != edge[1]}
+    unrelated = {
+        tuple(sorted(edge)) for edge in unrelated_segments if edge[0] != edge[1]
+    }
     return sum(
         1
-        for first in segments
-        for second in unrelated_segments
+        for first in primary
+        for second in unrelated
         if _crosses_without_shared_endpoint(first, second)
     )
 
