@@ -50,12 +50,12 @@ def test_balanced_candidate_improves_page_center_without_changing_geometry() -> 
     moved = _centroid_balanced_packing(baseline)
     assert moved is not None
     assert moved.attempts[-1] == "centroid-balanced-page"
-    assert compactness_whitespace_penalties(moved)[0] == compactness_whitespace_penalties(
-        baseline
-    )[0]
-    assert compactness_whitespace_penalties(moved)[1] < compactness_whitespace_penalties(
-        baseline
-    )[1]
+    assert (
+        compactness_whitespace_penalties(moved)[0] == compactness_whitespace_penalties(baseline)[0]
+    )
+    assert (
+        compactness_whitespace_penalties(moved)[1] < compactness_whitespace_penalties(baseline)[1]
+    )
     original_spacing = (
         baseline.fragments[1].delta[0] - baseline.fragments[0].delta[0],
         baseline.fragments[1].delta[1] - baseline.fragments[0].delta[1],
