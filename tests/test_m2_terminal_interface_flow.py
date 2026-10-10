@@ -1,7 +1,21 @@
 """Mutation and metamorphic controls for passive external interface flow inference."""
 
-from ai_kicad.m2_route import _routable_edges
-from ai_kicad.m2_semantics import BlockPlan, SemanticEdge, SemanticPlan, SemanticPort
+from ai_kicad.m2_fragments import FragmentVariant, PortAnchor
+from ai_kicad.m2_geometry import Gateway
+from ai_kicad.m2_pack import _place
+from ai_kicad.m2_route import (
+    MAX_LOCAL_VISIBLE_SIGNAL_DISTANCE,
+    _optional_local_visible_edges,
+    _routable_edges,
+    route_between_fragments,
+)
+from ai_kicad.m2_semantics import (
+    BlockPlan,
+    PresentationNet,
+    SemanticEdge,
+    SemanticPlan,
+    SemanticPort,
+)
 from ai_kicad.m2_terminal_interface_flow import inferred_passive_interface_signal_relations
 
 
@@ -152,3 +166,85 @@ def test_ambiguous_passive_interface_relationship_does_not_force_route() -> None
     )
 
     assert _routable_edges(plan) == ()
+
+
+
+def _local_signal_plan_and_placements(*, distance: int, role: str = "signal"):
+    connector = _block("connector", "interface", ("signal", "passive"))
+    stage = _block("stage", "active", ("signal", "signal_in"))
+    presentation = PresentationNet(
+        "signal",
+        (),
+        ("connector", "stage"),
+        role,
+        False,
+    )
+    plan = SemanticPlan(
+        blocks=(connector, stage),
+        edges=(),
+        owners={},
+        signal_order=(),
+        presentation_nets=(presentation,),
+    )
+
+    def placed(block: BlockPlan, left: int, direction: str):
+        port = block.ports[0]
+        escape = (1_270_000, 0) if direction == "right" else (-1_270_000, 0)
+        gateway = Gateway(
+            port.id,
+            "signal",
+            ((block.id, "1"),),
+            f"{block.id}:signal",
+            (0, 0),
+            direction,
+            ((0, 0), escape),
+            frozenset({direction}),
+            (),
+        )
+        fragment = FragmentVariant(
+            f"{block.id}.v0",
+            block,
+            {},
+            {},
+            {},
+            (),
+            (),
+            (("signal", gateway.point),),
+            (),
+            (PortAnchor(port, gateway.point, direction),),
+            (-2_540_000, -2_540_000, 2_540_000, 2_540_000),
+            frozenset(),
+            gateways=(gateway,),
+        )
+        return _place(fragment, left, 25_400_000)
+
+    source = placed(connector, 25_400_000, "right")
+    target = placed(stage, 25_400_000 + distance, "left")
+    return plan, (source, target)
+
+
+def test_local_unique_signal_interface_gets_best_effort_visible_route() -> None:
+    plan, placed = _local_signal_plan_and_placements(distance=25_400_000)
+    eligible = _optional_local_visible_edges(plan, placed)
+    assert [(edge.source, edge.target, edge.net) for edge in eligible] == [
+        ("connector", "stage", "signal")
+    ]
+    trees = route_between_fragments(plan, placed)
+    assert [(tree.net, tree.strategy) for tree in trees] == [
+        ("signal", "local_visible_optional")
+    ]
+    assert trees[0].segments
+
+
+def test_distant_or_distributive_signal_interface_remains_label_governed() -> None:
+    distant, distant_placed = _local_signal_plan_and_placements(
+        distance=MAX_LOCAL_VISIBLE_SIGNAL_DISTANCE + 2_540_000
+    )
+    assert _optional_local_visible_edges(distant, distant_placed) == ()
+    assert route_between_fragments(distant, distant_placed) == ()
+
+    shared, shared_placed = _local_signal_plan_and_placements(
+        distance=25_400_000, role="distributive"
+    )
+    assert _optional_local_visible_edges(shared, shared_placed) == ()
+    assert route_between_fragments(shared, shared_placed) == ()

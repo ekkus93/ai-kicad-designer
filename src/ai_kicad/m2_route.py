@@ -27,6 +27,7 @@ MAX_TRACKS_PER_SIDE = 8
 MAX_TAPS_PER_ATTACHMENT = 32
 MAX_ROUTE_STATES_PER_TAP = 4_096
 MAX_CANONICAL_LENGTH = 250_000_000
+MAX_LOCAL_VISIBLE_SIGNAL_DISTANCE = 80_000_000
 
 
 def _floor_grid(value: int) -> int:
@@ -596,6 +597,42 @@ def _routable_edges(plan: SemanticPlan) -> tuple[SemanticEdge, ...]:
     )
 
 
+def _optional_local_visible_edges(
+    plan: SemanticPlan, placed: tuple[PlacedFragment, ...]
+) -> tuple[SemanticEdge, ...]:
+    """Return unambiguous local signal interfaces eligible for optional visible routing.
+
+    Labels remain the fallback.  Only a two-fragment signal net, not a shared or
+    distributive net, can opt into this local route, and only while the observed
+    gateway separation stays within the existing 80 mm locality bound.
+    """
+    by_id = {item.fragment.block.id: item for item in placed}
+    presentation_by_net = {item.id: item for item in plan.presentation_nets}
+    result = []
+    for edge in _routable_edges(plan):
+        if edge.origins != ("inferred_passive_interface",):
+            continue
+        presentation = presentation_by_net.get(edge.net)
+        if (
+            presentation is None
+            or presentation.role != "signal"
+            or presentation.explicit_geometry_required
+            or set(presentation.fragments) != {edge.source, edge.target}
+            or edge.source not in by_id
+            or edge.target not in by_id
+        ):
+            continue
+        source = _gateway(by_id[edge.source], edge.net, True)
+        target = _gateway(by_id[edge.target], edge.net, False)
+        distance = (
+            abs(source.point[0] - target.point[0])
+            + abs(source.point[1] - target.point[1])
+        )
+        if distance <= MAX_LOCAL_VISIBLE_SIGNAL_DISTANCE:
+            result.append(edge)
+    return tuple(sorted(result, key=lambda edge: (edge.net, edge.source, edge.target)))
+
+
 def route_between_fragments(
     plan: SemanticPlan,
     placed: tuple[PlacedFragment, ...],
@@ -1050,4 +1087,140 @@ def route_between_fragments(
                 planned_corridors,
             )
         )
+    # Label-eligible connector nets historically remained disconnected islands.
+    # Add a visible conductor only when the semantic relation is unique, local,
+    # and physically routable. This is intentionally best-effort: blocked or
+    # over-length optional routes retain the proven label presentation instead
+    # of turning an aesthetic preference into a correctness failure.
+    routed_nets = {tree.net for tree in result}
+    for edge in _optional_local_visible_edges(plan, placed):
+        if edge.net in routed_nets:
+            continue
+        net = edge.net
+        owner = f"tree.{net}.local-visible"
+        source = _gateway(by_id[edge.source], net, True)
+        target = _gateway(by_id[edge.target], net, False)
+        obstacles = tuple(
+            reservation
+            for reservation in scene_reservations
+            if (
+                reservation.occupancy == "exclusive"
+                and reservation.clearance_class
+                in {"body", "text", "label", "pin", "wire", "protected"}
+                and not (
+                    reservation.clearance_class == "label"
+                    and reservation.permitted_net == net
+                )
+            )
+            or (
+                reservation.occupancy == "channel"
+                and reservation.permitted_net not in {None, net}
+            )
+        )
+        source_external = _advance(source.point, source.escape_direction, PITCH)
+        target_external = _advance(target.point, target.escape_direction, PITCH)
+        if not _path_legal(
+            (source.point, source_external),
+            _escape_obstacles(obstacles, source),
+            tuple(previous),
+            net=net,
+            owner=owner,
+            allowed_contacts=frozenset({source.point}),
+            route_bounds=route_bounds,
+        ):
+            continue
+        if not _path_legal(
+            (target.point, target_external),
+            _escape_obstacles(obstacles, target),
+            tuple(previous),
+            net=net,
+            owner=owner,
+            allowed_contacts=frozenset({target.point}),
+            route_bounds=route_bounds,
+        ):
+            continue
+        route_path, expansions = _connect(
+            source_external,
+            target_external,
+            obstacles,
+            tuple(previous),
+            net=net,
+            owner=owner,
+            allowed_contacts=frozenset({source.point, target.point}),
+            route_bounds=route_bounds,
+        )
+        if route_path is None:
+            continue
+        conductors = (
+            ConductorSegment(
+                source.point,
+                source_external,
+                net,
+                owner,
+                (source.id, "optional-visible"),
+            ),
+            *(
+                ConductorSegment(first, second, net, owner, ("optional-visible",))
+                for first, second in route_path
+                if first != second
+            ),
+            ConductorSegment(
+                target.point,
+                target_external,
+                net,
+                owner,
+                (target.id, "optional-visible"),
+            ),
+        )
+        local_conductors = tuple(
+            ConductorSegment(
+                (first[0] + item.delta[0], first[1] + item.delta[1]),
+                (second[0] + item.delta[0], second[1] + item.delta[1]),
+                net,
+                item.fragment.block.id,
+            )
+            for item in placed
+            for (first, second), wire_net in zip(
+                item.fragment.wires, item.fragment.wire_nets, strict=True
+            )
+            if wire_net == net
+        )
+        complete = canonical_conductor_tree((*local_conductors, *conductors))
+        if complete.length > MAX_CANONICAL_LENGTH:
+            continue
+        tree = canonical_conductor_tree(conductors)
+        planned_corridors = tuple(
+            Reservation(
+                f"route.{net}.optional.{index}",
+                "channel",
+                owner,
+                "global_route",
+                (
+                    min(segment.start[0], segment.end[0]) - 250_000,
+                    min(segment.start[1], segment.end[1]) - 250_000,
+                    max(segment.start[0], segment.end[0]) + 250_000,
+                    max(segment.start[1], segment.end[1]) + 250_000,
+                ),
+                net,
+                1,
+            )
+            for index, segment in enumerate(tree.segments)
+        )
+        previous.extend((net, segment.start, segment.end) for segment in tree.segments)
+        result.append(
+            RouteTree(
+                net,
+                (edge,),
+                tuple((segment.start, segment.end) for segment in tree.segments),
+                tree.junctions,
+                owner,
+                tuple(segment.provenance for segment in tree.segments),
+                0,
+                expansions,
+                "local_visible_optional",
+                1,
+                planned_corridors,
+            )
+        )
+        routed_nets.add(net)
     return tuple(result)
