@@ -40,16 +40,18 @@ MANIFEST = (
     / "native_render_archive_manifest_42ab8452.json"
 )
 WIRE_STYLE = "stroke:#009600"
-WIRE_PATH = re.compile(
-    r"M\s*(-?[0-9.]+)\s+(-?[0-9.]+)\s+L\s*(-?[0-9.]+)\s+(-?[0-9.]+)\s*"
-)
+WIRE_PATH = re.compile(r"M\s*(-?[0-9.]+)\s+(-?[0-9.]+)\s+L\s*(-?[0-9.]+)\s+(-?[0-9.]+)\s*")
 MM_TO_NM = 1_000_000
 ENVELOPE_CENTER_MM = (18 * 1.27 + 105.0, 23 * 1.27 + 70.0)
 OWNER_LOCALITY_MM = 60.0
 LOCAL_LABEL_MM = 80.0
 ACTIVE_CORE_KINDS = {
-    "timer", "power_stage", "buffer", "noninverting_amplifier",
-    "inverting_amplifier", "sallen_key",
+    "timer",
+    "power_stage",
+    "buffer",
+    "noninverting_amplifier",
+    "inverting_amplifier",
+    "sallen_key",
 }
 
 
@@ -107,6 +109,7 @@ def _text(svg: bytes) -> dict[str, tuple[tuple[float, float], ...]]:
 # Compatibility names keep focused evidence tests independent of helper refactors.
 _design_paths = _designs
 _verified_svg_by_case = _svgs
+
 
 def _refdes(component: dict, unit: int, resolved: dict) -> str:
     base = component["refdes"]
@@ -168,14 +171,16 @@ def _interfaces(plan, centers: dict) -> dict:
         owner = centers.get(item.owner_stage_id)
         if owner is None:
             continue
-        distances.append({
-            "interface_id": item.interface_id,
-            "owner_stage_id": item.owner_stage_id,
-            "role": item.role,
-            "distance_mm": round(
-                abs(item.center[0] - owner[0]) + abs(item.center[1] - owner[1]), 6
-            ),
-        })
+        distances.append(
+            {
+                "interface_id": item.interface_id,
+                "owner_stage_id": item.owner_stage_id,
+                "role": item.role,
+                "distance_mm": round(
+                    abs(item.center[0] - owner[0]) + abs(item.center[1] - owner[1]), 6
+                ),
+            }
+        )
     return {
         "interface_side_violations": [asdict(item) for item in measured.interface_side_violations],
         "interface_owner_distances_mm": distances,
@@ -196,8 +201,12 @@ def _wires(svg: bytes):
             if element.tag.rsplit("}", 1)[-1] != "path" or match is None:
                 continue
             x1, y1, x2, y2 = (float(value) for value in match.groups())
-            result.append(((round(x1 * MM_TO_NM), round(y1 * MM_TO_NM)),
-                           (round(x2 * MM_TO_NM), round(y2 * MM_TO_NM))))
+            result.append(
+                (
+                    (round(x1 * MM_TO_NM), round(y1 * MM_TO_NM)),
+                    (round(x2 * MM_TO_NM), round(y2 * MM_TO_NM)),
+                )
+            )
     return tuple(result)
 
 
@@ -236,15 +245,17 @@ def _label_disconnects(design: dict, plan, text: dict, segments) -> list[dict]:
     for net in sorted(authored & signal):
         anchors = sorted({p for label in text.get(net, ()) if (p := _nearest(label, components))})
         for index, first in enumerate(anchors):
-            for second in anchors[index + 1:]:
+            for second in anchors[index + 1 :]:
                 distance = (abs(first[0] - second[0]) + abs(first[1] - second[1])) / MM_TO_NM
                 if distance <= LOCAL_LABEL_MM and components.get(first) != components.get(second):
-                    result.append({
-                        "net": net,
-                        "first_anchor_mm": [first[0] / MM_TO_NM, first[1] / MM_TO_NM],
-                        "second_anchor_mm": [second[0] / MM_TO_NM, second[1] / MM_TO_NM],
-                        "manhattan_distance_mm": round(distance, 6),
-                    })
+                    result.append(
+                        {
+                            "net": net,
+                            "first_anchor_mm": [first[0] / MM_TO_NM, first[1] / MM_TO_NM],
+                            "second_anchor_mm": [second[0] / MM_TO_NM, second[1] / MM_TO_NM],
+                            "manhattan_distance_mm": round(distance, 6),
+                        }
+                    )
     return result
 
 
@@ -264,7 +275,10 @@ def _page(plan, centers: dict) -> dict:
     return {
         "observable": True,
         "content_bbox_mm": [
-            round(min(xs), 6), round(min(ys), 6), round(max(xs), 6), round(max(ys), 6)
+            round(min(xs), 6),
+            round(min(ys), 6),
+            round(max(xs), 6),
+            round(max(ys), 6),
         ],
         "occupied_area_ratio": round(ratio, 9),
         "centroid_offset_mm": round(offset, 6),
@@ -308,9 +322,7 @@ def _flow_order(plan, centers: dict) -> dict:
             )
     return {
         "stage_order_inversions": len(violations),
-        "cumulative_reversal_mm": round(
-            sum(item["reversal_mm"] for item in violations), 6
-        ),
+        "cumulative_reversal_mm": round(sum(item["reversal_mm"] for item in violations), 6),
         "violations": violations,
     }
 
@@ -356,7 +368,8 @@ def _features(plan, design: dict, interface: dict, centers: dict) -> dict:
         if block.kind != "interface":
             kinds[block.kind] += 1
     core_ys = sorted(
-        centers[block.id][1] for block in plan.blocks
+        centers[block.id][1]
+        for block in plan.blocks
         if block.id in centers and not block.unused and block.kind in ACTIVE_CORE_KINDS
     )
     bands = []
@@ -369,13 +382,19 @@ def _features(plan, design: dict, interface: dict, centers: dict) -> dict:
         or any(edge.kind == "branch" for edge in plan.edges),
         "feedback": any(edge.kind == "feedback" for edge in plan.edges),
         "repeated_channels": max(kinds.values(), default=0) >= 3,
-        "shared_rail": any(item.role == "distributive" and len(item.fragments) >= 2
-                           for item in plan.presentation_nets),
+        "shared_rail": any(
+            item.role == "distributive" and len(item.fragments) >= 2
+            for item in plan.presentation_nets
+        ),
         "internal_reference": any(item.internally_generated for item in plan.presentation_nets),
-        "multi_output": sum(item["role"] == SIGNAL_OUTPUT_ROLE
-                            for item in interface["interface_owner_distances_mm"]) >= 2,
-        "long_field_text": max((len(str(item.get("value", "")))
-                                for item in design["components"]), default=0) >= 24,
+        "multi_output": sum(
+            item["role"] == SIGNAL_OUTPUT_ROLE for item in interface["interface_owner_distances_mm"]
+        )
+        >= 2,
+        "long_field_text": max(
+            (len(str(item.get("value", ""))) for item in design["components"]), default=0
+        )
+        >= 24,
         "active_core_band_count": len(bands),
         "active_core_block_count": len(core_ys),
     }
@@ -520,8 +539,16 @@ def analyze_case(case: str, path: Path, svg: bytes, resolved: dict) -> dict:
 
 def _archetype_examples(records: list[dict]) -> dict:
     result = {}
-    names = ("linear_chain", "branch_fanout", "feedback", "repeated_channels",
-             "shared_rail", "internal_reference", "multi_output", "long_field_text")
+    names = (
+        "linear_chain",
+        "branch_fanout",
+        "feedback",
+        "repeated_channels",
+        "shared_rail",
+        "internal_reference",
+        "multi_output",
+        "long_field_text",
+    )
     for name in names:
         matches = [r for r in records if r["semantic_features"][name]]
         if matches:
@@ -536,8 +563,12 @@ def _archetype_examples(records: list[dict]) -> dict:
             result["structural_one_band"] = max(
                 one, key=lambda r: (r["semantic_features"]["active_core_block_count"], r["case"])
             )["case"]
-    mixed = [r for r in records if r["case"].startswith("i")
-             and sum(bool(r["semantic_features"][name]) for name in names) >= 3]
+    mixed = [
+        r
+        for r in records
+        if r["case"].startswith("i")
+        and sum(bool(r["semantic_features"][name]) for name in names) >= 3
+    ]
     if mixed:
         result["mixed_interaction"] = max(
             mixed,
@@ -561,12 +592,10 @@ def _repeated_structure_corpus(records: list[dict]) -> dict:
             "frozen_tolerance_mm": tolerance.maximum_repeated_alignment_variance_mm,
             "applicable_case_count": len(candidates),
             "passing_case_count": sum(
-                record["repeated_structure"]["within_frozen_tolerance"]
-                for record in candidates
+                record["repeated_structure"]["within_frozen_tolerance"] for record in candidates
             ),
             "failing_case_count": sum(
-                not record["repeated_structure"]["within_frozen_tolerance"]
-                for record in candidates
+                not record["repeated_structure"]["within_frozen_tolerance"] for record in candidates
             ),
             "maximum_observed_off_axis_drift_mm": max(
                 (
@@ -622,14 +651,21 @@ def main() -> None:
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n")
     seed = next(r for r in report["cases"] if r["case"] == "i4__b2_mixed")
-    print(json.dumps({
-        "cases": len(report["cases"]),
-        "archive_inventory_sha256": report["provenance"]["inventory_sha256"],
-        "i4_interface_side_violations": len(seed["interface_flow"]["interface_side_violations"]),
-        "i4_local_label_disconnects": len(seed["routing"]["local_label_disconnects"]),
-        "i4_u_shaped_detours": seed["routing"]["u_shaped_detours"],
-        "i4_edge_bias": seed["page"].get("edge_bias"),
-    }, sort_keys=True))
+    print(
+        json.dumps(
+            {
+                "cases": len(report["cases"]),
+                "archive_inventory_sha256": report["provenance"]["inventory_sha256"],
+                "i4_interface_side_violations": len(
+                    seed["interface_flow"]["interface_side_violations"]
+                ),
+                "i4_local_label_disconnects": len(seed["routing"]["local_label_disconnects"]),
+                "i4_u_shaped_detours": seed["routing"]["u_shaped_detours"],
+                "i4_edge_bias": seed["page"].get("edge_bias"),
+            },
+            sort_keys=True,
+        )
+    )
 
 
 if __name__ == "__main__":

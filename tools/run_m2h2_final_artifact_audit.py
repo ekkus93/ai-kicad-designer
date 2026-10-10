@@ -252,9 +252,7 @@ def _defect_total(record: dict) -> int:
     return sum(_hard_defects(record).values())
 
 
-def comparative_baseline(
-    qualification: Path, interactions: Path, structural: Path
-) -> dict:
+def comparative_baseline(qualification: Path, interactions: Path, structural: Path) -> dict:
     baseline = build_historical_composition_report()
     designs = historical_design_paths()
     resolved = assets()
@@ -341,15 +339,14 @@ def comparative_baseline(
 
     i4 = next((item for item in pairs if item["case"] == "i4__b2_mixed"), None)
     criteria = {
-        "complete_case_coverage": not missing and len(pairs) == baseline["provenance"]["native_svg_count"],
+        "complete_case_coverage": not missing
+        and len(pairs) == baseline["provenance"]["native_svg_count"],
         "baseline_hard_defects_cleared": all(
-            item["historical_hard_defect_total"] == 0
-            or item["fresh_hard_defect_total"] == 0
+            item["historical_hard_defect_total"] == 0 or item["fresh_hard_defect_total"] == 0
             for item in pairs
         ),
         "no_new_hard_defects_on_previously_clean_cases": all(
-            item["historical_hard_defect_total"] != 0
-            or item["fresh_hard_defect_total"] == 0
+            item["historical_hard_defect_total"] != 0 or item["fresh_hard_defect_total"] == 0
             for item in pairs
         ),
         "individual_hard_defects_never_worsen": all(

@@ -121,9 +121,7 @@ def measure_svg_wires(svg: bytes) -> dict[str, int | float | None]:
     for p in points:
         arms = _arms(p, segments)
         branches += len(arms) > 2
-        bends += len(arms) == 2 and bool(arms & {"left", "right"}) and bool(
-            arms & {"up", "down"}
-        )
+        bends += len(arms) == 2 and bool(arms & {"left", "right"}) and bool(arms & {"up", "down"})
     return {
         "wire_length_mm": round(
             sum(abs(a[0] - b[0]) + abs(a[1] - b[1]) for a, b in segments) / SCALE, 4
@@ -175,8 +173,7 @@ def main() -> None:
     parser.add_argument(
         "--manifest",
         type=Path,
-        default=ROOT
-        / "fixtures/m2h2/human_composition_baseline_2026-10-08/"
+        default=ROOT / "fixtures/m2h2/human_composition_baseline_2026-10-08/"
         "native_render_archive_manifest_42ab8452.json",
     )
     args = parser.parse_args()

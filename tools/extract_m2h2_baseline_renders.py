@@ -126,9 +126,7 @@ def extract_baseline_renders(
     result = {
         "schema_version": "m2h2.historical-render-extraction.1",
         "historical_qualification_sha": manifest["historical_qualification_sha"],
-        "preserved_case_inventory_sha256": manifest[
-            "sorted_case_svg_sha256_inventory_sha256"
-        ],
+        "preserved_case_inventory_sha256": manifest["sorted_case_svg_sha256_inventory_sha256"],
         "verified_svg_count": len(verified),
         "extracted_svg_count": len(selected),
         "entries": entries,
@@ -150,9 +148,7 @@ def main() -> None:
     manifest = args.manifest
     if not manifest.is_absolute():
         manifest = args.repo_root / manifest
-    report = extract_baseline_renders(
-        args.repo_root, manifest, args.output_dir, tuple(args.cases)
-    )
+    report = extract_baseline_renders(args.repo_root, manifest, args.output_dir, tuple(args.cases))
     print(
         json.dumps(
             {
