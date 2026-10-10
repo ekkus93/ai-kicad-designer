@@ -14,6 +14,7 @@ from analyze_m2h2_historical_composition import (  # noqa: E402
     _design_paths,
     _verified_svg_by_case,
     analyze_case,
+    build_report,
 )
 from ai_kicad.m2b import assets  # noqa: E402
 
@@ -51,6 +52,46 @@ def test_i4_falsification_seed_is_detected_from_semantics_and_native_geometry() 
         witness["net"] == "INPUT" for witness in record["routing"]["local_label_disconnects"]
     )
     assert record["observation_coverage"]["missing_or_ambiguous_occurrences"] == []
+
+
+def test_full_historical_report_is_complete_ranked_and_archetype_covered() -> None:
+    report = build_report()
+    records = report["cases"]
+    ranked = report["ranked_case_ids"]
+
+    assert report["provenance"]["native_svg_count"] == 90
+    assert len(records) == 90
+    assert len(ranked) == 90
+    assert len(set(ranked)) == 90
+    assert set(ranked) == {record["case"] for record in records}
+    assert [record["case"] for record in records] == ranked
+    assert all(
+        not record["observation_coverage"]["missing_or_ambiguous_occurrences"]
+        for record in records
+    )
+
+    required_archetypes = {
+        "linear_chain",
+        "branch_fanout",
+        "feedback",
+        "repeated_channels",
+        "shared_rail",
+        "internal_reference",
+        "multi_output",
+        "long_field_text",
+        "structural_multi_band",
+        "structural_one_band",
+        "mixed_interaction",
+    }
+    assert required_archetypes <= report["archetype_examples"].keys()
+    assert set(report["archetype_examples"].values()) <= set(ranked)
+
+    seed = next(record for record in records if record["case"] == "i4__b2_mixed")
+    assert seed["rank_key"][0] >= 2
+    assert seed["rank_key"][1] >= 1
+    assert seed["rank_key"][2] >= 1
+    assert seed["rank_key"][3] >= 1
+    assert seed["rank_key"][4] > 0
 
 
 def test_analysis_is_evidence_only_and_never_claims_current_qualification() -> None:
