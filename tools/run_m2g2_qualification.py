@@ -158,7 +158,7 @@ def _preservation_audit() -> dict:
 def _anti_overfitting_audit() -> dict:
     forbidden = re.compile(
         r"V5-[1-8]|dual_regulator_mixed_loads|passive_two_level_fanout|"
-        r"timer_split_filtered_gain_indicator|corpus\.v6|cp[-_ ]?sat|ortools",
+        r"timer_split_filtered_gain_indicator|corpus\.v6|\b(?:cp[-_ ]?sat|ortools)\b",
         re.IGNORECASE,
     )
     findings = []

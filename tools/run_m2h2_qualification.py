@@ -46,6 +46,17 @@ def cases() -> list[tuple[str, Path, str]]:
     return result
 
 
+def qualification_passed(payload: dict) -> bool:
+    """Never promote an electrically valid matrix when mandatory audits fail."""
+    return (
+        payload["total"] == 56
+        and payload["accepted"] == 56
+        and payload["negative_v3_8_accepted"] is True
+        and payload["historical_preservation"]["pass"] is True
+        and payload["anti_overfitting"]["pass"] is True
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", type=Path, required=True)
@@ -209,7 +220,7 @@ def main() -> None:
         ),
         flush=True,
     )
-    if payload["accepted"] != payload["total"] or not negative_v3_8_accepted:
+    if not qualification_passed(payload):
         raise SystemExit(1)
 
 
