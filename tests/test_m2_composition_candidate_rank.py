@@ -992,6 +992,7 @@ def test_page_balance_precedes_area_within_compactness_tier() -> None:
     key = composition_candidate_key(_plan((first, second)), layout, (100, 100, 1, 0, 0, 0))
     assert key[-6:-3] == (edge_bias, area, imbalance)
 
+
 def test_rigid_page_balance_uses_the_same_center_as_candidate_ranking() -> None:
     """The optional translation seed must optimize the ranking target."""
     from ai_kicad.m2_pack import (
@@ -1049,9 +1050,7 @@ def test_page_rank_prefers_the_physical_envelope_center() -> None:
     centered_x = (LEFT + RIGHT - width) // 2
     centered_y = (TOP + BOTTOM - height) // 2
     centered = _packing(_placed(block, centered_x, centered_y, width, height))
-    displaced = _packing(
-        _placed(block, centered_x + 4 * PITCH, centered_y, width, height)
-    )
+    displaced = _packing(_placed(block, centered_x + 4 * PITCH, centered_y, width, height))
     centered_metrics = compactness_whitespace_penalties(centered)
     displaced_metrics = compactness_whitespace_penalties(displaced)
     assert centered_metrics[1] == 0
