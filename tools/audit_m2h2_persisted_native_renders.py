@@ -84,9 +84,7 @@ def collect(root: Path, source_sha: str) -> dict:
         if name in seen or not case["accepted"] or not case["reproducible"]:
             raise ValueError(f"{name}: missing or duplicate qualified case")
         seen.add(name)
-        records.append(
-            inventory_case(root / "qualification" / case["id"], name, case["runs"])
-        )
+        records.append(inventory_case(root / "qualification" / case["id"], name, case["runs"]))
     if len(records) != 56:
         raise ValueError("base case inventory must contain exactly 56 cases")
 
@@ -103,9 +101,7 @@ def collect(root: Path, source_sha: str) -> dict:
                 raise ValueError(f"{name}: missing or duplicate qualified case")
             seen.add(name)
             records.append(
-                inventory_case(
-                    root / "interactions" / group / case["id"], name, case["runs"]
-                )
+                inventory_case(root / "interactions" / group / case["id"], name, case["runs"])
             )
 
     observed_structural = set()

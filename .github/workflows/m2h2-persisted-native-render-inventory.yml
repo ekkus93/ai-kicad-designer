@@ -58,5 +58,7 @@ jobs:
           args=(--root "$root" --source-sha "$source_sha" --out "$root/audit/native_render_inventory_$source_sha.json")
           if [[ -n "${INPUT_CASE:-}" ]]; then
             args+=(--emit-case "$INPUT_CASE")
+          elif [[ "$PUSH_MESSAGE" =~ \\[m2h2-render-case:([A-Za-z0-9_.-]+__[A-Za-z0-9_.-]+)\\] ]]; then
+            args+=(--emit-case "${BASH_REMATCH[1]}")
           fi
           PYTHONPATH=src:tools python tools/audit_m2h2_persisted_native_renders.py "${args[@]}"
