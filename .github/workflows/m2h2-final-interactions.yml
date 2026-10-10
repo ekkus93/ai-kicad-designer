@@ -100,8 +100,18 @@ jobs:
           done
           exit "$overall"
 
+      - name: Persist final interaction evidence on locked runner
+        if: always()
+        run: |
+          root="$HOME/m2h2-evidence/${GITHUB_SHA}"
+          mkdir -p "$root"
+          rm -rf "$root/interactions"
+          cp -a "fixtures/m2h2/interaction_final_${GITHUB_SHA}" "$root/interactions"
+          echo "m2h2_persistent_evidence_root=$root/interactions"
+
       - name: Upload final interaction evidence
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: m2h2-final-interactions-${{ github.sha }}

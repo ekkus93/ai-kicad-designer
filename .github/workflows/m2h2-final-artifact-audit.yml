@@ -1,16 +1,17 @@
 name: M2h2 Final Artifact Audit
 
 on:
-  workflow_run:
-    workflows: ["M2h2 Final Qualification"]
-    types: [completed]
   push:
     branches: [master]
   workflow_dispatch:
+    inputs:
+      qualification_sha:
+        description: Exact stabilized source SHA whose persisted evidence should be audited
+        required: false
+        type: string
 
 permissions:
   contents: read
-  actions: read
 
 concurrency:
   group: m2h2-artifact-audit
@@ -21,8 +22,8 @@ jobs:
     if: >-
       github.event_name == 'workflow_dispatch' ||
       contains(github.event.head_commit.message, '[m2h2-artifact-audit]')
-    runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    runs-on: self-hosted
+    timeout-minutes: 90
     steps:
       - name: Check out current source for provenance comparison
         uses: actions/checkout@v4
@@ -31,47 +32,50 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+          cache: pip
 
       - name: Install project
         run: python -m pip install -e '.[dev]'
 
-      - name: Download exact qualification evidence
-        uses: actions/download-artifact@v4
-        with:
-          name: m2h2-final-qualification-42ab8452fca16592ead8f628b17980a9d34794b7
-          path: fixtures/m2h2/qualification_final_candidate_42ab8452fca16592ead8f628b17980a9d34794b7
-          run-id: 37132185217
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Resolve exact persisted qualification root
+        id: evidence
+        env:
+          DISPATCH_SHA: ${{ inputs.qualification_sha }}
+          PUSH_PARENT_SHA: ${{ github.event.before }}
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ] && [ -n "${DISPATCH_SHA}" ]; then
+            source_sha="${DISPATCH_SHA}"
+          else
+            source_sha="${PUSH_PARENT_SHA}"
+          fi
+          test -n "${source_sha}"
+          root="$HOME/m2h2-evidence/${source_sha}"
+          test -f "$root/qualification/results.json"
+          test -f "$root/interactions/i1/results.json"
+          test -f "$root/structural/a0_multiple/results.json"
+          mkdir -p "$root/audit"
+          rm -f "$root/audit/artifact_audit_${source_sha}.json"
+          echo "source_sha=${source_sha}" >> "$GITHUB_OUTPUT"
+          echo "root=${root}" >> "$GITHUB_OUTPUT"
+          echo "m2h2_persistent_evidence_root=${root}"
 
-      - name: Download exact interaction evidence
-        uses: actions/download-artifact@v4
-        with:
-          name: m2h2-final-interactions-42ab8452fca16592ead8f628b17980a9d34794b7
-          path: fixtures/m2h2/interaction_final_42ab8452fca16592ead8f628b17980a9d34794b7
-          run-id: 37132185171
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Download exact structural evidence
-        uses: actions/download-artifact@v4
-        with:
-          name: m2h2-structural-qualification-42ab8452fca16592ead8f628b17980a9d34794b7
-          path: fixtures/m2h2/structural_final_42ab8452fca16592ead8f628b17980a9d34794b7
-          run-id: 37132185186
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Audit final source, structural evidence, and fresh renders
+      - name: Audit exact final evidence and stream native renders
+        env:
+          ROOT: ${{ steps.evidence.outputs.root }}
+          SOURCE_SHA: ${{ steps.evidence.outputs.source_sha }}
         run: |
           PYTHONPATH=src:tools python tools/run_m2h2_final_artifact_audit.py \
-            --qualification fixtures/m2h2/qualification_final_candidate_42ab8452fca16592ead8f628b17980a9d34794b7 \
-            --interactions fixtures/m2h2/interaction_final_42ab8452fca16592ead8f628b17980a9d34794b7 \
-            --structural fixtures/m2h2/structural_final_42ab8452fca16592ead8f628b17980a9d34794b7 \
-            --out fixtures/m2h2/finalization_checks/artifact_audit_42ab8452fca16592ead8f628b17980a9d34794b7.json \
+            --qualification "$ROOT/qualification" \
+            --interactions "$ROOT/interactions" \
+            --structural "$ROOT/structural" \
+            --out "$ROOT/audit/artifact_audit_${SOURCE_SHA}.json" \
             --emit-renders
 
       - name: Upload artifact audit report
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
-          name: m2h2-artifact-audit-${{ github.sha }}
-          path: fixtures/m2h2/finalization_checks/artifact_audit_42ab8452fca16592ead8f628b17980a9d34794b7.json
+          name: m2h2-artifact-audit-${{ steps.evidence.outputs.source_sha }}
+          path: ${{ steps.evidence.outputs.root }}/audit/artifact_audit_${{ steps.evidence.outputs.source_sha }}.json
           if-no-files-found: warn

@@ -103,7 +103,7 @@ def render_chunks(root: Path, case_id: str, case_dir: Path) -> None:
     if len(svgs) != 1:
         raise ValueError(f"{case_id}: expected one real KiCad render, got {len(svgs)}")
     data = svgs[0].read_bytes()
-    encoded = base64.b64encode(gzip.compress(data, mtime=0)).decode()
+    encoded = base64.b64encode(data).decode()
     chunks = [encoded[index : index + 1000] for index in range(0, len(encoded), 1000)]
     for index, chunk in enumerate(chunks):
         print(
@@ -115,6 +115,7 @@ def render_chunks(root: Path, case_id: str, case_dir: Path) -> None:
                     "index": index,
                     "total": len(chunks),
                     "svg_sha256": hashlib.sha256(data).hexdigest(),
+                    "encoding": "base64-svg",
                     "data": chunk,
                 },
                 separators=(",", ":"),

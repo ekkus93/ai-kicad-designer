@@ -61,8 +61,18 @@ jobs:
           qualify a3_interleaved --bands 2 --minimum-bands --interleaved
           exit "$overall"
 
+      - name: Persist measured structural evidence on locked runner
+        if: always()
+        run: |
+          root="$HOME/m2h2-evidence/${GITHUB_SHA}"
+          mkdir -p "$root"
+          rm -rf "$root/structural"
+          cp -a "fixtures/m2h2/structural_final_${GITHUB_SHA}" "$root/structural"
+          echo "m2h2_persistent_evidence_root=$root/structural"
+
       - name: Upload measured structural evidence
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: m2h2-structural-qualification-${{ github.sha }}

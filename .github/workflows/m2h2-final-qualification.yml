@@ -102,8 +102,18 @@ jobs:
           PYTHONPATH=src:tools python tools/run_m2h2_qualification.py
           --out fixtures/m2h2/qualification_final_candidate_${{ github.sha }}
 
+      - name: Persist final qualification evidence on locked runner
+        if: always()
+        run: |
+          root="$HOME/m2h2-evidence/${GITHUB_SHA}"
+          mkdir -p "$root"
+          rm -rf "$root/qualification"
+          cp -a "fixtures/m2h2/qualification_final_candidate_${GITHUB_SHA}" "$root/qualification"
+          echo "m2h2_persistent_evidence_root=$root/qualification"
+
       - name: Upload final qualification evidence
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: m2h2-final-qualification-${{ github.sha }}
