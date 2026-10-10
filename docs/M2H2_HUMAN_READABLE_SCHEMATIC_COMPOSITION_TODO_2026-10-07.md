@@ -327,19 +327,21 @@ Source-level checkpoint: `cdcfd445be09712f8a12d30068d3a23509cb7684`, fast-valida
 
 ## 16. Source stabilization
 
+Exact-source validation checkpoint (not final qualification or a source freeze): behavior-affecting Python source at `69b27128625e71caae704707b396071046c029f9` passed all three jobs of [M2h2 Fast Validation run 38017902850](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38017902850). The locked KiCad runner completed full pytest, current-source V6-3/DP2 generation and independent electrical/scene regressions, the connector/selected-triple and whole-band five-run regression subsets, and fresh regression-build steps. Hosted contracts, Ruff lint and scope-specific formatting, structural anti-overfitting, `git diff --check`, and scoped trailing-whitespace checks passed. The eight items checked below are **only** those directly supported by this exact-source run; it is not evidence for the full 56×5, I1–I6×5, structural-class×5, native-render engineering inspection, comparative closure, or final PASS. Any subsequent behavior-affecting change requires revalidation of the affected gates.
+
 - [ ] Finish all behavior-affecting composition implementation changes.
-- [ ] Run complete pytest.
-- [ ] Run scoped Ruff lint.
-- [ ] Run scoped Ruff format check.
-- [ ] Run `git diff --check`.
-- [ ] Run scoped whitespace checks.
+- [x] Run complete pytest.
+- [x] Run scoped Ruff lint.
+- [x] Run scoped Ruff format check.
+- [x] Run `git diff --check`.
+- [x] Run scoped whitespace checks.
 - [ ] Run applicable link checks.
 - [ ] Run historical preservation audit.
 - [ ] Run literal anti-overfitting audit.
-- [ ] Run structural anti-overfitting audit.
+- [x] Run structural anti-overfitting audit.
 - [ ] Confirm CP-SAT remains absent.
-- [ ] Run current-source V6-3 real-tool regression.
-- [ ] Run current-source DP2 real-tool regression.
+- [x] Run current-source V6-3 real-tool regression.
+- [x] Run current-source DP2 real-tool regression.
 - [ ] Record final behavior-affecting source hashes.
 - [ ] Freeze composition observer/oracle schema and hashes.
 - [ ] Create fresh final human-composition qualification root.
