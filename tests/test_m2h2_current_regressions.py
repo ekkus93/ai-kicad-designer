@@ -34,6 +34,10 @@ def test_reference_free_design_does_not_invent_vref() -> None:
                 "net_graph_witnesses": [],
             }
         },
+        "layout": {
+            "unrelated_wire_crossing_count": 0,
+            "wire_through_body_count": 0,
+        },
     }
     assert _case_errors("i4__b2_mixed", design, signature) == []
 
@@ -66,3 +70,32 @@ def test_native_route_diagnostic_identifies_straight_wires() -> None:
     assert report["routed_length_nm"] == 10
     assert report["bend_count"] == 0
     assert report["u_shaped_detours"] == 0
+
+
+def test_current_regression_gate_rejects_route_crossing_or_body_intrusion() -> None:
+    design = {"nets": [{"id": "INPUT"}]}
+    base = {
+        "electrical": {"status": "pass", "diagnostics": []},
+        "erc": {"sheets": [{"violations": []}]},
+        "composition": {
+            "obligation_certificate": {
+                "serialized_scene_verified": "pass",
+                "net_graph_witnesses": [],
+            }
+        },
+        "layout": {
+            "unrelated_wire_crossing_count": 0,
+            "wire_through_body_count": 0,
+        },
+    }
+
+    crossing = {
+        **base,
+        "layout": {**base["layout"], "unrelated_wire_crossing_count": 1},
+    }
+    body = {
+        **base,
+        "layout": {**base["layout"], "wire_through_body_count": 1},
+    }
+    assert any("unrelated_wire_crossing_count=1" in error for error in _case_errors("x", design, crossing))
+    assert any("wire_through_body_count=1" in error for error in _case_errors("x", design, body))

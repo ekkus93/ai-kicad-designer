@@ -102,6 +102,12 @@ def _case_errors(case_id: str, design: dict[str, Any], signature: dict[str, Any]
     if certificate.get("serialized_scene_verified") != "pass":
         errors.append("serialized-scene verification did not pass")
 
+    layout = signature.get("layout", {})
+    for metric in ("unrelated_wire_crossing_count", "wire_through_body_count"):
+        value = layout.get(metric)
+        if value != 0:
+            errors.append(f"{metric}={value!r}; expected certified zero")
+
     witnesses = _net_witnesses(signature)
     for net in _reference_nets(design):
         witness = witnesses.get(net)
@@ -212,6 +218,12 @@ def _run_case(case_id: str, design_path: Path, output: Path) -> dict[str, Any]:
         composition_observer=composition_observer,
         native_pin_composition_diagnostic=native_pin_diagnostic,
         native_route_diagnostic=_native_route_diagnostic(native),
+        certified_route_clearance={
+            "unrelated_wire_crossing_count": signature["layout"].get(
+                "unrelated_wire_crossing_count"
+            ),
+            "wire_through_body_count": signature["layout"].get("wire_through_body_count"),
+        },
         reference_metrics=reference_metrics,
         layout=signature["layout"],
     )
