@@ -172,8 +172,11 @@ def _centroid_balanced_packing(packing: Packing) -> Packing | None:
     content_top = min(rect[1] for rect in rects)
     content_right = max(rect[2] for rect in rects)
     content_bottom = max(rect[3] for rect in rects)
-    target_x = LEFT + MAX_CONTENT_WIDTH // 2
-    target_y = TOP + MAX_CONTENT_HEIGHT // 2
+    # The physical placement envelope, not the independent maximum-spread
+    # limit, defines the feasible page center used by candidate ranking.
+    # Keep this target identical to compactness_whitespace_penalties().
+    target_x = (LEFT + RIGHT) // 2
+    target_y = (TOP + BOTTOM) // 2
     actual_x = (content_left + content_right) // 2
     actual_y = (content_top + content_bottom) // 2
 

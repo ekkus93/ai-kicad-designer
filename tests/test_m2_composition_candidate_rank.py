@@ -991,3 +991,69 @@ def test_page_balance_precedes_area_within_compactness_tier() -> None:
     area, edge_bias, imbalance = compactness_whitespace_penalties(layout)
     key = composition_candidate_key(_plan((first, second)), layout, (100, 100, 1, 0, 0, 0))
     assert key[-6:-3] == (edge_bias, area, imbalance)
+
+def test_rigid_page_balance_uses_the_same_center_as_candidate_ranking() -> None:
+    """The optional translation seed must optimize the ranking target."""
+    from ai_kicad.m2_pack import (
+        BOTTOM,
+        LEFT,
+        RIGHT,
+        TOP,
+        Packing,
+        PlacedFragment,
+        _centroid_balanced_packing,
+    )
+
+    block = _block("ordinary-stage")
+    envelope = (
+        LEFT + 10 * PITCH,
+        TOP + 10 * PITCH,
+        LEFT + 16 * PITCH,
+        TOP + 14 * PITCH,
+    )
+    fragment = SimpleNamespace(
+        block=block,
+        envelope=envelope,
+        content_envelope=envelope,
+        ports=(),
+        reservations=(),
+        gateways=(),
+        occupied_geometry=(),
+    )
+    initial = Packing(
+        (PlacedFragment(fragment, (0, 0), envelope, (), envelope),),
+        (),
+    )
+    balanced = _centroid_balanced_packing(initial)
+    assert balanced is not None
+    assert balanced.attempts[-1] == "centroid-balanced-page"
+
+    initial_score = compactness_whitespace_penalties(initial)
+    balanced_score = compactness_whitespace_penalties(balanced)
+    assert balanced_score[0] == initial_score[0]
+    assert balanced_score[1] < initial_score[1]
+    assert balanced_score[2] < initial_score[2]
+
+    content = balanced.fragments[0].content_envelope
+    assert content is not None
+    assert abs((content[0] + content[2]) // 2 - (LEFT + RIGHT) // 2) <= PITCH
+    assert abs((content[1] + content[3]) // 2 - (TOP + BOTTOM) // 2) <= PITCH
+
+
+def test_page_rank_prefers_the_physical_envelope_center() -> None:
+    from ai_kicad.m2_pack import BOTTOM, LEFT, RIGHT, TOP
+
+    block = _block("stage")
+    width = 5 * PITCH
+    height = 5 * PITCH
+    centered_x = (LEFT + RIGHT - width) // 2
+    centered_y = (TOP + BOTTOM - height) // 2
+    centered = _packing(_placed(block, centered_x, centered_y, width, height))
+    displaced = _packing(
+        _placed(block, centered_x + 4 * PITCH, centered_y, width, height)
+    )
+    centered_metrics = compactness_whitespace_penalties(centered)
+    displaced_metrics = compactness_whitespace_penalties(displaced)
+    assert centered_metrics[1] == 0
+    assert centered_metrics[1] < displaced_metrics[1]
+    assert centered_metrics[0] == displaced_metrics[0]
