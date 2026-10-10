@@ -989,7 +989,5 @@ def test_page_balance_precedes_area_within_compactness_tier() -> None:
     second = _block("second")
     layout = _packing(_placed(first, 2 * PITCH), _placed(second, 12 * PITCH))
     area, edge_bias, imbalance = compactness_whitespace_penalties(layout)
-    key = composition_candidate_key(
-        _plan((first, second)), layout, (100, 100, 1, 0, 0, 0)
-    )
+    key = composition_candidate_key(_plan((first, second)), layout, (100, 100, 1, 0, 0, 0))
     assert key[-6:-3] == (edge_bias, area, imbalance)
