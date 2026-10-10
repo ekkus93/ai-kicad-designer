@@ -157,7 +157,6 @@ def _place(fragment: FragmentVariant, left: int, top: int) -> PlacedFragment:
     )
 
 
-
 def _centroid_balanced_packing(packing: Packing) -> Packing | None:
     """Translate an entire valid arrangement toward the frozen page center.
 
@@ -210,9 +209,7 @@ def _centroid_balanced_packing(packing: Packing) -> Packing | None:
         for geometry in item.fragment.occupied_geometry:
             rect = tuple(
                 value + offset
-                for value, offset in zip(
-                    geometry.rect, (*item.delta, *item.delta), strict=True
-                )
+                for value, offset in zip(geometry.rect, (*item.delta, *item.delta), strict=True)
             )
             if (
                 rect[0] < worksheet[2]
@@ -2281,7 +2278,13 @@ def _retain_composition_seed_diversity(
     protected = tuple(
         candidate
         for candidate in (
-            distribution, partial, *repeated, *branch, field_slot, local_signal, centered
+            distribution,
+            partial,
+            *repeated,
+            *branch,
+            field_slot,
+            local_signal,
+            centered,
         )
         if candidate is not None
     )

@@ -267,16 +267,18 @@ def baseline_regression_diagnostics(pairs: list[dict], limit: int = 24) -> dict:
             fresh["fragmentation_total_mm"] - historic["fragmentation_total_mm"], 4
         )
         detours = fresh["u_shaped_detours"] - historic["u_shaped_detours"]
-        branch = round(
-            fresh["branch_inconsistency_mm"] - historic["branch_inconsistency_mm"], 4
-        )
+        branch = round(fresh["branch_inconsistency_mm"] - historic["branch_inconsistency_mm"], 4)
         unresolved_hard = bool(
             record["historical_hard_defect_total"] and record["fresh_hard_defect_total"]
         )
         repeated_fail = not fresh["repeated_within_tolerance"]
         if not (
-            unresolved_hard or increased_hard or repeated_fail
-            or fragmentation > 0 or detours > 0 or branch > 0
+            unresolved_hard
+            or increased_hard
+            or repeated_fail
+            or fragmentation > 0
+            or detours > 0
+            or branch > 0
         ):
             continue
         ranked.append(
@@ -301,8 +303,10 @@ def baseline_regression_diagnostics(pairs: list[dict], limit: int = 24) -> dict:
             -len(item["increased_hard"]),
             -int(item["unresolved_hard"]),
             -int(item["repeated_out_of_tolerance"]),
-            -(max(item["u_shaped_detours_delta"], 0)
-              + max(item["branch_inconsistency_delta_mm"], 0)),
+            -(
+                max(item["u_shaped_detours_delta"], 0)
+                + max(item["branch_inconsistency_delta_mm"], 0)
+            ),
             item["case"],
         )
     )
