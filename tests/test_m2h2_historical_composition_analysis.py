@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import json
-from pathlib import Path
-
 from ai_kicad.m2a import ROOT
 
 import sys
