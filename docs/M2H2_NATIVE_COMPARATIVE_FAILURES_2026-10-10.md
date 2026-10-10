@@ -1,0 +1,3 @@
+# M2h2 native comparative failure checkpoint
+
+The independent 90-case audit at source `e95ce90b70dcac8a0b20044bf5310a5b71a99618` remains FAILED: six frozen comparative criteria fail. Of 90 cases, 89 have at least one unresolved hard defect, worsened hard defect, out-of-tolerance repeated structure, or positive fragmentation/detour/branch delta. `i4__b2_mixed` improves interface-side violations from 2 to 0 but worsens fragmentation by 25.4 mm, detours by 4, and branch inconsistency by 7.62 mm; edge bias persists. Do not claim native acceptance or relax thresholds. CI run 38073452080 is the evidence source.
