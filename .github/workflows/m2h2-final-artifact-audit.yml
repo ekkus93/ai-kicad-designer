@@ -42,13 +42,16 @@ jobs:
         env:
           DISPATCH_SHA: ${{ inputs.qualification_sha }}
           PUSH_PARENT_SHA: ${{ github.event.before }}
+          PUSH_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
           if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ] && [ -n "${DISPATCH_SHA}" ]; then
             source_sha="${DISPATCH_SHA}"
+          elif [[ "${PUSH_MESSAGE}" =~ \[m2h2-audit-source:([0-9a-f]{40})\] ]]; then
+            source_sha="${BASH_REMATCH[1]}"
           else
             source_sha="${PUSH_PARENT_SHA}"
           fi
-          test -n "${source_sha}"
+          [[ "${source_sha}" =~ ^[0-9a-f]{40}$ ]]
           root="$HOME/m2h2-evidence/${source_sha}"
           test -f "$root/qualification/results.json"
           test -f "$root/interactions/i1/results.json"
@@ -59,17 +62,18 @@ jobs:
           echo "root=${root}" >> "$GITHUB_OUTPUT"
           echo "m2h2_persistent_evidence_root=${root}"
 
-      - name: Audit exact final evidence and stream native renders
+      - name: Audit exact final evidence and report comparison diagnostics
         env:
           ROOT: ${{ steps.evidence.outputs.root }}
           SOURCE_SHA: ${{ steps.evidence.outputs.source_sha }}
         run: |
+          set -o pipefail
           PYTHONPATH=src:tools python tools/run_m2h2_final_artifact_audit.py \
             --qualification "$ROOT/qualification" \
             --interactions "$ROOT/interactions" \
             --structural "$ROOT/structural" \
-            --out "$ROOT/audit/artifact_audit_${SOURCE_SHA}.json" \
-            --emit-renders
+            --out "$ROOT/audit/artifact_audit_${SOURCE_SHA}.json" |
+            grep -E '"kind":"m2h2\.(baseline-comparison|artifact-audit-outcome|artifact-case-audit|structural-case-audit)\.1"'
 
       - name: Upload artifact audit report
         if: always()
