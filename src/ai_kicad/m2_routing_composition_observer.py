@@ -141,31 +141,36 @@ def _normalized_excess(actual: int, baseline: int) -> float:
 def _unrelated_crossing_count(
     segments: tuple[Segment, ...], unrelated_segments: tuple[Segment, ...]
 ) -> int:
-    # A repeated or reversed serialized stroke is one geometric crossing,
-    # not additional evidence of unrelated-net interference.
+    """Count distinct unrelated orthogonal intersections, not serialized pairs.
+
+    A crossing is one geometric location even when either wire is split,
+    duplicated, or reversed. Endpoint-on-interior contacts remain visible
+    conflicts rather than disappearing when a route is split at the crossing.
+    """
     primary = {tuple(sorted(edge)) for edge in segments if edge[0] != edge[1]}
-    unrelated = {
-        tuple(sorted(edge)) for edge in unrelated_segments if edge[0] != edge[1]
-    }
-    return sum(
-        1
-        for first in primary
-        for second in unrelated
-        if _crosses_without_shared_endpoint(first, second)
+    unrelated = {tuple(sorted(edge)) for edge in unrelated_segments if edge[0] != edge[1]}
+    return len(
+        {
+            point
+            for first in primary
+            for second in unrelated
+            if (point := _orthogonal_intersection(first, second)) is not None
+        }
     )
 
 
-def _crosses_without_shared_endpoint(first: Segment, second: Segment) -> bool:
-    if set(first) & set(second):
-        return False
+def _orthogonal_intersection(first: Segment, second: Segment) -> Point | None:
     first_direction = _direction(first)
     second_direction = _direction(second)
     if {first_direction, second_direction} != {"horizontal", "vertical"}:
-        return False
-    horizontal, vertical = (first, second) if first_direction == "horizontal" else (second, first)
+        return None
+    horizontal, vertical = (
+        (first, second) if first_direction == "horizontal" else (second, first)
+    )
+    x, y = vertical[0][0], horizontal[0][1]
     hx1, hx2 = sorted((horizontal[0][0], horizontal[1][0]))
     vy1, vy2 = sorted((vertical[0][1], vertical[1][1]))
-    return hx1 < vertical[0][0] < hx2 and vy1 < horizontal[0][1] < vy2
+    return (x, y) if hx1 <= x <= hx2 and vy1 <= y <= vy2 else None
 
 
 def _coalesced_route_edges(segments: tuple[Segment, ...]) -> tuple[Segment, ...]:

@@ -363,3 +363,24 @@ def test_unrelated_crossing_count_deduplicates_reversed_strokes() -> None:
             unrelated_segments=unrelated,
         )
         assert metrics.unrelated_crossings == 1
+
+def test_unrelated_crossings_are_invariant_to_collinear_splitting() -> None:
+    horizontal = ((0, 0), (20, 0))
+    vertical = ((10, -10), (10, 10))
+    split_h = (((0, 0), (10, 0)), ((10, 0), (20, 0)))
+    split_v = (((10, -10), (10, 0)), ((10, 0), (10, 10)))
+    for primary in ((horizontal,), split_h, split_h + split_h):
+        for unrelated in ((vertical,), split_v, split_v + split_v):
+            metrics = measure_routing_readability(
+                primary, semantic_local_length=20, unrelated_segments=unrelated
+            )
+            assert metrics.unrelated_crossings == 1
+
+
+def test_unrelated_crossings_count_distinct_locations_not_stroke_pairs() -> None:
+    primary = (((0, 0), (30, 0)), ((0, 0), (15, 0)), ((15, 0), (30, 0)))
+    unrelated = (((10, -10), (10, 10)), ((20, -10), (20, 10)))
+    metrics = measure_routing_readability(
+        primary, semantic_local_length=30, unrelated_segments=unrelated
+    )
+    assert metrics.unrelated_crossings == 2

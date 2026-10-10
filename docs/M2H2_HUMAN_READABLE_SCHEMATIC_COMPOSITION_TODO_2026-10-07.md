@@ -220,6 +220,7 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Report canonical routed length.
 - [x] Define normalized routed-length excess against a legal semantic-local baseline.
 - [x] Report unrelated wire crossings.
+  - Independent observer refinement: count unique orthogonal intersection coordinates, invariant to wire serialization splits, reversals, and duplicates; preserve endpoint-on-interior unrelated-net conflict witnesses. Authored controls cover a split at the intersection and overlapping strokes. This is observer correctness, not a current-source native-render PASS.
 - [x] Detect unnecessary U-shaped/rectangular detours.
 - [x] Detect route excursions through unrelated blocks.
 - [x] Report sibling-branch geometry inconsistency.
