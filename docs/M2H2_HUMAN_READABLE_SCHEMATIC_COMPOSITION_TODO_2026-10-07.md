@@ -45,26 +45,28 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
   - `fixtures/m2h2/human_composition_baseline_2026-10-08/native_render_archive_manifest_42ab8452.json` records the preserved ten-part archive and its individual part SHA-256 and Git blob SHA-1 digests; the immutable archive contains 90 SVGs with independently verified SHA-256s and a sorted case inventory digest `759f49bf715da357d70f4fb4ae5513594328acb3ba8612031866ac6788a21fe0`. All ten archived files are present on current `master`. This preserves historical baseline evidence only, not current-source native render acceptance.
 - [x] Add a new human-composition baseline evidence root.
 - [x] Define a versioned composition metric schema before behavior changes.
-- [ ] Evaluate current final M2h2 renders using the initial independent observer.
-- [ ] Produce a ranked per-case defect inventory.
-  - Historical SVG geometry-only screening is reproducible with `tools/inspect_m2h2_historical_svg_routes.py` and its authored tests; see `docs/M2H2_HISTORICAL_SVG_WIRE_SCREENING_2026-10-09.md`. It hash-verifies and ranks all 90 historical native SVGs by wire footprint, but does **not** identify semantic defects, establish current-source qualification, or satisfy this checkbox.
+- [x] Evaluate current final M2h2 renders using the initial independent observer.
+- [x] Produce a ranked per-case defect inventory.
+  - Exact-head baseline characterization evidence: `tools/analyze_m2h2_historical_composition.py` hash-verifies all 90 preserved final M2h2 native SVGs, reconstructs authored semantics independently of production scores, emits per-case interface/page/routing witnesses plus a deterministic defect-oriented `ranked_case_ids` inventory, and explicitly claims no current-source qualification. `tests/test_m2h2_historical_composition_analysis.py::test_full_historical_report_is_complete_ranked_and_archetype_covered` requires all 90 cases, unique one-to-one ranking, and zero missing/ambiguous semantic occurrences. Exact source `97542c4cd1ca1a6e46afb050cf6bac5a23540c0b`: Fast Validation run `38012665368`, locked-runner full pytest step PASS; all governed regression/build steps 7-10 also PASS. The workflow conclusion is failure solely because artifact upload hit storage quota; hosted jobs failed before exposing steps/logs. Historical SVG geometry-only screening remains supplementary evidence, not final qualification.
 - [x] Record `i4__b2_mixed` as a falsification seed.
-  - [ ] output interfaces on visually inappropriate frontier are detected;
-  - [ ] detached interface-to-owning-stage relationships are detected;
-  - [ ] weak page utilization/edge bias is detected;
-  - [ ] awkward branch/detour geometry is measured;
-  - [ ] local label-mediated visual disconnection is measured where applicable.
-- [ ] Identify at least one baseline example for each applicable archetype:
-  - [ ] linear chain;
-  - [ ] branch/fanout;
-  - [ ] feedback;
-  - [ ] repeated channels;
-  - [ ] shared rail;
-  - [ ] internal reference;
-  - [ ] multi-output;
-  - [ ] long-field text;
-  - [ ] structural multi-band/one-band;
-  - [ ] mixed interaction.
+  - [x] output interfaces on visually inappropriate frontier are detected;
+  - [x] detached interface-to-owning-stage relationships are detected;
+  - [x] weak page utilization/edge bias is detected;
+  - [x] awkward branch/detour geometry is measured;
+  - [x] local label-mediated visual disconnection is measured where applicable.
+    - The generic falsification-seed test on exact source `97542c4cd1ca1a6e46afb050cf6bac5a23540c0b` requires both `OUTPUT_1`/`OUTPUT_2` right-frontier violations, >60 mm owner detachments, edge bias, at least one U-shaped detour, nonzero sibling-branch geometry inconsistency, and an `INPUT` local label-mediated disconnect; locked-runner pytest PASS in run `38012665368`.
+- [x] Identify at least one baseline example for each applicable archetype:
+  - [x] linear chain;
+  - [x] branch/fanout;
+  - [x] feedback;
+  - [x] repeated channels;
+  - [x] shared rail;
+  - [x] internal reference;
+  - [x] multi-output;
+  - [x] long-field text;
+  - [x] structural multi-band/one-band;
+  - [x] mixed interaction.
+  - `build_report()["archetype_examples"]` records exact case IDs from generic semantic/native geometry features. The exact-head corpus test requires keys for linear, branch/fanout, feedback, repeated channels, shared rail, internal reference, multi-output, long-field text, structural multi-band, structural one-band, and mixed interaction, and requires every selected example to be a member of the hash-verified 90-case ranked inventory. Locked-runner pytest PASS: `97542c4cd1ca1a6e46afb050cf6bac5a23540c0b`, run `38012665368`.
 - [x] Confirm baseline failures do not alter historical M2h2 PASS status.
 
 ## 2. Independent semantic-flow observer
@@ -226,8 +228,9 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Detect route excursions through unrelated blocks.
 - [x] Report sibling-branch geometry inconsistency.
 - [x] Detect label-mediated local disconnects.
-- [ ] Prefer direct visible local connectivity when legal and clearer.
-- [ ] Prefer labels for genuinely global/shared distribution when clearer.
+- [x] Prefer direct visible local connectivity when legal and clearer.
+- [x] Prefer labels for genuinely global/shared distribution when clearer.
+  - Current-source routing evidence: `m2_route._optional_local_visible_edges` admits only unique two-fragment local signal-interface relations within the existing 80 mm locality bound and `route_between_fragments` adds a best-effort obstacle-checked conductor while preserving the 250 mm canonical-length gate. Distant, distributive/shared, ambiguous, power/reference, blocked, and over-length cases remain label/distribution governed. `tests/test_m2_terminal_interface_flow.py` covers both local visible routing and distant/distributive label retention. Exact source `97542c4cd1ca1a6e46afb050cf6bac5a23540c0b`, locked-runner full pytest PASS in run `38012665368`; final native-render acceptance remains open.
 - [x] Ensure label discipline never creates electrical ambiguity.
 - [x] Add direct-vs-label synthetic oracle cases.
 - [x] Add detour negative mutations.
