@@ -140,6 +140,18 @@ def collect(root: Path, source_sha: str) -> dict:
     }
 
 
+def require_deterministic_geometry(report: dict) -> None:
+    """Fail qualification on any per-case normalized native SVG mismatch."""
+    mismatches = sorted(
+        record["case"] for record in report["cases"] if not record["normalized_identical"]
+    )
+    if mismatches:
+        raise ValueError(
+            "normalized native render geometry differs across qualification runs: "
+            + ", ".join(mismatches)
+        )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--root", type=Path, required=True)
@@ -184,6 +196,10 @@ def main() -> None:
             ),
             flush=True,
         )
+    # Preserve the complete per-run hash manifest and log witnesses before
+    # failing the workflow: visual geometry drift is never advisory.
+    require_deterministic_geometry(report)
+
     if args.emit_case:
         candidates = {item["case"] for item in report["cases"]}
         if args.emit_case not in candidates:
