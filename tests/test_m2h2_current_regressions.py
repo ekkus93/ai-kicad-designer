@@ -97,5 +97,7 @@ def test_current_regression_gate_rejects_route_crossing_or_body_intrusion() -> N
         **base,
         "layout": {**base["layout"], "wire_through_body_count": 1},
     }
-    assert any("unrelated_wire_crossing_count=1" in error for error in _case_errors("x", design, crossing))
+    assert any(
+        "unrelated_wire_crossing_count=1" in error for error in _case_errors("x", design, crossing)
+    )
     assert any("wire_through_body_count=1" in error for error in _case_errors("x", design, body))

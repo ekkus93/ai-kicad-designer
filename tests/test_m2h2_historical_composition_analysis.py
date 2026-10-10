@@ -65,10 +65,11 @@ def test_full_historical_report_is_complete_ranked_and_archetype_covered() -> No
     assert set(ranked) == {record["case"] for record in records}
     assert [record["case"] for record in records] == ranked
     assert all(
-        not record["observation_coverage"]["missing_or_ambiguous_occurrences"]
-        for record in records
+        not record["observation_coverage"]["missing_or_ambiguous_occurrences"] for record in records
     )
-    assert all("flow_order" in record and "functional_fragmentation" in record for record in records)
+    assert all(
+        "flow_order" in record and "functional_fragmentation" in record for record in records
+    )
 
     required_archetypes = {
         "linear_chain",
@@ -97,8 +98,8 @@ def test_full_historical_report_is_complete_ranked_and_archetype_covered() -> No
 def test_analysis_is_evidence_only_and_never_claims_current_qualification() -> None:
     source = (ROOT / "tools/analyze_m2h2_historical_composition.py").read_text()
     assert "historical_baseline_observation_only_not_current_qualification" in source
-    assert "production_scores_consumed\": False" in source
-    assert "acceptance_claimed\": False" in source
+    assert 'production_scores_consumed": False' in source
+    assert 'acceptance_claimed": False' in source
     analysis_body = source.split("def analyze_case", 1)[1].split("def _archetype_examples", 1)[0]
     assert "i4__b2_mixed" not in analysis_body
 
@@ -112,22 +113,25 @@ def test_repeated_structure_tolerances_are_bound_to_full_corpus_without_retuning
     )
     assert evidence["applicable_case_count"] > 0
     assert set(evidence["bands"]) == {"tiny", "small", "medium", "dense"}
-    assert {
-        band: item["frozen_tolerance_mm"]
-        for band, item in evidence["bands"].items()
-    } == {"tiny": 5.0, "small": 4.0, "medium": 3.0, "dense": 2.5}
-    assert sum(
-        item["applicable_case_count"] for item in evidence["bands"].values()
-    ) == evidence["applicable_case_count"]
+    assert {band: item["frozen_tolerance_mm"] for band, item in evidence["bands"].items()} == {
+        "tiny": 5.0,
+        "small": 4.0,
+        "medium": 3.0,
+        "dense": 2.5,
+    }
+    assert (
+        sum(item["applicable_case_count"] for item in evidence["bands"].values())
+        == evidence["applicable_case_count"]
+    )
     assert all(
-        item["passing_case_count"] + item["failing_case_count"]
-        == item["applicable_case_count"]
+        item["passing_case_count"] + item["failing_case_count"] == item["applicable_case_count"]
         for item in evidence["bands"].values()
     )
 
     for record in report["cases"]:
         repeated = record["repeated_structure"]
-        assert repeated["frozen_tolerance_mm"] == record["page"]["tolerance"][
-            "maximum_repeated_alignment_variance_mm"
-        ]
+        assert (
+            repeated["frozen_tolerance_mm"]
+            == record["page"]["tolerance"]["maximum_repeated_alignment_variance_mm"]
+        )
         assert repeated["peer_pair_count"] == len(repeated["witnesses"])

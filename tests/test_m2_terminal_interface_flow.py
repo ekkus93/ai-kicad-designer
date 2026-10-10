@@ -168,7 +168,6 @@ def test_ambiguous_passive_interface_relationship_does_not_force_route() -> None
     assert _routable_edges(plan) == ()
 
 
-
 def _local_signal_plan_and_placements(*, distance: int, role: str = "signal"):
     connector = _block("connector", "interface", ("signal", "passive"))
     stage = _block("stage", "active", ("signal", "signal_in"))
@@ -230,9 +229,7 @@ def test_local_unique_signal_interface_gets_best_effort_visible_route() -> None:
         ("connector", "stage", "signal")
     ]
     trees = route_between_fragments(plan, placed)
-    assert [(tree.net, tree.strategy) for tree in trees] == [
-        ("signal", "local_visible_optional")
-    ]
+    assert [(tree.net, tree.strategy) for tree in trees] == [("signal", "local_visible_optional")]
     assert trees[0].segments
 
 

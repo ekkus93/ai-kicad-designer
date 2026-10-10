@@ -364,6 +364,7 @@ def test_unrelated_crossing_count_deduplicates_reversed_strokes() -> None:
         )
         assert metrics.unrelated_crossings == 1
 
+
 def test_unrelated_crossings_are_invariant_to_collinear_splitting() -> None:
     horizontal = ((0, 0), (20, 0))
     vertical = ((10, -10), (10, 10))

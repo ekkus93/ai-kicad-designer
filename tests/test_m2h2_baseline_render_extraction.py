@@ -52,16 +52,16 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
         "historical_qualification_sha": "historical-fixture",
         "native_svg_count": 2,
         "sorted_case_svg_sha256_inventory_sha256": "historical-inventory-fixture",
-        "archive_parts": [
-            {"path": "fixtures/m2h2/part01.json", "sha256": _hash(raw)}
-        ],
+        "archive_parts": [{"path": "fixtures/m2h2/part01.json", "sha256": _hash(raw)}],
     }
     manifest_path = root / "manifest.json"
     manifest_path.write_text(json.dumps(manifest))
     return root, manifest_path, part_path
 
 
-def test_extract_checks_all_hashes_and_produces_deterministic_selected_index(tmp_path: Path) -> None:
+def test_extract_checks_all_hashes_and_produces_deterministic_selected_index(
+    tmp_path: Path,
+) -> None:
     root, manifest, _ = _fixture(tmp_path)
     output = tmp_path / "out"
     result = extract_baseline_renders(root, manifest, output, ("i4__mixed",))

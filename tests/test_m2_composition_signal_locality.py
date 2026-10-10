@@ -181,10 +181,7 @@ def test_local_signal_search_avoids_blocked_aligned_corridor() -> None:
     assert placed["extra"] == obstructing.envelope
     assert placed["target"][0] > placed["source"][2]
     assert placed["target"][0] < target.envelope[0]
-    assert (
-        placed["target"][3] <= placed["extra"][1]
-        or placed["target"][1] >= placed["extra"][3]
-    )
+    assert placed["target"][3] <= placed["extra"][1] or placed["target"][1] >= placed["extra"][3]
 
 
 def test_vertical_local_signal_alternative_is_semantically_order_invariant() -> None:
