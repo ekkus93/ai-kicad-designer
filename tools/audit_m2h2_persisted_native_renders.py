@@ -7,6 +7,7 @@ not a visual-engineering acceptance oracle.
 from __future__ import annotations
 
 import argparse
+import base64
 import hashlib
 import json
 import re
@@ -195,6 +196,37 @@ def main() -> None:
         else:
             directory = args.root / "interactions" / prefix / case
         render_chunks(args.root, args.emit_case, directory)
+
+        # PNG is a preview transport for engineering inspection, not native
+        # acceptance evidence; the exact source SVG hash is retained.
+        from cairosvg import svg2png
+
+        svgs = sorted((directory / "run1/renders/schematic").glob("*.svg"))
+        if len(svgs) != 1:
+            raise ValueError(f"{args.emit_case}: expected exactly one native SVG")
+        source_bytes = svgs[0].read_bytes()
+        preview = svg2png(bytestring=source_bytes, output_width=1600)
+        if not preview:
+            raise ValueError(f"{args.emit_case}: PNG preview conversion failed")
+        encoded = base64.b64encode(preview).decode()
+        chunks = [encoded[index : index + 1000] for index in range(0, len(encoded), 1000)]
+        for index, chunk in enumerate(chunks):
+            print(
+                json.dumps(
+                    {
+                        "kind": "m2h2.png-preview-transfer.1",
+                        "case": args.emit_case,
+                        "index": index,
+                        "total": len(chunks),
+                        "native_svg_sha256": hashlib.sha256(source_bytes).hexdigest(),
+                        "png_sha256": hashlib.sha256(preview).hexdigest(),
+                        "encoding": "base64-png",
+                        "data": chunk,
+                    },
+                    separators=(",", ":"),
+                ),
+                flush=True,
+            )
 
 
 if __name__ == "__main__":
