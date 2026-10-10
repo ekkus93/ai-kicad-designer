@@ -624,10 +624,7 @@ def _optional_local_visible_edges(
             continue
         source = _gateway(by_id[edge.source], edge.net, True)
         target = _gateway(by_id[edge.target], edge.net, False)
-        distance = (
-            abs(source.point[0] - target.point[0])
-            + abs(source.point[1] - target.point[1])
-        )
+        distance = abs(source.point[0] - target.point[0]) + abs(source.point[1] - target.point[1])
         if distance <= MAX_LOCAL_VISIBLE_SIGNAL_DISTANCE:
             result.append(edge)
     return tuple(sorted(result, key=lambda edge: (edge.net, edge.source, edge.target)))
@@ -1108,14 +1105,10 @@ def route_between_fragments(
                 and reservation.clearance_class
                 in {"body", "text", "label", "pin", "wire", "protected"}
                 and not (
-                    reservation.clearance_class == "label"
-                    and reservation.permitted_net == net
+                    reservation.clearance_class == "label" and reservation.permitted_net == net
                 )
             )
-            or (
-                reservation.occupancy == "channel"
-                and reservation.permitted_net not in {None, net}
-            )
+            or (reservation.occupancy == "channel" and reservation.permitted_net not in {None, net})
         )
         source_external = _advance(source.point, source.escape_direction, PITCH)
         target_external = _advance(target.point, target.escape_direction, PITCH)

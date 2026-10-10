@@ -86,11 +86,7 @@ def _bend_count(segments: tuple[Segment, ...]) -> int:
     bends = 0
     for point in {endpoint for segment in segments for endpoint in segment}:
         arms = _incident_cardinal_arms(point, segments)
-        if (
-            len(arms) == 2
-            and arms & {"left", "right"}
-            and arms & {"up", "down"}
-        ):
+        if len(arms) == 2 and arms & {"left", "right"} and arms & {"up", "down"}:
             bends += 1
     return bends
 
@@ -164,9 +160,7 @@ def _orthogonal_intersection(first: Segment, second: Segment) -> Point | None:
     second_direction = _direction(second)
     if {first_direction, second_direction} != {"horizontal", "vertical"}:
         return None
-    horizontal, vertical = (
-        (first, second) if first_direction == "horizontal" else (second, first)
-    )
+    horizontal, vertical = (first, second) if first_direction == "horizontal" else (second, first)
     x, y = vertical[0][0], horizontal[0][1]
     hx1, hx2 = sorted((horizontal[0][0], horizontal[1][0]))
     vy1, vy2 = sorted((vertical[0][1], vertical[1][1]))
@@ -398,14 +392,3 @@ def _endpoint_components(segments: tuple[Segment, ...]) -> dict[Point, int]:
             continue
         component_id = len(components)
         pending = [start]
-        while pending:
-            point = pending.pop()
-            if point in components:
-                continue
-            components[point] = component_id
-            pending.extend(adjacency[point] - components.keys())
-    return components
-
-
-def _manhattan(first: Point, second: Point) -> int:
-    return abs(first[0] - second[0]) + abs(first[1] - second[1])
