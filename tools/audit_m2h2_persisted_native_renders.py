@@ -12,6 +12,7 @@ import json
 import re
 from pathlib import Path
 
+from run_m2g2_qualification import _normalized_svg
 from run_m2h2_final_artifact_audit import identity_errors, render_chunks
 
 REQUIRED_STRUCTURAL = frozenset(
@@ -50,6 +51,7 @@ def inventory_case(root: Path, name: str, runs: list[dict]) -> dict:
                 "run": index,
                 "path": str(svgs[0]),
                 "sha256": hashlib.sha256(data).hexdigest(),
+                "normalized_svg_sha256": _normalized_svg(svgs[0]),
                 "size_bytes": len(data),
             }
         )
@@ -57,6 +59,7 @@ def inventory_case(root: Path, name: str, runs: list[dict]) -> dict:
         "case": name,
         "renders": renders,
         "byte_identical": len({record["sha256"] for record in renders}) == 1,
+        "normalized_identical": len({record["normalized_svg_sha256"] for record in renders}) == 1,
     }
 
 
@@ -131,6 +134,7 @@ def collect(root: Path, source_sha: str) -> dict:
         "total_cases": len(records),
         "total_svg_files": sum(len(record["renders"]) for record in records),
         "byte_identical_cases": sum(record["byte_identical"] for record in records),
+        "normalized_identical_cases": sum(record["normalized_identical"] for record in records),
         "cases": sorted(records, key=lambda record: record["case"]),
     }
 
@@ -169,7 +173,11 @@ def main() -> None:
                     "kind": "m2h2.native-render-hash.1",
                     "case": record["case"],
                     "sha256": [render["sha256"] for render in record["renders"]],
+                    "normalized_svg_sha256": [
+                        render["normalized_svg_sha256"] for render in record["renders"]
+                    ],
                     "byte_identical": record["byte_identical"],
+                    "normalized_identical": record["normalized_identical"],
                 },
                 separators=(",", ":"),
             ),
