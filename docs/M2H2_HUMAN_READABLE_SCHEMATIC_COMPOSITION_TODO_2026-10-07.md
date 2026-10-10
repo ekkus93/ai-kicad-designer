@@ -179,7 +179,8 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Add mirrored naming/refdes metamorphic tests.
 - [x] Add three-amplifier one-band regression.
 - [x] Add multi-band/repeated-channel regression.
-- [ ] Freeze repeated-structure acceptance tolerances from general corpus evidence.
+- [x] Freeze repeated-structure acceptance tolerances from general corpus evidence.
+  - Exact-head evidence `8a71ef7ec76980c251382293f2fd90c998954617`: the independent historical analyzer applies the already-frozen generic complexity-band limits (tiny 5.0 mm, small 4.0 mm, medium 3.0 mm, dense 2.5 mm) to every applicable incomparable semantic-peer pair across the hash-verified 90-case native baseline, records pass/fail counts and worst observed drift by band, and forbids case-specific retuning. `tests/test_m2h2_historical_composition_analysis.py::test_repeated_structure_tolerances_are_bound_to_full_corpus_without_retuning` passed in full pytest. Fast Validation run `38014022964` also passed locked-KiCad current-source regressions, connector/selected-triple five-run regressions, whole-band five-run, and fresh regression builds; artifact upload alone failed because Actions storage quota is exhausted.
 
 ## 9. Page utilization and whitespace
 
