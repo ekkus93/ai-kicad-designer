@@ -157,6 +157,73 @@ def _place(fragment: FragmentVariant, left: int, top: int) -> PlacedFragment:
     )
 
 
+
+def _centroid_balanced_packing(packing: Packing) -> Packing | None:
+    """Translate an entire valid arrangement toward the frozen page center.
+
+    Only a rigid on-grid translation is considered: block order, proximity,
+    fragment variants, and routed-port relative geometry remain unchanged.
+    This is one optional seed, not an acceptance bypass. The subsequent
+    placement/route/conductor/observer gates retain authority.
+    """
+    if not packing.fragments:
+        return None
+    rects = tuple(item.content_envelope or item.envelope for item in packing.fragments)
+    content_left = min(rect[0] for rect in rects)
+    content_top = min(rect[1] for rect in rects)
+    content_right = max(rect[2] for rect in rects)
+    content_bottom = max(rect[3] for rect in rects)
+    target_x = LEFT + MAX_CONTENT_WIDTH // 2
+    target_y = TOP + MAX_CONTENT_HEIGHT // 2
+    actual_x = (content_left + content_right) // 2
+    actual_y = (content_top + content_bottom) // 2
+
+    # Clamp the proposed rigid translation to the existing physical sheet
+    # boundaries.  No fragment may leave its governed placement envelope.
+    min_dx = LEFT - min(item.envelope[0] for item in packing.fragments)
+    max_dx = RIGHT - max(item.envelope[2] for item in packing.fragments)
+    min_dy = TOP - min(item.envelope[1] for item in packing.fragments)
+    max_dy = BOTTOM - max(item.envelope[3] for item in packing.fragments)
+
+    def snapped_clamped(target: int, minimum: int, maximum: int) -> int:
+        desired = ((target + PITCH // 2) // PITCH) * PITCH
+        lower = ((minimum + PITCH - 1) // PITCH) * PITCH
+        upper = (maximum // PITCH) * PITCH
+        return max(lower, min(desired, upper)) if lower <= upper else 0
+
+    dx = snapped_clamped(target_x - actual_x, min_dx, max_dx)
+    dy = snapped_clamped(target_y - actual_y, min_dy, max_dy)
+    if dx == dy == 0:
+        return None
+    if abs(actual_x + dx - target_x) + abs(actual_y + dy - target_y) >= (
+        abs(actual_x - target_x) + abs(actual_y - target_y)
+    ):
+        return None
+    changed = tuple(
+        _place(item.fragment, item.envelope[0] + dx, item.envelope[1] + dy)
+        for item in packing.fragments
+    )
+    # The A4 worksheet occupies the lower-right corner and cannot be used
+    # for circuitry. Do not create a candidate that intrudes on title fields.
+    worksheet = (177_000_000, 165_900_000, 285_100_000, 198_100_000)
+    for item in changed:
+        for geometry in item.fragment.occupied_geometry:
+            rect = tuple(
+                value + offset
+                for value, offset in zip(
+                    geometry.rect, (*item.delta, *item.delta), strict=True
+                )
+            )
+            if (
+                rect[0] < worksheet[2]
+                and rect[2] > worksheet[0]
+                and rect[1] < worksheet[3]
+                and rect[3] > worksheet[1]
+            ):
+                return None
+    return Packing(changed, packing.attempts + ("centroid-balanced-page",))
+
+
 def _topological(nodes: set[str], pairs: set[tuple[str, str]]) -> tuple[str, ...]:
     remaining = set(nodes)
     result: list[str] = []
@@ -2192,6 +2259,10 @@ def _retain_composition_seed_diversity(
         ),
         None,
     )
+    centered = next(
+        (candidate for candidate in extras if candidate.attempts[-1] == "centroid-balanced-page"),
+        None,
+    )
     # Distribution and partial-beam seeds are independent measured geometry
     # classes. Keep one of each when available: new aesthetic variants must not
     # displace the only candidate able to satisfy a global conductor bound.
@@ -2209,7 +2280,9 @@ def _retain_composition_seed_diversity(
     )
     protected = tuple(
         candidate
-        for candidate in (distribution, partial, *repeated, *branch, field_slot, local_signal)
+        for candidate in (
+            distribution, partial, *repeated, *branch, field_slot, local_signal, centered
+        )
         if candidate is not None
     )
     ordered = successful[:1] + protected + successful[1:3] + extras + successful[3:]
@@ -2567,6 +2640,11 @@ def pack_fragment_candidates(
 
     if successful:
         extras = []
+        # Rigid, on-grid centering is considered without displacing a complete
+        # original seed. Actual native-page acceptance remains independent.
+        centered = _centroid_balanced_packing(successful[0])
+        if centered is not None:
+            extras.append(centered)
         # Reserve candidate space for deterministic, legally measured interface
         # moves; the subsequent route proof remains authoritative.
         # A frontier move may be illegal in the first shelf arrangement but
