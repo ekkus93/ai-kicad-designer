@@ -415,6 +415,8 @@ Exact-source validation checkpoint (not final qualification or a source freeze):
 
 ## 20. Final reproducibility and audit closure
 
+Reproducibility evidence checkpoint (2026-10-10): source `ea154c78b8f0ca7348159d3d068fc62d8630f337` has **137/137 distinct qualified cases with identical normalized native KiCad SVG SHA-256 across all five runs**, verified independently from 685 preserved SVG files using governed normalization of volatile SVG `<title>` elements. Runner-native manifest v2: `$HOME/m2h2-evidence/ea154c78b8f0ca7348159d3d068fc62d8630f337/audit/native_render_inventory_v2_ea154c78b8f0ca7348159d3d068fc62d8630f337.json`; [Persisted Native Render Inventory run 38081853532](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38081853532) PASS. Raw hashes differ for all 137 cases, as expected when volatile titles vary; this does not weaken the normalized geometry requirement. All case SVGs have exact per-run hashes in the v2 manifest. The independent visual/aesthetic acceptance audit remains FAILED (run 38080254766); this checkpoint supplies only reproducibility evidence, not visual inspection, source stabilization, or final PASS.
+
 - [ ] Verify five-run deterministic project bytes where already governed.
 - [ ] Verify deterministic semantic composition class.
 - [ ] Verify deterministic normalized native-render geometry.
