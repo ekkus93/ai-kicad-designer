@@ -252,6 +252,69 @@ def _defect_total(record: dict) -> int:
     return sum(_hard_defects(record).values())
 
 
+def baseline_regression_diagnostics(pairs: list[dict], limit: int = 24) -> dict:
+    """Rank independent current-vs-historical regressions without relaxing a gate."""
+    ranked = []
+    for record in pairs:
+        historic = record["historical"]
+        fresh = record["fresh"]
+        increased_hard = {
+            name: record["fresh_hard_defects"][name] - count
+            for name, count in record["historical_hard_defects"].items()
+            if record["fresh_hard_defects"][name] > count
+        }
+        fragmentation = round(
+            fresh["fragmentation_total_mm"] - historic["fragmentation_total_mm"], 4
+        )
+        detours = fresh["u_shaped_detours"] - historic["u_shaped_detours"]
+        branch = round(
+            fresh["branch_inconsistency_mm"] - historic["branch_inconsistency_mm"], 4
+        )
+        unresolved_hard = bool(
+            record["historical_hard_defect_total"] and record["fresh_hard_defect_total"]
+        )
+        repeated_fail = not fresh["repeated_within_tolerance"]
+        if not (
+            unresolved_hard or increased_hard or repeated_fail
+            or fragmentation > 0 or detours > 0 or branch > 0
+        ):
+            continue
+        ranked.append(
+            {
+                "case": record["case"],
+                "unresolved_hard": unresolved_hard,
+                "historical_hard_defects": record["historical_hard_defects"],
+                "fresh_hard_defects": record["fresh_hard_defects"],
+                "increased_hard": increased_hard,
+                "repeated_out_of_tolerance": repeated_fail,
+                "fragmentation_delta_mm": fragmentation,
+                "u_shaped_detours_delta": detours,
+                "branch_inconsistency_delta_mm": branch,
+                "historical_interface_violations": historic["interface_side_violations"],
+                "fresh_interface_violations": fresh["interface_side_violations"],
+                "historical_edge_bias": historic["edge_bias"],
+                "fresh_edge_bias": fresh["edge_bias"],
+            }
+        )
+    ranked.sort(
+        key=lambda item: (
+            -len(item["increased_hard"]),
+            -int(item["unresolved_hard"]),
+            -int(item["repeated_out_of_tolerance"]),
+            -(max(item["u_shaped_detours_delta"], 0)
+              + max(item["branch_inconsistency_delta_mm"], 0)),
+            item["case"],
+        )
+    )
+    mixed = next((item for item in pairs if item["case"] == "i4__b2_mixed"), None)
+    return {
+        "affected_count": len(ranked),
+        "omitted_count": max(0, len(ranked) - limit),
+        "ranked_cases": ranked[:limit],
+        "i4": mixed,
+    }
+
+
 def comparative_baseline(qualification: Path, interactions: Path, structural: Path) -> dict:
     baseline = build_historical_composition_report()
     designs = historical_design_paths()
@@ -729,6 +792,16 @@ def main() -> None:
                 "missing_cases": baseline_comparison["missing_cases"],
                 "totals": baseline_comparison["totals"],
                 "criteria": baseline_comparison["criteria"],
+            },
+            separators=(",", ":"),
+        ),
+        flush=True,
+    )
+    print(
+        json.dumps(
+            {
+                "kind": "m2h2.baseline-regression-diagnostics.1",
+                **baseline_regression_diagnostics(baseline_comparison["cases"]),
             },
             separators=(",", ":"),
         ),
