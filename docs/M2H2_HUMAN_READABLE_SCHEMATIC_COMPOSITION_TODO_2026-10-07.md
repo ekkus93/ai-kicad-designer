@@ -47,6 +47,7 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Define a versioned composition metric schema before behavior changes.
 - [ ] Evaluate current final M2h2 renders using the initial independent observer.
 - [ ] Produce a ranked per-case defect inventory.
+  - Historical SVG geometry-only screening is reproducible with `tools/inspect_m2h2_historical_svg_routes.py` and its authored tests; see `docs/M2H2_HISTORICAL_SVG_WIRE_SCREENING_2026-10-09.md`. It hash-verifies and ranks all 90 historical native SVGs by wire footprint, but does **not** identify semantic defects, establish current-source qualification, or satisfy this checkbox.
 - [x] Record `i4__b2_mixed` as a falsification seed.
   - [ ] output interfaces on visually inappropriate frontier are detected;
   - [ ] detached interface-to-owning-stage relationships are detected;
