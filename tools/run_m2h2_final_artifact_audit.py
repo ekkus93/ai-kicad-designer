@@ -13,6 +13,12 @@ import re
 import subprocess
 
 from ai_kicad.m2a import ROOT, observe
+from ai_kicad.m2b import assets
+from analyze_m2h2_historical_composition import (
+    _design_paths as historical_design_paths,
+    analyze_case as analyze_native_composition,
+    build_report as build_historical_composition_report,
+)
 from run_m2h2_structural_audit import audit_paths
 
 
@@ -212,6 +218,215 @@ def verify_emitted_conductors(canonical_trees, observed_wires):
     canonical = [segment for tree in canonical_trees for segment in tree["segments"]]
     if normalized(canonical) != normalized(observed_wires):
         raise ValueError("canonical conductor inventory differs from emitted schematic bytes")
+
+
+def _fresh_case_directory(
+    case: str, qualification: Path, interactions: Path, structural: Path
+) -> Path | None:
+    if case.startswith("base__"):
+        return qualification / case.split("__", 1)[1]
+    if case.startswith("structural__"):
+        return structural / case.split("__", 1)[1]
+    if "__" in case:
+        group, case_id = case.split("__", 1)
+        if group in {"i1", "i2", "i3", "i4", "i5", "i6"}:
+            return interactions / group / case_id
+    return None
+
+
+def _hard_defects(record: dict) -> dict[str, int]:
+    repeated = record["repeated_structure"]
+    return {
+        "stage_order_inversions": int(record["flow_order"]["stage_order_inversions"]),
+        "interface_side_violations": len(record["interface_flow"]["interface_side_violations"]),
+        "local_label_disconnects": len(record["routing"]["local_label_disconnects"]),
+        "page_low_utilization": int(bool(record["page"].get("low_utilization"))),
+        "page_edge_bias": int(bool(record["page"].get("edge_bias"))),
+        "repeated_out_of_tolerance": int(
+            repeated["applicable"] and not repeated["within_frozen_tolerance"]
+        ),
+    }
+
+
+def _defect_total(record: dict) -> int:
+    return sum(_hard_defects(record).values())
+
+
+def comparative_baseline(
+    qualification: Path, interactions: Path, structural: Path
+) -> dict:
+    baseline = build_historical_composition_report()
+    designs = historical_design_paths()
+    resolved = assets()
+    pairs = []
+    missing = []
+    for historical in sorted(baseline["cases"], key=lambda item: item["case"]):
+        case = historical["case"]
+        directory = _fresh_case_directory(case, qualification, interactions, structural)
+        svgs = (
+            sorted((directory / "run1/renders/schematic").glob("*.svg"))
+            if directory is not None
+            else []
+        )
+        design = designs.get(case)
+        if directory is None or design is None or len(svgs) != 1:
+            missing.append(case)
+            continue
+        fresh = analyze_native_composition(case, design, svgs[0].read_bytes(), resolved)
+        pairs.append(
+            {
+                "case": case,
+                "historical_svg_sha256": historical["svg_sha256"],
+                "fresh_svg_sha256": fresh["svg_sha256"],
+                "historical_hard_defects": _hard_defects(historical),
+                "fresh_hard_defects": _hard_defects(fresh),
+                "historical_hard_defect_total": _defect_total(historical),
+                "fresh_hard_defect_total": _defect_total(fresh),
+                "historical": {
+                    "stage_order_inversions": historical["flow_order"]["stage_order_inversions"],
+                    "interface_side_violations": len(
+                        historical["interface_flow"]["interface_side_violations"]
+                    ),
+                    "fragmentation_total_mm": historical["functional_fragmentation"][
+                        "total_intra_block_span_mm"
+                    ],
+                    "edge_bias": historical["page"].get("edge_bias"),
+                    "low_utilization": historical["page"].get("low_utilization"),
+                    "u_shaped_detours": historical["routing"]["u_shaped_detours"],
+                    "branch_inconsistency_mm": historical["routing"][
+                        "sibling_branch_geometry_inconsistency_mm"
+                    ],
+                    "repeated_within_tolerance": historical["repeated_structure"][
+                        "within_frozen_tolerance"
+                    ],
+                },
+                "fresh": {
+                    "stage_order_inversions": fresh["flow_order"]["stage_order_inversions"],
+                    "interface_side_violations": len(
+                        fresh["interface_flow"]["interface_side_violations"]
+                    ),
+                    "fragmentation_total_mm": fresh["functional_fragmentation"][
+                        "total_intra_block_span_mm"
+                    ],
+                    "edge_bias": fresh["page"].get("edge_bias"),
+                    "low_utilization": fresh["page"].get("low_utilization"),
+                    "u_shaped_detours": fresh["routing"]["u_shaped_detours"],
+                    "branch_inconsistency_mm": fresh["routing"][
+                        "sibling_branch_geometry_inconsistency_mm"
+                    ],
+                    "repeated_within_tolerance": fresh["repeated_structure"][
+                        "within_frozen_tolerance"
+                    ],
+                },
+            }
+        )
+
+    def total(side: str, field: str) -> float:
+        return sum(float(item[side][field]) for item in pairs)
+
+    historical_stage = total("historical", "stage_order_inversions")
+    fresh_stage = total("fresh", "stage_order_inversions")
+    historical_interfaces = total("historical", "interface_side_violations")
+    fresh_interfaces = total("fresh", "interface_side_violations")
+    historical_fragmentation = total("historical", "fragmentation_total_mm")
+    fresh_fragmentation = total("fresh", "fragmentation_total_mm")
+    historical_uturns = total("historical", "u_shaped_detours")
+    fresh_uturns = total("fresh", "u_shaped_detours")
+    historical_branch = total("historical", "branch_inconsistency_mm")
+    fresh_branch = total("fresh", "branch_inconsistency_mm")
+    historical_edge_bias = sum(bool(item["historical"]["edge_bias"]) for item in pairs)
+    fresh_edge_bias = sum(bool(item["fresh"]["edge_bias"]) for item in pairs)
+    historical_low_util = sum(bool(item["historical"]["low_utilization"]) for item in pairs)
+    fresh_low_util = sum(bool(item["fresh"]["low_utilization"]) for item in pairs)
+
+    i4 = next((item for item in pairs if item["case"] == "i4__b2_mixed"), None)
+    criteria = {
+        "complete_case_coverage": not missing and len(pairs) == baseline["provenance"]["native_svg_count"],
+        "baseline_hard_defects_cleared": all(
+            item["historical_hard_defect_total"] == 0
+            or item["fresh_hard_defect_total"] == 0
+            for item in pairs
+        ),
+        "no_new_hard_defects_on_previously_clean_cases": all(
+            item["historical_hard_defect_total"] != 0
+            or item["fresh_hard_defect_total"] == 0
+            for item in pairs
+        ),
+        "individual_hard_defects_never_worsen": all(
+            all(
+                item["fresh_hard_defects"][key] <= value
+                for key, value in item["historical_hard_defects"].items()
+            )
+            for item in pairs
+        ),
+        "stage_order_improves_or_remains_zero": (
+            fresh_stage == 0 if historical_stage == 0 else fresh_stage < historical_stage
+        ),
+        "interface_side_metrics_improve": (
+            fresh_interfaces == 0
+            if historical_interfaces == 0
+            else fresh_interfaces < historical_interfaces
+        ),
+        "functional_fragmentation_nonworsening": fresh_fragmentation <= historical_fragmentation,
+        "page_bias_nonworsening": (
+            fresh_edge_bias <= historical_edge_bias and fresh_low_util <= historical_low_util
+        ),
+        "routing_aesthetics_nonworsening": (
+            fresh_uturns <= historical_uturns and fresh_branch <= historical_branch + 1e-6
+        ),
+        "repeated_structure_within_frozen_tolerance": all(
+            item["fresh"]["repeated_within_tolerance"] for item in pairs
+        ),
+        "i4_specific_improvement": bool(
+            i4
+            and i4["fresh_hard_defect_total"] < i4["historical_hard_defect_total"]
+            and i4["fresh"]["interface_side_violations"] == 0
+            and not i4["fresh"]["edge_bias"]
+            and i4["fresh"]["u_shaped_detours"] <= i4["historical"]["u_shaped_detours"]
+            and i4["fresh"]["branch_inconsistency_mm"]
+            <= i4["historical"]["branch_inconsistency_mm"] + 1e-6
+        ),
+    }
+    return {
+        "schema_version": "m2h2.comparative-native-baseline.1",
+        "historical_qualification_sha": baseline["provenance"]["historical_qualification_sha"],
+        "historical_inventory_sha256": baseline["provenance"]["inventory_sha256"],
+        "case_count": len(pairs),
+        "missing_cases": missing,
+        "totals": {
+            "stage_order_inversions": {
+                "historical": historical_stage,
+                "fresh": fresh_stage,
+            },
+            "interface_side_violations": {
+                "historical": historical_interfaces,
+                "fresh": fresh_interfaces,
+            },
+            "functional_fragmentation_total_mm": {
+                "historical": historical_fragmentation,
+                "fresh": fresh_fragmentation,
+            },
+            "edge_bias_case_count": {
+                "historical": historical_edge_bias,
+                "fresh": fresh_edge_bias,
+            },
+            "low_utilization_case_count": {
+                "historical": historical_low_util,
+                "fresh": fresh_low_util,
+            },
+            "u_shaped_detours": {
+                "historical": historical_uturns,
+                "fresh": fresh_uturns,
+            },
+            "branch_inconsistency_mm": {
+                "historical": historical_branch,
+                "fresh": fresh_branch,
+            },
+        },
+        "criteria": criteria,
+        "passed": all(criteria.values()),
+        "cases": pairs,
+    }
 
 
 def case_detail(group, case_id, signature, directory, design_path):
@@ -506,6 +721,27 @@ def main() -> None:
                 link_errors.append(f"{document.relative_to(ROOT)}: {target}")
     errors.extend(f"broken link: {item}" for item in link_errors)
     subprocess.run(["git", "diff", "--check"], cwd=ROOT, check=True)
+    baseline_comparison = comparative_baseline(
+        args.qualification, args.interactions, args.structural
+    )
+    for name, passed in baseline_comparison["criteria"].items():
+        if not passed:
+            errors.append(f"comparative baseline criterion failed: {name}")
+    print(
+        json.dumps(
+            {
+                "kind": "m2h2.baseline-comparison.1",
+                "passed": baseline_comparison["passed"],
+                "case_count": baseline_comparison["case_count"],
+                "missing_cases": baseline_comparison["missing_cases"],
+                "totals": baseline_comparison["totals"],
+                "criteria": baseline_comparison["criteria"],
+            },
+            separators=(",", ":"),
+        ),
+        flush=True,
+    )
+
     metrics = {}
     for detail in details:
         for name, value in detail["layout"].items():
@@ -528,6 +764,7 @@ def main() -> None:
         ),
         "historical_preservation": qualification["historical_preservation"],
         "anti_overfitting": qualification["anti_overfitting"],
+        "baseline_comparison": baseline_comparison,
         "schema_version": "m2h2.final-artifact-audit.1",
         "qualification_head": qualification["git_head"],
         "source_sha256": qualification["source_sha256"],

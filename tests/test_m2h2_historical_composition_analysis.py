@@ -52,6 +52,8 @@ def test_i4_falsification_seed_is_detected_from_semantics_and_native_geometry() 
         witness["net"] == "INPUT" for witness in record["routing"]["local_label_disconnects"]
     )
     assert record["observation_coverage"]["missing_or_ambiguous_occurrences"] == []
+    assert "stage_order_inversions" in record["flow_order"]
+    assert "total_intra_block_span_mm" in record["functional_fragmentation"]
 
 
 def test_full_historical_report_is_complete_ranked_and_archetype_covered() -> None:
@@ -69,6 +71,7 @@ def test_full_historical_report_is_complete_ranked_and_archetype_covered() -> No
         not record["observation_coverage"]["missing_or_ambiguous_occurrences"]
         for record in records
     )
+    assert all("flow_order" in record and "functional_fragmentation" in record for record in records)
 
     required_archetypes = {
         "linear_chain",

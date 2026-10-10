@@ -115,7 +115,7 @@ def _refdes(component: dict, unit: int, resolved: dict) -> str:
     return f"{base}{chr(ord('A') + unit - 1)}"
 
 
-def _centers(design: dict, plan, resolved: dict, text: dict) -> tuple[dict, list[str], int]:
+def _occurrence_points(design: dict, plan, resolved: dict, text: dict) -> tuple[dict, list[str]]:
     components = {item["id"]: item for item in design["components"]}
     points = {}
     missing = []
@@ -130,6 +130,11 @@ def _centers(design: dict, plan, resolved: dict, text: dict) -> tuple[dict, list
             missing.append(f"{component_id}:{unit}:{display}:count={len(unique)}")
         else:
             points[occurrence] = unique[0]
+    return points, missing
+
+
+def _centers(design: dict, plan, resolved: dict, text: dict) -> tuple[dict, list[str], int]:
+    points, missing = _occurrence_points(design, plan, resolved, text)
     centers = {}
     for block in plan.blocks:
         observed = [points[item] for item in block.occurrences if item in points]
@@ -271,6 +276,76 @@ def _page(plan, centers: dict) -> dict:
     }
 
 
+def _flow_order(plan, centers: dict) -> dict:
+    by_id = {block.id: block for block in plan.blocks}
+    relations = {
+        (edge.source, edge.target, edge.net)
+        for edge in plan.edges
+        if edge.kind in {"signal", "branch"} and edge.source != edge.target
+    }
+    relations.update(
+        (item.source_fragment, item.target_fragment, item.net)
+        for item in plan.precedence
+        if item.source_fragment != item.target_fragment
+    )
+    violations = []
+    for source, target, net in sorted(relations):
+        if source not in centers or target not in centers:
+            continue
+        if by_id.get(source) is None or by_id.get(target) is None:
+            continue
+        if by_id[source].kind == "interface" or by_id[target].kind == "interface":
+            continue
+        delta = centers[target][0] - centers[source][0]
+        if delta < 0:
+            violations.append(
+                {
+                    "source": source,
+                    "target": target,
+                    "net": net,
+                    "reversal_mm": round(-delta, 6),
+                }
+            )
+    return {
+        "stage_order_inversions": len(violations),
+        "cumulative_reversal_mm": round(
+            sum(item["reversal_mm"] for item in violations), 6
+        ),
+        "violations": violations,
+    }
+
+
+def _fragmentation(design: dict, plan, resolved: dict, text: dict) -> dict:
+    points, _missing = _occurrence_points(design, plan, resolved, text)
+    witnesses = []
+    for block in plan.blocks:
+        if block.kind == "interface":
+            continue
+        observed = [points[item] for item in block.occurrences if item in points]
+        if len(observed) < 2:
+            continue
+        xs = [point[0] for point in observed]
+        ys = [point[1] for point in observed]
+        span = (max(xs) - min(xs)) + (max(ys) - min(ys))
+        witnesses.append(
+            {
+                "block": block.id,
+                "occurrence_count": len(observed),
+                "manhattan_bbox_span_mm": round(span, 6),
+            }
+        )
+    return {
+        "multi_occurrence_block_count": len(witnesses),
+        "total_intra_block_span_mm": round(
+            sum(item["manhattan_bbox_span_mm"] for item in witnesses), 6
+        ),
+        "maximum_intra_block_span_mm": max(
+            (item["manhattan_bbox_span_mm"] for item in witnesses), default=0.0
+        ),
+        "witnesses": witnesses,
+    }
+
+
 def _features(plan, design: dict, interface: dict, centers: dict) -> dict:
     outgoing = defaultdict(set)
     for edge in plan.edges:
@@ -399,6 +474,8 @@ def analyze_case(case: str, path: Path, svg: bytes, resolved: dict) -> dict:
     text = _text(svg)
     centers, missing, observed = _centers(design, plan, resolved, text)
     interface = _interfaces(plan, centers)
+    flow_order = _flow_order(plan, centers)
+    fragmentation = _fragmentation(design, plan, resolved, text)
     segments = _wires(svg)
     length = sum(abs(a[0] - b[0]) + abs(a[1] - b[1]) for a, b in segments)
     routing = measure_routing_readability(segments, semantic_local_length=length)
@@ -417,6 +494,8 @@ def analyze_case(case: str, path: Path, svg: bytes, resolved: dict) -> dict:
             "wire_segment_count": len(segments),
         },
         "interface_flow": interface,
+        "flow_order": flow_order,
+        "functional_fragmentation": fragmentation,
         "page": page,
         "routing": {
             "bend_count": routing.bend_count,
