@@ -101,3 +101,33 @@ def test_analysis_is_evidence_only_and_never_claims_current_qualification() -> N
     assert "acceptance_claimed\": False" in source
     analysis_body = source.split("def analyze_case", 1)[1].split("def _archetype_examples", 1)[0]
     assert "i4__b2_mixed" not in analysis_body
+
+
+def test_repeated_structure_tolerances_are_bound_to_full_corpus_without_retuning() -> None:
+    report = build_report()
+    evidence = report["repeated_structure_corpus"]
+    assert evidence["selection_rule"] == (
+        "predeclared_generic_complexity_band_thresholds_recorded_against_"
+        "the_full_frozen_corpus_without_case_specific_retuning"
+    )
+    assert evidence["applicable_case_count"] > 0
+    assert set(evidence["bands"]) == {"tiny", "small", "medium", "dense"}
+    assert {
+        band: item["frozen_tolerance_mm"]
+        for band, item in evidence["bands"].items()
+    } == {"tiny": 5.0, "small": 4.0, "medium": 3.0, "dense": 2.5}
+    assert sum(
+        item["applicable_case_count"] for item in evidence["bands"].values()
+    ) == evidence["applicable_case_count"]
+    assert all(
+        item["passing_case_count"] + item["failing_case_count"]
+        == item["applicable_case_count"]
+        for item in evidence["bands"].values()
+    )
+
+    for record in report["cases"]:
+        repeated = record["repeated_structure"]
+        assert repeated["frozen_tolerance_mm"] == record["page"]["tolerance"][
+            "maximum_repeated_alignment_variance_mm"
+        ]
+        assert repeated["peer_pair_count"] == len(repeated["witnesses"])

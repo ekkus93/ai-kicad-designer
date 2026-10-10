@@ -20,7 +20,7 @@ from xml.etree import ElementTree as ET
 
 from ai_kicad.m2a import ROOT
 from ai_kicad.m2b import assets, validate
-from ai_kicad.m2_composition_tolerances import Complexity, tolerance_for
+from ai_kicad.m2_composition_tolerances import FROZEN_TOLERANCES, Complexity, tolerance_for
 from ai_kicad.m2_interface_flow_composition_observer import (
     ExternalInterface,
     FlowStage,
@@ -306,6 +306,93 @@ def _features(plan, design: dict, interface: dict, centers: dict) -> dict:
     }
 
 
+def _signal_reachability(plan) -> set[tuple[str, str]]:
+    outgoing = defaultdict(set)
+    for edge in plan.edges:
+        if edge.kind in {"signal", "branch"} and edge.source != edge.target:
+            outgoing[edge.source].add(edge.target)
+    for item in plan.precedence:
+        if item.source_fragment != item.target_fragment:
+            outgoing[item.source_fragment].add(item.target_fragment)
+    result = set()
+    for source in sorted(outgoing):
+        pending = list(sorted(outgoing[source]))
+        seen = set()
+        while pending:
+            target = pending.pop()
+            if target in seen:
+                continue
+            seen.add(target)
+            result.add((source, target))
+            pending.extend(sorted(outgoing.get(target, ())))
+    return result
+
+
+def _semantic_peer_signature(plan, block_id: str) -> tuple:
+    by_id = {block.id: block for block in plan.blocks}
+    block = by_id[block_id]
+    incident = []
+    for edge in plan.edges:
+        if edge.source == block_id:
+            neighbor = by_id.get(edge.target)
+            incident.append(("out", edge.kind, neighbor.kind if neighbor else "unknown"))
+        elif edge.target == block_id:
+            neighbor = by_id.get(edge.source)
+            incident.append(("in", edge.kind, neighbor.kind if neighbor else "unknown"))
+    return (
+        block.kind,
+        tuple(sorted(port.role for port in block.ports)),
+        tuple(sorted(incident)),
+    )
+
+
+def _repeated_alignment(plan, centers: dict, page: dict) -> dict:
+    """Measure generic incomparable semantic peers against frozen band tolerance."""
+    reachable = _signal_reachability(plan)
+    groups = defaultdict(list)
+    for block in plan.blocks:
+        if block.kind == "interface" or block.unused or block.id not in centers:
+            continue
+        groups[_semantic_peer_signature(plan, block.id)].append(block.id)
+
+    witnesses = []
+    for signature, members in sorted(groups.items(), key=lambda item: repr(item[0])):
+        ordered = sorted(members)
+        if len(ordered) < 2:
+            continue
+        for index, first in enumerate(ordered):
+            for second in ordered[index + 1 :]:
+                if (first, second) in reachable or (second, first) in reachable:
+                    continue
+                first_point, second_point = centers[first], centers[second]
+                witnesses.append(
+                    {
+                        "members": [first, second],
+                        "semantic_signature": repr(signature),
+                        "x_displacement_mm": round(abs(first_point[0] - second_point[0]), 6),
+                        "y_displacement_mm": round(abs(first_point[1] - second_point[1]), 6),
+                        "off_axis_drift_mm": round(
+                            min(
+                                abs(first_point[0] - second_point[0]),
+                                abs(first_point[1] - second_point[1]),
+                            ),
+                            6,
+                        ),
+                    }
+                )
+
+    tolerance = page.get("tolerance", {}).get("maximum_repeated_alignment_variance_mm")
+    maximum = max((item["off_axis_drift_mm"] for item in witnesses), default=0.0)
+    return {
+        "applicable": bool(witnesses),
+        "peer_pair_count": len(witnesses),
+        "maximum_off_axis_drift_mm": maximum,
+        "frozen_tolerance_mm": tolerance,
+        "within_frozen_tolerance": tolerance is None or maximum <= tolerance,
+        "witnesses": witnesses,
+    }
+
+
 def analyze_case(case: str, path: Path, svg: bytes, resolved: dict) -> dict:
     design = json.loads(path.read_text())
     plan = semantic_plan(validate(design, resolved), resolved)
@@ -318,6 +405,7 @@ def analyze_case(case: str, path: Path, svg: bytes, resolved: dict) -> dict:
     labels = _label_disconnects(design, plan, text, segments)
     page = _page(plan, centers)
     features = _features(plan, design, interface, centers)
+    repeated = _repeated_alignment(plan, centers, page)
     record = {
         "case": case,
         "design": str(path.relative_to(ROOT)),
@@ -339,6 +427,7 @@ def analyze_case(case: str, path: Path, svg: bytes, resolved: dict) -> dict:
             "local_label_disconnects": labels,
         },
         "semantic_features": features,
+        "repeated_structure": repeated,
     }
     record["rank_key"] = [
         len(interface["interface_side_violations"]),
@@ -378,6 +467,46 @@ def _archetype_examples(records: list[dict]) -> dict:
     return result
 
 
+def _repeated_structure_corpus(records: list[dict]) -> dict:
+    bands = {}
+    applicable_total = 0
+    for band, tolerance in FROZEN_TOLERANCES.items():
+        candidates = [
+            record
+            for record in records
+            if record["page"].get("tolerance", {}).get("band") == band
+            and record["repeated_structure"]["applicable"]
+        ]
+        applicable_total += len(candidates)
+        bands[band] = {
+            "frozen_tolerance_mm": tolerance.maximum_repeated_alignment_variance_mm,
+            "applicable_case_count": len(candidates),
+            "passing_case_count": sum(
+                record["repeated_structure"]["within_frozen_tolerance"]
+                for record in candidates
+            ),
+            "failing_case_count": sum(
+                not record["repeated_structure"]["within_frozen_tolerance"]
+                for record in candidates
+            ),
+            "maximum_observed_off_axis_drift_mm": max(
+                (
+                    record["repeated_structure"]["maximum_off_axis_drift_mm"]
+                    for record in candidates
+                ),
+                default=0.0,
+            ),
+        }
+    return {
+        "selection_rule": (
+            "predeclared_generic_complexity_band_thresholds_recorded_against_"
+            "the_full_frozen_corpus_without_case_specific_retuning"
+        ),
+        "applicable_case_count": applicable_total,
+        "bands": bands,
+    }
+
+
 def build_report(root: Path = ROOT, manifest: Path = MANIFEST) -> dict:
     svgs, provenance = _svgs(root, manifest)
     designs = _designs()
@@ -397,6 +526,7 @@ def build_report(root: Path = ROOT, manifest: Path = MANIFEST) -> dict:
             "acceptance_claimed": False,
         },
         "archetype_examples": _archetype_examples(records),
+        "repeated_structure_corpus": _repeated_structure_corpus(records),
         "ranked_case_ids": [r["case"] for r in ranked],
         "cases": ranked,
     }
