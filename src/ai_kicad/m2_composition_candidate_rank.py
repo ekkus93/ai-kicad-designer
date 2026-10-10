@@ -816,13 +816,17 @@ def composition_candidate_key(plan, packing, routing_compactness) -> CandidateKe
         routing_compactness
     )
     semantic = semantic_composition_penalties(plan, packing)
-    compactness = compactness_whitespace_penalties(packing)
+    area, edge_bias, whitespace_imbalance = compactness_whitespace_penalties(packing)
     return (
         *semantic,
         int(union_length),
         int(worst_length),
         int(bend_count),
-        *compactness,
+        # Within the compactness tier, page balance precedes minimum area.
+        # Avoid rewarding pathological corner packing when routing ties.
+        edge_bias,
+        area,
+        whitespace_imbalance,
         _field_slot_consistency_penalty(packing),
         int(seed_index),
         int(round_index),

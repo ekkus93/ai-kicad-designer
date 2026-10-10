@@ -982,3 +982,12 @@ def test_local_label_gap_is_net_name_order_and_duplicate_invariant() -> None:
         ).local_signal_neighbor_gap
         == original
     )
+
+
+def test_page_balance_precedes_area_within_compactness_tier() -> None:
+    first = _block("first")
+    second = _block("second")
+    layout = _packing(_placed(first, 2 * PITCH), _placed(second, 12 * PITCH))
+    area, edge_bias, imbalance = compactness_whitespace_penalties(layout)
+    key = composition_candidate_key(_plan((first, second)), layout, (100, 100, 1, 0, 0, 0))
+    assert key[-6:-3] == (edge_bias, area, imbalance)
