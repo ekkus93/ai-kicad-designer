@@ -1,7 +1,12 @@
-# Historical native SVG wire-geometry screening (2026-10-09)
+# Historical SVG wire screening
 
-A local, hash-verified screening pass decoded all 90 historical native KiCad SVGs from the preserved ten-part archive (qualification SHA `42ab8452fca16592ead8f628b17980a9d34794b7`). It counted physical green-wire strokes after coalescing split, overlapping, reversed, and duplicate strokes; measured route ink length, bounding-box dimensions, bends, and visible endpoint-on-wire branches. These measurements exclude sheet frames, symbols, fields, and labels.
+The committed analyzer `tools/inspect_m2h2_historical_svg_routes.py` verifies all 90 preserved historical native SVGs, then reports physical green-wire length, bounding box, bends, and branches. The tests are in `tests/test_m2h2_historical_svg_route_screening.py`.
 
-For `i4__b2_mixed` (SVG SHA-256 `9deab519039a207aa8de93508cc538c3c4c404ca9f6da3d17eab40a4d80f371e`), wire-ink bounds are 93.98 × 52.07 mm, total unique visible wire length 177.8 mm, five orthogonal bends, and three endpoint-on-wire branches. Its wire-only bounding-box area is 16.6447% of the 210 × 140 mm reference envelope. This is historical geometry evidence, **not** current-source qualification or a visual PASS.
+Run from repository root:
 
-The full analyzer and seven authored tests passed locally, but their repository commit was blocked by the GitHub-write tool safety gate. The source and report must be committed and qualified before any TODO checkbox can be reconciled from this work. Wire-only ranking cannot establish unrelated-net crossings, semantic owner detachment, or label-mediated disconnection; those require independent semantic observation and native engineering inspection.
+```bash
+PYTHONPATH=src:. python tools/inspect_m2h2_historical_svg_routes.py --out /tmp/historical_wire_geometry.json
+PYTHONPATH=src:. pytest -q tests/test_m2h2_historical_svg_route_screening.py
+```
+
+The historical `i4__b2_mixed` SVG has a 93.98 by 52.07 mm wire bounding box, 177.8 mm of unique visible wire ink, five bends, and three branch points. The geometry review rank is 9/90 by ascending wire bounding-box area. This is only a historical screening signal: it excludes symbol/field geometry and semantic net identities, and **does not establish current-source composition acceptance or final PASS**. Retain all pending baseline, native-render, and final qualification checkboxes.
