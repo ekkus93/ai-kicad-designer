@@ -58,30 +58,52 @@ def inspect_lock(lock: dict, current: dict) -> dict:
             path = Path(entry["path"])
             expected = entry["file_sha256"]
             actual = sha256_file(path)
-            files.append({"section": section, "id": entry["id"], "path": str(path),
-                          "present": actual is not None, "sha256_matches": actual == expected})
+            files.append(
+                {
+                    "section": section,
+                    "id": entry["id"],
+                    "path": str(path),
+                    "present": actual is not None,
+                    "sha256_matches": actual == expected,
+                }
+            )
             if actual != expected:
                 mismatches.append(
-                    {"id": entry["id"], "path": str(path), "expected_sha256": expected,
-                     "actual_sha256": actual}
+                    {
+                        "id": entry["id"],
+                        "path": str(path),
+                        "expected_sha256": expected,
+                        "actual_sha256": actual,
+                    }
                 )
     launcher = Path(lock["executables"][0]["path"])
     if sha256_file(launcher) == lock["executables"][0]["file_sha256"]:
         try:
             probe = subprocess.run(
                 [str(launcher), "kicad-cli", "version"],
-                check=False, capture_output=True, text=True, timeout=30,
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=30,
             )
             expected_version = lock["executables"][0]["version"]
             if probe.returncode != 0 or probe.stdout.strip() != expected_version:
                 mismatches.append(
-                    {"id": "version_probe", "expected": expected_version,
-                     "returncode": probe.returncode, "actual": probe.stdout.strip()}
+                    {
+                        "id": "version_probe",
+                        "expected": expected_version,
+                        "returncode": probe.returncode,
+                        "actual": probe.stdout.strip(),
+                    }
                 )
         except (OSError, subprocess.TimeoutExpired) as exc:
             mismatches.append({"id": "version_probe", "error": type(exc).__name__})
-    return {"kind": "m2h2.locked-toolchain-preflight.1",
-            "ok": not mismatches, "files": files, "mismatches": mismatches}
+    return {
+        "kind": "m2h2.locked-toolchain-preflight.1",
+        "ok": not mismatches,
+        "files": files,
+        "mismatches": mismatches,
+    }
 
 
 def main() -> int:
@@ -89,10 +111,12 @@ def main() -> int:
     result = inspect_lock(lock, runner_platform())
     print("LOCKED_KICAD_TOOLCHAIN_PREFLIGHT=" + json.dumps(result, sort_keys=True))
     if not result["ok"]:
-        print("LOCKED_KICAD_TOOLCHAIN_UNAVAILABLE: Restore exactly the byte-pinned "
-              "KiCad 10.0.6 files specified in fixtures/m1a/toolchain.lock.json "
-              "before retrying; do not weaken hashes or substitute an unverified build.",
-              file=sys.stderr)
+        print(
+            "LOCKED_KICAD_TOOLCHAIN_UNAVAILABLE: Restore exactly the byte-pinned "
+            "KiCad 10.0.6 files specified in fixtures/m1a/toolchain.lock.json "
+            "before retrying; do not weaken hashes or substitute an unverified build.",
+            file=sys.stderr,
+        )
         return 1
     return 0
 
