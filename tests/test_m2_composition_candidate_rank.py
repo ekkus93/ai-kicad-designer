@@ -232,9 +232,7 @@ def test_intra_block_dispersion_uses_full_bounding_span() -> None:
         semantic_composition_penalty_breakdown(plan, translated).intra_block_dispersion
         == observed_triangle
     )
-    assert semantic_composition_penalty_breakdown(
-        plan, straight
-    ).intra_block_dispersion == 6
+    assert semantic_composition_penalty_breakdown(plan, straight).intra_block_dispersion == 6
 
 
 def test_unrelated_blocks_require_visual_separation() -> None:
