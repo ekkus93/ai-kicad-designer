@@ -2786,3 +2786,6 @@ def pack_fragments(plan: SemanticPlan, variants: dict[str, tuple[FragmentVariant
         try:
             route_between_fragments(plan, candidate.fragments)
         except InputError:
+            continue
+        return candidate
+    return candidates[0]
