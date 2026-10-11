@@ -1328,8 +1328,19 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
                     candidate = _measured_repack(plan, baseline, interface, left, top, label)
                     if candidate is None:
                         continue
+                    # A single output-search slot must address the *most*
+                    # visually disconnected eligible interface, not merely
+                    # whichever connector needs the smallest cosmetic move.
+                    # Prefer improving the worst producer/connector row gap;
+                    # hard placement and routing proof still validate the move.
+                    initial_row_gap = abs(
+                        interface.envelope[1]
+                        + interface.envelope[3]
+                        - owner.envelope[1]
+                        - owner.envelope[3]
+                    )
                     distance = abs(left - interface.envelope[0]) + abs(top - interface.envelope[1])
-                    options.append(((distance, block.id, top), candidate))
+                    options.append(((-initial_row_gap, distance, block.id, top), candidate))
         if options:
             alternatives.append(min(options, key=lambda item: item[0])[1])
     return tuple(alternatives)
@@ -2775,6 +2786,3 @@ def pack_fragments(plan: SemanticPlan, variants: dict[str, tuple[FragmentVariant
         try:
             route_between_fragments(plan, candidate.fragments)
         except InputError:
-            continue
-        return candidate
-    return candidates[0]

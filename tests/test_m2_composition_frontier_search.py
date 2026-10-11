@@ -87,6 +87,43 @@ def test_frontier_search_is_independent_of_semantic_declaration_order() -> None:
     assert candidates == reordered
 
 
+def test_output_frontier_search_fixes_worst_row_misalignment_first() -> None:
+    """Do not consume the sole output slot on an almost aligned connector."""
+    near_owner = _block("near-owner", "amplifier")
+    far_owner = _block("far-owner", "amplifier")
+    near_output = _block("near-output", "interface", "signal_out")
+    far_output = _block("far-output", "interface", "signal_out")
+    blocks = (near_owner, far_owner, near_output, far_output)
+    edges = (
+        SemanticEdge("signal", "near-owner", "near-output", "near", ()),
+        SemanticEdge("signal", "far-owner", "far-output", "far", ()),
+    )
+    plan = SemanticPlan(blocks, edges, {}, ())
+    baseline = Packing(
+        (
+            _place(_fragment(near_owner), LEFT + 60 * PITCH, 50 * PITCH),
+            _place(_fragment(far_owner), LEFT + 60 * PITCH, 80 * PITCH),
+            _place(_fragment(near_output), LEFT + 90 * PITCH, 51 * PITCH),
+            _place(_fragment(far_output), LEFT + 90 * PITCH, 98 * PITCH),
+        ),
+        (),
+    )
+    candidates = _interface_frontier_candidates(plan, baseline)
+    assert len(candidates) == 1
+    by_id = {item.fragment.block.id: item for item in candidates[0].fragments}
+    original = {item.fragment.block.id: item for item in baseline.fragments}
+    assert by_id["far-output"].delta != original["far-output"].delta
+    assert by_id["near-output"].delta == original["near-output"].delta
+    assert by_id["far-output"].envelope[1] == by_id["far-owner"].envelope[1]
+    assert (
+        _interface_frontier_candidates(
+            SemanticPlan(tuple(reversed(blocks)), tuple(reversed(edges)), {}, ()),
+            baseline,
+        )
+        == candidates
+    )
+
+
 def test_bidirectional_interface_is_not_forced_to_a_signal_frontier() -> None:
     plan, baseline = _layout()
     bidirectional = BlockPlan(
