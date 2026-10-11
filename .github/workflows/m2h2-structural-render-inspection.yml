@@ -5,54 +5,77 @@ on:
     workflows: [M2h2 Structural Qualification]
     types: [completed]
     branches: [master]
+  push:
+    branches: [master]
   workflow_dispatch:
     inputs:
       source_head:
-        description: Exact qualified source head
+        description: Exact qualified source SHA with persisted runner evidence
         required: true
+        type: string
       run_id:
-        description: Completed structural qualification run
-        required: true
+        description: Legacy qualification run identifier (persisted evidence is authoritative)
+        required: false
+        type: string
 
 permissions:
   contents: read
-  actions: read
 
 jobs:
   inspect:
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    env:
-      QUALIFICATION_HEAD: ${{ github.event.workflow_run.head_sha || inputs.source_head }}
-      QUALIFICATION_RUN: ${{ github.event.workflow_run.id || inputs.run_id }}
+    if: >-
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+      (github.event_name == 'push' && contains(github.event.head_commit.message, '[m2h2-structural-render-audit]')) ||
+      github.event_name == 'workflow_dispatch'
+    runs-on: self-hosted
+    timeout-minutes: 20
     steps:
+      - name: Resolve exact qualified source
+        id: evidence
+        shell: bash
+        env:
+          EVENT_HEAD: ${{ github.event.workflow_run.head_sha }}
+          DISPATCH_HEAD: ${{ inputs.source_head }}
+          PUSH_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_run" ]]; then
+            source_sha="$EVENT_HEAD"
+          elif [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            source_sha="$DISPATCH_HEAD"
+          elif [[ "$PUSH_MESSAGE" =~ \[m2h2-audit-source:([0-9a-f]{40})\] ]]; then
+            source_sha="${BASH_REMATCH[1]}"
+          else
+            echo "Push audit requires an explicit m2h2-audit-source SHA" >&2
+            exit 1
+          fi
+          [[ "$source_sha" =~ ^[0-9a-f]{40}$ ]]
+          test -f "$HOME/m2h2-evidence/$source_sha/structural/a0_multiple/results.json"
+          echo "source_sha=$source_sha" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
         with:
-          ref: ${{ env.QUALIFICATION_HEAD }}
+          ref: ${{ steps.evidence.outputs.source_sha }}
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - run: python -m pip install -e '.[dev]'
-      - uses: actions/download-artifact@v4
-        with:
-          name: m2h2-structural-qualification-${{ env.QUALIFICATION_HEAD }}
-          path: fixtures/m2h2/structural_final_${{ env.QUALIFICATION_HEAD }}
-          run-id: ${{ env.QUALIFICATION_RUN }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Transfer source-matched structural renders
+        env:
+          QUALIFICATION_HEAD: ${{ steps.evidence.outputs.source_sha }}
         run: |
           PYTHONPATH=src:tools python - <<'PY'
           import json
           import os
           from pathlib import Path
           from run_m2h2_final_artifact_audit import identity_errors, render_chunks
-          root = Path('fixtures/m2h2/structural_final_' + os.environ['QUALIFICATION_HEAD'])
+          sha = os.environ['QUALIFICATION_HEAD']
+          root = Path.home() / 'm2h2-evidence' / sha / 'structural'
           records = []
           for path in sorted(root.glob('*/results.json')):
               payload = json.loads(path.read_text())
               errors = identity_errors(payload)
               assert not errors, errors
+              assert payload['git_head'] == sha
               assert payload['accepted'] and payload['reproducible'] and len(payload['runs']) == 5
               record = {
                   'case': path.parent.name,
