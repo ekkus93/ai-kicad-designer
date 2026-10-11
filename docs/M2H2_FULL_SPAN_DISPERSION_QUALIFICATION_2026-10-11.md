@@ -1,0 +1,9 @@
+# M2H2 full-span intra-block dispersion — locked qualification checkpoint
+
+**Status:** Implementation landed; fresh electrical and visual qualification required.
+
+Behavior-affecting production commit `c071f9169f915357fdaea2ccb2085da9a4191948` now ranks functional-cell composition by the complete horizontal-plus-vertical bounding extent of its native fragment occurrences, not the maximum Manhattan distance between one pair. This generic objective fixes undercounting when the X and Y extrema belong to different components. A metamorphic regression tests a triangular three-component placement against a linear pair and verifies rigid-translation invariance. It changes neither the independent observer nor hard electrical, page, net, or routing acceptance gates.
+
+The original source `6a15e01ed248d467d98d9e01794789917b218885` passed 56×5 base/V3-8, I1–I6×5, nine structural classes×5, Fast Validation, and base/structural render audits, but independent artifact audit [38153545158](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38153545158) failed six historical visual-composition criteria. Diagnostic source `fa961056777576a051415852d25f58313a0664c0` added a per-metric largest-regressions inventory without changing pass/fail thresholds; format followups are contained in this current source tree. Known leading fragmentation witnesses include `base__v4-3` (+44.4501 mm), `i3__a1_interleaved` (+44.45 mm), and `base__v6-4` (+41.9101 mm).
+
+This checkpoint triggers all three locked-KiCad qualification suites against the full current source. Do not reuse the previous-source PASS as evidence of current-source acceptance. On successful qualification, run the independent comparative baseline audit and normalized-render reproducibility inventory on the new run-scoped evidence root. Keep sections 15–21 unchecked until each item passes from current-source evidence.
