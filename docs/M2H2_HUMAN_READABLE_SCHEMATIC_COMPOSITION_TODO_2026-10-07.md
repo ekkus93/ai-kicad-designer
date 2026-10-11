@@ -357,6 +357,8 @@ Exact-source validation checkpoint (not final qualification or a source freeze):
 
 ## 17. Fresh locked-KiCad qualification
 
+**2026-10-11 restored locked-KiCad three-suite qualification evidence:** exact source `44d0dfa437f060e234792fec2e6285e5b10cc4b9` passed [56 base cases×5 with V3-8 negative, run 38131967086](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38131967086), [I1–I6×5 interactions, run 38131967113](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38131967113), and [nine structural classes×5, run 38131967196](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38131967196). The isolated [locked-toolchain diagnostic 38131967136](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38131967136) independently passed byte-pinned KiCad 10.0.6 identity. This is exact-source **electrical/structural/generation qualification evidence**, not final human-composition PASS. Trigger native-render inventory, base and structural inspection transfer, and independent comparative audit against the persisted `$HOME/m2h2-evidence/44d0dfa437f060e234792fec2e6285e5b10cc4b9/` root. Keep visual acceptance, new-source metric reproducibility, and final sections 18–21 unchecked until full independent audit and engineering inspection. The previous six comparative deficiencies remain open until this audit disproves them from current evidence.
+
 - [ ] Run all 56 positive M2h2 base cases ×5 from stabilized final source.
 - [ ] Require locked KiCad 10.0.6 for all governed runs.
 - [ ] Require exact package/unit/pin identity.
