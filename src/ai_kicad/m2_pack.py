@@ -195,33 +195,76 @@ def _centroid_balanced_packing(packing: Packing) -> Packing | None:
 
     dx = snapped_clamped(target_x - actual_x, min_dx, max_dx)
     dy = snapped_clamped(target_y - actual_y, min_dy, max_dy)
-    if dx == dy == 0:
-        return None
-    if abs(actual_x + dx - target_x) + abs(actual_y + dy - target_y) >= (
-        abs(actual_x - target_x) + abs(actual_y - target_y)
-    ):
-        return None
-    changed = tuple(
-        _place(item.fragment, item.envelope[0] + dx, item.envelope[1] + dy)
-        for item in packing.fragments
-    )
-    # The A4 worksheet occupies the lower-right corner and cannot be used
-    # for circuitry. Do not create a candidate that intrudes on title fields.
+    original_error = abs(actual_x - target_x) + abs(actual_y - target_y)
+    # A fully centered placement can intrude on the lower-right worksheet
+    # even when an independently centered horizontal or vertical shift is
+    # legal. Try both one-axis fallbacks without altering relative geometry.
     worksheet = (177_000_000, 165_900_000, 285_100_000, 198_100_000)
-    for item in changed:
-        for geometry in item.fragment.occupied_geometry:
-            rect = tuple(
-                value + offset
-                for value, offset in zip(geometry.rect, (*item.delta, *item.delta), strict=True)
+    proposals: list[tuple[int, int, int, int, Packing]] = []
+    for shift_x, shift_y in dict.fromkeys(((dx, dy), (dx, 0), (0, dy))):
+        if shift_x == shift_y == 0:
+            continue
+        error = abs(actual_x + shift_x - target_x) + abs(actual_y + shift_y - target_y)
+        if error >= original_error:
+            continue
+        changed = tuple(
+            _place(item.fragment, item.envelope[0] + shift_x, item.envelope[1] + shift_y)
+            for item in packing.fragments
+        )
+        if any(
+            rect[0] < worksheet[2]
+            and rect[2] > worksheet[0]
+            and rect[1] < worksheet[3]
+            and rect[3] > worksheet[1]
+            for item in changed
+            for geometry in item.fragment.occupied_geometry
+            for rect in (
+                tuple(
+                    value + offset
+                    for value, offset in zip(
+                        geometry.rect, (*item.delta, *item.delta), strict=True
+                    )
+                ),
             )
-            if (
-                rect[0] < worksheet[2]
-                and rect[2] > worksheet[0]
-                and rect[1] < worksheet[3]
-                and rect[3] > worksheet[1]
-            ):
-                return None
-    return Packing(changed, packing.attempts + ("centroid-balanced-page",))
+        ):
+            continue
+        proposals.append(
+            (
+                error,
+                abs(shift_x) + abs(shift_y),
+                shift_x,
+                shift_y,
+                Packing(changed, packing.attempts + ("centroid-balanced-page",)),
+            )
+        )
+    return min(proposals, key=lambda proposal: proposal[:4])[-1] if proposals else None
+
+
+def _best_centroid_balanced_packing(packings: list[Packing]) -> Packing | None:
+    """Choose the best legal rigid page-balance seed across shelf variants.
+
+    The first shelf variant may already be centered or may have no legal
+    translation. Searching the bounded existing variants adds no new geometry
+    classes and keeps all later routing and electrical proofs authoritative.
+    """
+    options = [
+        candidate
+        for packing in packings
+        if (candidate := _centroid_balanced_packing(packing)) is not None
+    ]
+    if not options:
+        return None
+
+    def key(packing: Packing) -> tuple:
+        rects = tuple(item.content_envelope or item.envelope for item in packing.fragments)
+        center_x = (min(rect[0] for rect in rects) + max(rect[2] for rect in rects)) // 2
+        center_y = (min(rect[1] for rect in rects) + max(rect[3] for rect in rects)) // 2
+        return (
+            abs(center_x - (LEFT + RIGHT) // 2) + abs(center_y - (TOP + BOTTOM) // 2),
+            tuple((item.fragment.id, item.delta) for item in packing.fragments),
+        )
+
+    return min(options, key=key)
 
 
 def _topological(nodes: set[str], pairs: set[tuple[str, str]]) -> tuple[str, ...]:
@@ -2648,7 +2691,7 @@ def pack_fragment_candidates(
         extras = []
         # Rigid, on-grid centering is considered without displacing a complete
         # original seed. Actual native-page acceptance remains independent.
-        centered = _centroid_balanced_packing(successful[0])
+        centered = _best_centroid_balanced_packing(successful)
         if centered is not None:
             extras.append(centered)
         # Reserve candidate space for deterministic, legally measured interface
