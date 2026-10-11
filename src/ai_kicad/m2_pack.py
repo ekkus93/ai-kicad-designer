@@ -221,9 +221,7 @@ def _centroid_balanced_packing(packing: Packing) -> Packing | None:
             for rect in (
                 tuple(
                     value + offset
-                    for value, offset in zip(
-                        geometry.rect, (*item.delta, *item.delta), strict=True
-                    )
+                    for value, offset in zip(geometry.rect, (*item.delta, *item.delta), strict=True)
                 ),
             )
         ):
