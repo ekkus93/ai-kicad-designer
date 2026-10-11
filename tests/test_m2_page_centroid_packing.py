@@ -86,6 +86,7 @@ def test_balanced_candidate_is_idempotent_after_centering() -> None:
     assert centered is not None
     assert _centroid_balanced_packing(centered) is None
 
+
 def test_centered_seed_survives_competing_optional_seed_families() -> None:
     """An eight-slot search must not silently starve legal page centering."""
     fragment = _fragment("stage")
