@@ -57,22 +57,27 @@ jobs:
           test -f "$root/interactions/i1/results.json"
           test -f "$root/structural/a0_multiple/results.json"
           mkdir -p "$root/audit"
-          rm -f "$root/audit/artifact_audit_${source_sha}.json"
+          # Preserve every prior PASS/FAIL report, including repeated attempts.
+          # Never overwrite a previous independently audited evidence artifact.
+          report="$root/audit/artifact_audit_${source_sha}_run${GITHUB_RUN_ID}_attempt${GITHUB_RUN_ATTEMPT}.json"
+          test ! -e "$report"
           echo "source_sha=${source_sha}" >> "$GITHUB_OUTPUT"
           echo "root=${root}" >> "$GITHUB_OUTPUT"
+          echo "report=${report}" >> "$GITHUB_OUTPUT"
           echo "m2h2_persistent_evidence_root=${root}"
 
       - name: Audit exact final evidence and report comparison diagnostics
         env:
           ROOT: ${{ steps.evidence.outputs.root }}
           SOURCE_SHA: ${{ steps.evidence.outputs.source_sha }}
+          REPORT_PATH: ${{ steps.evidence.outputs.report }}
         run: |
           set -o pipefail
           PYTHONPATH=src:tools python tools/run_m2h2_final_artifact_audit.py \
             --qualification "$ROOT/qualification" \
             --interactions "$ROOT/interactions" \
             --structural "$ROOT/structural" \
-            --out "$ROOT/audit/artifact_audit_${SOURCE_SHA}.json" |
+            --out "$REPORT_PATH" |
             grep -E '"kind":"m2h2\.(baseline-comparison|baseline-regression-diagnostics|artifact-audit-outcome|artifact-case-audit|structural-case-audit)\.1"'
 
       - name: Upload artifact audit report
@@ -80,6 +85,6 @@ jobs:
         continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
-          name: m2h2-artifact-audit-${{ steps.evidence.outputs.source_sha }}
-          path: ${{ steps.evidence.outputs.root }}/audit/artifact_audit_${{ steps.evidence.outputs.source_sha }}.json
+          name: m2h2-artifact-audit-${{ steps.evidence.outputs.source_sha }}-run${{ github.run_id }}-attempt${{ github.run_attempt }}
+          path: ${{ steps.evidence.outputs.report }}
           if-no-files-found: warn
