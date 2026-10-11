@@ -35,6 +35,9 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e '.[dev]'
 
+      - name: Require exact pinned KiCad 10.0.6 before qualification
+        run: python tools/check_m2h2_locked_toolchain.py
+
       - name: Qualify missing measured I3 classes
         run: |
           set -uo pipefail
