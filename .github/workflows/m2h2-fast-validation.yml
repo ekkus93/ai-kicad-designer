@@ -172,6 +172,9 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e '.[dev]'
 
+      - name: Locked toolchain preflight unit tests (does not require KiCad)
+        run: python -m pytest -q tests/test_m2h2_locked_toolchain_preflight.py
+
       - name: M2h2 contract pytest
         run: >-
           python -m pytest -q
