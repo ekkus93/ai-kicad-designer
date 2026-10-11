@@ -325,9 +325,7 @@ def baseline_regression_diagnostics(pairs: list[dict], limit: int = 24) -> dict:
                     "case": pair["case"],
                     "historical": pair["historical"][metric],
                     "fresh": pair["fresh"][metric],
-                    "delta": round(
-                        pair["fresh"][metric] - pair["historical"][metric], 4
-                    ),
+                    "delta": round(pair["fresh"][metric] - pair["historical"][metric], 4),
                 }
                 for pair in pairs
                 if pair["fresh"][metric] > pair["historical"][metric]
@@ -336,9 +334,7 @@ def baseline_regression_diagnostics(pairs: list[dict], limit: int = 24) -> dict:
         )
         by_metric[metric] = {
             "worsened_case_count": len(worsened),
-            "total_positive_delta": round(
-                sum(item["delta"] for item in worsened), 4
-            ),
+            "total_positive_delta": round(sum(item["delta"] for item in worsened), 4),
             "omitted_count": max(0, len(worsened) - limit),
             "worst_cases": worsened[:limit],
         }
