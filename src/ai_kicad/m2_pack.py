@@ -2326,9 +2326,12 @@ def _retain_composition_seed_diversity(
             partial,
             *repeated,
             *branch,
+            # Keep a legal rigid centering alternative in the bounded beam
+            # even when optional field-slot and local-proximity variants are
+            # present; routing/electrical proof still decides acceptance.
+            centered,
             field_slot,
             local_signal,
-            centered,
         )
         if candidate is not None
     )

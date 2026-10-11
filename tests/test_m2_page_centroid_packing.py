@@ -85,3 +85,41 @@ def test_balanced_candidate_is_idempotent_after_centering() -> None:
     centered = _centroid_balanced_packing(baseline)
     assert centered is not None
     assert _centroid_balanced_packing(centered) is None
+
+def test_centered_seed_survives_competing_optional_seed_families() -> None:
+    """An eight-slot search must not silently starve legal page centering."""
+    fragment = _fragment("stage")
+
+    def seed(index: int, label: str) -> Packing:
+        return Packing(
+            (_place(fragment, LEFT + (2 + index * 9) * PITCH, TOP + 2 * PITCH),),
+            (label,),
+        )
+
+    shelves = tuple(seed(index, f"shelf-{index}") for index in range(8))
+    centered = _centroid_balanced_packing(shelves[0])
+    assert centered is not None
+    extras = (
+        seed(9, "distribution-column:generated"),
+        Packing(seed(10, "partial").fragments, ("partial-beam", "partial-beam:pass")),
+        seed(11, "repeated-peer-row"),
+        seed(12, "repeated-peer-column"),
+        seed(13, "branch-fanout-origin-centered"),
+        seed(14, "branch-fanout-sibling-depth"),
+        seed(15, "local-signal-direct-proximity"),
+        centered,
+    )
+    retained = _retain_composition_seed_diversity(shelves, extras)
+    assert len(retained) == CANDIDATE_BUDGET
+    assert retained[0] == shelves[0]
+    assert centered in retained
+    # Structural/routing-critical and comparable-channel seeds retain their
+    # previous precedence, and all identities remain physically distinct.
+    assert {
+        "partial-beam:pass",
+        "distribution-column:generated",
+        "repeated-peer-row",
+        "repeated-peer-column",
+        "branch-fanout-origin-centered",
+        "branch-fanout-sibling-depth",
+    } <= {candidate.attempts[-1] for candidate in retained}
