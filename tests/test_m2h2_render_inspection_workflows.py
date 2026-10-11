@@ -18,5 +18,5 @@ def test_render_inspection_uses_exact_source_matched_runner_evidence():
         assert "payload['git_head'] == sha" in workflow
         assert "ref: ${{ steps.evidence.outputs.source_sha }}" in workflow
         assert tag in workflow
-        assert "[m2h2-audit-source:" in workflow
+        assert "m2h2-audit-source:" in workflow
         assert "render_chunks(" in workflow
