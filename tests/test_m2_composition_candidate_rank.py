@@ -1057,6 +1057,7 @@ def test_page_rank_prefers_the_physical_envelope_center() -> None:
     assert centered_metrics[1] < displaced_metrics[1]
     assert centered_metrics[0] == displaced_metrics[0]
 
+
 def test_equal_semantics_prefers_readable_low_bend_routing_over_shorter_maze() -> None:
     """Prioritize route clarity only after proving the same semantic layout."""
     first = _block("functional-stage", "filter", ("signal_in", "signal_out"))
