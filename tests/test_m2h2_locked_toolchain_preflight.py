@@ -14,12 +14,19 @@ def _lock(tmp_path, content: bytes = b"toolchain-binary") -> dict:
     return {
         "platform": {"os": "test-os", "architecture": "x86_64"},
         "executables": [
-            {"id": "kicad-cli", "path": str(executable), "version": "10.0.6",
-             "file_sha256": hashlib.sha256(content).hexdigest()},
+            {
+                "id": "kicad-cli",
+                "path": str(executable),
+                "version": "10.0.6",
+                "file_sha256": hashlib.sha256(content).hexdigest(),
+            },
         ],
         "libraries": [
-            {"id": "sharun", "path": str(library),
-             "file_sha256": hashlib.sha256(b"pinned-library").hexdigest()},
+            {
+                "id": "sharun",
+                "path": str(library),
+                "file_sha256": hashlib.sha256(b"pinned-library").hexdigest(),
+            },
         ],
     }
 
@@ -54,8 +61,10 @@ def test_deleted_volatile_library_fails_closed(tmp_path, monkeypatch) -> None:
 def test_modified_pinned_binary_is_not_accepted(tmp_path, monkeypatch) -> None:
     lock = _lock(tmp_path)
     (tmp_path / "AppRun").write_bytes(b"unverified")
+
     def forbid_probe(*_args, **_kwargs):
         raise AssertionError("unverified launcher must not be executed")
+
     monkeypatch.setattr(tool.subprocess, "run", forbid_probe)
     report = tool.inspect_lock(lock, {"os": "test-os", "architecture": "x86_64"})
     assert not report["ok"]
@@ -71,6 +80,4 @@ def test_incorrect_version_and_platform_are_rejected(tmp_path, monkeypatch) -> N
     )
     report = tool.inspect_lock(lock, {"os": "other-os", "architecture": "x86_64"})
     assert not report["ok"]
-    assert {issue["id"] for issue in report["mismatches"]} == {
-        "platform.os", "version_probe"
-    }
+    assert {issue["id"] for issue in report["mismatches"]} == {"platform.os", "version_probe"}
