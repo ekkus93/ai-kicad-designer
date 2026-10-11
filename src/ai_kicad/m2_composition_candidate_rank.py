@@ -229,7 +229,13 @@ def _repeated_alignment_penalty(plan, centers, signal_relations) -> int:
 
 
 def _intra_block_dispersion(packing) -> int:
-    """Measure internal occurrence spread from the selected fragment geometry."""
+    """Penalize full X-plus-Y spread of every functional cell's occurrences.
+
+    The maximum distance between a *single pair* can undercount fragmentation
+    when horizontal and vertical extrema belong to different occurrences.
+    Measure the complete bounding span instead, using only selected fragment
+    geometry; a rigid page translation cannot change this penalty.
+    """
     penalty = 0
     for item in packing.fragments:
         delta = getattr(item, "delta", (0, 0))
@@ -239,11 +245,9 @@ def _intra_block_dispersion(packing) -> int:
         )
         if len(points) < 2:
             continue
-        penalty += max(
-            abs(first[0] - second[0]) + abs(first[1] - second[1])
-            for first in points
-            for second in points
-        )
+        xs = [point[0] for point in points]
+        ys = [point[1] for point in points]
+        penalty += max(xs) - min(xs) + max(ys) - min(ys)
     return _grid_units(penalty)
 
 

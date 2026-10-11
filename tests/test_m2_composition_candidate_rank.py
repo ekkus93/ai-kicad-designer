@@ -206,6 +206,37 @@ def test_intra_block_cohesion_penalizes_spread_internal_geometry() -> None:
     )
 
 
+def test_intra_block_dispersion_uses_full_bounding_span() -> None:
+    """Three corners expose fragmentation missed by pairwise max distance."""
+    block = _block("generic-functional-cell", "amplifier")
+    plan = _plan((block,))
+    triangle_positions = {
+        ("a", 1): (0, 0),
+        ("b", 1): (4 * PITCH, PITCH),
+        ("c", 1): (PITCH, 4 * PITCH),
+    }
+    triangle = _packing(_placed(block, 0, positions=triangle_positions))
+    translated = _packing(_placed(block, 9 * PITCH, positions=triangle_positions))
+    straight = _packing(
+        _placed(
+            block,
+            0,
+            positions={("a", 1): (0, 0), ("b", 1): (6 * PITCH, 0)},
+        )
+    )
+    observed_triangle = semantic_composition_penalty_breakdown(
+        plan, triangle
+    ).intra_block_dispersion
+    assert observed_triangle == 8
+    assert (
+        semantic_composition_penalty_breakdown(plan, translated).intra_block_dispersion
+        == observed_triangle
+    )
+    assert semantic_composition_penalty_breakdown(
+        plan, straight
+    ).intra_block_dispersion == 6
+
+
 def test_unrelated_blocks_require_visual_separation() -> None:
     amplifier = _block("amp", "amplifier")
     controller = _block("ctrl", "controller")
