@@ -310,11 +310,44 @@ def baseline_regression_diagnostics(pairs: list[dict], limit: int = 24) -> dict:
             item["case"],
         )
     )
+    # Independently rank worst metric contributions. The hard-defect priority
+    # list above can bury the cases driving a corpus-wide aesthetic regression.
+    # The ranking is diagnostic only; no acceptance criterion is relaxed.
+    by_metric = {}
+    for metric in (
+        "fragmentation_total_mm",
+        "u_shaped_detours",
+        "branch_inconsistency_mm",
+    ):
+        worsened = sorted(
+            (
+                {
+                    "case": pair["case"],
+                    "historical": pair["historical"][metric],
+                    "fresh": pair["fresh"][metric],
+                    "delta": round(
+                        pair["fresh"][metric] - pair["historical"][metric], 4
+                    ),
+                }
+                for pair in pairs
+                if pair["fresh"][metric] > pair["historical"][metric]
+            ),
+            key=lambda item: (-item["delta"], item["case"]),
+        )
+        by_metric[metric] = {
+            "worsened_case_count": len(worsened),
+            "total_positive_delta": round(
+                sum(item["delta"] for item in worsened), 4
+            ),
+            "omitted_count": max(0, len(worsened) - limit),
+            "worst_cases": worsened[:limit],
+        }
     mixed = next((item for item in pairs if item["case"] == "i4__b2_mixed"), None)
     return {
         "affected_count": len(ranked),
         "omitted_count": max(0, len(ranked) - limit),
         "ranked_cases": ranked[:limit],
+        "by_metric": by_metric,
         "i4": mixed,
     }
 

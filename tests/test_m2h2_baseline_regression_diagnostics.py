@@ -42,3 +42,41 @@ def test_ranked_witnesses_and_i4_are_deterministic():
     assert report["ranked_cases"][0]["repeated_out_of_tolerance"]
     assert report["i4"]["case"] == "i4__b2_mixed"
     assert cases[0]["fresh_hard_defects"] == {"interface_side_violations": 0}
+
+
+def test_metric_rankings_are_independent_of_hard_defect_priority():
+    cases = [
+        _record("late", False, 3, True),
+        _record("middle", True, 5, True),
+        _record("early", False, 5, True),
+    ]
+    cases[0]["fresh"]["fragmentation_total_mm"] = 30.0
+    cases[1]["fresh"]["fragmentation_total_mm"] = 11.0
+    cases[2]["fresh"]["fragmentation_total_mm"] = 28.0
+    cases[0]["fresh"]["branch_inconsistency_mm"] = 5.0
+    cases[1]["fresh"]["branch_inconsistency_mm"] = 4.0
+    cases[2]["fresh"]["branch_inconsistency_mm"] = 5.0
+
+    report = baseline_regression_diagnostics(cases, limit=2)
+    by_metric = report["by_metric"]
+    fragmentation = by_metric["fragmentation_total_mm"]
+    assert fragmentation["worsened_case_count"] == 3
+    assert fragmentation["omitted_count"] == 1
+    assert fragmentation["total_positive_delta"] == 39.0
+    assert [item["case"] for item in fragmentation["worst_cases"]] == [
+        "late",
+        "early",
+    ]
+    detours = by_metric["u_shaped_detours"]
+    assert detours["worsened_case_count"] == 3
+    assert [item["case"] for item in detours["worst_cases"]] == [
+        "early",
+        "middle",
+    ]
+    branch = by_metric["branch_inconsistency_mm"]
+    assert branch["worsened_case_count"] == 3
+    assert [item["case"] for item in branch["worst_cases"]] == [
+        "early",
+        "late",
+    ]
+    assert cases[0]["historical"]["fragmentation_total_mm"] == 10.0
