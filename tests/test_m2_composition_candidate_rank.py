@@ -1069,7 +1069,5 @@ def test_equal_semantics_prefers_readable_low_bend_routing_over_shorter_maze() -
     assert readable < short_but_turny
 
     # With equal bend count the shorter proof remains preferable.
-    equally_straight_shorter = composition_candidate_key(
-        plan, layout, (95, 95, 2, 1, 0, 0)
-    )
+    equally_straight_shorter = composition_candidate_key(plan, layout, (95, 95, 2, 1, 0, 0))
     assert equally_straight_shorter < readable
