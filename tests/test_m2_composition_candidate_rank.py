@@ -1056,3 +1056,19 @@ def test_page_rank_prefers_the_physical_envelope_center() -> None:
     assert centered_metrics[1] == 0
     assert centered_metrics[1] < displaced_metrics[1]
     assert centered_metrics[0] == displaced_metrics[0]
+
+def test_equal_semantics_prefers_readable_low_bend_routing_over_shorter_maze() -> None:
+    """Prioritize route clarity only after proving the same semantic layout."""
+    first = _block("functional-stage", "filter", ("signal_in", "signal_out"))
+    layout = _packing(_placed(first, 2 * PITCH, 2 * PITCH))
+    plan = _plan((first,))
+
+    readable = composition_candidate_key(plan, layout, (180, 180, 2, 1, 0, 0))
+    short_but_turny = composition_candidate_key(plan, layout, (95, 95, 7, 1, 0, 0))
+    assert readable < short_but_turny
+
+    # With equal bend count the shorter proof remains preferable.
+    equally_straight_shorter = composition_candidate_key(
+        plan, layout, (95, 95, 2, 1, 0, 0)
+    )
+    assert equally_straight_shorter < readable

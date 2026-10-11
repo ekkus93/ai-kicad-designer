@@ -819,9 +819,13 @@ def composition_candidate_key(plan, packing, routing_compactness) -> CandidateKe
     area, edge_bias, whitespace_imbalance = compactness_whitespace_penalties(packing)
     return (
         *semantic,
+        # Both candidates have already passed electrical/hard-routing proof.
+        # Prefer a legible low-bend route over a shorter maze when all
+        # higher-priority semantic obligations are identical.  This ranking
+        # tier is generic and does not alter any length or ERC hard gate.
+        int(bend_count),
         int(union_length),
         int(worst_length),
-        int(bend_count),
         # Within the compactness tier, page balance precedes minimum area.
         # Avoid rewarding pathological corner packing when routing ties.
         edge_bias,
