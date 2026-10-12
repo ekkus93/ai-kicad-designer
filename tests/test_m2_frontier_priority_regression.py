@@ -15,8 +15,18 @@ def _block(name: str, role: str | None = None) -> BlockPlan:
 
 def _at(block: BlockPlan, x: int, y: int):
     fragment = FragmentVariant(
-        block.id, block, {}, {}, {}, (), (), (), (), (),
-        (0, 0, 8 * PITCH, 4 * PITCH), frozenset(),
+        block.id,
+        block,
+        {},
+        {},
+        {},
+        (),
+        (),
+        (),
+        (),
+        (),
+        (0, 0, 8 * PITCH, 4 * PITCH),
+        frozenset(),
     )
     return _place(fragment, LEFT + x * PITCH, y * PITCH)
 
@@ -33,17 +43,25 @@ def test_wrong_side_is_repaired_before_distant_row(
     bad = _block("bad", role)
     good = _block("good", role)
     edges = (
-        (SemanticEdge("signal", "bad", "producer", "a", ()),
-         SemanticEdge("signal", "good", "peer", "b", ()))
+        (
+            SemanticEdge("signal", "bad", "producer", "a", ()),
+            SemanticEdge("signal", "good", "peer", "b", ()),
+        )
         if role == "signal_in"
-        else (SemanticEdge("signal", "producer", "bad", "a", ()),
-              SemanticEdge("signal", "peer", "good", "b", ()))
+        else (
+            SemanticEdge("signal", "producer", "bad", "a", ()),
+            SemanticEdge("signal", "peer", "good", "b", ()),
+        )
     )
     blocks = (producer, peer, bad, good)
     plan = SemanticPlan(blocks, edges, {}, ())
     baseline = Packing(
-        (_at(producer, 60, 50), _at(peer, 60, 80),
-         _at(bad, bad_x, 50), _at(good, good_x, 98)),
+        (
+            _at(producer, 60, 50),
+            _at(peer, 60, 80),
+            _at(bad, bad_x, 50),
+            _at(good, good_x, 98),
+        ),
         (),
     )
     candidates = _interface_frontier_candidates(plan, baseline)
