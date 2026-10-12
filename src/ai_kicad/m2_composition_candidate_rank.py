@@ -811,6 +811,39 @@ def _field_slot_consistency_penalty(packing) -> int:
     return _grid_units(drift)
 
 
+def _coalesced_route_segments(segments):
+    """Coalesce split collinear strokes before evaluating route backtracking."""
+    spans = defaultdict(list)
+    for first, second in segments:
+        if first == second:
+            continue
+        if first[1] == second[1]:
+            spans[(0, first[1])].append(tuple(sorted((first[0], second[0]))))
+        elif first[0] == second[0]:
+            spans[(1, first[0])].append(tuple(sorted((first[1], second[1]))))
+        else:
+            raise ValueError("canonical conductor geometry must be orthogonal")
+    result = []
+    for (axis, fixed), intervals in sorted(spans.items()):
+        low, high = sorted(intervals)[0]
+        for left, right in sorted(intervals)[1:]:
+            if left <= high:
+                high = max(high, right)
+            else:
+                result.append(
+                    ((low, fixed), (high, fixed))
+                    if axis == 0
+                    else ((fixed, low), (fixed, high))
+                )
+                low, high = left, right
+        result.append(
+            ((low, fixed), (high, fixed))
+            if axis == 0
+            else ((fixed, low), (fixed, high))
+        )
+    return tuple(result)
+
+
 def route_backtracking_penalty(canonical_trees) -> int:
     """Count axis-reversing three-leg route detours in proven conductor trees.
 
@@ -820,7 +853,7 @@ def route_backtracking_penalty(canonical_trees) -> int:
     """
     penalty = 0
     for tree in canonical_trees:
-        segments = tuple(tree.geometry_signature)
+        segments = _coalesced_route_segments(tree.geometry_signature)
         incident = defaultdict(list)
         for first, second in segments:
             incident[first].append((first, second))
