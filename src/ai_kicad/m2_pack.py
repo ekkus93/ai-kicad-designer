@@ -1290,7 +1290,7 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
         ("signal_in", "interface-frontier-input"),
         ("signal_out", "interface-frontier-output"),
     ):
-        options: list[tuple[tuple[int, str, int], Packing]] = []
+        options: list[tuple[tuple[int, int, int, str, int], Packing]] = []
         for block in sorted(plan.blocks, key=lambda item: item.id):
             if block.kind != "interface" or block.id not in by_id:
                 continue
@@ -1328,11 +1328,14 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
                     candidate = _measured_repack(plan, baseline, interface, left, top, label)
                     if candidate is None:
                         continue
-                    # A single output-search slot must address the *most*
-                    # visually disconnected eligible interface, not merely
-                    # whichever connector needs the smallest cosmetic move.
-                    # Prefer improving the worst producer/connector row gap;
-                    # hard placement and routing proof still validate the move.
+                    # Repair semantic side violations before cosmetic row drift:
+                    # one output slot must not ignore a left-of-producer output
+                    # in favor of aligning an already right-side connector.
+                    side_violation = (
+                        max(0, interface.envelope[2] - owner.envelope[0])
+                        if role == "signal_in"
+                        else max(0, owner.envelope[2] - interface.envelope[0])
+                    )
                     initial_row_gap = abs(
                         interface.envelope[1]
                         + interface.envelope[3]
@@ -1340,7 +1343,9 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
                         - owner.envelope[3]
                     )
                     distance = abs(left - interface.envelope[0]) + abs(top - interface.envelope[1])
-                    options.append(((-initial_row_gap, distance, block.id, top), candidate))
+                    options.append(
+                        ((-side_violation, -initial_row_gap, distance, block.id, top), candidate)
+                    )
         if options:
             alternatives.append(min(options, key=lambda item: item[0])[1])
     return tuple(alternatives)
