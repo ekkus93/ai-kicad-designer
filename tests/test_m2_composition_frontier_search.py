@@ -305,12 +305,15 @@ def test_final_beam_retains_both_repeated_grammars_and_variant_seeds() -> None:
     retained = _retain_composition_seed_diversity(baseline, extras)
     labels = [candidate.attempts[-1] for candidate in retained]
     assert len(retained) == CANDIDATE_BUDGET
+    # Both semantic interface frontiers now have explicit retention priority
+    # under the saturated beam; the older baseline-only expectation would
+    # reject that intentional improvement before routing can evaluate it.
     assert labels[:5] == [
         "baseline-0",
         "repeated-peer-row",
         "repeated-peer-column",
-        "baseline-1",
-        "baseline-2",
+        "interface-frontier-output",
+        "interface-frontier-input",
     ]
     assert len({candidate.fragments[0].delta for candidate in retained}) == CANDIDATE_BUDGET
 
