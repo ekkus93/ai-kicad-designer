@@ -408,6 +408,9 @@ Exact-source validation checkpoint (not final qualification or a source freeze):
 
 ## 19. Comparative baseline closure
 
+**2026-10-11 independent current-source audit — still FAILED:** [run 38196730438](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38196730438) independently evaluated all 90 historical native SVG cases against exact successful qualification source `9938aa4be5d4ab15507f307cfa2465f65010e17a`. Six of twelve comparative criteria FAIL: `baseline_hard_defects_cleared`, `individual_hard_defects_never_worsen`, `functional_fragmentation_nonworsening`, `routing_aesthetics_nonworsening`, `repeated_structure_within_frozen_tolerance`, and `i4_specific_improvement`. Improvements: stage inversions 1→0, interface violations 77→53, edge-biased cases 64→55. Regressions: fragmentation 14743.4342→14759.9463 mm, U-detours 691→845, branch inconsistency 1529.08→1717.04 mm. `i4__b2_mixed` hard defects 4→0 and edge bias true→false, but U-detours 2→6 and branch inconsistency 21.59→29.21 mm. Prioritize generic route-backtracking, branch geometry, repeated structure, and residual per-case hard-defect remediation; do not relax observer thresholds. Native render hashes for 137 cases ×5 passed normalized comparison in [inventory 38196730492](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38196730492), but required engineering inspection remains incomplete. Generic route-backtracking ranking candidate `a2209341f3e83d828a4698dc165347f921a8a53e` is a new behavior-affecting source and requires fresh five-run qualification and a new independent audit before any acceptance checkbox is marked complete.
+
+
 - [ ] Re-run composition observer over the original baseline corpus.
 - [ ] Produce before/after per-case metric comparison.
 - [ ] Show every baseline hard composition defect fixed or evidence-backed as unavoidable.
