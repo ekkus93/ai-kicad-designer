@@ -45,8 +45,9 @@ def test_correct_side_input_gap_prefers_nearby_consumer():
         plan, _packing((port, 0, 0), (stage, 18 * PITCH, 0))
     )
     assert close.interface_side_violations == distant.interface_side_violations == 0
-    assert close.interface_owner_distance == 1
-    assert distant.interface_owner_distance == 15
+    assert close.interface_owner_distance == distant.interface_owner_distance == 0
+    assert close.local_signal_neighbor_gap == 1
+    assert distant.local_signal_neighbor_gap == 15
 
 
 def test_correct_side_output_gap_prefers_nearby_producer():
@@ -55,8 +56,8 @@ def test_correct_side_output_gap_prefers_nearby_producer():
     plan = _plan((stage, port), (_edge("filter", "out", "out_net"),))
     close = _packing((stage, 0, 0), (port, 4 * PITCH, 0))
     distant = _packing((stage, 0, 0), (port, 18 * PITCH, 0))
-    assert semantic_composition_penalty_breakdown(plan, close).interface_owner_distance == 1
-    assert semantic_composition_penalty_breakdown(plan, distant).interface_owner_distance == 15
+    assert semantic_composition_penalty_breakdown(plan, close).local_signal_neighbor_gap == 1
+    assert semantic_composition_penalty_breakdown(plan, distant).local_signal_neighbor_gap == 15
 
 
 def test_fanout_uses_nearest_owner_once():
@@ -72,7 +73,7 @@ def test_fanout_uses_nearest_owner_once():
         ),
     )
     packed = _packing((port, 0, 0), (near, 4 * PITCH, 0), (far, 17 * PITCH, 8 * PITCH))
-    assert semantic_composition_penalty_breakdown(plan, packed).interface_owner_distance == 1
+    assert semantic_composition_penalty_breakdown(plan, packed).local_signal_neighbor_gap == 1
 
 
 def test_bidirectional_and_power_only_interfaces_are_exempt():
@@ -87,3 +88,36 @@ def test_bidirectional_and_power_only_interfaces_are_exempt():
     plan = _plan((port, power, stage), edges)
     packed = _packing((port, 0, 0), (stage, 18 * PITCH, 0), (power, 25 * PITCH, 0))
     assert semantic_composition_penalty_breakdown(plan, packed).interface_owner_distance == 0
+
+
+def test_soft_gap_does_not_outrank_functional_fragmentation():
+    port = _block("input", "interface", "signal_in")
+    stage = _block("owner", "filter", "signal_in", "signal_out")
+    plan = _plan((port, stage), (_edge("input", "owner", "path"),))
+
+    def score(stage_x, extra_span):
+        packed = _packing((port, 0, 0), (stage, stage_x, 0))
+        members = list(packed.fragments)
+        base = members[1]
+        # The functional cell's measured local symbol positions may be
+        # fragmented even when its enclosing placement remains unchanged.
+        members[1] = SimpleNamespace(
+            fragment=SimpleNamespace(
+                block=stage,
+                positions={("u", 1): (0, 0), ("v", 1): (extra_span, 0)},
+            ),
+            envelope=base.envelope,
+            content_envelope=base.content_envelope,
+            delta=base.delta,
+        )
+        return semantic_composition_penalty_breakdown(
+            plan, SimpleNamespace(fragments=tuple(members))
+        )
+
+    compact_but_distant = score(18 * PITCH, 0)
+    fragmented_but_near = score(4 * PITCH, 5 * PITCH)
+    assert compact_but_distant.interface_owner_distance == 0
+    assert fragmented_but_near.interface_owner_distance == 0
+    assert compact_but_distant.local_signal_neighbor_gap > fragmented_but_near.local_signal_neighbor_gap
+    assert compact_but_distant.intra_block_dispersion < fragmented_but_near.intra_block_dispersion
+    assert compact_but_distant.vector() < fragmented_but_near.vector()

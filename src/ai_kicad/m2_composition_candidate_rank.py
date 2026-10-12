@@ -655,6 +655,7 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
     roles = _interface_roles(plan, signal_relations)
     interface_side_violations = 0
     interface_owner_distance = 0
+    interface_soft_gap = 0
     for source, target, _net in signal_relations:
         if source not in centers or target not in centers:
             continue
@@ -693,7 +694,7 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
         else:
             continue
         if gaps:
-            interface_owner_distance += max(0, min(gaps) - 2 * PITCH)
+            interface_soft_gap += max(0, min(gaps) - 2 * PITCH)
 
     frontier_distance = 0
     if centers:
@@ -735,7 +736,12 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
     )
     support_axis_drift = _support_axis_alignment_penalty(plan, centers)
     passive_reference_axis_drift = _passive_reference_axis_alignment_penalty(packing)
-    local_signal_neighbor_gap = _local_signal_neighbor_gap(plan, rects)
+    # Nearest directed connector-to-owner gap is a soft signal-neighbor
+    # preference, not a wrong-side violation. Keep it below fragmentation,
+    # grouping, and all stronger semantic obligations in the lexicographic key.
+    local_signal_neighbor_gap = _local_signal_neighbor_gap(plan, rects) + _grid_units(
+        interface_soft_gap
+    )
 
     return SemanticPenaltyBreakdown(
         missing_geometry=missing_geometry,
