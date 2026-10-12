@@ -19,8 +19,18 @@ def _block(name: str, role: str | None = None) -> BlockPlan:
 
 def _placed(block: BlockPlan, x: int, y: int):
     fragment = FragmentVariant(
-        f"{block.id}.variant", block, {}, {}, {}, (), (), (), (), (), 
-        (0, 0, 8 * PITCH, 4 * PITCH), frozenset(),
+        f"{block.id}.variant",
+        block,
+        {},
+        {},
+        {},
+        (),
+        (),
+        (),
+        (),
+        (),
+        (0, 0, 8 * PITCH, 4 * PITCH),
+        frozenset(),
     )
     return _place(fragment, LEFT + x * PITCH, y * PITCH)
 
