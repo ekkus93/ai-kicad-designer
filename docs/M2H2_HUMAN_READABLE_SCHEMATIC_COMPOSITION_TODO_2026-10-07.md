@@ -2,6 +2,8 @@
 
 **Status:** IN PROGRESS / INCOMPLETE
 
+**2026-10-12 independent qualified-source audit launch:** Exact source `ffac87b0e6d5cc9d788fbfb28048c436743a952a` passed locked KiCad 10.0.6 base 56×5/V3-8-negative ([38257222455](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38257222455)), I1–I6×5 ([38257222464](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38257222464)), structural×5 ([38257222777](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38257222777)), and source-matched base and structural render transfers ([38259407140](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38259407140), [38261359388](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38261359388)). Fast Validation [38257222487](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38257222487) failed solely Ruff test formatting; unchanged-behavior descendant `a1cbd22948f57c77a875b58dd357916db0e5ddb6` corrects it, with new Fast Validation [38289895469](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38289895469) started. Request the independent 90-case comparative audit and normalized native-render inventory against persisted **exact-source** evidence root `$HOME/m2h2-evidence/ffac87b0e6d5cc9d788fbfb28048c436743a952a/`. Keep all six previously failed comparative visual criteria and sections 15–21 acceptance unchecked until the new audit and engineering inspection prove closure.
+
 Canonical executable checklist for the post-M2h2 human-readable schematic composition remediation.
 
 Source-level reconciliation checkpoint: current implementation/observer/oracle evidence has been reconciled through the source state immediately preceding this TODO update. Fresh locked-KiCad qualification, native-render inspection, comparative closure, and final PASS remain open and authoritative.
@@ -78,6 +80,7 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 
 - [x] Implement independently authored semantic-flow graph reconstruction.
 - [x] Distinguish signal, support, power, reference, return, and interface roles.
+
 - [x] Derive directed primary-flow precedence independently of generator placement state.
 - [x] Preserve sibling incomparability where topology does not order siblings.
 - [x] Handle feedback cycles without incorrectly ordering feedback as forward flow.
@@ -157,6 +160,7 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Add amplifier/filter feedback regression.
 
 ## 7. Power and reference composition
+
 
 - [x] Add shared-rail/reference visual-coherence metrics.
 - [x] Report supply/reference infrastructure dispersion.
@@ -238,6 +242,7 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Prefer labels for genuinely global/shared distribution when clearer.
   - Current-source routing evidence: `m2_route._optional_local_visible_edges` admits only unique two-fragment local signal-interface relations within the existing 80 mm locality bound and `route_between_fragments` adds a best-effort obstacle-checked conductor while preserving the 250 mm canonical-length gate. Distant, distributive/shared, ambiguous, power/reference, blocked, and over-length cases remain label/distribution governed. `tests/test_m2_terminal_interface_flow.py` covers both local visible routing and distant/distributive label retention. Exact source `97542c4cd1ca1a6e46afb050cf6bac5a23540c0b`, locked-runner full pytest PASS in run `38012665368`; final native-render acceptance remains open.
 - [x] Ensure label discipline never creates electrical ambiguity.
+
 - [x] Add direct-vs-label synthetic oracle cases.
 - [x] Add detour negative mutations.
 - [x] Freeze routing-aesthetic tolerances before final qualification.
@@ -318,6 +323,7 @@ Source-level checkpoint: `cdcfd445be09712f8a12d30068d3a23509cb7684`, fast-valida
 
 - [ ] `i4__b2_mixed` reads left-to-right with output interfaces associated with final outputs.
 - [ ] `i4__b2_mixed` no longer exhibits pathological upper-left page packing for its complexity.
+
 - [ ] `i4__b2_mixed` branch geometry has no avoidable dominant empty rectangle/detour.
 - [ ] two-signal-chains/shared-rail remains electrically correct and becomes visually coherent.
 - [ ] V6-3 remains electrically correct and its internal reference/support reads coherently.
@@ -398,6 +404,7 @@ Exact-source validation checkpoint (not final qualification or a source freeze):
 - [ ] Explicitly inspect all repeated-channel cases.
 - [ ] Explicitly inspect all branch/fanout cases.
 - [ ] Explicitly inspect all feedback cases.
+
 - [ ] Explicitly inspect all shared-rail/reference cases.
 - [ ] Explicitly inspect all long-field cases.
 - [ ] Explicitly inspect all structural band-class cases.
@@ -477,6 +484,7 @@ Reproducibility evidence checkpoint (2026-10-10): source `ea154c78b8f0ca7348159d
 - [ ] Confirm no unchecked item remains.
 - [ ] Mark this TODO **COMPLETE / PASS**.
 - [ ] Stop; do not create corpus.v7 and do not begin M3.
+
 
 ## Completion rule
 
