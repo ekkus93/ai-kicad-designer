@@ -1388,12 +1388,10 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
                     def worst_violation(placed: PlacedFragment) -> int:
                         if role == "signal_in":
                             return max(
-                                max(0, placed.envelope[2] - owner.envelope[0])
-                                for owner in owners
+                                max(0, placed.envelope[2] - owner.envelope[0]) for owner in owners
                             )
                         return max(
-                            max(0, owner.envelope[2] - placed.envelope[0])
-                            for owner in owners
+                            max(0, owner.envelope[2] - placed.envelope[0]) for owner in owners
                         )
 
                     before = worst_violation(interface)
@@ -1409,13 +1407,12 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
                         )
                         center_top = (owner.envelope[1] + owner.envelope[3] - height) // 2
                         for top in sorted({center_top, owner.envelope[1]}):
-                            proposal = _measured_repack(
-                                plan, selected, interface, left, top, label
-                            )
+                            proposal = _measured_repack(plan, selected, interface, left, top, label)
                             if proposal is None:
                                 continue
                             moved = next(
-                                item for item in proposal.fragments
+                                item
+                                for item in proposal.fragments
                                 if item.fragment.block.id == block.id
                             )
                             after = worst_violation(moved)
