@@ -40,15 +40,11 @@ def test_inferred_output_interface_aligns_with_producer_row():
 
     # Explicit and precedence-inferred output polarity must rank alike.
     explicit = _block("connector", "interface", "signal_out")
-    assert _signal_row_alignment_penalties(
-        _plan((explicit, stage)), centers, directed
-    ) == (0, 3)
+    assert _signal_row_alignment_penalties(_plan((explicit, stage)), centers, directed) == (0, 3)
 
     # Permuting declarations and renaming the net cannot change the result.
     renamed = (("stage", "connector", "renamed"),)
-    assert _signal_row_alignment_penalties(
-        _plan((inferred, stage)), centers, renamed
-    ) == (0, 3)
+    assert _signal_row_alignment_penalties(_plan((inferred, stage)), centers, renamed) == (0, 3)
 
 
 def test_inferred_input_interface_aligns_with_consumer_row():
