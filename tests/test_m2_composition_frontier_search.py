@@ -380,3 +380,42 @@ def test_final_beam_preserves_measured_field_slot_variant() -> None:
         <= 1
         for packing in kept
     )
+
+
+def test_directed_frontiers_survive_full_competing_seed_budget() -> None:
+    from ai_kicad.m2_pack import CANDIDATE_BUDGET, _retain_composition_seed_diversity
+
+    block = _block("stage", "filter")
+    fragment = _fragment(block)
+
+    def seed(index: int, label: str) -> Packing:
+        return Packing(
+            (_place(fragment, LEFT + (20 + index * 9) * PITCH, 55 * PITCH),),
+            (label,),
+        )
+
+    baseline = tuple(seed(index, f"baseline-{index}") for index in range(CANDIDATE_BUDGET))
+    extras = (
+        seed(8, "distribution-column:legal"),
+        Packing(seed(9, "partial-beam:pass").fragments, ("partial-beam", "partial-beam:pass")),
+        seed(10, "repeated-peer-row"),
+        seed(11, "repeated-peer-column"),
+        seed(12, "branch-fanout-origin-centered"),
+        seed(13, "branch-fanout-sibling-depth"),
+        seed(14, "interface-frontier-input"),
+        seed(15, "interface-frontier-output"),
+        seed(16, "centroid-balanced-page"),
+    )
+    retained = _retain_composition_seed_diversity(baseline, extras)
+    labels = [item.attempts[-1] for item in retained]
+    assert len(retained) == CANDIDATE_BUDGET
+    assert labels == [
+        "baseline-0",
+        "distribution-column:legal",
+        "partial-beam:pass",
+        "repeated-peer-row",
+        "repeated-peer-column",
+        "interface-frontier-output",
+        "interface-frontier-input",
+        "branch-fanout-origin-centered",
+    ]
