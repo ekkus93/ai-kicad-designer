@@ -669,6 +669,36 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
             interface_side_violations += 1
             interface_owner_distance += source_x - target_x
 
+    # Preserve producer/consumer locality after an interface reaches the
+    # correct side. Use the nearest owner for fanout; do not turn shared
+    # distribution into an artificial all-owner constraint.
+    for interface_id, interface_roles in sorted(roles.items()):
+        interface_rect = rects.get(interface_id)
+        if interface_rect is None:
+            continue
+        if interface_roles == {"signal_in"}:
+            owners = {
+                target
+                for source, target, _net in signal_relations
+                if source == interface_id and target in rects and target not in roles
+            }
+            gaps = [
+                max(0, rects[owner][0] - interface_rect[2]) for owner in sorted(owners)
+            ]
+        elif interface_roles == {"signal_out"}:
+            owners = {
+                source
+                for source, target, _net in signal_relations
+                if target == interface_id and source in rects and source not in roles
+            }
+            gaps = [
+                max(0, interface_rect[0] - rects[owner][2]) for owner in sorted(owners)
+            ]
+        else:
+            continue
+        if gaps:
+            interface_owner_distance += max(0, min(gaps) - 2 * PITCH)
+
     frontier_distance = 0
     if centers:
         min_x = min(point[0] for point in centers.values())
