@@ -345,11 +345,13 @@ def _power_interface_distance(plan, centers: dict[str, Point]) -> int:
 
 def _infrastructure_primary_row_intrusion(plan, centers: dict[str, Point]) -> int:
     """Penalize supply/reference infrastructure that occupies the primary signal row."""
+    # Use the same directed signal relations as production flow ranking.
+    # Passive connector terminals and precedence may establish a primary
+    # signal corridor without an explicitly authored signal/branch edge.
     signal_ids = {
         block_id
-        for edge in plan.edges
-        if edge.kind in {"signal", "branch"}
-        for block_id in (edge.source, edge.target)
+        for source, target, _net in _signal_relations(plan)
+        for block_id in (source, target)
         if block_id in centers
     }
     signal_rows = sorted(
