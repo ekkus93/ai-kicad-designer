@@ -238,6 +238,4 @@ def test_known_v4_7_regression_fits_the_unchanged_prospective_gate():
                 )
         raise
     assert scene.metrics["page_margin_pass"] is True
-    assert any(
-        ":pass:measured=" in attempt for attempt in scene.metrics["packing_attempts"]
-    )
+    assert any(":pass:measured=" in attempt for attempt in scene.metrics["packing_attempts"])
