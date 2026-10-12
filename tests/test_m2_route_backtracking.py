@@ -83,6 +83,7 @@ def test_backtracking_span_respects_axis_rotation_translation_and_mirror():
         ((0, PITCH), (width, PITCH)),
         ((width, PITCH), (width, 0)),
     )
+
     def rotate(point):
         return point[1] + 13 * PITCH, -point[0] + 19 * PITCH
 
