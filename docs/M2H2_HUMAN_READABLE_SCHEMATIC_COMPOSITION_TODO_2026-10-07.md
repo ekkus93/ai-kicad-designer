@@ -2,6 +2,8 @@
 
 **Status:** IN PROGRESS / INCOMPLETE
 
+**2026-10-12 independent comparative FAIL / development diagnosis:** The exact preserved qualification root for source `ffac87b0e6d5cc9d788fbfb28048c436743a952a` was audited by [run 38290616419](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38290616419) after all three locked KiCad five-run suites passed. Complete historical 90-case coverage was proved, but **six of twelve visual comparative criteria FAILED**: `baseline_hard_defects_cleared`, `individual_hard_defects_never_worsen`, `functional_fragmentation_nonworsening`, `routing_aesthetics_nonworsening`, `repeated_structure_within_frozen_tolerance`, and `i4_specific_improvement`. Historical→fresh totals: stage-order inversions 1→0, interface-side violations 77→44, edge-biased cases 64→54, low-utilization cases 2→0, fragmentation 14743.4342→14743.4361 mm, U-detours 691→858, and sibling-branch inconsistency 1529.08→1714.5 mm. The previous hard visual failures remain open without waivers. Source-matched native-render inventory [38290616413](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38290616413) PASSED; it establishes evidence availability, not aesthetic acceptance or engineering visual inspection. A format-only fix `a1cbd22948f57c77a875b58dd357916db0e5ddb6` and this documentation-only audit-launch descendant `8694fa977faba5b32a6b3ea8a01f9ba6c78acaea` preserve production behavior. Fast Validation [38290616357](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38290616357) PASSED all hosted contracts, locked-runner pytest/current-source regressions, and static checks. The next generic development composition probe is requested to diagnose choice of candidates and route/branch penalties without weakening frozen tolerances or special-casing any benchmark.
+
 **2026-10-12 independent qualified-source audit launch:** Exact source `ffac87b0e6d5cc9d788fbfb28048c436743a952a` passed locked KiCad 10.0.6 base 56×5/V3-8-negative ([38257222455](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38257222455)), I1–I6×5 ([38257222464](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38257222464)), structural×5 ([38257222777](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38257222777)), and source-matched base and structural render transfers ([38259407140](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38259407140), [38261359388](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38261359388)). Fast Validation [38257222487](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38257222487) failed solely Ruff test formatting; unchanged-behavior descendant `a1cbd22948f57c77a875b58dd357916db0e5ddb6` corrects it, with new Fast Validation [38289895469](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38289895469) started. Request the independent 90-case comparative audit and normalized native-render inventory against persisted **exact-source** evidence root `$HOME/m2h2-evidence/ffac87b0e6d5cc9d788fbfb28048c436743a952a/`. Keep all six previously failed comparative visual criteria and sections 15–21 acceptance unchecked until the new audit and engineering inspection prove closure.
 
 Canonical executable checklist for the post-M2h2 human-readable schematic composition remediation.
@@ -83,6 +85,7 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 
 - [x] Derive directed primary-flow precedence independently of generator placement state.
 - [x] Preserve sibling incomparability where topology does not order siblings.
+
 - [x] Handle feedback cycles without incorrectly ordering feedback as forward flow.
 - [x] Handle external terminal-backed signal sources.
 - [x] Handle multiple final outputs.
@@ -168,6 +171,7 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Keep package-local decoupling/support local where semantics permit.
 - [x] Prevent supply/reference infrastructure from dominating primary signal rows.
 - [x] Preserve no-fake-external-reference behavior.
+
 - [x] Add two-signal-chains/shared-rail regression.
 - [x] Add V6-3 internal-reference regression.
 - [x] Add multi-consumer supply/reference regression.
@@ -253,6 +257,7 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
   - [x] electrical correctness;
   - [x] existing hard M2h2 invariants;
   - [x] semantic readability;
+
   - [x] routing clarity;
   - [x] compactness/whitespace;
   - [x] aesthetic tie-breakers.
@@ -337,6 +342,7 @@ Source-level checkpoint: `cdcfd445be09712f8a12d30068d3a23509cb7684`, fast-valida
 - [ ] package-shared cases retain package/support association.
 - [ ] mixed interaction cases do not collapse into label-only disconnected visual islands.
 - [ ] all targeted regressions pass native KiCad 10.0.6 generation/inspection.
+
 
 ## 16. Source stabilization
 
@@ -423,6 +429,7 @@ Exact-source validation checkpoint (not final qualification or a source freeze):
   - [ ] no obvious unmodelled computer-generated layout defect remains.
 - [ ] Record inspection as engineering/agent inspection, not user approval.
 - [ ] Any hard visual defect falsifies the candidate and reopens affected qualification.
+
 
 ## 19. Comparative baseline closure
 
