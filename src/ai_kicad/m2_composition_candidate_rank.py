@@ -863,7 +863,12 @@ def route_backtracking_penalty(canonical_trees) -> int:
                 if leg_second[across] > fixed:
                     high_legs.add(position)
             for legs in (low_legs, high_legs):
-                penalty += len(legs) * (len(legs) - 1) // 2
+                positions = sorted(legs)
+                for index, left in enumerate(positions):
+                    for right in positions[index + 1 :]:
+                        # Prefer a short, local return to an equally legible
+                        # but unnecessarily wide U-shaped conductor detour.
+                        penalty += max(1, _grid_units(right - left))
     return penalty
 
 

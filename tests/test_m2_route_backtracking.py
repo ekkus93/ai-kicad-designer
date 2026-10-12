@@ -4,6 +4,7 @@ from types import SimpleNamespace
 
 import pytest
 
+from ai_kicad.m2a import PITCH
 from ai_kicad.m2_composition_candidate_rank import route_backtracking_penalty
 
 
@@ -59,3 +60,16 @@ def test_backtracking_does_not_count_opposite_side_branches():
 def test_backtracking_rejects_nonorthogonal_canonical_geometry():
     with pytest.raises(ValueError, match="orthogonal"):
         _score((((0, 0), (5, 5)),))
+
+
+def test_backtracking_prefers_shorter_same_side_return_spans():
+    def detour(width):
+        return (
+            ((0, 0), (0, PITCH)),
+            ((0, PITCH), (width, PITCH)),
+            ((width, PITCH), (width, 0)),
+        )
+
+    assert _score(detour(2 * PITCH)) == 2
+    assert _score(detour(8 * PITCH)) == 8
+    assert _score(tuple(reversed(detour(8 * PITCH)))) == 8
