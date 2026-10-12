@@ -2288,6 +2288,10 @@ def _retain_composition_seed_diversity(
     # Field-slot variants are independently constructed measured alternatives,
     # not mere shelf shifts. Preserve one legal distinct choice when the
     # eight-seed cap would otherwise discard it after repeated-peer repairs.
+    frontier = tuple(
+        next((item for item in extras if item.attempts[-1] == label), None)
+        for label in ("interface-frontier-output", "interface-frontier-input")
+    )
     branch = tuple(
         next(
             (candidate for candidate in extras if candidate.attempts[-1] == label),
@@ -2337,6 +2341,7 @@ def _retain_composition_seed_diversity(
             partial,
             *repeated,
             *branch,
+            *frontier,
             # Keep a legal rigid centering alternative in the bounded beam
             # even when optional field-slot and local-proximity variants are
             # present; routing/electrical proof still decides acceptance.
