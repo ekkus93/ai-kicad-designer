@@ -835,29 +835,7 @@ def _coalesced_route_segments(segments):
                 )
                 low, high = left, right
         result.append(((low, fixed), (high, fixed)) if axis == 0 else ((fixed, low), (fixed, high)))
-    # Collinear serialization splits are cosmetic, but perpendicular T-junctions
-    # are real graph vertices. Preserve those junctions even when a horizontal
-    # or vertical run was coalesced across their interior.
-    horizontal = [segment for segment in result if segment[0][1] == segment[1][1]]
-    vertical = [segment for segment in result if segment[0][0] == segment[1][0]]
-    cuts = {segment: {segment[0], segment[1]} for segment in result}
-    for horizontal_segment in horizontal:
-        h_start, h_end = horizontal_segment
-        for vertical_segment in vertical:
-            v_start, v_end = vertical_segment
-            junction = (v_start[0], h_start[1])
-            if (
-                h_start[0] <= junction[0] <= h_end[0]
-                and v_start[1] <= junction[1] <= v_end[1]
-            ):
-                cuts[horizontal_segment].add(junction)
-                cuts[vertical_segment].add(junction)
-
-    pieces = []
-    for segment in result:
-        nodes = sorted(cuts[segment])
-        pieces.extend((start, end) for start, end in zip(nodes, nodes[1:]))
-    return tuple(pieces)
+    return tuple(result)
 
 
 def route_backtracking_penalty(canonical_trees) -> int:
