@@ -374,12 +374,14 @@ def _infrastructure_primary_row_intrusion(plan, centers: dict[str, Point]) -> in
     return _grid_units(penalty)
 
 
-def _branch_readability_penalty(plan, centers: dict[str, Point], rects: dict[str, Rect]) -> int:
+def _branch_readability_penalty(
+    plan, centers: dict[str, Point], rects: dict[str, Rect], signal_relations
+) -> int:
     """Prefer a visible, centered fanout with equally deep forward branches.
 
-    Group targets by source and net, not a case/fixture name. Explicit branch
-    edges and ordinary directed signal edges can both describe a real fanout;
-    deduplicate their targets so mixed annotations do not double count. A
+    Group targets by source and net, not a case/fixture name. Reuse the same
+    directed signal relations as frontier ranking, including terminal-inferred
+    and precedence-inferred relationships. Deduplicate mixed annotations. A
     source should sit between its branch rows; sibling targets should occupy
     a consistent column. Penalize unrelated obstacles intersecting both short
     orthogonal corridors to a branch target. This is a *placement proxy*, not
@@ -387,14 +389,9 @@ def _branch_readability_penalty(plan, centers: dict[str, Point], rects: dict[str
     connections are exempt.
     """
     fanouts: dict[tuple[str, str], set[str]] = defaultdict(set)
-    for edge in plan.edges:
-        if (
-            edge.kind in {"branch", "signal"}
-            and edge.source != edge.target
-            and edge.source in centers
-            and edge.target in centers
-        ):
-            fanouts[(edge.source, edge.net)].add(edge.target)
+    for source, target, net in signal_relations:
+        if source != target and source in centers and target in centers:
+            fanouts[(source, net)].add(target)
 
     known_blocks = {block.id for block in plan.blocks if block.kind != "interface"}
     penalty = 0
@@ -700,7 +697,7 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
         elif edge.kind in {"support", "package"}:
             support_distance += distance
 
-    branch_alignment = _branch_readability_penalty(plan, centers, rects)
+    branch_alignment = _branch_readability_penalty(plan, centers, rects, signal_relations)
     repeated_alignment = _repeated_alignment_penalty(plan, centers, signal_relations)
     intra_block_dispersion = _intra_block_dispersion(packing)
     unrelated_block_proximity = _unrelated_block_proximity(plan, rects)
