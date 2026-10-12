@@ -3,7 +3,9 @@
 from types import SimpleNamespace
 
 from ai_kicad.m2a import PITCH
-from ai_kicad.m2_composition_candidate_rank import semantic_composition_penalty_breakdown
+from ai_kicad.m2_composition_candidate_rank import (
+    semantic_composition_penalty_breakdown,
+)
 
 
 def _block(name, kind):
@@ -33,7 +35,11 @@ def _score(plan, source_y):
 
 
 def test_inferred_fanout_matches_explicit_and_mixed_annotations():
-    blocks = (_block("input", "interface"), _block("upper", "filter"), _block("lower", "filter"))
+    blocks = (
+        _block("input", "interface"),
+        _block("upper", "filter"),
+        _block("lower", "filter"),
+    )
     precedence = (
         SimpleNamespace(source_fragment="input", target_fragment="upper", net="split"),
         SimpleNamespace(source_fragment="input", target_fragment="lower", net="split"),
@@ -56,7 +62,11 @@ def test_inferred_fanout_matches_explicit_and_mixed_annotations():
 
 
 def test_unrelated_precedence_nets_are_not_a_single_fanout():
-    blocks = (_block("input", "interface"), _block("upper", "filter"), _block("lower", "filter"))
+    blocks = (
+        _block("input", "interface"),
+        _block("upper", "filter"),
+        _block("lower", "filter"),
+    )
     precedence = (
         SimpleNamespace(source_fragment="input", target_fragment="upper", net="a"),
         SimpleNamespace(source_fragment="input", target_fragment="lower", net="b"),
