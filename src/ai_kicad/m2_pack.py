@@ -1313,8 +1313,10 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
                 {
                     target if role == "signal_in" else source
                     for source, target, _net in relations
-                    if role == "signal_in" and source == interface_id
-                    or role == "signal_out" and target == interface_id
+                    if role == "signal_in"
+                    and source == interface_id
+                    or role == "signal_out"
+                    and target == interface_id
                 }
             )
         )
