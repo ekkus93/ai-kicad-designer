@@ -155,6 +155,74 @@ def test_frontier_search_repairs_two_reversed_outputs_in_one_bounded_candidate()
     assert _interface_frontier_candidates(reversed_plan, baseline) == candidates
 
 
+def test_frontier_search_uses_unique_terminal_backed_passive_output() -> None:
+    """A uniquely inferred passive output belongs after its producer."""
+    stage = BlockPlan(
+        "producer",
+        "amplifier",
+        (),
+        frozenset(),
+        (SemanticPort("producer.out", "producer", "SIGNAL", "signal_out", ()),),
+    )
+    output = BlockPlan(
+        "external",
+        "interface",
+        (),
+        frozenset(),
+        (SemanticPort("external.pin", "external", "SIGNAL", "passive", ()),),
+    )
+    plan = SemanticPlan((stage, output), (), {}, ())
+    baseline = Packing(
+        (
+            _place(_fragment(stage), LEFT + 60 * PITCH, 50 * PITCH),
+            _place(_fragment(output), LEFT + 30 * PITCH, 50 * PITCH),
+        ),
+        (),
+    )
+    candidates = _interface_frontier_candidates(plan, baseline)
+    assert len(candidates) == 1
+    by_id = {item.fragment.block.id: item for item in candidates[0].fragments}
+    assert by_id["external"].envelope[0] > by_id["producer"].envelope[2]
+    assert candidates[0].attempts[-1] == "interface-frontier-output"
+    reversed_plan = SemanticPlan((output, stage), (), {}, ())
+    assert _interface_frontier_candidates(reversed_plan, baseline) == candidates
+
+
+def test_frontier_search_does_not_assign_ambiguous_passive_interface() -> None:
+    """A passive interface shared by producer and consumer is undirected."""
+    producer = BlockPlan(
+        "producer",
+        "amplifier",
+        (),
+        frozenset(),
+        (SemanticPort("producer.out", "producer", "SHARED", "signal_out", ()),),
+    )
+    consumer = BlockPlan(
+        "consumer",
+        "amplifier",
+        (),
+        frozenset(),
+        (SemanticPort("consumer.in", "consumer", "SHARED", "signal_in", ()),),
+    )
+    passive = BlockPlan(
+        "external",
+        "interface",
+        (),
+        frozenset(),
+        (SemanticPort("external.pin", "external", "SHARED", "passive", ()),),
+    )
+    plan = SemanticPlan((producer, consumer, passive), (), {}, ())
+    baseline = Packing(
+        (
+            _place(_fragment(producer), LEFT + 60 * PITCH, 50 * PITCH),
+            _place(_fragment(consumer), LEFT + 80 * PITCH, 50 * PITCH),
+            _place(_fragment(passive), LEFT + 30 * PITCH, 50 * PITCH),
+        ),
+        (),
+    )
+    assert _interface_frontier_candidates(plan, baseline) == ()
+
+
 def test_bidirectional_interface_is_not_forced_to_a_signal_frontier() -> None:
     plan, baseline = _layout()
     bidirectional = BlockPlan(

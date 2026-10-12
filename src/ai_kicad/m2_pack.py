@@ -9,6 +9,7 @@ from .m2a import PITCH
 from .m2_fragments import FragmentVariant, Point, PortAnchor, Rect
 from .m2_geometry import ConductorSegment, Gateway, Reservation, canonical_conductor_tree
 from .m2_semantics import PlacementConflict, SemanticPlan, check_placement_constraints
+from .m2_terminal_interface_flow import inferred_passive_interface_signal_relations
 
 
 LEFT = 18 * PITCH
@@ -1285,6 +1286,39 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
     the search. Bidirectional interfaces are deliberately not forced to a side.
     """
     by_id = {item.fragment.block.id: item for item in baseline.fragments}
+    # Keep bounded frontier search consistent with independent signal-flow
+    # observation, including unique terminal-backed passive interfaces.
+    relations = {
+        (edge.source, edge.target, edge.net)
+        for edge in plan.edges
+        if edge.kind in {"signal", "branch"}
+    }
+    relations.update(
+        (item.source_fragment, item.target_fragment, item.net) for item in plan.precedence
+    )
+    relations.update(inferred_passive_interface_signal_relations(plan))
+
+    def frontier_roles(block) -> set[str]:
+        roles = {port.role for port in block.ports}
+        for source, target, _net in relations:
+            if source == block.id:
+                roles.add("signal_in")
+            if target == block.id:
+                roles.add("signal_out")
+        return roles
+
+    def frontier_owner_ids(interface_id: str, role: str) -> tuple[str, ...]:
+        return tuple(
+            sorted(
+                {
+                    target if role == "signal_in" else source
+                    for source, target, _net in relations
+                    if role == "signal_in" and source == interface_id
+                    or role == "signal_out" and target == interface_id
+                }
+            )
+        )
+
     alternatives: list[Packing] = []
     for role, label in (
         ("signal_in", "interface-frontier-input"),
@@ -1294,25 +1328,13 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
         for block in sorted(plan.blocks, key=lambda item: item.id):
             if block.kind != "interface" or block.id not in by_id:
                 continue
-            roles = {port.role for port in block.ports}
+            roles = frontier_roles(block)
             if role not in roles or {"signal_in", "signal_out"} <= roles:
                 continue
             interface = by_id[block.id]
             width = interface.envelope[2] - interface.envelope[0]
             height = interface.envelope[3] - interface.envelope[1]
-            owners = sorted(
-                {
-                    edge.target if role == "signal_in" else edge.source
-                    for edge in plan.edges
-                    if edge.kind in {"signal", "branch"}
-                    and (
-                        role == "signal_in"
-                        and edge.source == block.id
-                        or role == "signal_out"
-                        and edge.target == block.id
-                    )
-                }
-            )
+            owners = frontier_owner_ids(block.id, role)
             for owner_id in owners:
                 owner = by_id.get(owner_id)
                 if owner is None or owner.fragment.block.kind == "interface":
@@ -1360,25 +1382,13 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
                 for block in sorted(plan.blocks, key=lambda item: item.id):
                     if block.kind != "interface" or block.id not in current:
                         continue
-                    roles = {port.role for port in block.ports}
+                    roles = frontier_roles(block)
                     if role not in roles or {"signal_in", "signal_out"} <= roles:
                         continue
                     interface = current[block.id]
                     owners = tuple(
                         current[owner_id]
-                        for owner_id in sorted(
-                            {
-                                edge.target if role == "signal_in" else edge.source
-                                for edge in plan.edges
-                                if edge.kind in {"signal", "branch"}
-                                and (
-                                    role == "signal_in"
-                                    and edge.source == block.id
-                                    or role == "signal_out"
-                                    and edge.target == block.id
-                                )
-                            }
-                        )
+                        for owner_id in frontier_owner_ids(block.id, role)
                         if owner_id in current
                         and current[owner_id].fragment.block.kind != "interface"
                     )
