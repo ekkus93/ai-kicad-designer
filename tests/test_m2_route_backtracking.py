@@ -37,6 +37,25 @@ def test_backtracking_does_not_penalize_nonreversing_routes():
     assert _score(()) == 0
 
 
+def test_backtracking_counts_return_spanning_a_mid_run_branch():
+    tree = (
+        ((0, 0), (0, 10)),
+        ((0, 10), (20, 10)),
+        ((10, 0), (10, 10)),
+    )
+    assert _score(tree) == 1
+    assert _score(tuple(reversed(tree))) == 1
+
+
+def test_backtracking_does_not_count_opposite_side_branches():
+    positive_branch = (
+        ((0, 0), (0, 10)),
+        ((0, 10), (20, 10)),
+        ((10, 10), (10, 20)),
+    )
+    assert _score(positive_branch) == 0
+
+
 def test_backtracking_rejects_nonorthogonal_canonical_geometry():
     with pytest.raises(ValueError, match="orthogonal"):
         _score((((0, 0), (5, 5)),))

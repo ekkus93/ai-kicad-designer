@@ -839,40 +839,31 @@ def _coalesced_route_segments(segments):
 
 
 def route_backtracking_penalty(canonical_trees) -> int:
-    """Count axis-reversing three-leg route detours in proven conductor trees.
-
-    This generic production ranking hint uses canonical conductor geometry,
-    without reading SVG output or independent composition-observer verdicts.
-    It does not change routing legality or any fixed conductor-length gate.
-    """
+    """Count same-side return legs across continuous rectilinear conductor runs."""
     penalty = 0
     for tree in canonical_trees:
-        segments = _coalesced_route_segments(tree.geometry_signature)
-        incident = defaultdict(list)
-        for first, second in segments:
-            incident[first].append((first, second))
-            incident[second].append((first, second))
-        for first, second in segments:
+        spans = _coalesced_route_segments(tree.geometry_signature)
+        for first, second in spans:
             axis = 0 if first[1] == second[1] else 1
-            cross_axis = 1 - axis
-            for enter in incident[first]:
-                if enter == (first, second):
+            across = 1 - axis
+            low_legs = set()
+            high_legs = set()
+            for leg_first, leg_second in spans:
+                if leg_first[axis] != leg_second[axis]:
                     continue
-                preceding = enter[1] if enter[0] == first else enter[0]
-                if preceding[axis] != first[axis]:
+                position = leg_first[axis]
+                fixed = first[across]
+                if not (
+                    first[axis] <= position <= second[axis]
+                    and leg_first[across] <= fixed <= leg_second[across]
+                ):
                     continue
-                initial = first[cross_axis] - preceding[cross_axis]
-                if initial == 0:
-                    continue
-                for leave in incident[second]:
-                    if leave == (first, second) or leave == enter:
-                        continue
-                    following = leave[1] if leave[0] == second else leave[0]
-                    if following[axis] != second[axis]:
-                        continue
-                    final = following[cross_axis] - second[cross_axis]
-                    if initial * final < 0:
-                        penalty += 1
+                if leg_first[across] < fixed:
+                    low_legs.add(position)
+                if leg_second[across] > fixed:
+                    high_legs.add(position)
+            for legs in (low_legs, high_legs):
+                penalty += len(legs) * (len(legs) - 1) // 2
     return penalty
 
 
