@@ -73,3 +73,40 @@ def test_backtracking_prefers_shorter_same_side_return_spans():
     assert _score(detour(2 * PITCH)) == 2
     assert _score(detour(8 * PITCH)) == 8
     assert _score(tuple(reversed(detour(8 * PITCH)))) == 8
+
+
+def test_backtracking_span_respects_axis_rotation_translation_and_mirror():
+    """A generic return-span score must not depend on sheet orientation."""
+    width = 7 * PITCH
+    route = (
+        ((0, 0), (0, PITCH)),
+        ((0, PITCH), (width, PITCH)),
+        ((width, PITCH), (width, 0)),
+    )
+    rotate = lambda point: (point[1] + 13 * PITCH, -point[0] + 19 * PITCH)
+    mirror = lambda point: (-point[0] + 23 * PITCH, point[1] + 11 * PITCH)
+
+    assert _score(route) == 7
+    assert _score(tuple((rotate(a), rotate(b)) for a, b in route)) == 7
+    assert _score(tuple((mirror(a), mirror(b)) for a, b in route)) == 7
+
+
+def test_backtracking_span_ignores_split_junction_and_duplicate_strokes():
+    """A junction or serialization split cannot hide a wide return detour."""
+    width = 7 * PITCH
+    original = (
+        ((0, 0), (0, PITCH)),
+        ((0, PITCH), (width, PITCH)),
+        ((width, PITCH), (width, 0)),
+    )
+    split_with_branch = (
+        original[0],
+        ((0, PITCH), (3 * PITCH, PITCH)),
+        ((3 * PITCH, PITCH), (width, PITCH)),
+        original[2],
+        ((3 * PITCH, PITCH), (3 * PITCH, 2 * PITCH)),
+        original[0],
+    )
+    assert _score(original) == 7
+    assert _score(split_with_branch) == 7
+    assert _score(tuple(reversed(split_with_branch))) == 7
