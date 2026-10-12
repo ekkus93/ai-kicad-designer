@@ -9,7 +9,7 @@ from ai_kicad.m2_semantics import BlockPlan, SemanticEdge, SemanticPlan, Semanti
 
 
 def _block(name: str, role: str | None = None) -> BlockPlan:
-    ports = ((SemanticPort(f"{name}.port", name, "net", role, ()),) if role else ())
+    ports = (SemanticPort(f"{name}.port", name, "net", role, ()),) if role else ()
     return BlockPlan(name, "interface" if role else "amplifier", (), frozenset(), ports)
 
 
@@ -35,9 +35,7 @@ def _at(block: BlockPlan, x: int, y: int):
     ("role", "bad_x", "good_x"),
     (("signal_in", 100, 25), ("signal_out", 30, 90)),
 )
-def test_wrong_side_is_repaired_before_distant_row(
-    role: str, bad_x: int, good_x: int
-) -> None:
+def test_wrong_side_is_repaired_before_distant_row(role: str, bad_x: int, good_x: int) -> None:
     producer = _block("producer")
     peer = _block("peer")
     bad = _block("bad", role)
@@ -70,7 +68,10 @@ def test_wrong_side_is_repaired_before_distant_row(
     initial = {item.fragment.block.id: item for item in baseline.fragments}
     assert changed["bad"].delta != initial["bad"].delta
     assert changed["good"].delta == initial["good"].delta
-    assert _interface_frontier_candidates(
-        SemanticPlan(tuple(reversed(blocks)), tuple(reversed(edges)), {}, ()),
-        baseline,
-    ) == candidates
+    assert (
+        _interface_frontier_candidates(
+            SemanticPlan(tuple(reversed(blocks)), tuple(reversed(edges)), {}, ()),
+            baseline,
+        )
+        == candidates
+    )
