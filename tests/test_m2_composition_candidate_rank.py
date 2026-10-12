@@ -1100,3 +1100,28 @@ def test_equal_semantics_prefers_readable_low_bend_routing_over_shorter_maze() -
     # With equal bend count the shorter proof remains preferable.
     equally_straight_shorter = composition_candidate_key(plan, layout, (95, 95, 2, 1, 0, 0))
     assert equally_straight_shorter < readable
+
+
+def test_route_backtracking_penalty_detects_axis_reversal_without_external_oracle():
+    from types import SimpleNamespace
+    from ai_kicad.m2_composition_candidate_rank import route_backtracking_penalty
+
+    def route(segments):
+        return SimpleNamespace(geometry_signature=segments)
+
+    direct = route((((0, 0), (10, 0)), ((10, 0), (10, 10))))
+    detour = route((((0, 0), (0, 10)), ((0, 10), (10, 10)), ((10, 0), (10, 10))))
+    assert route_backtracking_penalty((direct,)) == 0
+    assert route_backtracking_penalty((detour,)) == 1
+    assert route_backtracking_penalty((detour, direct)) == 1
+
+
+def test_route_backtracking_penalty_separates_equally_semantic_candidates():
+    from types import SimpleNamespace
+
+    plan = _plan(())
+    packing = SimpleNamespace(fragments=())
+    routing = (1000, 500, 1, 1.0, 0, 0)
+    assert composition_candidate_key(plan, packing, routing, routing_backtracking=0) < (
+        composition_candidate_key(plan, packing, routing, routing_backtracking=1)
+    )

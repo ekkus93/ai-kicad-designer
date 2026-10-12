@@ -811,7 +811,47 @@ def _field_slot_consistency_penalty(packing) -> int:
     return _grid_units(drift)
 
 
-def composition_candidate_key(plan, packing, routing_compactness) -> CandidateKey:
+def route_backtracking_penalty(canonical_trees) -> int:
+    """Count axis-reversing three-leg route detours in proven conductor trees.
+
+    This generic production ranking hint uses canonical conductor geometry,
+    without reading SVG output or independent composition-observer verdicts.
+    It does not change routing legality or any fixed conductor-length gate.
+    """
+    penalty = 0
+    for tree in canonical_trees:
+        segments = tuple(tree.geometry_signature)
+        incident = defaultdict(list)
+        for first, second in segments:
+            incident[first].append((first, second))
+            incident[second].append((first, second))
+        for first, second in segments:
+            axis = 0 if first[1] == second[1] else 1
+            cross_axis = 1 - axis
+            for enter in incident[first]:
+                if enter == (first, second):
+                    continue
+                preceding = enter[1] if enter[0] == first else enter[0]
+                if preceding[axis] != first[axis]:
+                    continue
+                initial = first[cross_axis] - preceding[cross_axis]
+                if initial == 0:
+                    continue
+                for leave in incident[second]:
+                    if leave == (first, second) or leave == enter:
+                        continue
+                    following = leave[1] if leave[0] == second else leave[0]
+                    if following[axis] != second[axis]:
+                        continue
+                    final = following[cross_axis] - second[cross_axis]
+                    if initial * final < 0:
+                        penalty += 1
+    return penalty
+
+
+def composition_candidate_key(
+    plan, packing, routing_compactness, *, routing_backtracking: int = 0
+) -> CandidateKey:
     """Build the production lexicographic key for a fully proved candidate."""
 
     if len(routing_compactness) != 6:
@@ -827,6 +867,9 @@ def composition_candidate_key(plan, packing, routing_compactness) -> CandidateKe
         # Prefer a legible low-bend route over a shorter maze when all
         # higher-priority semantic obligations are identical.  This ranking
         # tier is generic and does not alter any length or ERC hard gate.
+        # Penalize direction-reversing detours before bend/length tie-breaks.
+        # Every ranked candidate has already passed independent hard proofs.
+        int(routing_backtracking),
         int(bend_count),
         int(union_length),
         int(worst_length),

@@ -7,6 +7,7 @@ from dataclasses import dataclass, replace
 from .ir import InputError
 from .m2_conflicts import ConflictKind, TypedConflict
 from .m2_composition_candidate_rank import (
+    route_backtracking_penalty,
     compactness_whitespace_penalties,
     composition_candidate_key,
     semantic_composition_penalty_breakdown,
@@ -1421,7 +1422,12 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
             )
             semantic_penalties = semantic_composition_penalties(plan, working_packing)
             compactness_penalties = compactness_whitespace_penalties(working_packing)
-            selection_key = composition_candidate_key(plan, working_packing, routing_compactness)
+            selection_key = composition_candidate_key(
+                plan,
+                working_packing,
+                routing_compactness,
+                routing_backtracking=route_backtracking_penalty(canonical_trees),
+            )
             structure = _structural_signature(working_packing)
             proved_candidates.append(
                 (
