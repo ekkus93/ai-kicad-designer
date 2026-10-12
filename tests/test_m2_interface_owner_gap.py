@@ -118,6 +118,9 @@ def test_soft_gap_does_not_outrank_functional_fragmentation():
     fragmented_but_near = score(4 * PITCH, 5 * PITCH)
     assert compact_but_distant.interface_owner_distance == 0
     assert fragmented_but_near.interface_owner_distance == 0
-    assert compact_but_distant.local_signal_neighbor_gap > fragmented_but_near.local_signal_neighbor_gap
+    assert (
+        compact_but_distant.local_signal_neighbor_gap
+        > fragmented_but_near.local_signal_neighbor_gap
+    )
     assert compact_but_distant.intra_block_dispersion < fragmented_but_near.intra_block_dispersion
     assert compact_but_distant.vector() < fragmented_but_near.vector()
