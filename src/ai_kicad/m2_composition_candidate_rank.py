@@ -118,6 +118,7 @@ def _placed_rects(packing) -> dict[str, Rect]:
             )
         else:
             rects[block_id] = rect
+
     return rects
 
 
@@ -238,6 +239,7 @@ def _intra_block_dispersion(packing) -> int:
     """
     penalty = 0
     for item in packing.fragments:
+
         delta = getattr(item, "delta", (0, 0))
         points = tuple(
             (point[0] + delta[0], point[1] + delta[1])
@@ -358,6 +360,7 @@ def _infrastructure_primary_row_intrusion(plan, centers: dict[str, Point]) -> in
         if next((block for block in plan.blocks if block.id == block_id), None) is not None
     )
     if not signal_rows:
+
         return 0
     primary_row = signal_rows[len(signal_rows) // 2]
     infrastructure_ids = {
@@ -478,6 +481,7 @@ def _feedback_corridor_intrusions(plan, rects: dict[str, Rect], centers: dict[st
         if edge.kind == "feedback" and edge.source != edge.target
     }
     penalty = 0
+
     for source_id, target_id, _net in sorted(edges):
         source = centers.get(source_id)
         target = centers.get(target_id)
@@ -540,10 +544,14 @@ def _signal_row_alignment_penalties(
         stage_drift += abs(centers[source_id][1] - centers[target_id][1])
 
     interface_drift = 0
+    # Match interface-side ranking: unique inferred/precedence-backed signal
+    # polarity is meaningful even when authored ports are not explicitly typed
+    # signal_in or signal_out. Preserve the bidirectional ambiguity exemption.
+    interface_roles = _interface_roles(plan, signal_relations)
     for block_id, block in sorted(blocks.items()):
         if block.kind != "interface" or block_id not in centers:
             continue
-        roles = {port.role for port in block.ports}
+        roles = interface_roles[block_id]
         # A genuinely bidirectional or ambiguous interface has no prescribed
         # signal-row polarity.
         if "signal_in" in roles and "signal_out" in roles:
@@ -598,6 +606,7 @@ def _passive_reference_axis_alignment_penalty(packing) -> int:
     Shared, missing, multi-unit, or ambiguous ownership is exempt.
     """
     drift = 0
+
     for item in packing.fragments:
         block = item.fragment.block
         ports = getattr(block, "ports", ())
@@ -718,6 +727,7 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
         interface_owner_distance=_grid_units(interface_owner_distance),
         frontier_distance=_grid_units(frontier_distance),
         feedback_distance=_grid_units(feedback_distance),
+
         support_distance=_grid_units(support_distance),
         branch_alignment=_grid_units(branch_alignment),
         repeated_alignment=repeated_alignment,
@@ -836,6 +846,7 @@ def _coalesced_route_segments(segments):
                 low, high = left, right
         result.append(((low, fixed), (high, fixed)) if axis == 0 else ((fixed, low), (fixed, high)))
     return tuple(result)
+
 
 
 def route_backtracking_penalty(canonical_trees) -> int:
