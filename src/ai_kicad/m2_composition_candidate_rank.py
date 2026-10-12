@@ -682,18 +682,14 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
                 for source, target, _net in signal_relations
                 if source == interface_id and target in rects and target not in roles
             }
-            gaps = [
-                max(0, rects[owner][0] - interface_rect[2]) for owner in sorted(owners)
-            ]
+            gaps = [max(0, rects[owner][0] - interface_rect[2]) for owner in sorted(owners)]
         elif interface_roles == {"signal_out"}:
             owners = {
                 source
                 for source, target, _net in signal_relations
                 if target == interface_id and source in rects and source not in roles
             }
-            gaps = [
-                max(0, interface_rect[0] - rects[owner][2]) for owner in sorted(owners)
-            ]
+            gaps = [max(0, interface_rect[0] - rects[owner][2]) for owner in sorted(owners)]
         else:
             continue
         if gaps:
