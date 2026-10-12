@@ -150,7 +150,7 @@ def test_frontier_search_repairs_two_reversed_outputs_in_one_bounded_candidate()
     by_id = {item.fragment.block.id: item for item in candidates[0].fragments}
     assert candidates[0].attempts[-1] == "interface-frontier-output"
     for suffix in ("a", "b"):
-        assert by_id[`output-${suffix}`].envelope[0] > by_id[`stage-${suffix}`].envelope[2]
+        assert by_id[f"output-{suffix}"].envelope[0] > by_id[f"stage-{suffix}"].envelope[2]
     reversed_plan = SemanticPlan(tuple(reversed(blocks)), tuple(reversed(edges)), {}, ())
     assert _interface_frontier_candidates(reversed_plan, baseline) == candidates
 
