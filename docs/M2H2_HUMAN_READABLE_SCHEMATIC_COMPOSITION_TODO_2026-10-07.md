@@ -6,6 +6,9 @@ Canonical executable checklist for the post-M2h2 human-readable schematic compos
 
 Source-level reconciliation checkpoint: current implementation/observer/oracle evidence has been reconciled through the source state immediately preceding this TODO update. Fresh locked-KiCad qualification, native-render inspection, comparative closure, and final PASS remain open and authoritative.
 
+**2026-10-12 current-source qualification/audit handoff:** Production and regression source `d6ed65a6ea92c5f0a91b949ee258671762c8ef05` passed locked KiCad 10.0.6 five-run base 56+V3-8-negative (run 38210636588), I1–I6 (38210636686), and structural (38210636624) qualifications, plus locked-toolchain diagnostics (38210637591). Source-matched base/structural render transfers passed (38213108120, 38213970555). Its Fast Validation (38210636612) passed locked-runner full pytest, current-source regressions, hosted contracts, lint, and structural audit, but failed only Ruff formatting for a missing blank line in `tests/test_m2_route_backtracking.py`. The exact one-line test-only format fix is commit `7289b247ea2693ae182370659dd76855265109a0`; its Fast Validation must pass independently. This documentation-only descendant requests the independent final-artifact comparative audit and normalized native-render inventory against **exact** persisted qualification source `d6ed65a6ea92c5f0a91b949ee258671762c8ef05`. Qualification success does not establish any section 15–21 visual or comparative acceptance; preserve all six previously failing gates and their checkboxes until independently disproved by current native evidence.
+
+
 Governing documents:
 
 - `docs/M2_GENERALIZATION_REMEDIATION_SPEC.md`
