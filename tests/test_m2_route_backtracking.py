@@ -33,9 +33,7 @@ def test_backtracking_is_invariant_to_segment_splitting_and_serialization():
 
 
 def test_backtracking_does_not_penalize_nonreversing_routes():
-    assert _score(
-        (((0, 0), (0, 10)), ((0, 10), (10, 10)), ((10, 10), (10, 20)))
-    ) == 0
+    assert _score((((0, 0), (0, 10)), ((0, 10), (10, 10)), ((10, 10), (10, 20)))) == 0
     assert _score(()) == 0
 
 
