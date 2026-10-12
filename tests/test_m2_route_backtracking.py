@@ -83,8 +83,11 @@ def test_backtracking_span_respects_axis_rotation_translation_and_mirror():
         ((0, PITCH), (width, PITCH)),
         ((width, PITCH), (width, 0)),
     )
-    rotate = lambda point: (point[1] + 13 * PITCH, -point[0] + 19 * PITCH)
-    mirror = lambda point: (-point[0] + 23 * PITCH, point[1] + 11 * PITCH)
+    def rotate(point):
+        return point[1] + 13 * PITCH, -point[0] + 19 * PITCH
+
+    def mirror(point):
+        return -point[0] + 23 * PITCH, point[1] + 11 * PITCH
 
     assert _score(route) == 7
     assert _score(tuple((rotate(a), rotate(b)) for a, b in route)) == 7
