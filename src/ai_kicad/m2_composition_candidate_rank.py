@@ -831,16 +831,10 @@ def _coalesced_route_segments(segments):
                 high = max(high, right)
             else:
                 result.append(
-                    ((low, fixed), (high, fixed))
-                    if axis == 0
-                    else ((fixed, low), (fixed, high))
+                    ((low, fixed), (high, fixed)) if axis == 0 else ((fixed, low), (fixed, high))
                 )
                 low, high = left, right
-        result.append(
-            ((low, fixed), (high, fixed))
-            if axis == 0
-            else ((fixed, low), (fixed, high))
-        )
+        result.append(((low, fixed), (high, fixed)) if axis == 0 else ((fixed, low), (fixed, high)))
     return tuple(result)
 
 
