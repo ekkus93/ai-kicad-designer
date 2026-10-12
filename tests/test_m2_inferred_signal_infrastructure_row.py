@@ -33,9 +33,7 @@ def _plan(interface_port_role="passive", stage_port_role="signal_in"):
     stage = _block("stage", "filter", (stage_port_role, "signal"))
     rail = _block("rail", "infrastructure")
     power_edge = SimpleNamespace(kind="power", source="stage", target="rail", net="vcc")
-    return SimpleNamespace(
-        blocks=(connector, stage, rail), edges=(power_edge,), precedence=()
-    )
+    return SimpleNamespace(blocks=(connector, stage, rail), edges=(power_edge,), precedence=())
 
 
 def _score(plan, rail_row):
