@@ -1347,7 +1347,90 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
                         ((-side_violation, -initial_row_gap, distance, block.id, top), candidate)
                     )
         if options:
-            alternatives.append(min(options, key=lambda item: item[0])[1])
+            selected = min(options, key=lambda item: item[0])[1]
+            # One frontier candidate may need to repair several distinct
+            # directed interfaces. Apply further *measured* improvements to
+            # the same candidate; a single-interface-only move leaves other
+            # reversed output connectors untouched under the eight-seed cap.
+            # Stop after at most one successful repair per interface. Never
+            # move a correctly sided interface just to fill this budget.
+            for _ in range(len(by_id) - 1):
+                current = {item.fragment.block.id: item for item in selected.fragments}
+                repairs: list[tuple[tuple[int, int, int, str, int], Packing]] = []
+                for block in sorted(plan.blocks, key=lambda item: item.id):
+                    if block.kind != "interface" or block.id not in current:
+                        continue
+                    roles = {port.role for port in block.ports}
+                    if role not in roles or {"signal_in", "signal_out"} <= roles:
+                        continue
+                    interface = current[block.id]
+                    owners = tuple(
+                        current[owner_id]
+                        for owner_id in sorted(
+                            {
+                                edge.target if role == "signal_in" else edge.source
+                                for edge in plan.edges
+                                if edge.kind in {"signal", "branch"}
+                                and (
+                                    role == "signal_in"
+                                    and edge.source == block.id
+                                    or role == "signal_out"
+                                    and edge.target == block.id
+                                )
+                            }
+                        )
+                        if owner_id in current
+                        and current[owner_id].fragment.block.kind != "interface"
+                    )
+                    if not owners:
+                        continue
+
+                    def worst_violation(placed: PlacedFragment) -> int:
+                        if role == "signal_in":
+                            return max(
+                                max(0, placed.envelope[2] - owner.envelope[0])
+                                for owner in owners
+                            )
+                        return max(
+                            max(0, owner.envelope[2] - placed.envelope[0])
+                            for owner in owners
+                        )
+
+                    before = worst_violation(interface)
+                    if before == 0:
+                        continue
+                    width = interface.envelope[2] - interface.envelope[0]
+                    height = interface.envelope[3] - interface.envelope[1]
+                    for owner in owners:
+                        left = (
+                            owner.envelope[0] - width - CHANNEL_GAP
+                            if role == "signal_in"
+                            else owner.envelope[2] + CHANNEL_GAP
+                        )
+                        center_top = (owner.envelope[1] + owner.envelope[3] - height) // 2
+                        for top in sorted({center_top, owner.envelope[1]}):
+                            proposal = _measured_repack(
+                                plan, selected, interface, left, top, label
+                            )
+                            if proposal is None:
+                                continue
+                            moved = next(
+                                item for item in proposal.fragments
+                                if item.fragment.block.id == block.id
+                            )
+                            after = worst_violation(moved)
+                            if after >= before:
+                                continue
+                            travel = abs(left - interface.envelope[0]) + abs(
+                                top - interface.envelope[1]
+                            )
+                            repairs.append(
+                                ((after - before, after, travel, block.id, top), proposal)
+                            )
+                if not repairs:
+                    break
+                selected = min(repairs, key=lambda item: item[0])[1]
+            alternatives.append(selected)
     return tuple(alternatives)
 
 

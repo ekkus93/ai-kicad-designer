@@ -124,6 +124,37 @@ def test_output_frontier_search_fixes_worst_row_misalignment_first() -> None:
     )
 
 
+def test_frontier_search_repairs_two_reversed_outputs_in_one_bounded_candidate() -> None:
+    """All independent wrongly-sided outputs must be considered under one slot."""
+    stage_a = _block("stage-a", "amplifier")
+    stage_b = _block("stage-b", "amplifier")
+    output_a = _block("output-a", "interface", "signal_out")
+    output_b = _block("output-b", "interface", "signal_out")
+    blocks = (stage_a, stage_b, output_a, output_b)
+    edges = (
+        SemanticEdge("signal", "stage-a", "output-a", "a", ()),
+        SemanticEdge("signal", "stage-b", "output-b", "b", ()),
+    )
+    baseline = Packing(
+        (
+            _place(_fragment(stage_a), LEFT + 60 * PITCH, 50 * PITCH),
+            _place(_fragment(stage_b), LEFT + 60 * PITCH, 80 * PITCH),
+            _place(_fragment(output_a), LEFT + 30 * PITCH, 50 * PITCH),
+            _place(_fragment(output_b), LEFT + 30 * PITCH, 80 * PITCH),
+        ),
+        (),
+    )
+    plan = SemanticPlan(blocks, edges, {}, ())
+    candidates = _interface_frontier_candidates(plan, baseline)
+    assert len(candidates) == 1
+    by_id = {item.fragment.block.id: item for item in candidates[0].fragments}
+    assert candidates[0].attempts[-1] == "interface-frontier-output"
+    for suffix in ("a", "b"):
+        assert by_id[`output-${suffix}`].envelope[0] > by_id[`stage-${suffix}`].envelope[2]
+    reversed_plan = SemanticPlan(tuple(reversed(blocks)), tuple(reversed(edges)), {}, ())
+    assert _interface_frontier_candidates(reversed_plan, baseline) == candidates
+
+
 def test_bidirectional_interface_is_not_forced_to_a_signal_frontier() -> None:
     plan, baseline = _layout()
     bidirectional = BlockPlan(
