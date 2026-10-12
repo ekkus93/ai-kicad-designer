@@ -7,30 +7,32 @@ from ai_kicad.m2_composition_candidate_rank import semantic_composition_penalty_
 
 
 def _block(name, kind, *ports):
-    return SimpleNamespace(id=name, kind=kind, ports=tuple(
-        SimpleNamespace(role=role, net=net) for role, net in ports
-    ))
+    return SimpleNamespace(
+        id=name,
+        kind=kind,
+        ports=tuple(SimpleNamespace(role=role, net=net) for role, net in ports),
+    )
 
 
 def _packing(*entries):
-    return SimpleNamespace(fragments=tuple(
-        SimpleNamespace(
-            fragment=SimpleNamespace(block=block, positions={}),
-            content_envelope=(x, y, x + PITCH, y + PITCH),
-            envelope=(x, y, x + PITCH, y + PITCH),
-            delta=(0, 0),
+    return SimpleNamespace(
+        fragments=tuple(
+            SimpleNamespace(
+                fragment=SimpleNamespace(block=block, positions={}),
+                content_envelope=(x, y, x + PITCH, y + PITCH),
+                envelope=(x, y, x + PITCH, y + PITCH),
+                delta=(0, 0),
+            )
+            for block, x, y in entries
         )
-        for block, x, y in entries
-    ))
+    )
 
 
 def _plan(interface_port_role="passive", stage_port_role="signal_in"):
     connector = _block("connector", "interface", (interface_port_role, "signal"))
     stage = _block("stage", "filter", (stage_port_role, "signal"))
     rail = _block("rail", "infrastructure")
-    power_edge = SimpleNamespace(
-        kind="power", source="stage", target="rail", net="vcc"
-    )
+    power_edge = SimpleNamespace(kind="power", source="stage", target="rail", net="vcc")
     return SimpleNamespace(
         blocks=(connector, stage, rail), edges=(power_edge,), precedence=()
     )
