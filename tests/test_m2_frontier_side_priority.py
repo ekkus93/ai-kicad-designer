@@ -10,9 +10,7 @@ from ai_kicad.m2_semantics import BlockPlan, SemanticEdge, SemanticPlan, Semanti
 
 def _block(name: str, role: str | None = None) -> BlockPlan:
     ports = (
-        (SemanticPort(f"{name}.port", name, f"{name}.net", role, ()),)
-        if role is not None
-        else ()
+        (SemanticPort(f"{name}.port", name, f"{name}.net", role, ()),) if role is not None else ()
     )
     return BlockPlan(name, "interface" if role else "amplifier", (), frozenset(), ports)
 
