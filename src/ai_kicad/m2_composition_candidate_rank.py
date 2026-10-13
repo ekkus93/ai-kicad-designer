@@ -538,6 +538,11 @@ def _signal_row_alignment_penalties(
         target_id = next(iter(targets))
         if len(incoming[target_id]) != 1 or not is_signal_stage(target_id):
             continue
+        # Junctions may legitimately change rows: neither the downstream
+        # fanout nor the upstream convergence is a serial stage corridor,
+        # even when its ports explicitly declare both signal directions.
+        if len(incoming[source_id]) > 1 or len(outgoing[target_id]) > 1:
+            continue
         stage_drift += abs(centers[source_id][1] - centers[target_id][1])
 
     interface_drift = 0
