@@ -43,3 +43,27 @@ for case, relative in CASES.items():
         print(json.dumps({"kind": "m2h2.development-candidate-tradeoff.1", "case": case,
                           **summarize_comparable_candidates(evidence["candidate_selection"])},
                          separators=(",", ":")), flush=True)
+        # A single proved candidate cannot be repaired by ranking. Preserve
+        # the bounded search/route rejection ledger for generic seed diagnosis.
+        selection = evidence["candidate_selection"]
+        penalties = selection["selected_semantic_penalty_breakdown"]
+        if selection["proved_candidate_count"] <= 1 or any(
+            penalties.get(name, 0) for name in
+            ("stage_order_violations", "interface_side_violations")
+        ):
+            print(json.dumps({
+                "kind": "m2h2.development-search-witness.1",
+                "case": case,
+                "proved_candidate_count": selection["proved_candidate_count"],
+                "seeds": [
+                    {"seed": item["seed"], "placement_class": item["placement_class"]}
+                    for item in evidence["structural_search"]["seeds"]
+                ],
+                "attempts": [
+                    {key: item.get(key) for key in
+                     ("seed", "round", "operation", "result", "failure_class",
+                      "conflict", "net", "actual", "limit")}
+                    for item in evidence["layout_attempts"]
+                    if item["result"] != "pass"
+                ],
+            }, separators=(",", ":")), flush=True)
