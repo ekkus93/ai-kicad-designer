@@ -170,7 +170,7 @@ def _signal_reachability(plan, signal_relations) -> set[tuple[str, str]]:
     return reachable
 
 
-def _block_semantic_signature(plan, block_id: str) -> tuple:
+def _block_semantic_signature(plan, block_id: str, signal_relations) -> tuple:
     by_id = {block.id: block for block in plan.blocks}
     block = by_id[block_id]
     port_roles = tuple(sorted(port.role for port in block.ports))
@@ -189,6 +189,14 @@ def _block_semantic_signature(plan, block_id: str) -> tuple:
             incident_links.add(("out", "signal", item.target_fragment))
         elif item.target_fragment == block_id:
             incident_links.add(("in", "signal", item.source_fragment))
+    # Include uniquely inferred passive-terminal signal links in the same
+    # incident signature used for authored edges and precedence. The set
+    # removes duplicate representations without relying on net names.
+    for source, target, _net in signal_relations:
+        if source == block_id:
+            incident_links.add(("out", "signal", target))
+        elif target == block_id:
+            incident_links.add(("in", "signal", source))
     incident = tuple(
         sorted(
             (
@@ -215,7 +223,7 @@ def _repeated_alignment_penalty(plan, centers, signal_relations) -> int:
     groups: dict[tuple, list[str]] = defaultdict(list)
     for block in plan.blocks:
         if block.id in centers and block.kind != "interface":
-            groups[_block_semantic_signature(plan, block.id)].append(block.id)
+            groups[_block_semantic_signature(plan, block.id, signal_relations)].append(block.id)
 
     penalty = 0
     for members in groups.values():

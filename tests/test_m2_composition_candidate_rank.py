@@ -1282,3 +1282,62 @@ def test_precedence_only_repeated_chains_align_corresponding_stages() -> None:
     )
     assert semantic_composition_penalty_breakdown(mixed, aligned).repeated_alignment == 0
     assert semantic_composition_penalty_breakdown(mixed, drifted).repeated_alignment == 2
+
+
+def test_inferred_passive_terminal_links_define_repeated_stage_context() -> None:
+    """Only matched terminal-backed signal stages are repeated peers."""
+    first = _block("stage-a", "filter", ("signal_out",))
+    second = _block("stage-b", "filter", ("signal_out",))
+    port_a = _block("port-a", "interface", ("passive",))
+    port_b = _block("port-b", "interface", ("passive",))
+    first.ports = (SimpleNamespace(role="signal_out", net="alpha"),)
+    second.ports = (SimpleNamespace(role="signal_out", net="beta"),)
+    port_a.ports = (SimpleNamespace(role="passive", net="alpha"),)
+    port_b.ports = (SimpleNamespace(role="passive", net="beta"),)
+    placed = _packing(
+        _placed(first, 2 * PITCH, 2 * PITCH),
+        _placed(second, 7 * PITCH, 7 * PITCH),
+        _placed(port_a, 12 * PITCH, 2 * PITCH),
+        _placed(port_b, 12 * PITCH, 7 * PITCH),
+    )
+
+    lone = _plan((first, second, port_a))
+    paired = _plan((first, second, port_a, port_b))
+    assert semantic_composition_penalty_breakdown(lone, placed).repeated_alignment == 0
+    assert semantic_composition_penalty_breakdown(paired, placed).repeated_alignment == 5
+
+    # An authored representation of one inferred link must not duplicate
+    # incident context. Ordering and renaming the distinct nets are irrelevant.
+    mixed = _plan(
+        (port_b, second, port_a, first),
+        (
+            _edge("signal", "stage-a", "port-a", "alpha"),
+            _edge("branch", "stage-a", "port-a", "alpha"),
+        ),
+    )
+    assert semantic_composition_penalty_breakdown(mixed, placed).repeated_alignment == 5
+    for port, stage in ((port_a, first), (port_b, second)):
+        port.ports = (SimpleNamespace(role="passive", net=f"renamed-{stage.id}"),)
+        stage.ports = (SimpleNamespace(role="signal_out", net=f"renamed-{stage.id}"),)
+    renamed = _plan((port_b, port_a, second, first))
+    assert semantic_composition_penalty_breakdown(renamed, placed).repeated_alignment == 5
+
+
+def test_shared_passive_net_does_not_falsely_split_repeated_peers() -> None:
+    """Ambiguous passive ownership is not evidence of a directed output."""
+    first = _block("first", "filter", ("signal_out",))
+    second = _block("second", "filter", ("signal_out",))
+    terminal = _block("terminal", "interface", ("passive",))
+    shared = _block("shared", "resistor", ("passive",))
+    first.ports = (SimpleNamespace(role="signal_out", net="a"),)
+    second.ports = (SimpleNamespace(role="signal_out", net="b"),)
+    terminal.ports = (SimpleNamespace(role="passive", net="a"),)
+    shared.ports = (SimpleNamespace(role="passive", net="a"),)
+    placed = _packing(
+        _placed(first, 0),
+        _placed(second, 5 * PITCH, 5 * PITCH),
+        _placed(terminal, 10 * PITCH),
+        _placed(shared, 2 * PITCH),
+    )
+    plan = _plan((shared, second, terminal, first))
+    assert semantic_composition_penalty_breakdown(plan, placed).repeated_alignment == 5
