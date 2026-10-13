@@ -273,6 +273,7 @@ def _rect_gap(first: Rect, second: Rect) -> int:
 
 
 def _unrelated_block_proximity(plan, rects: dict[str, Rect]) -> int:
+
     """Penalize unrelated functional cells that visually collapse together."""
     by_id = {block.id: block for block in plan.blocks}
     related: set[frozenset[str]] = set()
@@ -548,6 +549,7 @@ def _signal_row_alignment_penalties(
 
     stage_drift = 0
     for source_id, targets in sorted(outgoing.items()):
+
         if len(targets) != 1 or not is_signal_stage(source_id):
             continue
         target_id = next(iter(targets))
@@ -720,20 +722,65 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
         if gaps:
             interface_soft_gap += max(0, min(gaps) - 2 * PITCH)
 
+    # A multi-output schematic can contain separate parallel signal chains.
+    # The rightmost cell of an unrelated chain is not the output frontier for
+    # this chain. Only use producer-local frontiers when there are multiple
+    # directed outputs (or consumer-local frontiers for multiple inputs).
+    # Single-interface layouts preserve the original page-edge preference.
+    signal_parents: dict[str, set[str]] = defaultdict(set)
+    signal_children: dict[str, set[str]] = defaultdict(set)
+    for source, target, _net in signal_relations:
+        if source != target:
+            signal_parents[target].add(source)
+            signal_children[source].add(target)
+
+    def signal_lineage_extreme(interface_id: str, *, upstream: bool) -> int | None:
+        links = signal_parents if upstream else signal_children
+        pending = list(sorted(links[interface_id]))
+        visited: set[str] = set()
+        positions: list[int] = []
+        while pending:
+            member = pending.pop()
+            if member in visited:
+                continue
+            visited.add(member)
+            # Interfaces delimit a corridor: do not borrow the frontier of a
+            # different output (or walk through an external shared endpoint).
+            if member in roles:
+                continue
+            if member in centers:
+                positions.append(centers[member][0])
+            pending.extend(sorted(links[member]))
+        if not positions:
+            return None
+        return max(positions) if upstream else min(positions)
+
+    directed_inputs = {block_id for block_id, block_roles in roles.items()
+                       if block_roles == {"signal_in"} and block_id in centers}
+    directed_outputs = {block_id for block_id, block_roles in roles.items()
+                        if block_roles == {"signal_out"} and block_id in centers}
     frontier_distance = 0
     if centers:
         min_x = min(point[0] for point in centers.values())
         max_x = max(point[0] for point in centers.values())
-        for block_id, block_roles in roles.items():
+        for block_id, block_roles in sorted(roles.items()):
             point = centers.get(block_id)
-            if point is None:
-                continue
-            if "signal_in" in block_roles and "signal_out" in block_roles:
+            if point is None or block_roles == {"signal_in", "signal_out"}:
                 continue
             if "signal_in" in block_roles:
-                frontier_distance += max(0, point[0] - min_x)
+                bound = (
+                    signal_lineage_extreme(block_id, upstream=False)
+                    if block_id in directed_inputs and len(directed_inputs) > 1
+                    else None
+                )
+                frontier_distance += max(0, point[0] - (min_x if bound is None else bound))
             if "signal_out" in block_roles:
-                frontier_distance += max(0, max_x - point[0])
+                bound = (
+                    signal_lineage_extreme(block_id, upstream=True)
+                    if block_id in directed_outputs and len(directed_outputs) > 1
+                    else None
+                )
+                frontier_distance += max(0, (max_x if bound is None else bound) - point[0])
 
     feedback_distance = 0
     support_distance = 0
@@ -822,6 +869,7 @@ def compactness_whitespace_penalties(packing) -> CompactnessPenaltyVector:
     bottom_margin = max(0, BOTTOM - bottom)
     whitespace_imbalance = abs(left_margin - right_margin) + abs(top_margin - bottom_margin)
     return area_units, _grid_units(edge_bias), _grid_units(whitespace_imbalance)
+
 
 
 def _field_slot_consistency_penalty(packing) -> int:
