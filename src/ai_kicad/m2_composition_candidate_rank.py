@@ -523,11 +523,13 @@ def _signal_row_alignment_penalties(
 
     def is_signal_stage(block_id: str) -> bool:
         block = blocks.get(block_id)
-        return bool(
-            block is not None
-            and block.kind != "interface"
-            and {"signal_in", "signal_out"}.issubset({port.role for port in block.ports})
-        )
+        if block is None or block.kind == "interface":
+            return False
+        if {"signal_in", "signal_out"}.issubset({port.role for port in block.ports}):
+            return True
+        # Inferred one-to-one signal corridors also need readable serial rows;
+        # fanout, convergence, and unowned single-ended cells are exempt.
+        return len(incoming[block_id]) == len(outgoing[block_id]) == 1
 
     stage_drift = 0
     for source_id, targets in sorted(outgoing.items()):
