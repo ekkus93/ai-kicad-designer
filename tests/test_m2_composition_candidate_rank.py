@@ -1473,3 +1473,88 @@ def test_material_dislocation_keeps_wrong_side_and_renaming_invariants() -> None
     assert composition_candidate_key(
         plan, distant, metrics, routing_backtracking=999
     ) < composition_candidate_key(plan, wrong_side, metrics, routing_backtracking=0)
+
+def test_two_independent_output_chains_prefer_producer_owned_rows() -> None:
+    from ai_kicad.m2_composition_candidate_rank import _independent_output_owner_row_drift
+
+    first = _block("stage-a", "filter")
+    second = _block("stage-b", "filter")
+    a = _block("interface-a", "interface", ("signal_out",))
+    b = _block("interface-b", "interface", ("signal_out",))
+    edges = (
+        _edge("signal", "stage-a", "interface-a", "net-a"),
+        _edge("signal", "stage-b", "interface-b", "net-b"),
+    )
+    plan = _plan((first, second, a, b), edges)
+    aligned = _packing(
+        _placed(first, 0),
+        _placed(a, 4 * PITCH),
+        _placed(second, 8 * PITCH, 10 * PITCH),
+        _placed(b, 12 * PITCH, 10 * PITCH),
+    )
+    detached = _packing(
+        _placed(first, 0),
+        _placed(a, 4 * PITCH, 5 * PITCH),
+        _placed(second, 8 * PITCH, 10 * PITCH),
+        _placed(b, 12 * PITCH, 5 * PITCH),
+    )
+    assert _independent_output_owner_row_drift(plan, aligned) == 0
+    assert _independent_output_owner_row_drift(plan, detached) == 10
+    routing = (1_000, 500, 2, 1.0, 0, 0)
+    assert composition_candidate_key(
+        plan, aligned, routing, routing_backtracking=100
+    ) < composition_candidate_key(plan, detached, routing, routing_backtracking=0)
+
+    renamed = _plan(
+        (b, second, a, first),
+        (
+            _edge("signal", "stage-b", "interface-b", "new-z"),
+            _edge("signal", "stage-a", "interface-a", "new-y"),
+        ),
+    )
+    assert _independent_output_owner_row_drift(renamed, detached) == 10
+    assert composition_candidate_key(renamed, detached, routing, routing_backtracking=0) == (
+        composition_candidate_key(plan, detached, routing, routing_backtracking=0)
+    )
+
+
+def test_shared_producer_and_single_output_exempt_from_independent_row_priority() -> None:
+    from ai_kicad.m2_composition_candidate_rank import _independent_output_owner_row_drift
+
+    stage = _block("stage", "filter")
+    a = _block("first", "interface", ("signal_out",))
+    b = _block("second", "interface", ("signal_out",))
+    shared = _plan(
+        (stage, a, b),
+        (
+            _edge("branch", "stage", "first", "n"),
+            _edge("branch", "stage", "second", "n"),
+        ),
+    )
+    placed = _packing(
+        _placed(stage, 0),
+        _placed(a, 4 * PITCH),
+        _placed(b, 4 * PITCH, 10 * PITCH),
+    )
+    assert _independent_output_owner_row_drift(shared, placed) == 0
+    sole = _plan((stage, b), (_edge("signal", "stage", "second", "n"),))
+    assert _independent_output_owner_row_drift(
+        sole, _packing(_placed(stage, 0), _placed(b, 4 * PITCH, 10 * PITCH))
+    ) == 0
+
+    ambiguous = _plan(
+        (stage, a, b, _block("other", "filter")),
+        (
+            _edge("signal", "stage", "first", "n"),
+            _edge("signal", "stage", "second", "n"),
+            _edge("signal", "other", "second", "other-n"),
+        ),
+    )
+    assert _independent_output_owner_row_drift(
+        ambiguous,
+        _packing(
+            _placed(stage, 0), _placed(a, 4 * PITCH),
+            _placed(b, 4 * PITCH, 10 * PITCH),
+            _placed(_block("other", "filter"), 8 * PITCH, 10 * PITCH),
+        ),
+    ) == 0

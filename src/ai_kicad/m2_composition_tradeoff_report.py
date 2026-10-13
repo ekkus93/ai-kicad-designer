@@ -21,8 +21,9 @@ def _view(candidate: dict) -> dict:
         "branch_alignment": penalties.get("branch_alignment"),
         "directed_interface_row_drift": penalties.get("directed_interface_row_drift"),
         "material_interface_row_dislocation": key[16] if len(key) > 16 else None,
+        "independent_output_owner_row_drift": key[17] if len(key) > 17 else None,
         "local_signal_neighbor_gap": penalties.get("local_signal_neighbor_gap"),
-        "route_backtracking": key[17] if len(key) > 17 else None,
+        "route_backtracking": key[18] if len(key) > 18 else None,
         "routed_union_length_nm": score[0] if score else None,
     }
 

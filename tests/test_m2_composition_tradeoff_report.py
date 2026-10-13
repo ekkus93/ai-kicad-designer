@@ -6,7 +6,7 @@ def candidate(seed, row, frontier, length, side=0, backtracking=0):
         "seed": seed,
         "round": 0,
         "score": [length],
-        "selection_key": [0] * 17 + [backtracking],
+        "selection_key": [0] * 18 + [backtracking],
         "semantic_penalty_breakdown": {
             "stage_order_violations": 0,
             "reversal_distance": 0,
@@ -94,7 +94,7 @@ def test_first_rank_difference_identifies_earliest_production_priority():
     alternative["selection_key"][5] = 46
     result = summarize_comparable_candidates(selection)
     assert result["best_row_locality_alternatives"][0]["first_rank_difference"] == {
-        "index": 17,
+        "index": 18,
         "candidate_value": 88,
         "selected_value": 78,
         "candidate_preferred": False,

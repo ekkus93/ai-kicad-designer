@@ -606,6 +606,41 @@ def _signal_row_alignment_penalties(
     return _signal_row_alignment_components(plan, centers, signal_relations)[:2]
 
 
+def _independent_output_owner_row_drift(plan, packing) -> int:
+    """Keep separate final output interfaces on their own producer rows.
+
+    Only consider at least two unambiguous, independently owned, directed
+    outputs. Multiple connectors sharing the same producer are fanout, not
+    parallel terminal chains. A missing or ambiguous owner cancels this soft
+    preference; do not guess direction from names, nets or symbol placement.
+    All electrical and packing legality is already proved before ranking.
+    """
+    centers = {block_id: _center(rect) for block_id, rect in _placed_rects(packing).items()}
+    relations = _signal_relations(plan)
+    roles = _interface_roles(plan, relations)
+    outputs = tuple(
+        sorted(block_id for block_id, role in roles.items()
+               if role == {"signal_out"} and block_id in centers)
+    )
+    if len(outputs) < 2:
+        return 0
+    owner_ids = []
+    for output in outputs:
+        owners = {
+            source for source, target, _net in relations
+            if target == output and source in centers and source not in roles and source != output
+        }
+        if len(owners) != 1:
+            return 0
+        owner_ids.append(next(iter(owners)))
+    if len(set(owner_ids)) != len(owner_ids):
+        return 0
+    return _grid_units(
+        sum(abs(centers[output][1] - centers[owner][1])
+            for output, owner in zip(outputs, owner_ids, strict=True))
+    )
+
+
 def _support_axis_alignment_penalty(plan, centers: dict[str, Point]) -> int:
     """Prefer a shared row or column for explicitly owned local support.
 
@@ -1024,6 +1059,11 @@ def composition_candidate_key(
         # Escaped owner rows are a material visual-disconnection risk, but
         # small connector-row adjustments remain secondary to route clarity.
         breakdown.material_interface_row_dislocation,
+        # Independent final-output ownership takes priority over cosmetic
+        # route-backtracking: an output on an unrelated chain's row is
+        # harder to trace even when its conductor has a slightly shorter jog.
+        # Shared-producer fanout and single-output layouts remain exempt.
+        _independent_output_owner_row_drift(plan, packing),
         int(routing_backtracking),
         *semantic[16:],
         # Prefer a low-bend routed conductor before raw length.
