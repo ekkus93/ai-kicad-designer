@@ -40,9 +40,7 @@ def summarize_comparable_candidates(selection: dict, limit: int = 8) -> dict:
         "round": selection.get("selected_round"),
         "score": selection.get("selected_score", ()),
         "selection_key": selection.get("selected_selection_key", ()),
-        "semantic_penalty_breakdown": selection.get(
-            "selected_semantic_penalty_breakdown", {}
-        ),
+        "semantic_penalty_breakdown": selection.get("selected_semantic_penalty_breakdown", {}),
     }
     selected_view = _view(selected)
     obligations = (
