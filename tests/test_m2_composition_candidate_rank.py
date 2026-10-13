@@ -298,7 +298,6 @@ def test_supply_infrastructure_is_penalized_on_primary_signal_row() -> None:
             _edge("signal", "first", "second", "signal"),
             _edge("power", "supply", "first", "rail"),
         ),
-
     )
     intruding = _packing(
         _placed(first, 2 * PITCH, 2 * PITCH),
@@ -599,7 +598,6 @@ def test_inferred_precedence_serial_stages_align_without_explicit_roles() -> Non
 
 def test_inferred_serial_row_exempts_fanout_and_single_ended_stages() -> None:
     source = _block("source", "interface", ("signal_in",))
-
     root = _block("root", "rc")
     upper = _block("upper", "rc")
     lower = _block("lower", "rc")
@@ -900,7 +898,6 @@ def test_passive_reference_axis_exempts_shared_or_missing_ownership() -> None:
             shared,
             0,
             positions={
-
                 ("main", 1): (0, 0),
                 ("ref-a", 1): (3 * PITCH, 4 * PITCH),
                 ("ref-b", 1): (4 * PITCH, 4 * PITCH),
@@ -1201,7 +1198,6 @@ def test_serial_row_exempts_explicit_signal_stage_before_fanout() -> None:
     """The fanout junction is not forced onto its upstream stage row."""
     first = _block("first", "filter", ("signal_in", "signal_out"))
     branch = _block("branch", "filter", ("signal_in", "signal_out"))
-
     upper = _block("upper", "filter", ("signal_in", "signal_out"))
     lower = _block("lower", "filter", ("signal_in", "signal_out"))
     edges = (

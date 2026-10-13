@@ -89,7 +89,6 @@ class SemanticPenaltyBreakdown:
             "feedback_intrusion": self.feedback_intrusion,
             "sequential_stage_row_drift": self.sequential_stage_row_drift,
             "directed_interface_row_drift": self.directed_interface_row_drift,
-            "material_interface_row_dislocation": self.material_interface_row_dislocation,
             "support_axis_drift": self.support_axis_drift,
             "passive_reference_axis_drift": self.passive_reference_axis_drift,
             "local_signal_neighbor_gap": self.local_signal_neighbor_gap,
@@ -301,7 +300,6 @@ def _unrelated_block_proximity(plan, rects: dict[str, Rect]) -> int:
 
 def _local_signal_neighbor_gap(plan, rects: dict[str, Rect]) -> int:
     """Prefer nearby members of label-eligible two-fragment signal nets.
-
 
     Shared distribution, mandatory explicit geometry, interfaces, and fanout
     are excluded. This is placement preference, not emitted-route proof.
@@ -520,7 +518,7 @@ def _feedback_corridor_intrusions(plan, rects: dict[str, Rect], centers: dict[st
     return penalty
 
 
-def _signal_row_alignment_penalties(
+def _signal_row_alignment_components(
     plan, centers: dict[str, Point], signal_relations: tuple[tuple[str, str, str], ...]
 ) -> tuple[int, int, int]:
     """Prefer legible serial signal rows and connector-to-owner row alignment.
@@ -601,6 +599,13 @@ def _signal_row_alignment_penalties(
     return _grid_units(stage_drift), _grid_units(interface_drift), _grid_units(material_drift)
 
 
+def _signal_row_alignment_penalties(
+    plan, centers: dict[str, Point], signal_relations: tuple[tuple[str, str, str], ...]
+) -> tuple[int, int]:
+    """Preserve the stable two-field alignment helper API for callers."""
+    return _signal_row_alignment_components(plan, centers, signal_relations)[:2]
+
+
 def _support_axis_alignment_penalty(plan, centers: dict[str, Point]) -> int:
     """Prefer a shared row or column for explicitly owned local support.
 
@@ -610,7 +615,6 @@ def _support_axis_alignment_penalty(plan, centers: dict[str, Point]) -> int:
     semantic annotation order and repeated declarations.
     """
     pairs = {
-
         tuple(sorted((edge.source, edge.target)))
         for edge in plan.edges
         if edge.kind in {"support", "package"}
@@ -823,7 +827,7 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
         sequential_stage_row_drift,
         directed_interface_row_drift,
         material_interface_row_dislocation,
-    ) = _signal_row_alignment_penalties(plan, centers, signal_relations)
+    ) = _signal_row_alignment_components(plan, centers, signal_relations)
     support_axis_drift = _support_axis_alignment_penalty(plan, centers)
     passive_reference_axis_drift = _passive_reference_axis_alignment_penalty(packing)
     # Nearest directed connector-to-owner gap is a soft signal-neighbor
@@ -914,7 +918,6 @@ def _field_slot_consistency_penalty(packing) -> int:
         text_positions = getattr(fragment, "text_positions", {})
         angles = getattr(fragment, "angles", {})
         for occurrence, center in sorted(positions.items()):
-
             text = text_positions.get(occurrence)
             roles = roles_by_component.get(occurrence[0])
             if text is None or not roles:
