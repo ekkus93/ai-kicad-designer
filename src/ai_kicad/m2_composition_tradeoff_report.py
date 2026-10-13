@@ -26,6 +26,24 @@ def _view(candidate: dict) -> dict:
     }
 
 
+def _delta_from_selected(candidate: dict, selected: dict) -> dict:
+    """Positive deltas are larger than selected; negative deltas are smaller."""
+    keys = (
+        "frontier_distance",
+        "directed_interface_row_drift",
+        "route_backtracking",
+        "routed_union_length_nm",
+    )
+    return {
+        key: (
+            candidate[key] - selected[key]
+            if candidate[key] is not None and selected[key] is not None
+            else None
+        )
+        for key in keys
+    }
+
+
 def summarize_comparable_candidates(selection: dict, limit: int = 8) -> dict:
     """Expose alternatives with the same leading flow/side obligations.
 
@@ -61,6 +79,8 @@ def summarize_comparable_candidates(selection: dict, limit: int = 8) -> dict:
     alternatives = [
         item for item in alternatives if all(item[key] == selected_view[key] for key in obligations)
     ]
+    for item in alternatives:
+        item["delta_from_selected"] = _delta_from_selected(item, selected_view)
     alternatives.sort(
         key=lambda item: (
             item["directed_interface_row_drift"] is None,
@@ -74,6 +94,11 @@ def summarize_comparable_candidates(selection: dict, limit: int = 8) -> dict:
     return {
         "selected": selected_view,
         "same_flow_side_alternative_count": len(alternatives),
+        "better_row_locality_count": sum(
+            item["delta_from_selected"]["directed_interface_row_drift"] is not None
+            and item["delta_from_selected"]["directed_interface_row_drift"] < 0
+            for item in alternatives
+        ),
         "best_row_locality_alternatives": alternatives[:limit],
         "truncated": len(alternatives) > limit,
         "acceptance_claimed": False,

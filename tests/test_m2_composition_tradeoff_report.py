@@ -35,6 +35,13 @@ def test_tradeoff_exposes_lower_row_drift_without_promoting_wrong_side():
     report = summarize_comparable_candidates(selection)
     assert report["selected"]["route_backtracking"] == 78
     assert report["same_flow_side_alternative_count"] == 1
+    assert report["better_row_locality_count"] == 1
+    assert report["best_row_locality_alternatives"][0]["delta_from_selected"] == {
+        "frontier_distance": 15,
+        "directed_interface_row_drift": -40,
+        "route_backtracking": 10,
+        "routed_union_length_nm": -48_260_000,
+    }
     assert report["best_row_locality_alternatives"][0]["seed"] == 1
     assert report["best_row_locality_alternatives"][0]["directed_interface_row_drift"] == 28
     assert report["acceptance_claimed"] is False
@@ -57,6 +64,7 @@ def test_tradeoff_is_bounded_and_stable_under_candidate_permutation():
     report = summarize_comparable_candidates(selection, limit=2)
     assert [x["seed"] for x in report["best_row_locality_alternatives"]] == [3, 2]
     assert report["same_flow_side_alternative_count"] == 3
+    assert report["better_row_locality_count"] == 3
     assert report["truncated"] is True
     selection["proved_candidates"] = list(reversed(others))
     assert summarize_comparable_candidates(selection, limit=2) == report
