@@ -8,7 +8,8 @@ permissions:
 jobs:
   composition-probe:
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[m2h2-development-probe]')
-    runs-on: ubuntu-24.04
+    # This private repository's governed M2h2 evidence and KiCad tooling run on the locked runner.
+    runs-on: self-hosted
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
