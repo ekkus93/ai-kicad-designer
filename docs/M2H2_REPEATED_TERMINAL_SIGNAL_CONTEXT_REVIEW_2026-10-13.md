@@ -1,6 +1,20 @@
 # Terminal-inferred signal context in repeated-stage ranking — 2026-10-13
 
-Status: **analysis only; no production fix or visual acceptance claimed**.
+Status: **source correction implemented and exact-head Fast Validation passed; full visual acceptance unproven**.
+
+Implementation: `bab8a5f033b5ada900389def1d3642c987a30ba8` updated
+`_block_semantic_signature` to include the same deduplicated generic signal
+relations as production flow ranking, including uniquely inferred passive
+terminal connections. Added metamorphic regressions for unmatched/matched
+output terminals, shared passive ambiguity, net renaming, declaration order,
+and authored-plus-inferred equivalent edge annotations.
+
+Qualification: [Fast Validation 38370298212](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38370298212)
+**PASS, all three jobs**, and [locked toolchain 38370298298](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38370298298)
+**PASS**. Full five-run current-source qualification and independent
+native comparative audit were not executed by these checks. Historical
+comparison still has five failed frozen visual acceptance criteria. This
+review does not waive any visual gate or change historical evidence.
 
 The current `src/ai_kicad/m2_composition_candidate_rank.py` derives
 `_signal_relations(plan)` from authored signal/branch edges, precedence, and
