@@ -13,6 +13,7 @@ def inferred_passive_interface_signal_relations(
     producers: dict[str, set[str]] = {}
     consumers: dict[str, set[str]] = {}
     excluded: set[str] = set()
+    passive_owners: dict[str, set[str]] = {}
     for block in plan.blocks:
         for port in block.ports:
             net = getattr(port, "net", None)
@@ -23,6 +24,10 @@ def inferred_passive_interface_signal_relations(
                     interfaces.setdefault(net, set()).add(block.id)
                 else:
                     excluded.add(net)
+            elif port.role == "passive":
+                # A second passive participant makes direction/ownership
+                # ambiguous; never turn a shared net into a directed link.
+                passive_owners.setdefault(net, set()).add(block.id)
             elif port.role == "signal_out":
                 producers.setdefault(net, set()).add(block.id)
             elif port.role == "signal_in":
@@ -31,7 +36,7 @@ def inferred_passive_interface_signal_relations(
                 excluded.add(net)
     result: set[tuple[str, str, str]] = set()
     for net, attached in interfaces.items():
-        if net in excluded or len(attached) != 1:
+        if net in excluded or len(attached) != 1 or passive_owners.get(net):
             continue
         interface = next(iter(attached))
         sources = producers.get(net, set())
