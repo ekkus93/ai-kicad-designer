@@ -619,15 +619,19 @@ def _independent_output_owner_row_drift(plan, packing) -> int:
     relations = _signal_relations(plan)
     roles = _interface_roles(plan, relations)
     outputs = tuple(
-        sorted(block_id for block_id, role in roles.items()
-               if role == {"signal_out"} and block_id in centers)
+        sorted(
+            block_id
+            for block_id, role in roles.items()
+            if role == {"signal_out"} and block_id in centers
+        )
     )
     if len(outputs) < 2:
         return 0
     owner_ids = []
     for output in outputs:
         owners = {
-            source for source, target, _net in relations
+            source
+            for source, target, _net in relations
             if target == output and source in centers and source not in roles and source != output
         }
         if len(owners) != 1:
@@ -636,8 +640,10 @@ def _independent_output_owner_row_drift(plan, packing) -> int:
     if len(set(owner_ids)) != len(owner_ids):
         return 0
     return _grid_units(
-        sum(abs(centers[output][1] - centers[owner][1])
-            for output, owner in zip(outputs, owner_ids, strict=True))
+        sum(
+            abs(centers[output][1] - centers[owner][1])
+            for output, owner in zip(outputs, owner_ids, strict=True)
+        )
     )
 
 
