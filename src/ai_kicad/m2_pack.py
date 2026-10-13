@@ -1380,9 +1380,7 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
             blocker, blocker_owners, blocker_role
         ):
             return None
-        return _measured_repack(
-            plan, packing, interface, left, top, label, displaced=blocker
-        )
+        return _measured_repack(plan, packing, interface, left, top, label, displaced=blocker)
 
     alternatives: list[Packing] = []
     for role, label in (
@@ -1412,9 +1410,7 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
                 # Align both centers and upper edges as separate legal choices.
                 center_top = (owner.envelope[1] + owner.envelope[3] - height) // 2
                 for top in sorted({center_top, owner.envelope[1]}):
-                    candidate = frontier_repack(
-                        baseline, interface, owner, role, left, top, label
-                    )
+                    candidate = frontier_repack(baseline, interface, owner, role, left, top, label)
                     if candidate is None:
                         continue
                     # Repair semantic side violations before cosmetic row drift:
