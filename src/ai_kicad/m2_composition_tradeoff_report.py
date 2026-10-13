@@ -55,12 +55,11 @@ def summarize_comparable_candidates(selection: dict, limit: int = 8) -> dict:
         if (
             candidate.get("seed"),
             candidate.get("round"),
-        ) != (selected_view["seed"], selected_view["round"])
+        )
+        != (selected_view["seed"], selected_view["round"])
     ]
     alternatives = [
-        item
-        for item in alternatives
-        if all(item[key] == selected_view[key] for key in obligations)
+        item for item in alternatives if all(item[key] == selected_view[key] for key in obligations)
     ]
     alternatives.sort(
         key=lambda item: (
