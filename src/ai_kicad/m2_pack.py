@@ -1321,6 +1321,69 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
             )
         )
 
+    def frontier_repack(
+        packing: Packing,
+        interface: PlacedFragment,
+        owner: PlacedFragment,
+        role: str,
+        left: int,
+        top: int,
+        label: str,
+    ) -> Packing | None:
+        """Swap mutually reversed interface blockers when a frontier is occupied.
+
+        A misplaced input may occupy the only legal output slot and vice versa.
+        Displace only a directed interface whose side error strictly improves;
+        never displace a functional stage or a correctly sided interface.
+        The measured placement and precedence proofs remain mandatory.
+        """
+        direct = _measured_repack(plan, packing, interface, left, top, label)
+        if direct is not None:
+            return direct
+        target = _place(interface.fragment, left, top)
+        blockers = [
+            item
+            for item in packing.fragments
+            if item.fragment.block.id != interface.fragment.block.id
+            and max(target.envelope[0], item.envelope[0])
+            < min(target.envelope[2], item.envelope[2])
+            and max(target.envelope[1], item.envelope[1])
+            < min(target.envelope[3], item.envelope[3])
+        ]
+        if len(blockers) != 1 or blockers[0].fragment.block.kind != "interface":
+            return None
+        blocker = blockers[0]
+        blocker_roles = frontier_roles(blocker.fragment.block)
+        if blocker_roles not in ({"signal_in"}, {"signal_out"}):
+            return None
+        blocker_role = next(iter(blocker_roles))
+        by_id = {item.fragment.block.id: item for item in packing.fragments}
+        blocker_owners = tuple(
+            by_id[owner_id]
+            for owner_id in frontier_owner_ids(blocker.fragment.block.id, blocker_role)
+            if owner_id in by_id and by_id[owner_id].fragment.block.kind != "interface"
+        )
+        if not blocker_owners:
+            return None
+
+        def side_violation(
+            placed: PlacedFragment, peers: tuple[PlacedFragment, ...], side: str
+        ) -> int:
+            if side == "signal_in":
+                return max(max(0, placed.envelope[2] - peer.envelope[0]) for peer in peers)
+            return max(max(0, peer.envelope[2] - placed.envelope[0]) for peer in peers)
+
+        if side_violation(interface, (owner,), role) <= side_violation(target, (owner,), role):
+            return None
+        relocated = _place(blocker.fragment, interface.envelope[0], interface.envelope[1])
+        if side_violation(relocated, blocker_owners, blocker_role) >= side_violation(
+            blocker, blocker_owners, blocker_role
+        ):
+            return None
+        return _measured_repack(
+            plan, packing, interface, left, top, label, displaced=blocker
+        )
+
     alternatives: list[Packing] = []
     for role, label in (
         ("signal_in", "interface-frontier-input"),
@@ -1349,7 +1412,9 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
                 # Align both centers and upper edges as separate legal choices.
                 center_top = (owner.envelope[1] + owner.envelope[3] - height) // 2
                 for top in sorted({center_top, owner.envelope[1]}):
-                    candidate = _measured_repack(plan, baseline, interface, left, top, label)
+                    candidate = frontier_repack(
+                        baseline, interface, owner, role, left, top, label
+                    )
                     if candidate is None:
                         continue
                     # Repair semantic side violations before cosmetic row drift:
@@ -1419,7 +1484,9 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
                         )
                         center_top = (owner.envelope[1] + owner.envelope[3] - height) // 2
                         for top in sorted({center_top, owner.envelope[1]}):
-                            proposal = _measured_repack(plan, selected, interface, left, top, label)
+                            proposal = frontier_repack(
+                                selected, interface, owner, role, left, top, label
+                            )
                             if proposal is None:
                                 continue
                             moved = next(

@@ -155,6 +155,63 @@ def test_frontier_search_repairs_two_reversed_outputs_in_one_bounded_candidate()
     assert _interface_frontier_candidates(reversed_plan, baseline) == candidates
 
 
+def test_opposing_interfaces_exchange_blocked_frontier_slots() -> None:
+    """An input and output may block one another's only direction-correct slot."""
+    stage = _block("stage", "amplifier")
+    input_block = _block("incoming", "interface", "signal_in")
+    output_block = _block("outgoing", "interface", "signal_out")
+    blocks = (stage, input_block, output_block)
+    edges = (
+        SemanticEdge("signal", "incoming", "stage", "in", ()),
+        SemanticEdge("signal", "stage", "outgoing", "out", ()),
+    )
+    baseline = Packing(
+        (
+            _place(_fragment(stage), LEFT + 60 * PITCH, 50 * PITCH),
+            _place(_fragment(input_block), LEFT + 69 * PITCH, 50 * PITCH),
+            _place(_fragment(output_block), LEFT + 51 * PITCH, 50 * PITCH),
+        ),
+        (),
+    )
+    plan = SemanticPlan(blocks, edges, {}, ())
+    candidates = _interface_frontier_candidates(plan, baseline)
+    assert len(candidates) == 2
+    for candidate in candidates:
+        by_id = {item.fragment.block.id: item for item in candidate.fragments}
+        assert by_id["incoming"].envelope[2] < by_id["stage"].envelope[0]
+        assert by_id["outgoing"].envelope[0] > by_id["stage"].envelope[2]
+    assert _interface_frontier_candidates(
+        SemanticPlan(tuple(reversed(blocks)), tuple(reversed(edges)), {}, ()), baseline
+    ) == candidates
+
+
+def test_frontier_exchange_never_reverses_a_correctly_sided_interface() -> None:
+    """A connector already to the right of its producer must not be evicted left."""
+    stage = _block("stage", "amplifier")
+    output_a = _block("out-a", "interface", "signal_out")
+    output_b = _block("out-b", "interface", "signal_out")
+    plan = SemanticPlan(
+        (stage, output_a, output_b),
+        (
+            SemanticEdge("signal", "stage", "out-a", "a", ()),
+            SemanticEdge("signal", "stage", "out-b", "b", ()),
+        ),
+        {},
+        (),
+    )
+    baseline = Packing(
+        (
+            _place(_fragment(stage), LEFT + 60 * PITCH, 50 * PITCH),
+            _place(_fragment(output_a), LEFT + 51 * PITCH, 50 * PITCH),
+            _place(_fragment(output_b), LEFT + 69 * PITCH, 50 * PITCH),
+        ),
+        (),
+    )
+    for candidate in _interface_frontier_candidates(plan, baseline):
+        by_id = {item.fragment.block.id: item for item in candidate.fragments}
+        assert by_id["out-b"].envelope[0] > by_id["stage"].envelope[2]
+
+
 def test_frontier_search_uses_unique_terminal_backed_passive_output() -> None:
     """A uniquely inferred passive output belongs after its producer."""
     stage = BlockPlan(
