@@ -68,3 +68,61 @@ def test_tradeoff_is_bounded_and_stable_under_candidate_permutation():
     assert report["truncated"] is True
     selection["proved_candidates"] = list(reversed(others))
     assert summarize_comparable_candidates(selection, limit=2) == report
+
+
+def test_first_rank_difference_identifies_earliest_production_priority():
+    selected = candidate(4, 68, 46, 335_280_000, backtracking=78)
+    alternative = candidate(1, 28, 61, 287_020_000, backtracking=88)
+    selected["selection_key"][5] = 46
+    alternative["selection_key"][5] = 61
+    selection = {
+        "selected_seed": selected["seed"],
+        "selected_round": selected["round"],
+        "selected_score": selected["score"],
+        "selected_selection_key": selected["selection_key"],
+        "selected_semantic_penalty_breakdown": selected["semantic_penalty_breakdown"],
+        "proved_candidates": [alternative],
+    }
+    result = summarize_comparable_candidates(selection)
+    assert result["best_row_locality_alternatives"][0]["first_rank_difference"] == {
+        "index": 5,
+        "candidate_value": 61,
+        "selected_value": 46,
+        "candidate_preferred": False,
+    }
+
+    alternative["selection_key"][5] = 46
+    result = summarize_comparable_candidates(selection)
+    assert result["best_row_locality_alternatives"][0]["first_rank_difference"] == {
+        "index": 16,
+        "candidate_value": 88,
+        "selected_value": 78,
+        "candidate_preferred": False,
+    }
+
+
+def test_first_rank_difference_handles_missing_or_equal_keys():
+    selected = candidate(4, 68, 46, 335_280_000)
+    alternative = candidate(1, 28, 46, 287_020_000)
+    selection = {
+        "selected_seed": selected["seed"],
+        "selected_round": selected["round"],
+        "selected_score": selected["score"],
+        "selected_selection_key": selected["selection_key"],
+        "selected_semantic_penalty_breakdown": selected["semantic_penalty_breakdown"],
+        "proved_candidates": [alternative],
+    }
+    result = summarize_comparable_candidates(selection)
+    assert result["best_row_locality_alternatives"][0]["first_rank_difference"] == {
+        "index": None,
+        "candidate_value": None,
+        "selected_value": None,
+        "candidate_preferred": False,
+    }
+    alternative["selection_key"] = []
+    assert (
+        summarize_comparable_candidates(selection)["best_row_locality_alternatives"][0][
+            "first_rank_difference"
+        ]
+        is None
+    )

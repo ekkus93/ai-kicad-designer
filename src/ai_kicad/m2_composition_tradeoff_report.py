@@ -44,6 +44,32 @@ def _delta_from_selected(candidate: dict, selected: dict) -> dict:
     }
 
 
+def _first_rank_difference(candidate: dict, selected: dict) -> dict | None:
+    """Locate the first production-key preference without re-ranking anything."""
+    candidate_key = candidate.get("selection_key")
+    selected_key = selected.get("selection_key")
+    if not candidate_key or not selected_key:
+        return None
+    for index, (alternative_value, selected_value) in enumerate(
+        zip(candidate_key, selected_key)
+    ):
+        if alternative_value != selected_value:
+            return {
+                "index": index,
+                "candidate_value": alternative_value,
+                "selected_value": selected_value,
+                "candidate_preferred": alternative_value < selected_value,
+            }
+    if len(candidate_key) != len(selected_key):
+        return None
+    return {
+        "index": None,
+        "candidate_value": None,
+        "selected_value": None,
+        "candidate_preferred": False,
+    }
+
+
 def summarize_comparable_candidates(selection: dict, limit: int = 8) -> dict:
     """Expose alternatives with the same leading flow/side obligations.
 
@@ -68,7 +94,10 @@ def summarize_comparable_candidates(selection: dict, limit: int = 8) -> dict:
         "interface_owner_distance",
     )
     alternatives = [
-        _view(candidate)
+        {
+            **_view(candidate),
+            "first_rank_difference": _first_rank_difference(candidate, selected),
+        }
         for candidate in selection.get("proved_candidates", ())
         if (
             candidate.get("seed"),
