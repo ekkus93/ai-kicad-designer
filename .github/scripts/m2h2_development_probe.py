@@ -6,6 +6,7 @@ from ai_kicad.ir import InputError
 from ai_kicad.m2a import ROOT
 from ai_kicad.m2b import assets, validate
 from ai_kicad.m2_compose import compose_with_evidence
+from ai_kicad.m2_composition_tradeoff_report import summarize_comparable_candidates
 
 CASES = {
     "v5-3": "fixtures/m2blind_v5/ir/V5-3.json",
@@ -34,3 +35,6 @@ for case, relative in CASES.items():
                           "labels": scene.labels, "layout": scene.metrics,
                           "selection": evidence["candidate_selection"],
                           "budgets": evidence["budgets"]}, separators=(",", ":")), flush=True)
+        print(json.dumps({"kind": "m2h2.development-candidate-tradeoff.1", "case": case,
+                          **summarize_comparable_candidates(evidence["candidate_selection"])},
+                         separators=(",", ":")), flush=True)
