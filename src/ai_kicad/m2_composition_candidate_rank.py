@@ -1072,7 +1072,11 @@ def composition_candidate_key(
         _independent_output_owner_row_drift(plan, packing),
         int(routing_backtracking),
         *semantic[16:],
-        # Prefer a low-bend routed conductor before raw length.
+        # Prefer a short, legible route rather than letting one saved bend
+        # dominate an arbitrarily long detour. One bend costs eight grid
+        # pitches of wire; backtracking and semantic obligations remain higher
+        # priorities, and the independent length/clearance gates are unchanged.
+        int(union_length) + 8 * PITCH * int(bend_count),
         int(bend_count),
         int(union_length),
         int(worst_length),

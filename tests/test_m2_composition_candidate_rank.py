@@ -1566,3 +1566,31 @@ def test_shared_producer_and_single_output_exempt_from_independent_row_priority(
         )
         == 0
     )
+
+
+def test_route_geometry_cost_rejects_gross_detour_for_one_saved_bend() -> None:
+    """One extra turn is preferable to an otherwise avoidable long wire."""
+    stage = _block("stage", "filter", ("signal_in", "signal_out"))
+    plan = _plan((stage,))
+    packing = _packing(_placed(stage, 2 * PITCH, 2 * PITCH))
+    # Both candidates have the same proved semantics and return-leg shape.
+    short = composition_candidate_key(
+        plan, packing, (100 * PITCH, 60 * PITCH, 5, 1.0, 0, 0),
+        routing_backtracking=3,
+    )
+    long = composition_candidate_key(
+        plan, packing, (121 * PITCH, 60 * PITCH, 4, 1.0, 1, 0),
+        routing_backtracking=3,
+    )
+    assert short < long
+    # A five-bend maze with only a small length saving still loses.
+    turny = composition_candidate_key(
+        plan, packing, (95 * PITCH, 60 * PITCH, 9, 1.0, 2, 0),
+        routing_backtracking=3,
+    )
+    assert long < turny
+    # Backtracking is still the higher-priority routing aesthetic.
+    assert long < composition_candidate_key(
+        plan, packing, (80 * PITCH, 60 * PITCH, 3, 1.0, 3, 0),
+        routing_backtracking=4,
+    )
