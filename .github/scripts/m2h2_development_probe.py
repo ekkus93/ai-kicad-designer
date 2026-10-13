@@ -9,7 +9,10 @@ from ai_kicad.m2_compose import compose_with_evidence
 from ai_kicad.m2_composition_tradeoff_report import summarize_comparable_candidates
 
 CASES = {
+    "v4-3": "fixtures/m2blind_v4/ir/V4-3.json",
+    "v4-7": "fixtures/m2blind_v4/ir/V4-7.json",
     "v5-3": "fixtures/m2blind_v5/ir/V5-3.json",
+    "v6-3": "fixtures/m2blind_v6/ir/V6-3.json",
     "v6-5": "fixtures/m2blind_v6/ir/V6-5.json",
     "v6-6": "fixtures/m2blind_v6/ir/V6-6.json",
     "v6-8": "fixtures/m2blind_v6/ir/V6-8.json",
