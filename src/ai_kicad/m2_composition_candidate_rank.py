@@ -920,14 +920,16 @@ def composition_candidate_key(
     semantic = semantic_composition_penalties(plan, packing)
     area, edge_bias, whitespace_imbalance = compactness_whitespace_penalties(packing)
     return (
-        *semantic,
-        # Both candidates have already passed electrical/hard-routing proof.
-        # Prefer a legible low-bend route over a shorter maze when all
-        # higher-priority semantic obligations are identical.  This ranking
-        # tier is generic and does not alter any length or ERC hard gate.
-        # Penalize direction-reversing detours before bend/length tie-breaks.
-        # Every ranked candidate has already passed independent hard proofs.
+        # Keep flow direction, interface-side correctness, ownership,
+        # grouping, repetition and primary-stage alignment above route shape.
+        # Once those higher-priority obligations are equal, a shorter return
+        # leg is preferable to minor connector-row/support-axis refinements.
+        # This is a generic choice among already electrically proved routes;
+        # it changes neither hard length gates nor frozen observer tolerances.
+        *semantic[:16],
         int(routing_backtracking),
+        *semantic[16:],
+        # Prefer a low-bend routed conductor before raw length.
         int(bend_count),
         int(union_length),
         int(worst_length),
