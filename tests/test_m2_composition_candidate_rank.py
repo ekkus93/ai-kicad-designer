@@ -1199,3 +1199,48 @@ def test_serial_row_exempts_explicit_signal_stage_before_fanout() -> None:
     first = _block("first", "filter", ("signal_in", "signal_out"))
     branch = _block("branch", "filter", ("signal_in", "signal_out"))
     upper = _block("upper", "filter", ("signal_in", "signal_out"))
+    lower = _block("lower", "filter", ("signal_in", "signal_out"))
+    edges = (
+        _edge("signal", "first", "branch", "entry"),
+        _edge("branch", "branch", "upper", "split"),
+        _edge("branch", "branch", "lower", "split"),
+    )
+    placed = _packing(
+        _placed(first, 0),
+        _placed(branch, 4 * PITCH, 3 * PITCH),
+        _placed(upper, 8 * PITCH),
+        _placed(lower, 8 * PITCH, 6 * PITCH),
+    )
+    for blocks, relations in (
+        ((first, branch, upper, lower), edges),
+        ((lower, upper, branch, first), tuple(reversed(edges))),
+    ):
+        score = semantic_composition_penalty_breakdown(_plan(blocks, relations), placed)
+        assert score.sequential_stage_row_drift == 0
+        assert score.stage_order_violations == 0
+
+
+def test_serial_row_exempts_explicit_signal_stage_after_convergence() -> None:
+    """A multi-input merge need not share its downstream stage row."""
+    upper = _block("upper", "filter", ("signal_in", "signal_out"))
+    lower = _block("lower", "filter", ("signal_in", "signal_out"))
+    merge = _block("merge", "filter", ("signal_in", "signal_out"))
+    tail = _block("tail", "filter", ("signal_in", "signal_out"))
+    edges = (
+        _edge("signal", "upper", "merge", "upper"),
+        _edge("signal", "lower", "merge", "lower"),
+        _edge("signal", "merge", "tail", "out"),
+    )
+    placed = _packing(
+        _placed(upper, 0),
+        _placed(lower, 0, 6 * PITCH),
+        _placed(merge, 4 * PITCH, 3 * PITCH),
+        _placed(tail, 8 * PITCH),
+    )
+    for blocks, relations in (
+        ((upper, lower, merge, tail), edges),
+        ((tail, merge, lower, upper), tuple(reversed(edges))),
+    ):
+        score = semantic_composition_penalty_breakdown(_plan(blocks, relations), placed)
+        assert score.sequential_stage_row_drift == 0
+        assert score.stage_order_violations == 0
