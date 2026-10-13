@@ -560,6 +560,71 @@ def test_serial_signal_stages_prefer_a_shared_row_with_equal_forward_progress() 
     assert good.stage_order_violations == bad.stage_order_violations == 0
 
 
+def test_inferred_precedence_serial_stages_align_without_explicit_roles() -> None:
+    """Passive stages with unique inferred signal neighbors have a row axis."""
+    source = _block("source", "interface", ("signal_in",))
+    first = _block("first", "rc")
+    second = _block("second", "rc")
+    output = _block("output", "interface", ("signal_out",))
+    relations = (
+        SimpleNamespace(source_fragment="source", target_fragment="first", net="input"),
+        SimpleNamespace(source_fragment="first", target_fragment="second", net="signal"),
+        SimpleNamespace(source_fragment="second", target_fragment="output", net="output"),
+    )
+    plan = _plan((source, first, second, output), precedence=relations)
+    aligned = _packing(
+        _placed(source, 0),
+        _placed(first, 4 * PITCH),
+        _placed(second, 8 * PITCH),
+        _placed(output, 12 * PITCH),
+    )
+    drifting = _packing(
+        _placed(source, 0),
+        _placed(first, 4 * PITCH),
+        _placed(second, 8 * PITCH, 3 * PITCH),
+        _placed(output, 12 * PITCH, 3 * PITCH),
+    )
+    good = semantic_composition_penalty_breakdown(plan, aligned)
+    bad = semantic_composition_penalty_breakdown(plan, drifting)
+    assert good.sequential_stage_row_drift == 0
+    assert bad.sequential_stage_row_drift == 3
+    assert good.stage_order_violations == bad.stage_order_violations == 0
+    renamed = _plan((output, second, first, source), precedence=tuple(reversed(relations)))
+    assert (
+        semantic_composition_penalty_breakdown(renamed, drifting).sequential_stage_row_drift
+        == bad.sequential_stage_row_drift
+    )
+
+
+def test_inferred_serial_row_exempts_fanout_and_single_ended_stages() -> None:
+    source = _block("source", "interface", ("signal_in",))
+    root = _block("root", "rc")
+    upper = _block("upper", "rc")
+    lower = _block("lower", "rc")
+    output = _block("output", "interface", ("signal_out",))
+    fanout = _plan(
+        (source, root, upper, lower, output),
+        (
+            _edge("signal", "source", "root", "input"),
+            _edge("signal", "root", "upper", "branch"),
+            _edge("signal", "root", "lower", "branch"),
+            _edge("signal", "upper", "output", "output"),
+        ),
+    )
+    placed = _packing(
+        _placed(source, 0),
+        _placed(root, 4 * PITCH),
+        _placed(upper, 8 * PITCH, 3 * PITCH),
+        _placed(lower, 8 * PITCH, 7 * PITCH),
+        _placed(output, 12 * PITCH, 3 * PITCH),
+    )
+    assert semantic_composition_penalty_breakdown(fanout, placed).sequential_stage_row_drift == 0
+
+    single_ended = _plan((root, upper), (_edge("signal", "root", "upper", "one_way"),))
+    alone = _packing(_placed(root, 0), _placed(upper, 4 * PITCH, 5 * PITCH))
+    assert semantic_composition_penalty_breakdown(single_ended, alone).sequential_stage_row_drift == 0
+
+
 def test_fanout_and_feedback_do_not_impose_one_serial_baseline() -> None:
     source = _block("source", "filter", ("signal_in", "signal_out"))
     upper = _block("upper", "filter", ("signal_in", "signal_out"))
