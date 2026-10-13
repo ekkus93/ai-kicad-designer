@@ -50,9 +50,7 @@ def _first_rank_difference(candidate: dict, selected: dict) -> dict | None:
     selected_key = selected.get("selection_key")
     if not candidate_key or not selected_key:
         return None
-    for index, (alternative_value, selected_value) in enumerate(
-        zip(candidate_key, selected_key)
-    ):
+    for index, (alternative_value, selected_value) in enumerate(zip(candidate_key, selected_key)):
         if alternative_value != selected_value:
             return {
                 "index": index,
