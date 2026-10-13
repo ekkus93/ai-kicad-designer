@@ -1377,8 +1377,10 @@ def test_parallel_output_frontiers_follow_their_own_signal_producers() -> None:
 
     renamed = _plan(
         (out_b, second, out_a, first),
-        (_edge("signal", "second", "out_b", "renamed_b"),
-         _edge("signal", "first", "out_a", "renamed_a")),
+        (
+            _edge("signal", "second", "out_b", "renamed_b"),
+            _edge("signal", "first", "out_a", "renamed_a"),
+        ),
     )
     assert semantic_composition_penalty_breakdown(renamed, attached) == proper
 
