@@ -1245,6 +1245,7 @@ def test_serial_row_exempts_explicit_signal_stage_after_convergence() -> None:
         assert score.sequential_stage_row_drift == 0
         assert score.stage_order_violations == 0
 
+
 def test_precedence_only_repeated_chains_align_corresponding_stages() -> None:
     """Do not align unrelated chain depths just because their kinds match."""
     a0, a1, b0, b1 = (_block(name, "filter") for name in ("a0", "a1", "b0", "b1"))
