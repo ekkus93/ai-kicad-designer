@@ -622,7 +622,9 @@ def test_inferred_serial_row_exempts_fanout_and_single_ended_stages() -> None:
 
     single_ended = _plan((root, upper), (_edge("signal", "root", "upper", "one_way"),))
     alone = _packing(_placed(root, 0), _placed(upper, 4 * PITCH, 5 * PITCH))
-    assert semantic_composition_penalty_breakdown(single_ended, alone).sequential_stage_row_drift == 0
+    assert (
+        semantic_composition_penalty_breakdown(single_ended, alone).sequential_stage_row_drift == 0
+    )
 
 
 def test_fanout_and_feedback_do_not_impose_one_serial_baseline() -> None:
