@@ -1474,6 +1474,7 @@ def test_material_dislocation_keeps_wrong_side_and_renaming_invariants() -> None
         plan, distant, metrics, routing_backtracking=999
     ) < composition_candidate_key(plan, wrong_side, metrics, routing_backtracking=0)
 
+
 def test_two_independent_output_chains_prefer_producer_owned_rows() -> None:
     from ai_kicad.m2_composition_candidate_rank import _independent_output_owner_row_drift
 
@@ -1538,9 +1539,12 @@ def test_shared_producer_and_single_output_exempt_from_independent_row_priority(
     )
     assert _independent_output_owner_row_drift(shared, placed) == 0
     sole = _plan((stage, b), (_edge("signal", "stage", "second", "n"),))
-    assert _independent_output_owner_row_drift(
-        sole, _packing(_placed(stage, 0), _placed(b, 4 * PITCH, 10 * PITCH))
-    ) == 0
+    assert (
+        _independent_output_owner_row_drift(
+            sole, _packing(_placed(stage, 0), _placed(b, 4 * PITCH, 10 * PITCH))
+        )
+        == 0
+    )
 
     ambiguous = _plan(
         (stage, a, b, _block("other", "filter")),
@@ -1550,11 +1554,15 @@ def test_shared_producer_and_single_output_exempt_from_independent_row_priority(
             _edge("signal", "other", "second", "other-n"),
         ),
     )
-    assert _independent_output_owner_row_drift(
-        ambiguous,
-        _packing(
-            _placed(stage, 0), _placed(a, 4 * PITCH),
-            _placed(b, 4 * PITCH, 10 * PITCH),
-            _placed(_block("other", "filter"), 8 * PITCH, 10 * PITCH),
-        ),
-    ) == 0
+    assert (
+        _independent_output_owner_row_drift(
+            ambiguous,
+            _packing(
+                _placed(stage, 0),
+                _placed(a, 4 * PITCH),
+                _placed(b, 4 * PITCH, 10 * PITCH),
+                _placed(_block("other", "filter"), 8 * PITCH, 10 * PITCH),
+            ),
+        )
+        == 0
+    )
