@@ -20,8 +20,9 @@ def _view(candidate: dict) -> dict:
         "frontier_distance": penalties.get("frontier_distance"),
         "branch_alignment": penalties.get("branch_alignment"),
         "directed_interface_row_drift": penalties.get("directed_interface_row_drift"),
+        "material_interface_row_dislocation": penalties.get("material_interface_row_dislocation"),
         "local_signal_neighbor_gap": penalties.get("local_signal_neighbor_gap"),
-        "route_backtracking": key[16] if len(key) > 16 else None,
+        "route_backtracking": key[17] if len(key) > 17 else None,
         "routed_union_length_nm": score[0] if score else None,
     }
 

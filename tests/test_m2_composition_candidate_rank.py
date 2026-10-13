@@ -298,6 +298,7 @@ def test_supply_infrastructure_is_penalized_on_primary_signal_row() -> None:
             _edge("signal", "first", "second", "signal"),
             _edge("power", "supply", "first", "rail"),
         ),
+
     )
     intruding = _packing(
         _placed(first, 2 * PITCH, 2 * PITCH),
@@ -598,6 +599,7 @@ def test_inferred_precedence_serial_stages_align_without_explicit_roles() -> Non
 
 def test_inferred_serial_row_exempts_fanout_and_single_ended_stages() -> None:
     source = _block("source", "interface", ("signal_in",))
+
     root = _block("root", "rc")
     upper = _block("upper", "rc")
     lower = _block("lower", "rc")
@@ -898,6 +900,7 @@ def test_passive_reference_axis_exempts_shared_or_missing_ownership() -> None:
             shared,
             0,
             positions={
+
                 ("main", 1): (0, 0),
                 ("ref-a", 1): (3 * PITCH, 4 * PITCH),
                 ("ref-b", 1): (4 * PITCH, 4 * PITCH),
@@ -1198,6 +1201,7 @@ def test_serial_row_exempts_explicit_signal_stage_before_fanout() -> None:
     """The fanout junction is not forced onto its upstream stage row."""
     first = _block("first", "filter", ("signal_in", "signal_out"))
     branch = _block("branch", "filter", ("signal_in", "signal_out"))
+
     upper = _block("upper", "filter", ("signal_in", "signal_out"))
     lower = _block("lower", "filter", ("signal_in", "signal_out"))
     edges = (
@@ -1400,3 +1404,76 @@ def test_single_output_still_prefers_global_page_frontier() -> None:
         _placed(unrelated, 8 * PITCH, 4 * PITCH),
     )
     assert semantic_composition_penalty_breakdown(plan, local).frontier_distance == 6
+
+
+def test_material_output_row_dislocation_precedes_route_backtracking() -> None:
+    """A >80 mm disconnected output row outweighs a small return-leg gain."""
+    from ai_kicad.m2_route import MAX_LOCAL_VISIBLE_SIGNAL_DISTANCE
+
+    producer = _block("producer", "filter")
+    output = _block("output", "interface", ("signal_out",))
+    plan = _plan((producer, output), (_edge("signal", "producer", "output"),))
+    aligned = _packing(_placed(producer, 0), _placed(output, 4 * PITCH))
+    remote = _packing(
+        _placed(producer, 0),
+        _placed(output, 4 * PITCH, MAX_LOCAL_VISIBLE_SIGNAL_DISTANCE + PITCH),
+    )
+    aligned_score = semantic_composition_penalty_breakdown(plan, aligned)
+    remote_score = semantic_composition_penalty_breakdown(plan, remote)
+    assert aligned_score.material_interface_row_dislocation == 0
+    assert remote_score.material_interface_row_dislocation == 1
+    assert aligned_score.interface_side_violations == remote_score.interface_side_violations == 0
+    route_metrics = (100, 100, 1, 1.0, 0, 0)
+    assert composition_candidate_key(
+        plan, aligned, route_metrics, routing_backtracking=999
+    ) < composition_candidate_key(plan, remote, route_metrics, routing_backtracking=0)
+
+    # Under the existing 80 mm locality limit, route shape wins even over
+    # a small row-alignment improvement, preserving prior priority semantics.
+    near = _packing(_placed(producer, 0), _placed(output, 4 * PITCH, PITCH))
+    assert semantic_composition_penalty_breakdown(
+        plan, near
+    ).material_interface_row_dislocation == 0
+    assert composition_candidate_key(
+        plan, near, route_metrics, routing_backtracking=0
+    ) < composition_candidate_key(plan, aligned, route_metrics, routing_backtracking=1)
+
+
+def test_material_dislocation_keeps_wrong_side_and_renaming_invariants() -> None:
+    from ai_kicad.m2_route import MAX_LOCAL_VISIBLE_SIGNAL_DISTANCE
+
+    first = _block("source")
+    second = _block("other")
+    first_output = _block("output_a", "interface", ("signal_out",))
+    second_output = _block("output_b", "interface", ("signal_out",))
+    relations = (
+        _edge("signal", "source", "output_a", "a"),
+        _edge("signal", "other", "output_b", "b"),
+    )
+    plan = _plan((first, second, first_output, second_output), relations)
+    distant = _packing(
+        _placed(first, 0),
+        _placed(first_output, 4 * PITCH, MAX_LOCAL_VISIBLE_SIGNAL_DISTANCE + PITCH),
+        _placed(second, 6 * PITCH, 3 * PITCH),
+        _placed(second_output, 10 * PITCH, 3 * PITCH),
+    )
+    breakdown = semantic_composition_penalty_breakdown(plan, distant)
+    assert breakdown.material_interface_row_dislocation == 1
+    renamed = _plan(
+        (second_output, first_output, second, first),
+        (
+            _edge("signal", "other", "output_b", "renamed_b"),
+            _edge("signal", "source", "output_a", "renamed_a"),
+        ),
+    )
+    assert semantic_composition_penalty_breakdown(renamed, distant) == breakdown
+    wrong_side = _packing(
+        _placed(first, 0),
+        _placed(first_output, -2 * PITCH),
+        _placed(second, 6 * PITCH, 3 * PITCH),
+        _placed(second_output, 10 * PITCH, 3 * PITCH),
+    )
+    metrics = (100, 100, 1, 1.0, 0, 0)
+    assert composition_candidate_key(
+        plan, distant, metrics, routing_backtracking=999
+    ) < composition_candidate_key(plan, wrong_side, metrics, routing_backtracking=0)

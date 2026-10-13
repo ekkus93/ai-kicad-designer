@@ -12,6 +12,7 @@ from dataclasses import dataclass
 
 from .m2a import PITCH
 from .m2_pack import BOTTOM, LEFT, RIGHT, TOP
+from .m2_route import MAX_LOCAL_VISIBLE_SIGNAL_DISTANCE
 from .m2_terminal_interface_flow import inferred_passive_interface_signal_relations
 
 Rect = tuple[int, int, int, int]
@@ -40,6 +41,7 @@ class SemanticPenaltyBreakdown:
     feedback_intrusion: int
     sequential_stage_row_drift: int
     directed_interface_row_drift: int
+    material_interface_row_dislocation: int
     support_axis_drift: int
     passive_reference_axis_drift: int
     local_signal_neighbor_gap: int
@@ -87,6 +89,7 @@ class SemanticPenaltyBreakdown:
             "feedback_intrusion": self.feedback_intrusion,
             "sequential_stage_row_drift": self.sequential_stage_row_drift,
             "directed_interface_row_drift": self.directed_interface_row_drift,
+            "material_interface_row_dislocation": self.material_interface_row_dislocation,
             "support_axis_drift": self.support_axis_drift,
             "passive_reference_axis_drift": self.passive_reference_axis_drift,
             "local_signal_neighbor_gap": self.local_signal_neighbor_gap,
@@ -298,6 +301,7 @@ def _unrelated_block_proximity(plan, rects: dict[str, Rect]) -> int:
 
 def _local_signal_neighbor_gap(plan, rects: dict[str, Rect]) -> int:
     """Prefer nearby members of label-eligible two-fragment signal nets.
+
 
     Shared distribution, mandatory explicit geometry, interfaces, and fanout
     are excluded. This is placement preference, not emitted-route proof.
@@ -518,7 +522,7 @@ def _feedback_corridor_intrusions(plan, rects: dict[str, Rect], centers: dict[st
 
 def _signal_row_alignment_penalties(
     plan, centers: dict[str, Point], signal_relations: tuple[tuple[str, str, str], ...]
-) -> tuple[int, int]:
+) -> tuple[int, int, int]:
     """Prefer legible serial signal rows and connector-to-owner row alignment.
 
     Only a one-to-one directed relation between signal-processing blocks is
@@ -561,6 +565,7 @@ def _signal_row_alignment_penalties(
         stage_drift += abs(centers[source_id][1] - centers[target_id][1])
 
     interface_drift = 0
+    material_drift = 0
     # Match interface-side ranking: unique inferred/precedence-backed signal
     # polarity is meaningful even when authored ports are not explicitly typed
     # signal_in or signal_out. Preserve the bidirectional ambiguity exemption.
@@ -585,8 +590,15 @@ def _signal_row_alignment_penalties(
             if neighbor in centers and blocks[neighbor].kind != "interface"
         ]
         if rows:
-            interface_drift += min(abs(centers[block_id][1] - row) for row in rows)
-    return _grid_units(stage_drift), _grid_units(interface_drift)
+            nearest_row_gap = min(abs(centers[block_id][1] - row) for row in rows)
+            interface_drift += nearest_row_gap
+            # A connector farther than the existing 80 mm local-visible
+            # signal corridor from every owner is materially disconnected
+            # in the page's vertical composition. Rank this gross defect
+            # above a marginal improvement in routed return-leg length.
+            # Within that corridor, keep route-backtracking priority intact.
+            material_drift += max(0, nearest_row_gap - MAX_LOCAL_VISIBLE_SIGNAL_DISTANCE)
+    return _grid_units(stage_drift), _grid_units(interface_drift), _grid_units(material_drift)
 
 
 def _support_axis_alignment_penalty(plan, centers: dict[str, Point]) -> int:
@@ -598,6 +610,7 @@ def _support_axis_alignment_penalty(plan, centers: dict[str, Point]) -> int:
     semantic annotation order and repeated declarations.
     """
     pairs = {
+
         tuple(sorted((edge.source, edge.target)))
         for edge in plan.edges
         if edge.kind in {"support", "package"}
@@ -806,9 +819,11 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
     power_interface_distance = _power_interface_distance(plan, centers)
     infrastructure_primary_row_intrusion = _infrastructure_primary_row_intrusion(plan, centers)
     feedback_intrusion = _feedback_corridor_intrusions(plan, rects, centers)
-    sequential_stage_row_drift, directed_interface_row_drift = _signal_row_alignment_penalties(
-        plan, centers, signal_relations
-    )
+    (
+        sequential_stage_row_drift,
+        directed_interface_row_drift,
+        material_interface_row_dislocation,
+    ) = _signal_row_alignment_penalties(plan, centers, signal_relations)
     support_axis_drift = _support_axis_alignment_penalty(plan, centers)
     passive_reference_axis_drift = _passive_reference_axis_alignment_penalty(packing)
     # Nearest directed connector-to-owner gap is a soft signal-neighbor
@@ -836,6 +851,7 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
         feedback_intrusion=feedback_intrusion,
         sequential_stage_row_drift=sequential_stage_row_drift,
         directed_interface_row_drift=directed_interface_row_drift,
+        material_interface_row_dislocation=material_interface_row_dislocation,
         support_axis_drift=support_axis_drift,
         passive_reference_axis_drift=passive_reference_axis_drift,
         local_signal_neighbor_gap=local_signal_neighbor_gap,
@@ -898,6 +914,7 @@ def _field_slot_consistency_penalty(packing) -> int:
         text_positions = getattr(fragment, "text_positions", {})
         angles = getattr(fragment, "angles", {})
         for occurrence, center in sorted(positions.items()):
+
             text = text_positions.get(occurrence)
             roles = roles_by_component.get(occurrence[0])
             if text is None or not roles:
@@ -990,7 +1007,8 @@ def composition_candidate_key(
     union_length, worst_length, bend_count, _legacy_area, seed_index, round_index = (
         routing_compactness
     )
-    semantic = semantic_composition_penalties(plan, packing)
+    breakdown = semantic_composition_penalty_breakdown(plan, packing)
+    semantic = breakdown.vector()
     area, edge_bias, whitespace_imbalance = compactness_whitespace_penalties(packing)
     return (
         # Keep flow direction, interface-side correctness, ownership,
@@ -1000,6 +1018,9 @@ def composition_candidate_key(
         # This is a generic choice among already electrically proved routes;
         # it changes neither hard length gates nor frozen observer tolerances.
         *semantic[:16],
+        # Escaped owner rows are a material visual-disconnection risk, but
+        # small connector-row adjustments remain secondary to route clarity.
+        breakdown.material_interface_row_dislocation,
         int(routing_backtracking),
         *semantic[16:],
         # Prefer a low-bend routed conductor before raw length.
