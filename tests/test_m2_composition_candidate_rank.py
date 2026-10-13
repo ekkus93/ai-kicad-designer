@@ -1427,9 +1427,9 @@ def test_material_output_row_dislocation_precedes_route_backtracking() -> None:
     # Under the existing 80 mm locality limit, route shape wins even over
     # a small row-alignment improvement, preserving prior priority semantics.
     near = _packing(_placed(producer, 0), _placed(output, 4 * PITCH, PITCH))
-    assert semantic_composition_penalty_breakdown(
-        plan, near
-    ).material_interface_row_dislocation == 0
+    assert (
+        semantic_composition_penalty_breakdown(plan, near).material_interface_row_dislocation == 0
+    )
     assert composition_candidate_key(
         plan, near, route_metrics, routing_backtracking=0
     ) < composition_candidate_key(plan, aligned, route_metrics, routing_backtracking=1)
