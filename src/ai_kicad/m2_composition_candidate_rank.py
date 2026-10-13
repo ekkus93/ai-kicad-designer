@@ -174,25 +174,32 @@ def _block_semantic_signature(plan, block_id: str) -> tuple:
     by_id = {block.id: block for block in plan.blocks}
     block = by_id[block_id]
     port_roles = tuple(sorted(port.role for port in block.ports))
-    incident = []
+    # Match structural signal context from both authored edges and inferred
+    # precedence. Distinct neighbors retain their cardinality, while duplicate
+    # annotations (including signal/branch synonyms) do not invent peers.
+    incident_links: set[tuple[str, str, str]] = set()
     for edge in plan.edges:
+        kind = "signal" if edge.kind in {"signal", "branch"} else edge.kind
         if edge.source == block_id:
-            incident.append(
-                (
-                    "out",
-                    edge.kind,
-                    by_id.get(edge.target).kind if edge.target in by_id else "unknown",
-                )
-            )
+            incident_links.add(("out", kind, edge.target))
         elif edge.target == block_id:
-            incident.append(
-                (
-                    "in",
-                    edge.kind,
-                    by_id.get(edge.source).kind if edge.source in by_id else "unknown",
-                )
+            incident_links.add(("in", kind, edge.source))
+    for item in plan.precedence:
+        if item.source_fragment == block_id:
+            incident_links.add(("out", "signal", item.target_fragment))
+        elif item.target_fragment == block_id:
+            incident_links.add(("in", "signal", item.source_fragment))
+    incident = tuple(
+        sorted(
+            (
+                direction,
+                kind,
+                by_id[neighbor].kind if neighbor in by_id else "unknown",
             )
-    return block.kind, port_roles, tuple(sorted(incident))
+            for direction, kind, neighbor in incident_links
+        )
+    )
+    return block.kind, port_roles, incident
 
 
 def _repeated_alignment_penalty(plan, centers, signal_relations) -> int:

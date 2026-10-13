@@ -1244,3 +1244,40 @@ def test_serial_row_exempts_explicit_signal_stage_after_convergence() -> None:
         score = semantic_composition_penalty_breakdown(_plan(blocks, relations), placed)
         assert score.sequential_stage_row_drift == 0
         assert score.stage_order_violations == 0
+
+def test_precedence_only_repeated_chains_align_corresponding_stages() -> None:
+    """Do not align unrelated chain depths just because their kinds match."""
+    a0, a1, b0, b1 = (_block(name, "filter") for name in ("a0", "a1", "b0", "b1"))
+    precedences = (
+        SimpleNamespace(source_fragment="a0", target_fragment="a1", net="first"),
+        SimpleNamespace(source_fragment="b0", target_fragment="b1", net="second"),
+    )
+    blocks = (a0, a1, b0, b1)
+    aligned = _packing(
+        _placed(a0, 0),
+        _placed(a1, 8 * PITCH),
+        _placed(b0, 0, 6 * PITCH),
+        _placed(b1, 8 * PITCH, 6 * PITCH),
+    )
+    drifted = _packing(
+        _placed(a0, 0),
+        _placed(a1, 8 * PITCH),
+        _placed(b0, 0, 6 * PITCH),
+        _placed(b1, 10 * PITCH, 6 * PITCH),
+    )
+    plan = _plan(blocks, precedence=precedences)
+    score = semantic_composition_penalty_breakdown(plan, aligned)
+    assert score.repeated_alignment == 0
+    assert semantic_composition_penalty_breakdown(plan, drifted).repeated_alignment == 2
+    # Mixed representations and repeated declarations describe the same
+    # structural roles. Neither may change repeated-stage alignment scores.
+    mixed = _plan(
+        tuple(reversed(blocks)),
+        (
+            _edge("signal", "a0", "a1", "first"),
+            _edge("branch", "a0", "a1", "first"),
+        ),
+        tuple(reversed(precedences)),
+    )
+    assert semantic_composition_penalty_breakdown(mixed, aligned).repeated_alignment == 0
+    assert semantic_composition_penalty_breakdown(mixed, drifted).repeated_alignment == 2
