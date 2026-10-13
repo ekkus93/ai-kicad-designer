@@ -44,8 +44,7 @@ def test_tradeoff_exposes_lower_row_drift_without_promoting_wrong_side():
 def test_tradeoff_is_bounded_and_stable_under_candidate_permutation():
     chosen = candidate(4, 68, 46, 335_280_000)
     others = [
-        candidate(seed, row, 60, 300_000_000 + seed)
-        for seed, row in ((1, 3), (2, 2), (3, 1))
+        candidate(seed, row, 60, 300_000_000 + seed) for seed, row in ((1, 3), (2, 2), (3, 1))
     ]
     selection = {
         "selected_seed": 4,
