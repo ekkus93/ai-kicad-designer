@@ -273,7 +273,6 @@ def test_power_input_prefers_semantically_connected_supply_infrastructure() -> N
     grouped = _packing(
         _placed(power, 2 * PITCH, 8 * PITCH),
         _placed(supply, 4 * PITCH, 8 * PITCH),
-
         _placed(signal, 4 * PITCH, 2 * PITCH),
     )
     detached = _packing(
@@ -549,7 +548,6 @@ def test_unowned_feedback_and_shared_infrastructure_do_not_claim_support_axis() 
 
 
 def test_serial_signal_stages_prefer_a_shared_row_with_equal_forward_progress() -> None:
-
     first = _block("a", "filter", ("signal_in", "signal_out"))
     second = _block("b", "amplifier", ("signal_in", "signal_out"))
     plan = _plan((first, second), (_edge("signal", "a", "b", "data"),))
@@ -827,7 +825,6 @@ def _passive_with_reference(main_id: str = "main", ref_id: str = "shunt"):
     )
 
 
-
 def test_local_passive_reference_leg_prefers_vertical_axis() -> None:
     block = _passive_with_reference()
     plan = _plan((block,))
@@ -1101,7 +1098,6 @@ def test_rigid_page_balance_uses_the_same_center_as_candidate_ranking() -> None:
         TOP,
         Packing,
         PlacedFragment,
-
         _centroid_balanced_packing,
     )
 
@@ -1346,6 +1342,7 @@ def test_shared_passive_net_does_not_falsely_split_repeated_peers() -> None:
     plan = _plan((shared, second, terminal, first))
     assert semantic_composition_penalty_breakdown(plan, placed).repeated_alignment == 5
 
+
 def test_parallel_output_frontiers_follow_their_own_signal_producers() -> None:
     """Unrelated rightmost producers must not displace another chain's output."""
     first = _block("first", "filter")
@@ -1354,8 +1351,10 @@ def test_parallel_output_frontiers_follow_their_own_signal_producers() -> None:
     out_b = _block("out_b", "interface", ("signal_out",))
     plan = _plan(
         (first, second, out_a, out_b),
-        (_edge("signal", "first", "out_a", "a"),
-         _edge("signal", "second", "out_b", "b")),
+        (
+            _edge("signal", "first", "out_a", "a"),
+            _edge("signal", "second", "out_b", "b"),
+        ),
     )
     attached = _packing(
         _placed(first, 2 * PITCH),
@@ -1389,10 +1388,13 @@ def test_single_output_still_prefers_global_page_frontier() -> None:
     producer = _block("producer", "filter")
     output = _block("output", "interface", ("signal_out",))
     unrelated = _block("unrelated", "filter")
-    plan = _plan((producer, unrelated, output),
-                 (_edge("signal", "producer", "output"),))
+    plan = _plan(
+        (producer, unrelated, output),
+        (_edge("signal", "producer", "output"),),
+    )
     local = _packing(
-        _placed(producer, 0), _placed(output, 2 * PITCH),
+        _placed(producer, 0),
+        _placed(output, 2 * PITCH),
         _placed(unrelated, 8 * PITCH, 4 * PITCH),
     )
     assert semantic_composition_penalty_breakdown(plan, local).frontier_distance == 6

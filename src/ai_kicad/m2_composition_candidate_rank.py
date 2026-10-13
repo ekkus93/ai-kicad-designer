@@ -273,7 +273,6 @@ def _rect_gap(first: Rect, second: Rect) -> int:
 
 
 def _unrelated_block_proximity(plan, rects: dict[str, Rect]) -> int:
-
     """Penalize unrelated functional cells that visually collapse together."""
     by_id = {block.id: block for block in plan.blocks}
     related: set[frozenset[str]] = set()
@@ -549,7 +548,6 @@ def _signal_row_alignment_penalties(
 
     stage_drift = 0
     for source_id, targets in sorted(outgoing.items()):
-
         if len(targets) != 1 or not is_signal_stage(source_id):
             continue
         target_id = next(iter(targets))
@@ -755,10 +753,16 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
             return None
         return max(positions) if upstream else min(positions)
 
-    directed_inputs = {block_id for block_id, block_roles in roles.items()
-                       if block_roles == {"signal_in"} and block_id in centers}
-    directed_outputs = {block_id for block_id, block_roles in roles.items()
-                        if block_roles == {"signal_out"} and block_id in centers}
+    directed_inputs = {
+        block_id
+        for block_id, block_roles in roles.items()
+        if block_roles == {"signal_in"} and block_id in centers
+    }
+    directed_outputs = {
+        block_id
+        for block_id, block_roles in roles.items()
+        if block_roles == {"signal_out"} and block_id in centers
+    }
     frontier_distance = 0
     if centers:
         min_x = min(point[0] for point in centers.values())
@@ -869,7 +873,6 @@ def compactness_whitespace_penalties(packing) -> CompactnessPenaltyVector:
     bottom_margin = max(0, BOTTOM - bottom)
     whitespace_imbalance = abs(left_margin - right_margin) + abs(top_margin - bottom_margin)
     return area_units, _grid_units(edge_bias), _grid_units(whitespace_imbalance)
-
 
 
 def _field_slot_consistency_penalty(packing) -> int:
