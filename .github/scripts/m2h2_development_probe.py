@@ -18,6 +18,8 @@ CASES = {
     "v6-8": "fixtures/m2blind_v6/ir/V6-8.json",
     "dp4": "fixtures/m2h2/development/dp4.json",
     "i4__b2_mixed": "fixtures/m2h2/interaction/i4/b2_mixed.json",
+    "shared_rail": "fixtures/m2f2/ir/two_signal_chains_shared_rail.json",
+    "passive_fanout": "fixtures/m2g2/probes/passive_two_level_fanout.json",
 }
 resolved = assets()
 for case, relative in CASES.items():

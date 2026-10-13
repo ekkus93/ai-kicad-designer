@@ -24,6 +24,10 @@ def _view(candidate: dict) -> dict:
         "independent_output_owner_row_drift": key[17] if len(key) > 17 else None,
         "local_signal_neighbor_gap": penalties.get("local_signal_neighbor_gap"),
         "route_backtracking": key[18] if len(key) > 18 else None,
+        # Expose production route-length/bend ranking without mutating it.
+        # Legacy/synthetic short keys have no such fields.
+        "route_geometry_cost_nm": key[23] if len(key) > 23 else None,
+        "route_bend_count": score[2] if len(score) > 2 else None,
         "routed_union_length_nm": score[0] if score else None,
     }
 

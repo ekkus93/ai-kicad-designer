@@ -126,3 +126,36 @@ def test_first_rank_difference_handles_missing_or_equal_keys():
         ]
         is None
     )
+
+
+def test_tradeoff_reports_measured_bend_length_priority_without_reranking():
+    # The candidate key's first route-shape tier follows semantic and
+    # backtracking obligations; the report must expose the existing key
+    # rather than recalculate its cost or change candidate selection.
+    chosen = candidate(1, 0, 0, 200_000_000, backtracking=3)
+    alternative = candidate(2, 0, 0, 190_000_000, backtracking=3)
+    chosen["score"] = [200_000_000, 90_000_000, 6]
+    alternative["score"] = [190_000_000, 90_000_000, 7]
+    chosen["selection_key"] = [0] * 23 + [300_000_000, 6, 200_000_000]
+    alternative["selection_key"] = [0] * 23 + [290_000_000, 7, 190_000_000]
+    selection = {
+        "selected_seed": 1,
+        "selected_round": 0,
+        "selected_score": chosen["score"],
+        "selected_selection_key": chosen["selection_key"],
+        "selected_semantic_penalty_breakdown": chosen["semantic_penalty_breakdown"],
+        "proved_candidates": [chosen, alternative],
+    }
+    report = summarize_comparable_candidates(selection)
+    assert report["selected"]["route_geometry_cost_nm"] == 300_000_000
+    assert report["selected"]["route_bend_count"] == 6
+    row = report["best_row_locality_alternatives"][0]
+    assert row["route_geometry_cost_nm"] == 290_000_000
+    assert row["route_bend_count"] == 7
+    assert row["first_rank_difference"] == {
+        "index": 23,
+        "candidate_value": 290_000_000,
+        "selected_value": 300_000_000,
+        "candidate_preferred": True,
+    }
+    assert report["acceptance_claimed"] is False
