@@ -1256,3 +1256,23 @@ def route_between_fragments(
                 net,
                 1,
             )
+            for index, segment in enumerate(tree.segments)
+        )
+        previous.extend((net, segment.start, segment.end) for segment in tree.segments)
+        result.append(
+            RouteTree(
+                net,
+                (edge,),
+                tuple((segment.start, segment.end) for segment in tree.segments),
+                tree.junctions,
+                owner,
+                tuple(segment.provenance for segment in tree.segments),
+                0,
+                expansions,
+                "local_visible_optional",
+                1,
+                planned_corridors,
+            )
+        )
+        routed_nets.add(net)
+    return tuple(result)
