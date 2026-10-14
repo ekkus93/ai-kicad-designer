@@ -167,9 +167,30 @@ def summarize_comparable_candidates(selection: dict, limit: int = 8) -> dict:
         )
         for item in alternatives
     )
+    # Count which *earlier* production priorities prevent a proved route
+    # improvement from winning. This diagnoses tradeoffs without relaxing
+    # any semantic obligation or changing production candidate selection.
+    blockers: dict[int, int] = {}
+    for item in alternatives:
+        delta = item["route_shape_delta_from_selected"]
+        backtrack = delta["route_backtracking"]
+        geometry = delta["route_geometry_cost_nm"]
+        better = backtrack is not None and (
+            backtrack < 0 or (backtrack == 0 and geometry is not None and geometry < 0)
+        )
+        first = item["first_rank_difference"]
+        if not better or first is None or first["candidate_preferred"]:
+            continue
+        rank_index = first["index"]
+        route_index = 18 if backtrack < 0 else 23
+        if rank_index is not None and rank_index < route_index:
+            blockers[rank_index] = blockers.get(rank_index, 0) + 1
     return {
         "selected": selected_view,
         "better_route_aesthetics_count": better_routes,
+        "better_routes_blocked_by_rank_index": {
+            str(index): blockers[index] for index in sorted(blockers)
+        },
         "best_route_aesthetics_alternatives": route_alternatives[:limit],
         "same_flow_side_alternative_count": len(alternatives),
         "better_row_locality_count": sum(

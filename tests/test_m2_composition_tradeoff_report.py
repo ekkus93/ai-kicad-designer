@@ -220,3 +220,30 @@ def test_route_shape_tradeoff_handles_missing_legacy_scores_and_permutations():
     assert [x["seed"] for x in report["best_route_aesthetics_alternatives"]] == [3, 2]
     selection["proved_candidates"] = list(reversed(selection["proved_candidates"]))
     assert summarize_comparable_candidates(selection) == report
+
+
+def test_route_improvement_blockers_identify_earlier_semantic_priorities():
+    chosen = candidate(1, 0, 12, 200_000_000, backtracking=8)
+    blocked = candidate(2, 0, 13, 180_000_000, backtracking=3)
+    other = candidate(3, 0, 14, 190_000_000, backtracking=5)
+    excluded = candidate(4, 0, 15, 170_000_000, side=1, backtracking=2)
+    for item in (chosen, blocked, other, excluded):
+        item["selection_key"] = [0] * 23 + [item["score"][0]]
+        item["selection_key"][5] = item["semantic_penalty_breakdown"]["frontier_distance"]
+        item["selection_key"][18] = item["selection_key"][18] or {
+            1: 8, 2: 3, 3: 5, 4: 2
+        }[item["seed"]]
+    selection = {
+        "selected_seed": 1,
+        "selected_round": 0,
+        "selected_score": chosen["score"],
+        "selected_selection_key": chosen["selection_key"],
+        "selected_semantic_penalty_breakdown": chosen["semantic_penalty_breakdown"],
+        "proved_candidates": [other, excluded, chosen, blocked],
+    }
+    result = summarize_comparable_candidates(selection, limit=1)
+    assert result["better_route_aesthetics_count"] == 2
+    assert result["better_routes_blocked_by_rank_index"] == {"5": 2}
+    selection["proved_candidates"] = list(reversed(selection["proved_candidates"]))
+    assert summarize_comparable_candidates(selection, limit=1) == result
+    assert summarize_comparable_candidates({})["better_routes_blocked_by_rank_index"] == {}
