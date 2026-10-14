@@ -41,12 +41,6 @@ def test_skewed_gateway_rows_choose_shorter_interior_trunk() -> None:
     for ordered in permutations(gateways[1:]):
         candidates = plans((gateways[0], *ordered))
         assert len(candidates) <= 8
-        median = next(
-            parts for name, parts, *_ in candidates if name == "horizontal_median"
-        )
-        trunk = next(
-            part
-            for part in median
-            if part.provenance == ("horizontal_median", "trunk")
-        )
+        median = next(parts for name, parts, *_ in candidates if name == "horizontal_median")
+        trunk = next(part for part in median if part.provenance == ("horizontal_median", "trunk"))
         assert trunk.start[1] == trunk.end[1] == -PITCH
