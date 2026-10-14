@@ -1275,3 +1275,5 @@ def route_between_fragments(
                 planned_corridors,
             )
         )
+        routed_nets.add(net)
+    return tuple(result)
