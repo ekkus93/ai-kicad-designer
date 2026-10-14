@@ -1321,6 +1321,25 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
             )
         )
 
+    def frontier_rows(owner: PlacedFragment, height: int) -> tuple[int, ...]:
+        """Try measured aligned rows, then immediately adjacent legal lanes.
+
+        Crowded circuits can have an unrelated block occupying both aligned
+        options. A one-gap lane above or below the owner's envelope may be
+        legal without displacing any functional stage or relaxing constraints.
+        """
+        centered = (owner.envelope[1] + owner.envelope[3] - height) // 2
+        return tuple(
+            sorted(
+                {
+                    centered,
+                    owner.envelope[1],
+                    owner.envelope[1] - height - CHANNEL_GAP,
+                    owner.envelope[3] + CHANNEL_GAP,
+                }
+            )
+        )
+
     def frontier_repack(
         packing: Packing,
         interface: PlacedFragment,
@@ -1408,8 +1427,7 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
                     else owner.envelope[2] + CHANNEL_GAP
                 )
                 # Align both centers and upper edges as separate legal choices.
-                center_top = (owner.envelope[1] + owner.envelope[3] - height) // 2
-                for top in sorted({center_top, owner.envelope[1]}):
+                for top in frontier_rows(owner, height):
                     candidate = frontier_repack(baseline, interface, owner, role, left, top, label)
                     if candidate is None:
                         continue
@@ -1478,8 +1496,7 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
                             if role == "signal_in"
                             else owner.envelope[2] + CHANNEL_GAP
                         )
-                        center_top = (owner.envelope[1] + owner.envelope[3] - height) // 2
-                        for top in sorted({center_top, owner.envelope[1]}):
+                        for top in frontier_rows(owner, height):
                             proposal = frontier_repack(
                                 selected, interface, owner, role, left, top, label
                             )
