@@ -1329,14 +1329,16 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
         legal without displacing any functional stage or relaxing constraints.
         """
         centered = (owner.envelope[1] + owner.envelope[3] - height) // 2
+        # Alignment remains preferred; nearby lanes are fallbacks only.
+        # Preserve order while dropping a duplicate centered/top slot.
         return tuple(
-            sorted(
-                {
+            dict.fromkeys(
+                (
                     centered,
                     owner.envelope[1],
                     owner.envelope[1] - height - CHANNEL_GAP,
                     owner.envelope[3] + CHANNEL_GAP,
-                }
+                )
             )
         )
 
@@ -1406,7 +1408,7 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
         ("signal_in", "interface-frontier-input"),
         ("signal_out", "interface-frontier-output"),
     ):
-        options: list[tuple[tuple[int, int, int, str, int], Packing]] = []
+        options: list[tuple[tuple[int, int, int, int, str, int], Packing]] = []
         for block in sorted(plan.blocks, key=lambda item: item.id):
             if block.kind != "interface" or block.id not in by_id:
                 continue
@@ -1427,7 +1429,7 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
                     else owner.envelope[2] + CHANNEL_GAP
                 )
                 # Align both centers and upper edges as separate legal choices.
-                for top in frontier_rows(owner, height):
+                for lane_rank, top in enumerate(frontier_rows(owner, height)):
                     candidate = frontier_repack(baseline, interface, owner, role, left, top, label)
                     if candidate is None:
                         continue
@@ -1447,7 +1449,10 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
                     )
                     distance = abs(left - interface.envelope[0]) + abs(top - interface.envelope[1])
                     options.append(
-                        ((-side_violation, -initial_row_gap, distance, block.id, top), candidate)
+                        (
+                            (-side_violation, -initial_row_gap, lane_rank, distance, block.id, top),
+                            candidate,
+                        )
                     )
         if options:
             selected = min(options, key=lambda item: item[0])[1]
@@ -1459,7 +1464,7 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
             # move a correctly sided interface just to fill this budget.
             for _ in range(len(by_id) - 1):
                 current = {item.fragment.block.id: item for item in selected.fragments}
-                repairs: list[tuple[tuple[int, int, int, str, int], Packing]] = []
+                repairs: list[tuple[tuple[int, int, int, int, str, int], Packing]] = []
                 for block in sorted(plan.blocks, key=lambda item: item.id):
                     if block.kind != "interface" or block.id not in current:
                         continue
@@ -1496,7 +1501,7 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
                             if role == "signal_in"
                             else owner.envelope[2] + CHANNEL_GAP
                         )
-                        for top in frontier_rows(owner, height):
+                        for lane_rank, top in enumerate(frontier_rows(owner, height)):
                             proposal = frontier_repack(
                                 selected, interface, owner, role, left, top, label
                             )
@@ -1514,7 +1519,7 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
                                 top - interface.envelope[1]
                             )
                             repairs.append(
-                                ((after - before, after, travel, block.id, top), proposal)
+                                ((after - before, after, lane_rank, travel, block.id, top), proposal)
                             )
                 if not repairs:
                     break
