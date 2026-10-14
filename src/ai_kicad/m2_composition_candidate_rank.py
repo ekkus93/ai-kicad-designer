@@ -1033,11 +1033,14 @@ def route_backtracking_penalty(canonical_trees) -> int:
                     high_legs.add(position)
             for legs in (low_legs, high_legs):
                 positions = sorted(legs)
-                for index, left in enumerate(positions):
-                    for right in positions[index + 1 :]:
-                        # Prefer a short, local return to an equally legible
-                        # but unnecessarily wide U-shaped conductor detour.
-                        penalty += max(1, _grid_units(right - left))
+                # Each gap between neighboring same-side legs represents
+                # one distinct return interval. Counting *every* pair also
+                # charges nested spans that are not separate detours, so a
+                # legitimate N-way fanout grows quadratically in the score.
+                # Neighbor-only gaps are additive and remain invariant to
+                # segmentation, branch order and conductor direction.
+                for left, right in zip(positions, positions[1:]):
+                    penalty += max(1, _grid_units(right - left))
     return penalty
 
 
