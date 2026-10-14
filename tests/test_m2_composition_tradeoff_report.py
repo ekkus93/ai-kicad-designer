@@ -230,9 +230,9 @@ def test_route_improvement_blockers_identify_earlier_semantic_priorities():
     for item in (chosen, blocked, other, excluded):
         item["selection_key"] = [0] * 23 + [item["score"][0]]
         item["selection_key"][5] = item["semantic_penalty_breakdown"]["frontier_distance"]
-        item["selection_key"][18] = item["selection_key"][18] or {
-            1: 8, 2: 3, 3: 5, 4: 2
-        }[item["seed"]]
+        item["selection_key"][18] = (
+            item["selection_key"][18] or {1: 8, 2: 3, 3: 5, 4: 2}[item["seed"]]
+        )
     selection = {
         "selected_seed": 1,
         "selected_round": 0,
