@@ -518,8 +518,20 @@ def _distribution_initial_trees(
         ),
         key=lambda x: (min(abs(x - left), abs(x - right)), x),
     )[:2]
+    # An interior trunk can reduce long shared-rail branches when endpoints
+    # occupy several rows. Retain the perimeter alternatives and the original
+    # producer-centered tree; legality and the fixed 250 mm union gate still
+    # decide which plans survive. Only one interior lane is considered so the
+    # deterministic search budget remains bounded to eight initial plans.
+    median_y = _floor_grid((top + bottom) // 2)
+    interior = (
+        [("horizontal_median", (left, median_y), (right, median_y), (seed_external[0], median_y))]
+        if top < median_y < bottom
+        else []
+    )
     candidates = (
-        [("horizontal_above", (left, y), (right, y), (seed_external[0], y)) for y in above]
+        interior
+        + [("horizontal_above", (left, y), (right, y), (seed_external[0], y)) for y in above]
         + [("horizontal_below", (left, y), (right, y), (seed_external[0], y)) for y in below]
         + [("vertical_side", (x, top), (x, bottom), (x, seed_external[1])) for x in sides]
     )
