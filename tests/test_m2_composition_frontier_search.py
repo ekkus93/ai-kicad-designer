@@ -180,9 +180,12 @@ def test_opposing_interfaces_exchange_blocked_frontier_slots() -> None:
         by_id = {item.fragment.block.id: item for item in candidate.fragments}
         assert by_id["incoming"].envelope[2] < by_id["stage"].envelope[0]
         assert by_id["outgoing"].envelope[0] > by_id["stage"].envelope[2]
-    assert _interface_frontier_candidates(
-        SemanticPlan(tuple(reversed(blocks)), tuple(reversed(edges)), {}, ()), baseline
-    ) == candidates
+    assert (
+        _interface_frontier_candidates(
+            SemanticPlan(tuple(reversed(blocks)), tuple(reversed(edges)), {}, ()), baseline
+        )
+        == candidates
+    )
 
 
 def test_frontier_exchange_never_reverses_a_correctly_sided_interface() -> None:
