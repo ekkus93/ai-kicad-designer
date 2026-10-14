@@ -318,6 +318,7 @@ def _visibility_path(
             new_cost = cost + abs(candidate[0] - point[0]) + abs(candidate[1] - point[1])
             state = (candidate, direction)
             if best.get(state, (10**30, 10**30)) <= (new_cost, new_bends):
+
                 continue
             if not _path_legal(
                 (point, candidate),
@@ -519,8 +520,8 @@ def _distribution_initial_trees(
         key=lambda x: (min(abs(x - left), abs(x - right)), x),
     )[:2]
     # Search nearby legal interior lanes when the gateway-row median is
-    # obstructed. Retain one seed-connected corridor within the eight-plan
-    # budget; conductor geometry/length validation remains authoritative.
+    # obstructed. Retain up to two distinct seed-connected corridors within
+    # the eight-plan budget; geometry/length validation remains authoritative.
     median_row = sorted(point[1] for point in external)[len(external) // 2]
     median_y = min(bottom - PITCH, max(top + PITCH, median_row))
     interior = []
@@ -576,7 +577,8 @@ def _distribution_initial_trees(
                 ),
             )
             interior.append((strategy, conductors, (first, second), expansions))
-            break
+            if len(interior) == 2:
+                break
     candidates = (
         [("horizontal_above", (left, y), (right, y), (seed_external[0], y)) for y in above]
         + [("horizontal_below", (left, y), (right, y), (seed_external[0], y)) for y in below]
@@ -638,6 +640,7 @@ def _routable_edges(plan: SemanticPlan) -> tuple[SemanticEdge, ...]:
                 "signal",
                 source,
                 target,
+
                 net,
                 ("inferred_passive_interface",),
             )
@@ -958,6 +961,7 @@ def route_between_fragments(
                             tap_tests += 1
                             route, expansions = _connect(
                                 target_external,
+
                                 tap,
                                 obstacles,
                                 tuple(previous),

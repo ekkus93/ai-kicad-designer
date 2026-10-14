@@ -40,10 +40,16 @@ def test_blocked_median_selects_adjacent_legal_interior_lane() -> None:
         assert len(plans) <= 8
         assert "horizontal_median" not in {name for name, *_ in plans}
         alternative = [plan for plan in plans if plan[0] == "horizontal_clear_lane"]
-        assert len(alternative) == 1
-        trunk = next(
-            part
-            for part in alternative[0][1]
-            if part.provenance == ("horizontal_clear_lane", "trunk")
-        )
-        assert trunk.start[1] == trunk.end[1] == 0
+        assert len(alternative) == 2
+        trunks = [
+            next(
+                part
+                for part in plan[1]
+                if part.provenance == ("horizontal_clear_lane", "trunk")
+            )
+            for plan in alternative
+        ]
+        assert [(trunk.start[1], trunk.end[1]) for trunk in trunks] == [
+            (0, 0),
+            (PITCH, PITCH),
+        ]
