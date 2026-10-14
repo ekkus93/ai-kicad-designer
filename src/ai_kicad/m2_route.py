@@ -318,7 +318,6 @@ def _visibility_path(
             new_cost = cost + abs(candidate[0] - point[0]) + abs(candidate[1] - point[1])
             state = (candidate, direction)
             if best.get(state, (10**30, 10**30)) <= (new_cost, new_bends):
-
                 continue
             if not _path_legal(
                 (point, candidate),
@@ -640,7 +639,6 @@ def _routable_edges(plan: SemanticPlan) -> tuple[SemanticEdge, ...]:
                 "signal",
                 source,
                 target,
-
                 net,
                 ("inferred_passive_interface",),
             )
@@ -961,7 +959,6 @@ def route_between_fragments(
                             tap_tests += 1
                             route, expansions = _connect(
                                 target_external,
-
                                 tap,
                                 obstacles,
                                 tuple(previous),
@@ -1278,5 +1275,3 @@ def route_between_fragments(
                 planned_corridors,
             )
         )
-        routed_nets.add(net)
-    return tuple(result)
