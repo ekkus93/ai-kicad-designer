@@ -159,3 +159,64 @@ def test_tradeoff_reports_measured_bend_length_priority_without_reranking():
         "candidate_preferred": True,
     }
     assert report["acceptance_claimed"] is False
+
+
+def test_route_shape_tradeoff_surfaces_better_route_behind_semantic_preference():
+    """A route improvement hidden by frontier priority must be inspectable."""
+    chosen = candidate(1, 0, 12, 200_000_000, backtracking=8)
+    alternate = candidate(2, 0, 13, 180_000_000, backtracking=3)
+    chosen["selection_key"] = [0] * 23 + [260_000_000]
+    alternate["selection_key"] = [0] * 23 + [240_000_000]
+    chosen["score"] = [200_000_000, 100_000_000, 6]
+    alternate["score"] = [180_000_000, 100_000_000, 5]
+    chosen["semantic_penalty_breakdown"]["repeated_alignment"] = 4
+    alternate["semantic_penalty_breakdown"]["repeated_alignment"] = 2
+    chosen["selection_key"][5] = 12
+    alternate["selection_key"][5] = 13
+    chosen["selection_key"][18] = 8
+    alternate["selection_key"][18] = 3
+    report = summarize_comparable_candidates(
+        {
+            "selected_seed": 1,
+            "selected_round": 0,
+            "selected_score": chosen["score"],
+            "selected_selection_key": chosen["selection_key"],
+            "selected_semantic_penalty_breakdown": chosen["semantic_penalty_breakdown"],
+            "proved_candidates": [chosen, alternate],
+        }
+    )
+    assert report["better_route_aesthetics_count"] == 1
+    better = report["best_route_aesthetics_alternatives"][0]
+    assert better["seed"] == 2
+    assert better["route_shape_delta_from_selected"] == {
+        "route_backtracking": -5,
+        "route_geometry_cost_nm": -20_000_000,
+        "route_bend_count": -1,
+        "routed_union_length_nm": -20_000_000,
+        "branch_alignment": 0,
+        "repeated_alignment": -2,
+    }
+    assert better["first_rank_difference"]["index"] == 5
+    assert better["first_rank_difference"]["candidate_preferred"] is False
+    assert report["acceptance_claimed"] is False
+
+
+def test_route_shape_tradeoff_handles_missing_legacy_scores_and_permutations():
+    chosen = candidate(1, 0, 0, 200_000_000, backtracking=0)
+    unknown = candidate(2, 0, 0, 100_000_000, backtracking=0)
+    better = candidate(3, 0, 0, 100_000_000, backtracking=0)
+    better["selection_key"] = [0] * 23 + [100_000_000]
+    chosen["selection_key"] = [0] * 23 + [200_000_000]
+    selection = {
+        "selected_seed": 1,
+        "selected_round": 0,
+        "selected_score": chosen["score"],
+        "selected_selection_key": chosen["selection_key"],
+        "selected_semantic_penalty_breakdown": chosen["semantic_penalty_breakdown"],
+        "proved_candidates": [unknown, better],
+    }
+    report = summarize_comparable_candidates(selection)
+    assert report["better_route_aesthetics_count"] == 1
+    assert [x["seed"] for x in report["best_route_aesthetics_alternatives"]] == [3, 2]
+    selection["proved_candidates"] = list(reversed(selection["proved_candidates"]))
+    assert summarize_comparable_candidates(selection) == report
