@@ -435,8 +435,10 @@ def test_distribution_enumerates_distinct_trunk_topologies() -> None:
         "producer_centered",
         "horizontal_above",
         "horizontal_below",
+        "horizontal_median",
         "vertical_side",
     }
+    assert len(plans) <= 8
     signatures = {tuple((part.start, part.end) for part in item[1]) for item in plans}
     assert len(signatures) == len(plans)
 
