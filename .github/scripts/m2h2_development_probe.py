@@ -43,6 +43,29 @@ for case, relative in CASES.items():
         print(json.dumps({"kind": "m2h2.development-candidate-tradeoff.1", "case": case,
                           **summarize_comparable_candidates(evidence["candidate_selection"])},
                          separators=(",", ":")), flush=True)
+        # Expose which bounded routing strategies actually survive selection.
+        # This is observational evidence only, never an acceptance shortcut.
+        print(
+            json.dumps(
+                {
+                    "kind": "m2h2.development-route-strategies.1",
+                    "case": case,
+                    "routes": [
+                        {
+                            "net": route["net"],
+                            "strategy": route["strategy"],
+                            "plan_tests": route["plan_tests"],
+                            "tap_tests": route["tap_tests"],
+                            "state_expansions": route["state_expansions"],
+                            "segment_count": len(route["segments"]),
+                        }
+                        for route in evidence["routes"]
+                    ],
+                },
+                separators=(",", ":"),
+            ),
+            flush=True,
+        )
         # A single proved candidate cannot be repaired by ranking. Preserve
         # the bounded search/route rejection ledger for generic seed diagnosis.
         selection = evidence["candidate_selection"]
