@@ -543,15 +543,23 @@ def _distribution_initial_trees(
         for y in ordered_lanes:
             first, second = (left, y), (right, y)
             if first == second or not _path_legal(
-                (first, second), obstacles, previous,
-                net=net, owner=owner,
-                allowed_contacts=frozenset(), route_bounds=route_bounds,
+                (first, second),
+                obstacles,
+                previous,
+                net=net,
+                owner=owner,
+                allowed_contacts=frozenset(),
+                route_bounds=route_bounds,
             ):
                 continue
             projection = (seed_external[0], y)
             branch, expansions = _connect(
-                seed_external, projection, obstacles, previous,
-                net=net, owner=owner,
+                seed_external,
+                projection,
+                obstacles,
+                previous,
+                net=net,
+                owner=owner,
                 allowed_contacts=frozenset({seed_external, projection}),
                 route_bounds=route_bounds,
             )
@@ -1248,23 +1256,3 @@ def route_between_fragments(
                 net,
                 1,
             )
-            for index, segment in enumerate(tree.segments)
-        )
-        previous.extend((net, segment.start, segment.end) for segment in tree.segments)
-        result.append(
-            RouteTree(
-                net,
-                (edge,),
-                tuple((segment.start, segment.end) for segment in tree.segments),
-                tree.junctions,
-                owner,
-                tuple(segment.provenance for segment in tree.segments),
-                0,
-                expansions,
-                "local_visible_optional",
-                1,
-                planned_corridors,
-            )
-        )
-        routed_nets.add(net)
-    return tuple(result)

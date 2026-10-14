@@ -10,20 +10,27 @@ from ai_kicad.m2_route import _distribution_initial_trees
 def test_blocked_median_selects_adjacent_legal_interior_lane() -> None:
     gateways = tuple(
         Gateway(
-            str(index), "RAIL", ((str(index), "1"),), str(index),
+            str(index),
+            "RAIL",
+            ((str(index), "1"),),
+            str(index),
             (10 * index * PITCH, (6 if index == 1 else 0) * PITCH),
             "up",
             (
                 (10 * index * PITCH, (6 if index == 1 else 0) * PITCH),
                 (10 * index * PITCH, ((6 if index == 1 else 0) - 1) * PITCH),
             ),
-            frozenset({"up"}), (),
+            frozenset({"up"}),
+            (),
         )
         for index in range(3)
     )
     bounds = (-100 * PITCH, -100 * PITCH, 100 * PITCH, 100 * PITCH)
     blocker = Reservation(
-        "unrelated.body", "exclusive", "unrelated", "body",
+        "unrelated.body",
+        "exclusive",
+        "unrelated",
+        "body",
         (9 * PITCH, -3 * PITCH // 2, 11 * PITCH, -PITCH // 2),
     )
     for ordered in permutations(gateways):
@@ -35,7 +42,8 @@ def test_blocked_median_selects_adjacent_legal_interior_lane() -> None:
         alternative = [plan for plan in plans if plan[0] == "horizontal_clear_lane"]
         assert len(alternative) == 1
         trunk = next(
-            part for part in alternative[0][1]
+            part
+            for part in alternative[0][1]
             if part.provenance == ("horizontal_clear_lane", "trunk")
         )
         assert trunk.start[1] == trunk.end[1] == 0
