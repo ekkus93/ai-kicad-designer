@@ -518,23 +518,59 @@ def _distribution_initial_trees(
         ),
         key=lambda x: (min(abs(x - left), abs(x - right)), x),
     )[:2]
-    # An interior trunk can reduce long shared-rail branches when endpoints
-    # occupy several rows. Retain the perimeter alternatives and the original
-    # producer-centered tree; legality and the fixed 250 mm union gate still
-    # decide which plans survive. Only one interior lane is considered so the
-    # deterministic search budget remains bounded to eight initial plans.
-    # Use the gateway-row median to minimize aggregate vertical branch travel.
-    # Clamp to an interior grid lane, distinct from perimeter alternatives.
+    # Search nearby legal interior lanes when the gateway-row median is
+    # obstructed. Retain one seed-connected corridor within the eight-plan
+    # budget; conductor geometry/length validation remains authoritative.
     median_row = sorted(point[1] for point in external)[len(external) // 2]
     median_y = min(bottom - PITCH, max(top + PITCH, median_row))
-    interior = (
-        [("horizontal_median", (left, median_y), (right, median_y), (seed_external[0], median_y))]
-        if top < median_y < bottom
-        else []
-    )
+    interior = []
+    if top < median_y < bottom:
+        lanes = {median_y}
+        for step in (1, 2):
+            lanes.update({median_y - step * PITCH, median_y + step * PITCH})
+        for obstacle in obstacles:
+            if obstacle.rect[0] < right and obstacle.rect[2] > left:
+                lanes.add(_floor_grid(obstacle.rect[1] - PITCH))
+                lanes.add(_ceil_grid(obstacle.rect[3] + PITCH))
+        ordered_lanes = sorted(
+            (y for y in lanes if top < y < bottom),
+            key=lambda y: (
+                sum(abs(point[1] - y) for point in external),
+                abs(y - median_y),
+                y,
+            ),
+        )[:8]
+        for y in ordered_lanes:
+            first, second = (left, y), (right, y)
+            if first == second or not _path_legal(
+                (first, second), obstacles, previous,
+                net=net, owner=owner,
+                allowed_contacts=frozenset(), route_bounds=route_bounds,
+            ):
+                continue
+            projection = (seed_external[0], y)
+            branch, expansions = _connect(
+                seed_external, projection, obstacles, previous,
+                net=net, owner=owner,
+                allowed_contacts=frozenset({seed_external, projection}),
+                route_bounds=route_bounds,
+            )
+            if branch is None:
+                continue
+            strategy = "horizontal_median" if y == median_y else "horizontal_clear_lane"
+            conductors = (
+                seed_segment,
+                ConductorSegment(first, second, net, owner, (strategy, "trunk")),
+                *(
+                    ConductorSegment(p, q, net, owner, (strategy, "seed_branch"))
+                    for p, q in branch
+                    if p != q
+                ),
+            )
+            interior.append((strategy, conductors, (first, second), expansions))
+            break
     candidates = (
-        interior
-        + [("horizontal_above", (left, y), (right, y), (seed_external[0], y)) for y in above]
+        [("horizontal_above", (left, y), (right, y), (seed_external[0], y)) for y in above]
         + [("horizontal_below", (left, y), (right, y), (seed_external[0], y)) for y in below]
         + [("vertical_side", (x, top), (x, bottom), (x, seed_external[1])) for x in sides]
     )
@@ -571,7 +607,7 @@ def _distribution_initial_trees(
             ),
         )
         result.append((strategy, conductors, (first, second), expansions))
-    return tuple(result[:8])
+    return tuple((result[:1] + interior + result[1:])[:8])
 
 
 def _routable_edges(plan: SemanticPlan) -> tuple[SemanticEdge, ...]:
