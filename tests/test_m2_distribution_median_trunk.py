@@ -21,7 +21,12 @@ def test_flat_distribution_has_no_redundant_median() -> None:
         for index in range(3)
     )
     plans = _distribution_initial_trees(
-        "RAIL", "tree.RAIL", gateways[0], gateways, (), (),
+        "RAIL",
+        "tree.RAIL",
+        gateways[0],
+        gateways,
+        (),
+        (),
         (-100 * PITCH, -100 * PITCH, 100 * PITCH, 100 * PITCH),
     )
     assert "horizontal_median" not in {name for name, *_ in plans}
