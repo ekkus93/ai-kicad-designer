@@ -1,6 +1,6 @@
 # M2h2 bounded second interior corridor — implementation handoff (2026-10-14)
 
-**Status: source change NOT applied.** A Ralph Bridge `commit_files` request containing the source and regression test, followed by a single-file `create_or_update_file` request, were blocked by the tool safety layer before any commit was accepted. Do not treat this note as qualification or a production fix.
+**Status: source change APPLIED and fast-qualified.** Initial source-write attempts were blocked, but the subsequent Ralph Bridge retry succeeded. After rectifying an omitted route-tree return and synchronizing the independent strategy-set contract and Ruff formatting, the final production/regression source `3fa6eafe8b97b95ff0787a2217dacab14b3d4b4c` passed all three [exact-head Fast Validation jobs (38652437889)](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38652437889) and the [locked KiCad 10.0.6 toolchain diagnostic (38652437837)](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38652437837). This is **not** full five-run qualification or independent composition acceptance.
 
 ## Exact inspected source
 
@@ -24,4 +24,4 @@
 - Compare shared-rail label disconnects, U-detours, branch inconsistency, repeated-structure alignment, V6-3, V5-3, V4-7, and mixed I4 B2. Revert if per-case hard defects worsen or frozen comparative criteria do not improve.
 - The last independent audit (run 38611663994) failed five frozen criteria; native inventory (38611663887) passed. Neither result is altered by this handoff.
 
-**Required unblock:** source-write requests must be accepted by the tool safety layer, or this small patch must be applied through an authorized local coding environment. Ralph Bridge is still the required GitHub/CI interface; do not create a per-task branch or PR.
+**Next:** source-write access is working. Run the exact-head five-run base, interaction, and structural suites, then independent historical comparison/native-render inspection. Preserve the five unresolved frozen acceptance failures until the independent audit proves otherwise. Ralph Bridge remains the only GitHub/CI interface; no per-task branches or PRs.
