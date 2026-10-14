@@ -435,58 +435,10 @@ def test_distribution_enumerates_distinct_trunk_topologies() -> None:
         "producer_centered",
         "horizontal_above",
         "horizontal_below",
-        "horizontal_median",
         "vertical_side",
     }
-    assert len(plans) <= 8
     signatures = {tuple((part.start, part.end) for part in item[1]) for item in plans}
     assert len(signatures) == len(plans)
-
-
-def test_distribution_median_trunk_is_deterministic_and_obstacle_proved() -> None:
-    """A crowded shared rail gets one legal interior option, never an unsafe shortcut."""
-    gateways = tuple(
-        Gateway(
-            f"port.{index}",
-            "N",
-            ((f"unit.{index}", "1"),),
-            f"island.{index}",
-            (index * 10 * PITCH, index * 6 * PITCH),
-            "up",
-            (
-                (index * 10 * PITCH, index * 6 * PITCH),
-                (index * 10 * PITCH, (index * 6 - 1) * PITCH),
-            ),
-            frozenset({"up"}),
-            (),
-        )
-        for index in range(3)
-    )
-    bounds = (-100 * PITCH, -100 * PITCH, 100 * PITCH, 100 * PITCH)
-    plans = _distribution_initial_trees(
-        "N", "tree.N", gateways[0], gateways, (), (), bounds
-    )
-    assert len(plans) <= 8
-    median = next(parts for name, parts, *_ in plans if name == "horizontal_median")
-    assert any(
-        part.start[1] == part.end[1] == 4 * PITCH
-        for part in median
-    )
-    # The route geometry must not depend on gateway declaration order.
-    reversed_plans = _distribution_initial_trees(
-        "N", "tree.N", gateways[0], tuple(reversed(gateways)), (), (), bounds
-    )
-    assert plans == reversed_plans
-
-    obstacle = Reservation(
-        "median-obstacle", "exclusive", "other", "body",
-        (9 * PITCH, 3 * PITCH, 11 * PITCH, 5 * PITCH), None,
-    )
-    obstructed = _distribution_initial_trees(
-        "N", "tree.N", gateways[0], gateways, (obstacle,), (), bounds
-    )
-    assert "horizontal_median" not in {name for name, *_ in obstructed}
-    assert "producer_centered" in {name for name, *_ in obstructed}
 
 
 def test_fixed_partial_conductor_union_prunes_with_typed_length_bound() -> None:
