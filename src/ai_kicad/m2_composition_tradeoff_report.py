@@ -19,6 +19,7 @@ def _view(candidate: dict) -> dict:
         "interface_owner_distance": penalties.get("interface_owner_distance"),
         "frontier_distance": penalties.get("frontier_distance"),
         "branch_alignment": penalties.get("branch_alignment"),
+        "repeated_alignment": penalties.get("repeated_alignment"),
         "directed_interface_row_drift": penalties.get("directed_interface_row_drift"),
         "material_interface_row_dislocation": key[16] if len(key) > 16 else None,
         "independent_output_owner_row_drift": key[17] if len(key) > 17 else None,
@@ -114,6 +115,21 @@ def summarize_comparable_candidates(selection: dict, limit: int = 8) -> dict:
     ]
     for item in alternatives:
         item["delta_from_selected"] = _delta_from_selected(item, selected_view)
+        item["route_shape_delta_from_selected"] = {
+            key: (
+                item[key] - selected_view[key]
+                if item[key] is not None and selected_view[key] is not None
+                else None
+            )
+            for key in (
+                "route_backtracking",
+                "route_geometry_cost_nm",
+                "route_bend_count",
+                "routed_union_length_nm",
+                "branch_alignment",
+                "repeated_alignment",
+            )
+        }
     alternatives.sort(
         key=lambda item: (
             item["directed_interface_row_drift"] is None,
@@ -124,8 +140,37 @@ def summarize_comparable_candidates(selection: dict, limit: int = 8) -> dict:
             item["round"] if item["round"] is not None else -1,
         )
     )
+    # Show route-shape improvements that production ranking may reject for
+    # higher-priority semantic obligations. This is an audit view only.
+    route_alternatives = sorted(
+        alternatives,
+        key=lambda item: (
+            item["route_backtracking"] is None,
+            item["route_backtracking"] if item["route_backtracking"] is not None else 0,
+            item["route_geometry_cost_nm"] is None,
+            item["route_geometry_cost_nm"] if item["route_geometry_cost_nm"] is not None else 0,
+            item["seed"] if item["seed"] is not None else -1,
+            item["round"] if item["round"] is not None else -1,
+        ),
+    )
+    better_routes = sum(
+        item["route_backtracking"] is not None
+        and selected_view["route_backtracking"] is not None
+        and (
+            item["route_backtracking"] < selected_view["route_backtracking"]
+            or (
+                item["route_backtracking"] == selected_view["route_backtracking"]
+                and item["route_geometry_cost_nm"] is not None
+                and selected_view["route_geometry_cost_nm"] is not None
+                and item["route_geometry_cost_nm"] < selected_view["route_geometry_cost_nm"]
+            )
+        )
+        for item in alternatives
+    )
     return {
         "selected": selected_view,
+        "better_route_aesthetics_count": better_routes,
+        "best_route_aesthetics_alternatives": route_alternatives[:limit],
         "same_flow_side_alternative_count": len(alternatives),
         "better_row_locality_count": sum(
             item["delta_from_selected"]["directed_interface_row_drift"] is not None
