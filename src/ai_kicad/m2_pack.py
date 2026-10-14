@@ -1519,7 +1519,10 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
                                 top - interface.envelope[1]
                             )
                             repairs.append(
-                                ((after - before, after, lane_rank, travel, block.id, top), proposal)
+                                (
+                                    (after - before, after, lane_rank, travel, block.id, top),
+                                    proposal,
+                                )
                             )
                 if not repairs:
                     break
