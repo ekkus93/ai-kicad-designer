@@ -29,7 +29,7 @@ def test_median_trunk_respects_unrelated_obstacles() -> None:
         "exclusive",
         "unrelated",
         "body",
-        (9 * PITCH, 0, 11 * PITCH, 2 * PITCH),
+        (9 * PITCH, -2 * PITCH, 11 * PITCH, 2 * PITCH),
     )
     clear = _distribution_initial_trees(
         "RAIL",

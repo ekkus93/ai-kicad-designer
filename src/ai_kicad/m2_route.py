@@ -523,7 +523,10 @@ def _distribution_initial_trees(
     # producer-centered tree; legality and the fixed 250 mm union gate still
     # decide which plans survive. Only one interior lane is considered so the
     # deterministic search budget remains bounded to eight initial plans.
-    median_y = _floor_grid((top + bottom) // 2)
+    # Use the gateway-row median to minimize aggregate vertical branch travel.
+    # Clamp to an interior grid lane, distinct from perimeter alternatives.
+    median_row = sorted(point[1] for point in external)[len(external) // 2]
+    median_y = min(bottom - PITCH, max(top + PITCH, median_row))
     interior = (
         [("horizontal_median", (left, median_y), (right, median_y), (seed_external[0], median_y))]
         if top < median_y < bottom
