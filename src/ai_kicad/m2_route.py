@@ -518,20 +518,8 @@ def _distribution_initial_trees(
         ),
         key=lambda x: (min(abs(x - left), abs(x - right)), x),
     )[:2]
-    # An interior trunk can reduce long shared-rail branches when endpoints
-    # occupy several rows. Retain the perimeter alternatives and the original
-    # producer-centered tree; legality and the fixed 250 mm union gate still
-    # decide which plans survive. Only one interior lane is considered so the
-    # deterministic search budget remains bounded to eight initial plans.
-    median_y = _floor_grid((top + bottom) // 2)
-    interior = (
-        [("horizontal_median", (left, median_y), (right, median_y), (seed_external[0], median_y))]
-        if top < median_y < bottom
-        else []
-    )
     candidates = (
-        interior
-        + [("horizontal_above", (left, y), (right, y), (seed_external[0], y)) for y in above]
+        [("horizontal_above", (left, y), (right, y), (seed_external[0], y)) for y in above]
         + [("horizontal_below", (left, y), (right, y), (seed_external[0], y)) for y in below]
         + [("vertical_side", (x, top), (x, bottom), (x, seed_external[1])) for x in sides]
     )
@@ -1010,3 +998,222 @@ def route_between_fragments(
                             net,
                             owner,
                             (target.id, "escape"),
+                        )
+                    )
+                    conductors.extend(
+                        ConductorSegment(first, second, net, owner, (target.id, f"tap.{tap}"))
+                        for first, second in route
+                        if first != second
+                    )
+                    connected.add(target.id)
+            except RouteBlockedConflict as conflict:
+                aggregate_taps += conflict.taps
+                aggregate_states += conflict.states
+                blocked_plans.append(conflict)
+                continue
+            except RouteLengthBoundConflict as conflict:
+                aggregate_taps += tap_tests
+                aggregate_states += state_expansions
+                length_prunes.append(conflict.lower_bound)
+                continue
+            aggregate_taps += tap_tests
+            aggregate_states += state_expansions
+            tree = canonical_conductor_tree(conductors)
+            complete = canonical_conductor_tree((*local_conductors, *conductors))
+            if trunk is None:
+                worst_to_trunk = 0
+            else:
+                first, second = trunk
+                worst_to_trunk = max(
+                    min(
+                        abs(gateway.point[0] - first[0]) + abs(gateway.point[1] - first[1]),
+                        abs(gateway.point[0] - second[0]) + abs(gateway.point[1] - second[1]),
+                    )
+                    for gateway in gateways.values()
+                )
+            candidates.append(
+                (
+                    complete.length,
+                    worst_to_trunk,
+                    complete.bends,
+                    tuple((segment.start, segment.end) for segment in tree.segments),
+                    strategy,
+                    tree,
+                )
+            )
+        if not candidates:
+            if length_prunes and not blocked_plans:
+                raise RouteLengthBoundConflict(net, min(length_prunes))
+            if blocked_plans:
+                blocked = max(blocked_plans, key=lambda item: (len(item.gateways), item.gateways))
+                raise RouteBlockedConflict(net, blocked.gateways, aggregate_taps, aggregate_states)
+            raise RouteBlockedConflict(
+                net, tuple(sorted(gateways)), aggregate_taps, aggregate_states
+            )
+        _, _, _, _, strategy, tree = min(candidates)
+        planned_corridors = tuple(
+            Reservation(
+                f"route.{net}.{index}",
+                "channel",
+                owner,
+                "global_route",
+                (
+                    min(segment.start[0], segment.end[0]) - 250_000,
+                    min(segment.start[1], segment.end[1]) - 250_000,
+                    max(segment.start[0], segment.end[0]) + 250_000,
+                    max(segment.start[1], segment.end[1]) + 250_000,
+                ),
+                net,
+                1,
+            )
+            for index, segment in enumerate(tree.segments)
+        )
+        previous.extend((net, segment.start, segment.end) for segment in tree.segments)
+        result.append(
+            RouteTree(
+                net,
+                tuple(ordered),
+                tuple((segment.start, segment.end) for segment in tree.segments),
+                tree.junctions,
+                owner,
+                tuple(segment.provenance for segment in tree.segments),
+                aggregate_taps,
+                aggregate_states,
+                strategy,
+                len(plans),
+                planned_corridors,
+            )
+        )
+    # Label-eligible connector nets historically remained disconnected islands.
+    # Add a visible conductor only when the semantic relation is unique, local,
+    # and physically routable. This is intentionally best-effort: blocked or
+    # over-length optional routes retain the proven label presentation instead
+    # of turning an aesthetic preference into a correctness failure.
+    routed_nets = {tree.net for tree in result}
+    for edge in _optional_local_visible_edges(plan, placed):
+        if edge.net in routed_nets:
+            continue
+        net = edge.net
+        owner = f"tree.{net}.local-visible"
+        source = _gateway(by_id[edge.source], net, True)
+        target = _gateway(by_id[edge.target], net, False)
+        obstacles = tuple(
+            reservation
+            for reservation in scene_reservations
+            if (
+                reservation.occupancy == "exclusive"
+                and reservation.clearance_class
+                in {"body", "text", "label", "pin", "wire", "protected"}
+                and not (
+                    reservation.clearance_class == "label" and reservation.permitted_net == net
+                )
+            )
+            or (reservation.occupancy == "channel" and reservation.permitted_net not in {None, net})
+        )
+        source_external = _advance(source.point, source.escape_direction, PITCH)
+        target_external = _advance(target.point, target.escape_direction, PITCH)
+        if not _path_legal(
+            (source.point, source_external),
+            _escape_obstacles(obstacles, source),
+            tuple(previous),
+            net=net,
+            owner=owner,
+            allowed_contacts=frozenset({source.point}),
+            route_bounds=route_bounds,
+        ):
+            continue
+        if not _path_legal(
+            (target.point, target_external),
+            _escape_obstacles(obstacles, target),
+            tuple(previous),
+            net=net,
+            owner=owner,
+            allowed_contacts=frozenset({target.point}),
+            route_bounds=route_bounds,
+        ):
+            continue
+        route_path, expansions = _connect(
+            source_external,
+            target_external,
+            obstacles,
+            tuple(previous),
+            net=net,
+            owner=owner,
+            allowed_contacts=frozenset({source.point, target.point}),
+            route_bounds=route_bounds,
+        )
+        if route_path is None:
+            continue
+        conductors = (
+            ConductorSegment(
+                source.point,
+                source_external,
+                net,
+                owner,
+                (source.id, "optional-visible"),
+            ),
+            *(
+                ConductorSegment(first, second, net, owner, ("optional-visible",))
+                for first, second in route_path
+                if first != second
+            ),
+            ConductorSegment(
+                target.point,
+                target_external,
+                net,
+                owner,
+                (target.id, "optional-visible"),
+            ),
+        )
+        local_conductors = tuple(
+            ConductorSegment(
+                (first[0] + item.delta[0], first[1] + item.delta[1]),
+                (second[0] + item.delta[0], second[1] + item.delta[1]),
+                net,
+                item.fragment.block.id,
+            )
+            for item in placed
+            for (first, second), wire_net in zip(
+                item.fragment.wires, item.fragment.wire_nets, strict=True
+            )
+            if wire_net == net
+        )
+        complete = canonical_conductor_tree((*local_conductors, *conductors))
+        if complete.length > MAX_CANONICAL_LENGTH:
+            continue
+        tree = canonical_conductor_tree(conductors)
+        planned_corridors = tuple(
+            Reservation(
+                f"route.{net}.optional.{index}",
+                "channel",
+                owner,
+                "global_route",
+                (
+                    min(segment.start[0], segment.end[0]) - 250_000,
+                    min(segment.start[1], segment.end[1]) - 250_000,
+                    max(segment.start[0], segment.end[0]) + 250_000,
+                    max(segment.start[1], segment.end[1]) + 250_000,
+                ),
+                net,
+                1,
+            )
+            for index, segment in enumerate(tree.segments)
+        )
+        previous.extend((net, segment.start, segment.end) for segment in tree.segments)
+        result.append(
+            RouteTree(
+                net,
+                (edge,),
+                tuple((segment.start, segment.end) for segment in tree.segments),
+                tree.junctions,
+                owner,
+                tuple(segment.provenance for segment in tree.segments),
+                0,
+                expansions,
+                "local_visible_optional",
+                1,
+                planned_corridors,
+            )
+        )
+        routed_nets.add(net)
+    return tuple(result)
