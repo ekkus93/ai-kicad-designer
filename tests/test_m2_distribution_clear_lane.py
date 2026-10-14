@@ -31,7 +31,7 @@ def test_blocked_median_selects_adjacent_legal_interior_lane() -> None:
         "exclusive",
         "unrelated",
         "body",
-        (9 * PITCH, -3 * PITCH // 2, 11 * PITCH, -PITCH // 2),
+        (9 * PITCH, -PITCH // 2, 11 * PITCH, PITCH // 2),
     )
     for ordered in permutations(gateways):
         plans = _distribution_initial_trees(
@@ -46,4 +46,4 @@ def test_blocked_median_selects_adjacent_legal_interior_lane() -> None:
             for part in alternative[0][1]
             if part.provenance == ("horizontal_clear_lane", "trunk")
         )
-        assert trunk.start[1] == trunk.end[1] == 0
+        assert trunk.start[1] == trunk.end[1] == PITCH
