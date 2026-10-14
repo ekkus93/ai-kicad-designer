@@ -96,7 +96,6 @@ def summarize_comparable_candidates(selection: dict, limit: int = 8) -> dict:
         "stage_inversions",
         "reversal_distance",
         "interface_side_violations",
-        "interface_owner_distance",
     )
     alternatives = [
         {
@@ -115,6 +114,18 @@ def summarize_comparable_candidates(selection: dict, limit: int = 8) -> dict:
     ]
     for item in alternatives:
         item["delta_from_selected"] = _delta_from_selected(item, selected_view)
+        item["soft_semantic_delta_from_selected"] = {
+            key: (
+                item[key] - selected_view[key]
+                if item[key] is not None and selected_view[key] is not None
+                else None
+            )
+            for key in (
+                "interface_owner_distance",
+                "material_interface_row_dislocation",
+                "independent_output_owner_row_drift",
+            )
+        }
         item["route_shape_delta_from_selected"] = {
             key: (
                 item[key] - selected_view[key]
