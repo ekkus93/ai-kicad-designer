@@ -8,6 +8,7 @@ from .ir import InputError
 from .m2_conflicts import ConflictKind, TypedConflict
 from .m2_composition_candidate_rank import (
     route_backtracking_penalty,
+    route_branch_arm_spread,
     compactness_whitespace_penalties,
     composition_candidate_key,
     semantic_composition_penalty_breakdown,
@@ -1427,6 +1428,7 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
                 working_packing,
                 routing_compactness,
                 routing_backtracking=route_backtracking_penalty(canonical_trees),
+                branch_arm_spread=route_branch_arm_spread(canonical_trees),
             )
             structure = _structural_signature(working_packing)
             proved_candidates.append(

@@ -1194,6 +1194,19 @@ def test_route_backtracking_penalty_separates_equally_semantic_candidates():
     )
 
 
+def test_branch_arm_spread_breaks_routing_ties():
+    plan = _plan(())
+    packing = SimpleNamespace(fragments=())
+    routing = (1000, 500, 1, 1.0, 0, 0)
+    balanced = composition_candidate_key(
+        plan, packing, routing, routing_backtracking=0, branch_arm_spread=0
+    )
+    uneven = composition_candidate_key(
+        plan, packing, routing, routing_backtracking=0, branch_arm_spread=1
+    )
+    assert balanced < uneven
+
+
 def test_serial_row_exempts_explicit_signal_stage_before_fanout() -> None:
     """The fanout junction is not forced onto its upstream stage row."""
     first = _block("first", "filter", ("signal_in", "signal_out"))

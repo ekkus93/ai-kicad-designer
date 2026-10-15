@@ -1044,8 +1044,76 @@ def route_backtracking_penalty(canonical_trees) -> int:
     return penalty
 
 
+def route_branch_arm_spread(canonical_trees) -> int:
+    """Measure the largest unequal straight-arm spread at a route junction.
+
+    This favors balanced, legible fanouts after semantic layout and return-leg
+    clarity have tied. It is computed from the candidate's own proved geometry.
+    """
+    worst = 0
+    for tree in canonical_trees:
+        segments = _coalesced_route_segments(tree.geometry_signature)
+        arms: dict[Point, set[str]] = defaultdict(set)
+        for first, second in tree.geometry_signature:
+            if first[1] == second[1]:
+                left, right = sorted((first, second))
+                arms[left].add("right")
+                arms[right].add("left")
+            else:
+                top, bottom = sorted((first, second), key=lambda point: point[1])
+                arms[top].add("down")
+                arms[bottom].add("up")
+        endpoints = {point for segment in segments for point in segment}
+        for point, directions in arms.items():
+            if len(directions) < 3:
+                continue
+            lengths = []
+            for direction in sorted(directions):
+                axis = 0 if direction in {"left", "right"} else 1
+                start = point[axis]
+                forward = direction in {"right", "down"}
+                intervals = [
+                    tuple(sorted((first[axis], second[axis])))
+                    for first, second in segments
+                    if first[1 - axis] == second[1 - axis] == point[1 - axis]
+                ]
+                reach = start
+                while True:
+                    if forward:
+                        farther = max(
+                            (high for low, high in intervals if low <= reach < high), default=reach
+                        )
+                    else:
+                        farther = min(
+                            (low for low, high in intervals if low < reach <= high), default=reach
+                        )
+                    if farther == reach:
+                        break
+                    reach = farther
+                straight = {"left", "right"} if axis == 0 else {"up", "down"}
+                stops = [
+                    abs(other[axis] - start)
+                    for other in endpoints
+                    if other[1 - axis] == point[1 - axis]
+                    and (
+                        (start < other[axis] <= reach)
+                        if forward
+                        else (reach <= other[axis] < start)
+                    )
+                    and arms[other] != straight
+                ]
+                lengths.append(min(stops, default=abs(reach - start)))
+            worst = max(worst, _grid_units(max(lengths) - min(lengths)))
+    return worst
+
+
 def composition_candidate_key(
-    plan, packing, routing_compactness, *, routing_backtracking: int = 0
+    plan,
+    packing,
+    routing_compactness,
+    *,
+    routing_backtracking: int = 0,
+    branch_arm_spread: int = 0,
 ) -> CandidateKey:
     """Build the production lexicographic key for a fully proved candidate."""
 
@@ -1074,6 +1142,7 @@ def composition_candidate_key(
         # Shared-producer fanout and single-output layouts remain exempt.
         _independent_output_owner_row_drift(plan, packing),
         int(routing_backtracking),
+        int(branch_arm_spread),
         *semantic[16:],
         # Prefer a short, legible route rather than letting one saved bend
         # dominate an arbitrarily long detour. One bend costs eight grid
