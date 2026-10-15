@@ -38,6 +38,26 @@ def _ceil_grid(value: int) -> int:
     return -((-value) // PITCH) * PITCH
 
 
+def _bounded_tracks(values: set[int], a: int, b: int) -> tuple[int, ...]:
+    """Retain near-outside tracks and span-diverse interior escape lanes.
+
+    Every interior lane has the same Manhattan distance to both endpoints;
+    taking the first eight by coordinate discards the far side of dense bands.
+    Quantile indices preserve both extremes and sample the intervening span
+    without increasing the existing per-region routing budget.
+    """
+    low, high = sorted((a, b))
+    below = sorted((value for value in values if value < low), reverse=True)[
+        :MAX_TRACKS_PER_SIDE
+    ]
+    above = sorted(value for value in values if value > high)[:MAX_TRACKS_PER_SIDE]
+    between = sorted(value for value in values if low <= value <= high)
+    if len(between) > MAX_TRACKS_PER_SIDE:
+        count = MAX_TRACKS_PER_SIDE
+        between = [between[index * (len(between) - 1) // (count - 1)] for index in range(count)]
+    return tuple(below + between + above)
+
+
 @dataclass(frozen=True)
 class RouteTree:
     net: str
@@ -410,19 +430,7 @@ def _connect(
     )
     routing_obstacles = obstacles + prior_keepouts
 
-    def bounded_tracks(values: set[int], a: int, b: int) -> tuple[int, ...]:
-        low, high = sorted((a, b))
-        below = sorted((value for value in values if value < low), reverse=True)[
-            :MAX_TRACKS_PER_SIDE
-        ]
-        above = sorted(value for value in values if value > high)[:MAX_TRACKS_PER_SIDE]
-        between = sorted(
-            (value for value in values if low <= value <= high),
-            key=lambda value: (abs(value - a) + abs(value - b), value),
-        )[:MAX_TRACKS_PER_SIDE]
-        return tuple(below + between + above)
-
-    tracks_x = bounded_tracks(
+    tracks_x = _bounded_tracks(
         {
             value
             for obstacle in routing_obstacles
@@ -435,7 +443,7 @@ def _connect(
         first[0],
         second[0],
     )
-    tracks_y = bounded_tracks(
+    tracks_y = _bounded_tracks(
         {
             value
             for obstacle in routing_obstacles
