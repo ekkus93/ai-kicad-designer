@@ -1563,12 +1563,22 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
     metrics["layout_repair_count"] = sum(
         bool(item.get("repair_state_changed")) for item in attempts
     )
+    physically_connected_nets = {
+        proof["net"]
+        for proof in metrics["pre_emission_net_witnesses"]
+        if proof["component_count"] == 1
+        and all(component >= 0 for _, component in proof["terminal_components"])
+    }
+    scene_labels = [
+        (net, point) for net, point in draft.labels if net not in physically_connected_nets
+    ]
+    metrics["label_count"] = len(scene_labels)
     scene = certify_scene_geometry(
         Scene(
             draft.positions,
             draft.wires,
             draft.wire_nets,
-            draft.labels,
+            scene_labels,
             draft.junctions,
             metrics,
             draft.angles,

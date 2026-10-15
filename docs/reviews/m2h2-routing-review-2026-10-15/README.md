@@ -15,10 +15,10 @@ These editable KiCad projects and native SVG renders show current local outputs 
 
 The I4 issue came from label connectivity: matching labels made OUTPUT_2 and RETURN electrically connected while their visible conductors were absent or split into islands. Routing now prioritizes short external output links before the common-return tree and retries placements when it cannot route them together. The selected layout connects OUTPUT_2 and RETURN physically while preserving the existing clearance and net-length limits.
 
-The current I4 artifact was built with locked KiCad 10.0.6. Electrical analysis passed with zero ERC violations, unrouted pins, unrelated wire crossings, or wires through symbol bodies. Full five-run qualification and the 90-case comparative audit have not been run for this source revision.
+Redundant local labels are omitted when the net has one continuous conductor component; labels remain only when they are needed to join separate wire islands. The current I4 artifact was built with locked KiCad 10.0.6. Electrical analysis passed with the same five pin groups and zero ERC violations, unrouted pins, unrelated wire crossings, or wires through symbol bodies. Full five-run qualification and the 90-case comparative audit have not been run for this source revision.
 
 Production source SHA-256:
 
-- `m2_compose.py`: `3d6881b72e16dfc7ae7c84a73aa6c9db2589ffa539217b5604457b7315c8b158`
+- `m2_compose.py`: `b4e997ca7b900c5eb91618f640fa7a0f7acdf87353cb8873cb7df1a4547f5ff3`
 - `m2_composition_candidate_rank.py`: `55a1f5dfd538267fa8ef160a945919db14ea99955a194bcfe299c6c796e54eae`
 - `m2_route.py`: `2d834375da528d155cb756fc624f2aca801c4c281568dda5a1b84a179ce0ec14`
