@@ -1,27 +1,24 @@
 # M2h2 Routing Review
 
-These native KiCad projects and SVG renders are the exact run 1 outputs from the locally qualified branch-arm scoring source. Open the `.kicad_pro` file for editable inspection; the adjacent SVG is a quick view. KiCad 10.0.6 was used for native renders. The committed SVG copies have trailing whitespace stripped from each line to satisfy repository checks; the schematic files are unmodified.
+These editable KiCad projects and native SVG renders show current local outputs built with KiCad 10.0.6. Open each `.kicad_pro` project for detailed inspection. The `.kicad_sch` files are unchanged native outputs; SVG copies have only trailing whitespace removed.
 
-## Cases to review
+## Cases
 
 | Case | Review focus | Files |
 | --- | --- | --- |
-| Shared rail | Two-chain shared-rail layout; local label disconnects increased from 1 historical witness to 2 in the current output. | [KiCad project](shared-rail/M2f2TwoSignalChainsSharedRail.kicad_pro), [SVG](shared-rail/M2f2TwoSignalChainsSharedRail.svg) |
-| V4-7 | Dual timer system; current output introduces one interface-side hard defect against a historically clean case. | [KiCad project](v4-7/V4RegulatedDualTimerSystem.kicad_pro), [SVG](v4-7/V4RegulatedDualTimerSystem.svg) |
-| V6-3 | Reference Sallen-Key output; current output introduces one interface-side hard defect against a historically clean case. | [KiCad project](v6-3/V6ReferenceSallenKeyOutputRc.kicad_pro), [SVG](v6-3/V6ReferenceSallenKeyOutputRc.svg) |
-| I4 B2 mixed | Mixed dual-output case; interface and label defects improve, while U-shaped detours rise 2→7 and branch inconsistency rises 21.59→29.21 mm. | [KiCad project](i4-b2-mixed/M2h2I4B2Mixed.kicad_pro), [SVG](i4-b2-mixed/M2h2I4B2Mixed.svg) |
+| Shared rail | Check shared reference and rail visibility across both chains. | [Project](shared-rail/M2f2TwoSignalChainsSharedRail.kicad_pro), [SVG](shared-rail/M2f2TwoSignalChainsSharedRail.svg) |
+| V4-7 | Check output-interface ownership and signal flow. | [Project](v4-7/V4RegulatedDualTimerSystem.kicad_pro), [SVG](v4-7/V4RegulatedDualTimerSystem.svg) |
+| V6-3 | Check reference/filter/feedback readability and output-interface ownership. | [Project](v6-3/V6ReferenceSallenKeyOutputRc.kicad_pro), [SVG](v6-3/V6ReferenceSallenKeyOutputRc.svg) |
+| I4 B2 mixed | The common-return connector is now physically routed to both shunt-capacitor reference pins. The routed union measures 212.09 mm with seven bends; the input path remains 45.72 mm with six bends. Please judge whether the long return path reads clearly and whether the input's left-down-right bend is acceptable. | [Project](i4-b2-mixed/M2h2I4B2Mixed.kicad_pro), [SVG](i4-b2-mixed/M2h2I4B2Mixed.svg) |
 
-## Provenance
+## Change and verification
 
-- Qualification checkout: `81b1e7f3521d806bf60432bf4a139186abf3aa17` with the exact production source hashes recorded in the qualification manifests.
-- `m2_compose.py` SHA-256: `3d6881b72e16dfc7ae7c84a73aa6c9db2589ffa539217b5604457b7315c8b158`.
-- `m2_composition_candidate_rank.py` SHA-256: `55a1f5dfd538267fa8ef160a945919db14ea99955a194bcfe299c6c796e54eae`.
-- Cases came from `.local/m2h2-branch-spread` qualification evidence; each selected run passed its electrical, serialization, and per-case qualification checks.
-- The independent 90-case comparison still fails five frozen criteria: hard-defect closure, individual hard-defect nonworsening, routing aesthetics, repeated-structure tolerance, and I4-specific improvement. These files are submitted for engineering review, not as an acceptance claim.
+The I4 issue came from label connectivity: the connector and both capacitors had the same `RETURN` net label, but their emitted conductor geometry formed separate islands. The router now tries a deterministic, bounded physical tree for an external reference interface with multiple internal reference terminals. If it cannot prove the route under existing clearance and length limits, labels remain the fallback. A regression checks conductor reachability from the return interface to both capacitor gateways.
 
-## Review questions
+The locked current-source checks passed for I4 B2 mixed, V6-3, and DP2. Shared-rail and V4-7 native builds also succeeded. The last complete 90-case comparison was for the preceding source and failed five frozen criteria; this routing change still needs full five-run qualification and a new independent comparison before acceptance.
 
-- Are the signal progression and interface associations clear at a glance?
-- For the shared rail, is the relationship between the reference trunk and both chains understandable?
-- For V4-7 and V6-3, where should the affected interface connect or face to preserve the intended flow?
-- For I4 B2 mixed, does the reduced interface clutter justify the visibly longer or more awkward return routing?
+Production source SHA-256:
+
+- `m2_compose.py`: `3d6881b72e16dfc7ae7c84a73aa6c9db2589ffa539217b5604457b7315c8b158`
+- `m2_composition_candidate_rank.py`: `55a1f5dfd538267fa8ef160a945919db14ea99955a194bcfe299c6c796e54eae`
+- `m2_route.py`: `8b8c74cacf1e5cc03f6d0ac7619c4764e6be5147624a993235a9c4d1bc0f3f1d`

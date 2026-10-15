@@ -814,6 +814,7 @@ def route_between_fragments(
 ) -> tuple[RouteTree, ...]:
     """Attach all required gateways with one obstacle-checked tree per net/island."""
     by_id = {item.fragment.block.id: item for item in placed}
+    block_by_id = {block.id: block for block in plan.blocks}
     # Keep emitted routing on the historically proved semantic edge inventory.
     # Inferred passive-interface relations are observer evidence only until
     # their additional conductor length and gateway feasibility are qualified.
@@ -823,6 +824,35 @@ def route_between_fragments(
     for edge in plan.edges:
         if edge.net and edge.kind in {"signal", "power", "branch"}:
             grouped.setdefault(edge.net, []).append(edge)
+    optional_reference_nets = set()
+    for presentation in plan.presentation_nets:
+        interface_fragments = {
+            fragment
+            for fragment in presentation.fragments
+            if fragment in block_by_id and block_by_id[fragment].kind == "interface"
+        }
+        reference_fragments = {
+            block.id
+            for block in plan.blocks
+            if block.id in presentation.fragments
+            and block.kind != "interface"
+            and any(
+                port.net == presentation.id and port.role == "reference" for port in block.ports
+            )
+        }
+        if (
+            presentation.role == "distributive"
+            and not presentation.explicit_geometry_required
+            and len(interface_fragments) == 1
+            and len(reference_fragments) >= 2
+        ):
+            # External reference connectors have historically been represented
+            # by matching labels, which can leave the connector visibly apart
+            # from the internal reference terminals. Try a complete physical
+            # tree as an optional readability improvement; labels remain the
+            # safe fallback if the bounded router cannot prove one.
+            optional_reference_nets.add(presentation.id)
+            grouped.setdefault(presentation.id, [])
     # A shared internal reference has no connector and may have no directed
     # edge at all. Its terminal inventory still demands a physical distribution.
     for net in plan.presentation_nets:
@@ -831,17 +861,21 @@ def route_between_fragments(
     distribution_nets = {
         item.id for item in plan.presentation_nets if item.explicit_geometry_required
     }
-    shared_tree_nets = distribution_nets | {
-        net
-        for net, edges in grouped.items()
-        if any(edge.kind == "power" for edge in edges)
-        and len({owner for edge in edges for owner in (edge.source, edge.target)}) >= 3
-        and any(
-            port.net == net and port.role == "power_out"
-            for block in plan.blocks
-            for port in block.ports
-        )
-    }
+    shared_tree_nets = (
+        distribution_nets
+        | optional_reference_nets
+        | {
+            net
+            for net, edges in grouped.items()
+            if any(edge.kind == "power" for edge in edges)
+            and len({owner for edge in edges for owner in (edge.source, edge.target)}) >= 3
+            and any(
+                port.net == net and port.role == "power_out"
+                for block in plan.blocks
+                for port in block.ports
+            )
+        }
+    )
 
     def net_gateways(net: str) -> tuple[Gateway, ...]:
         return tuple(gateway for item in placed for gateway in item.gateways if gateway.net == net)
@@ -971,6 +1005,8 @@ def route_between_fragments(
             allowed_contacts=frozenset({seed.point}),
             route_bounds=route_bounds,
         ):
+            if net in optional_reference_nets:
+                continue
             raise RouteBlockedConflict(net, (seed.id,), 0, 0)
         local_conductors = tuple(
             ConductorSegment(
@@ -1005,6 +1041,12 @@ def route_between_fragments(
                 ),
             )
         )
+        if net in optional_reference_nets:
+            # This route is an optional physical replacement for label-only
+            # reference connectivity. Keep its search bounded to the
+            # deterministic seed-connected producer-centered plan; mandatory
+            # distributive nets retain the full alternative search.
+            plans = plans[:1]
         candidates = []
         blocked_plans = []
         length_prunes: list[int] = []
@@ -1216,6 +1258,8 @@ def route_between_fragments(
                 )
             )
         if not candidates:
+            if net in optional_reference_nets:
+                continue
             if length_prunes and not blocked_plans:
                 raise RouteLengthBoundConflict(net, min(length_prunes))
             if blocked_plans:

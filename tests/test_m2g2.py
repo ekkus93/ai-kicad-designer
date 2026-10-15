@@ -148,6 +148,37 @@ def test_canonical_tree_deduplicates_overlap_and_preserves_provenance():
     }
 
 
+def test_external_reference_interface_connects_all_internal_reference_terminals():
+    design = validate(
+        json.loads((ROOT / "fixtures/m2h2/interaction/i4/b2_mixed.json").read_text()),
+        assets(),
+    )
+    _scene, evidence = compose_with_evidence(design, assets())
+    route = next(item for item in evidence["routes"] if item["net"] == "RETURN")
+    tree_data = next(item for item in evidence["canonical_trees"] if item["net"] == "RETURN")
+    tree = canonical_conductor_tree(
+        [
+            _segment(tuple(first), tuple(second), net="RETURN")
+            for first, second in tree_data["segments"]
+        ],
+        junctions={tuple(point) for point in tree_data["junctions"]},
+    )
+    gateways = {
+        variant["fragment"]: tuple(gateway["anchor"])
+        for variant in evidence["variants"]
+        for gateway in variant["gateways"]
+        if gateway["net"] == "RETURN"
+    }
+    assert route["segments"]
+    assert {"interface.return", "passive.root.series", "passive.branch_1.series"} <= set(gateways)
+    anchors = [
+        gateways["interface.return"],
+        gateways["passive.root.series"],
+        gateways["passive.branch_1.series"],
+    ]
+    assert all(conductor_reachable(tree, anchors[0], point) for point in anchors[1:])
+
+
 def test_final_text_envelope_and_exact_accounting():
     items = (
         GeometryItem("body", "symbol", "owner", (-2, -3, 7, 5)),
