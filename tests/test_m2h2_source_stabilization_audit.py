@@ -27,9 +27,7 @@ def test_local_markdown_links_preserve_anchors_and_detect_missing_files(
         "[existing](exists.md#section) [anchor](#inside) "
         "[remote](https://example.com/) [missing](missing.md)\n"
     )
-    assert check_local_links(tmp_path, document) == [
-        "docs/review.md: missing link missing.md"
-    ]
+    assert check_local_links(tmp_path, document) == ["docs/review.md: missing link missing.md"]
 
 
 def test_local_markdown_links_reject_path_escape(tmp_path: Path) -> None:
@@ -56,6 +54,4 @@ def test_production_fixture_dispatch_table_is_rejected() -> None:
     assert prohibited_source_imports(
         'rules = {"V6-3": "special", "normal": "generic"}\n', "m2_example.py"
     )
-    assert prohibited_source_imports(
-        'rules = {"reference": "generic"}\n', "m2_example.py"
-    ) == []
+    assert prohibited_source_imports('rules = {"reference": "generic"}\n', "m2_example.py") == []
