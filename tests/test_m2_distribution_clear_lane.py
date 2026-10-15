@@ -86,3 +86,41 @@ def test_vertical_interiors_include_two_distinct_legal_corridors() -> None:
             (6 * PITCH, 6 * PITCH),
             (5 * PITCH, 5 * PITCH),
         ]
+
+def test_obstacle_generated_outer_lanes_do_not_starve_vertical_side() -> None:
+    gateways = tuple(
+        Gateway(
+            str(index),
+            "RAIL",
+            ((str(index), "1"),),
+            str(index),
+            (6 * index * PITCH, 10 * index * PITCH),
+            "up",
+            (
+                (6 * index * PITCH, 10 * index * PITCH),
+                (6 * index * PITCH, (10 * index - 1) * PITCH),
+            ),
+            frozenset({"up"}),
+            (),
+        )
+        for index in range(3)
+    )
+    # This distant obstacle contributes extra above/below lane coordinates
+    # without intersecting the gateway-span trunks.
+    remote = Reservation(
+        "remote.body",
+        "exclusive",
+        "remote",
+        "body",
+        (70 * PITCH, -20 * PITCH, 80 * PITCH, 30 * PITCH),
+    )
+    bounds = (-100 * PITCH, -100 * PITCH, 100 * PITCH, 100 * PITCH)
+    for ordered in permutations(gateways):
+        plans = _distribution_initial_trees(
+            "RAIL", "tree.RAIL", gateways[0], ordered, (remote,), (), bounds
+        )
+        assert len(plans) <= 8
+        names = {name for name, *_ in plans}
+        assert {"horizontal_above", "horizontal_below", "vertical_side"} <= names
+        assert {"vertical_median", "vertical_clear_lane"} <= names
+        assert {"horizontal_median", "horizontal_clear_lane"} <= names

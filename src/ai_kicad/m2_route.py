@@ -644,6 +644,20 @@ def _distribution_initial_trees(
         + [("horizontal_below", (left, y), (right, y), (seed_external[0], y)) for y in below]
         + [("vertical_side", (x, top), (x, bottom), (x, seed_external[1])) for x in sides]
     )
+    # Round-robin perimeter families before the eight-plan cap: extra
+    # obstacle-derived above/below lanes must not starve vertical-side
+    # alternatives. Keep each family's original deterministic ordering.
+    grouped_candidates = (
+        [candidate for candidate in candidates if candidate[0] == "horizontal_above"],
+        [candidate for candidate in candidates if candidate[0] == "horizontal_below"],
+        [candidate for candidate in candidates if candidate[0] == "vertical_side"],
+    )
+    candidates = [
+        group[rank]
+        for rank in range(max(len(group) for group in grouped_candidates))
+        for group in grouped_candidates
+        if rank < len(group)
+    ]
     for strategy, first, second, projection in candidates:
         if first == second or not _path_legal(
             (first, second),
