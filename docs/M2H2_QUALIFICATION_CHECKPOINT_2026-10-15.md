@@ -1,0 +1,3 @@
+# M2h2 qualification request — 2026-10-15
+
+Source 7693f75e2b8c01158a345162fc7469cd1079c862 passed Fast Validation run 38765948435 and pinned KiCad diagnostic run 38765948253. This checkpoint requests fresh five-run base, interaction, and structural qualification plus a development probe. The preceding audit run 38756427708 failed five frozen comparative criteria and reported a stale source hash; native inventory run 38756427134 also failed source-identity validation. These are not acceptance evidence. Keep frozen baselines and TODO sections 15–21 unchanged. Independent historical comparison, normalized native render inventory, and engineering inspection remain open.
