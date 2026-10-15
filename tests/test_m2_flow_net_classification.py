@@ -40,9 +40,10 @@ def test_distributive_net_does_not_create_primary_flow() -> None:
     for role in ("signal", "distributive"):
         net = PresentationNet("n", (), ("a", "b"), role, False)
         expected = (("a", "b", "n"),) if role == "signal" else ()
-        assert inferred_passive_interface_signal_relations(
-            _plan((a, b), presentation_nets=(net,))
-        ) == expected
+        assert (
+            inferred_passive_interface_signal_relations(_plan((a, b), presentation_nets=(net,)))
+            == expected
+        )
 
 
 def test_feedback_edge_is_not_forward_flow() -> None:
