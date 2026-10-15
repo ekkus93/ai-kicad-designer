@@ -579,8 +579,8 @@ def _distribution_initial_trees(
             if len(interior) == 2:
                 break
     # A vertical interior trunk can be substantially shorter for shared nets
-    # whose consumers are separated mostly in Y. Explore one source-neutral,
-    # seed-connected legal corridor before the outer perimeter alternatives,
+    # whose consumers are separated mostly in Y. Explore two distinct source-neutral,
+    # seed-connected legal corridors before the outer perimeter alternatives,
     # without increasing the existing eight-plan budget or relaxing clearance.
     median_column = sorted(point[0] for point in external)[len(external) // 2]
     median_x = min(right - PITCH, max(left + PITCH, median_column))
@@ -637,7 +637,8 @@ def _distribution_initial_trees(
                 ),
             )
             vertical_interior.append((strategy, conductors, (first, second), expansions))
-            break
+            if len(vertical_interior) == 2:
+                break
     candidates = (
         [("horizontal_above", (left, y), (right, y), (seed_external[0], y)) for y in above]
         + [("horizontal_below", (left, y), (right, y), (seed_external[0], y)) for y in below]

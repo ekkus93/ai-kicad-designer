@@ -49,3 +49,45 @@ def test_blocked_median_selects_adjacent_legal_interior_lane() -> None:
             (0, 0),
             (PITCH, PITCH),
         ]
+
+
+def test_vertical_interiors_include_two_distinct_legal_corridors() -> None:
+    gateways = tuple(
+        Gateway(
+            str(index),
+            "RAIL",
+            ((str(index), "1"),),
+            str(index),
+            (6 * index * PITCH, 10 * index * PITCH),
+            "up",
+            (
+                (6 * index * PITCH, 10 * index * PITCH),
+                (6 * index * PITCH, (10 * index - 1) * PITCH),
+            ),
+            frozenset({"up"}),
+            (),
+        )
+        for index in range(3)
+    )
+    bounds = (-100 * PITCH, -100 * PITCH, 100 * PITCH, 100 * PITCH)
+    for ordered in permutations(gateways):
+        plans = _distribution_initial_trees(
+            "RAIL", "tree.RAIL", gateways[0], ordered, (), (), bounds
+        )
+        assert len(plans) <= 8
+        vertical = [
+            plan for plan in plans
+            if plan[0] in {"vertical_median", "vertical_clear_lane"}
+        ]
+        assert len(vertical) == 2
+        assert [plan[0] for plan in vertical] == [
+            "vertical_median", "vertical_clear_lane"
+        ]
+        trunks = [
+            next(part for part in plan[1] if part.provenance == (plan[0], "trunk"))
+            for plan in vertical
+        ]
+        assert [(part.start[0], part.end[0]) for part in trunks] == [
+            (6 * PITCH, 6 * PITCH),
+            (5 * PITCH, 5 * PITCH),
+        ]
