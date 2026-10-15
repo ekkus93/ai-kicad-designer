@@ -29,7 +29,7 @@ DOCUMENTS = (
     "docs/M2H2_HUMAN_READABLE_SCHEMATIC_COMPOSITION_TODO_2026-10-07.md",
     "docs/M2H2_NATIVE_ENGINEERING_REVIEW_2026-10-13.md",
 )
-MARKDOWN_LINK = re.compile(r"(?<!!)\\[[^\\]]+\\]\\(([^)]+)\\)")
+MARKDOWN_LINK = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
 PROHIBITED_SOLVER_ROOTS = frozenset({"ortools", "pulp", "cvxpy", "mip"})
 
 
