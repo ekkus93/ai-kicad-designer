@@ -64,9 +64,7 @@ def prohibited_source_imports(source: str, filename: str) -> list[str]:
     for node in ast.walk(tree):
         if isinstance(node, ast.ImportFrom) and node.module == "importlib":
             dynamic_import_names.update(
-                alias.asname or alias.name
-                for alias in node.names
-                if alias.name == "import_module"
+                alias.asname or alias.name for alias in node.names if alias.name == "import_module"
             )
 
     def check(module: str, line: int) -> None:
@@ -124,9 +122,7 @@ def source_audit(root: Path = ROOT) -> dict:
         issues.append(f"structural anti-overfitting violations: {structural['finding_count']}")
     try:
         svg_by_case, provenance = _verified_svg_by_case(root, root / HISTORICAL_MANIFEST)
-        issues.extend(
-            check_frozen_inventory(len(svg_by_case), provenance["inventory_sha256"])
-        )
+        issues.extend(check_frozen_inventory(len(svg_by_case), provenance["inventory_sha256"]))
     except (OSError, ValueError, KeyError) as exc:
         issues.append(f"historical native archive failed verification: {exc}")
     return {
