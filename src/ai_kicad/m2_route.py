@@ -578,6 +578,66 @@ def _distribution_initial_trees(
             interior.append((strategy, conductors, (first, second), expansions))
             if len(interior) == 2:
                 break
+    # A vertical interior trunk can be substantially shorter for shared nets
+    # whose consumers are separated mostly in Y. Explore one source-neutral,
+    # seed-connected legal corridor before the outer perimeter alternatives,
+    # without increasing the existing eight-plan budget or relaxing clearance.
+    median_column = sorted(point[0] for point in external)[len(external) // 2]
+    median_x = min(right - PITCH, max(left + PITCH, median_column))
+    vertical_interior = []
+    if left < median_x < right:
+        lanes = {median_x}
+        for step in (1, 2):
+            lanes.update({median_x - step * PITCH, median_x + step * PITCH})
+        for obstacle in obstacles:
+            if obstacle.rect[1] < bottom and obstacle.rect[3] > top:
+                lanes.add(_floor_grid(obstacle.rect[0] - PITCH))
+                lanes.add(_ceil_grid(obstacle.rect[2] + PITCH))
+        ordered_lanes = sorted(
+            (x for x in lanes if left < x < right),
+            key=lambda x: (
+                sum(abs(point[0] - x) for point in external),
+                abs(x - median_x),
+                x,
+            ),
+        )[:8]
+        for x in ordered_lanes:
+            first, second = (x, top), (x, bottom)
+            if first == second or not _path_legal(
+                (first, second),
+                obstacles,
+                previous,
+                net=net,
+                owner=owner,
+                allowed_contacts=frozenset(),
+                route_bounds=route_bounds,
+            ):
+                continue
+            projection = (x, seed_external[1])
+            branch, expansions = _connect(
+                seed_external,
+                projection,
+                obstacles,
+                previous,
+                net=net,
+                owner=owner,
+                allowed_contacts=frozenset({seed_external, projection}),
+                route_bounds=route_bounds,
+            )
+            if branch is None:
+                continue
+            strategy = "vertical_median" if x == median_x else "vertical_clear_lane"
+            conductors = (
+                seed_segment,
+                ConductorSegment(first, second, net, owner, (strategy, "trunk")),
+                *(
+                    ConductorSegment(p, q, net, owner, (strategy, "seed_branch"))
+                    for p, q in branch
+                    if p != q
+                ),
+            )
+            vertical_interior.append((strategy, conductors, (first, second), expansions))
+            break
     candidates = (
         [("horizontal_above", (left, y), (right, y), (seed_external[0], y)) for y in above]
         + [("horizontal_below", (left, y), (right, y), (seed_external[0], y)) for y in below]
@@ -616,7 +676,7 @@ def _distribution_initial_trees(
             ),
         )
         result.append((strategy, conductors, (first, second), expansions))
-    return tuple((result[:1] + interior + result[1:])[:8])
+    return tuple((result[:1] + interior + vertical_interior + result[1:])[:8])
 
 
 def _routable_edges(plan: SemanticPlan) -> tuple[SemanticEdge, ...]:
