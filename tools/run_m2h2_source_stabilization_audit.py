@@ -60,6 +60,14 @@ def prohibited_source_imports(source: str, filename: str) -> list[str]:
     """Detect direct and literal dynamic solver imports in production modules."""
     problems = []
     tree = ast.parse(source, filename=filename)
+    dynamic_import_names = {"__import__"}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.ImportFrom) and node.module == "importlib":
+            dynamic_import_names.update(
+                alias.asname or alias.name
+                for alias in node.names
+                if alias.name == "import_module"
+            )
 
     def check(module: str, line: int) -> None:
         if module.split(".", 1)[0] in PROHIBITED_SOLVER_ROOTS:
@@ -75,7 +83,7 @@ def prohibited_source_imports(source: str, filename: str) -> list[str]:
             func = node.func
             dynamic_import = (
                 isinstance(func, ast.Name)
-                and func.id == "__import__"
+                and func.id in dynamic_import_names
                 or isinstance(func, ast.Attribute)
                 and func.attr == "import_module"
             )
