@@ -16,19 +16,17 @@ def test_dense_interior_tracks_keep_both_extremes_and_middle() -> None:
 
 
 def test_sparse_and_outside_tracks_keep_existing_near_first_priority() -> None:
-    values = {-index * PITCH for index in range(1, 13)} | {
-        index * PITCH for index in range(1, 5)
-    } | {index * PITCH for index in range(11, 23)}
-    tracks = _bounded_tracks(values, 0, 10 * PITCH)
-    assert tracks[:MAX_TRACKS_PER_SIDE] == tuple(
-        -index * PITCH for index in range(1, 9)
+    values = (
+        {-index * PITCH for index in range(1, 13)}
+        | {index * PITCH for index in range(1, 5)}
+        | {index * PITCH for index in range(11, 23)}
     )
+    tracks = _bounded_tracks(values, 0, 10 * PITCH)
+    assert tracks[:MAX_TRACKS_PER_SIDE] == tuple(-index * PITCH for index in range(1, 9))
     assert tracks[MAX_TRACKS_PER_SIDE : MAX_TRACKS_PER_SIDE + 4] == tuple(
         index * PITCH for index in range(1, 5)
     )
-    assert tracks[-MAX_TRACKS_PER_SIDE:] == tuple(
-        index * PITCH for index in range(11, 19)
-    )
+    assert tracks[-MAX_TRACKS_PER_SIDE:] == tuple(index * PITCH for index in range(11, 19))
 
 
 def test_span_diverse_tracks_expose_far_side_to_both_direct_escape_orders() -> None:
