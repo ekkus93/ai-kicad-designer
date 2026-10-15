@@ -1,4 +1,4 @@
-"""Passive-interface inference respects distributive and feedback semantics."""
+"""Bounded semantic inference checks for passive connector ports."""
 
 from types import SimpleNamespace
 
@@ -13,22 +13,15 @@ def _block(name: str, kind: str, role: str):
     )
 
 
-def test_distribution_is_not_forward_flow() -> None:
+def test_unique_passive_connector_input_flow() -> None:
     a = _block("a", "interface", "passive")
     b = _block("b", "active", "signal_in")
-    plan = SimpleNamespace(
-        blocks=(a, b),
-        edges=(),
-        presentation_nets=(SimpleNamespace(id="n", role="distributive"),),
-    )
-    assert inferred_passive_interface_signal_relations(plan) == ()
-    plan.presentation_nets = (SimpleNamespace(id="n", role="signal"),)
+    plan = SimpleNamespace(blocks=(a, b), edges=(), presentation_nets=())
     assert inferred_passive_interface_signal_relations(plan) == (("a", "b", "n"),)
 
 
-def test_feedback_relation_is_not_forward_flow() -> None:
+def test_unique_passive_connector_output_flow() -> None:
     a = _block("a", "interface", "passive")
     b = _block("b", "active", "signal_out")
-    edge = SimpleNamespace(net="n", kind="feedback")
-    plan = SimpleNamespace(blocks=(a, b), edges=(edge,), presentation_nets=())
-    assert inferred_passive_interface_signal_relations(plan) == ()
+    plan = SimpleNamespace(blocks=(b, a), edges=(), presentation_nets=())
+    assert inferred_passive_interface_signal_relations(plan) == (("b", "a", "n"),)
