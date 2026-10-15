@@ -141,6 +141,7 @@ def test_repeated_structure_tolerances_are_bound_to_full_corpus_without_retuning
         )
         assert repeated["peer_pair_count"] == len(repeated["witnesses"])
 
+
 def test_historical_interface_flow_does_not_import_mutable_production_inference() -> None:
     source = (ROOT / "tools/analyze_m2h2_historical_composition.py").read_text()
     assert "from m2h2_frozen_passive_interface_flow import" in source
