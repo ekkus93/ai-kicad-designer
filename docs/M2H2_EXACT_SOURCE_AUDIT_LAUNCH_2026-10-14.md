@@ -1,0 +1,5 @@
+# M2h2 exact-source comparative audit launch — 2026-10-14
+
+The unchanged production behavior at `2c029336e135856419cde3c2ea0055e0c7701aff` was qualified from exact source `93d6ea92377f6aea60feae4e86ec7118625005a9` on pinned KiCad 10.0.6. Base 56×5 plus V3-8 negative (`38681030077`), I1–I6×5 (`38681030053`), nine structural classes×5 (`38681030093`), Fast Validation (`38681030061`), pinned toolchain (`38681030062`), development probe (`38681030071`), base native-render transfer (`38683480380`), and structural native-render transfer (`38683755030`) all passed.
+
+Request an independent 90-case frozen-baseline comparison and a 137-case×5 normalized native-render inventory from preserved source-matched evidence root `$HOME/m2h2-evidence/93d6ea92377f6aea60feae4e86ec7118625005a9/`. This request does not establish comparative or visual acceptance. The preceding comparison failed five frozen criteria, and TODO sections 15–21 remain open. Preserve all original baselines, tolerances, observers, and KiCad lock hashes; do not mark final PASS without engineering inspection and positive independent audit.
