@@ -256,6 +256,24 @@ def _direct_paths(
         yield (first, (x, first[1]), (x, second[1]), second)
     for y in tracks_y:
         yield (first, (first[0], y), (second[0], y), second)
+    # A bounded pair of obstacle-derived interior tracks can avoid a packed
+    # corner without detouring to the page perimeter. These are ordinary
+    # candidates: full clearance, prior-net, page and length checks still
+    # apply in _connect. Keep the cross-product small and deterministic.
+    nearest_x = sorted(
+        set(tracks_x),
+        key=lambda x: (min(abs(x - first[0]), abs(x - second[0])), x),
+    )[:4]
+    nearest_y = sorted(
+        set(tracks_y),
+        key=lambda y: (min(abs(y - first[1]), abs(y - second[1])), y),
+    )[:4]
+    for x in nearest_x:
+        for y in nearest_y:
+            if x in {first[0], second[0]} or y in {first[1], second[1]}:
+                continue
+            yield (first, (x, first[1]), (x, y), (second[0], y), second)
+            yield (first, (first[0], y), (x, y), (x, second[1]), second)
     # Deterministic perimeter channels provide sparse three-bend escapes when
     # two packed bands form an indivisible obstacle to every two-bend route.
     perimeter_x = tuple(
@@ -298,6 +316,7 @@ def _visibility_path(
                 _ceil_grid(obstacle.rect[3] + PITCH),
             )
         )
+
     xs = sorted(
         x_values,
         key=lambda value: (min(abs(value - first[0]), abs(value - second[0])), value),
@@ -598,6 +617,7 @@ def _distribution_initial_trees(
     # seed-connected legal corridors before the outer perimeter alternatives,
     # without increasing the existing eight-plan budget or relaxing clearance.
     median_column = sorted(point[0] for point in external)[len(external) // 2]
+
     median_x = min(right - PITCH, max(left + PITCH, median_column))
     vertical_interior = []
     if left < median_x < right:
@@ -898,6 +918,7 @@ def route_between_fragments(
         for edge in ordered:
             source = _gateway(by_id[edge.source], net, True)
             target = _gateway(by_id[edge.target], net, False)
+
             gateways[source.id] = source
             gateways[target.id] = target
         if net in distribution_nets or not ordered:
@@ -1198,6 +1219,7 @@ def route_between_fragments(
                 net, tuple(sorted(gateways)), aggregate_taps, aggregate_states
             )
         _, _, _, _, strategy, tree = min(candidates)
+
         planned_corridors = tuple(
             Reservation(
                 f"route.{net}.{index}",
