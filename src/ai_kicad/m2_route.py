@@ -110,6 +110,21 @@ def _advance(point: Point, direction: str, amount: int = PITCH) -> Point:
     return point[0] + dx, point[1] + dy
 
 
+def _point_to_trunk_distance(point: Point, first: Point, second: Point) -> int:
+    """Exact Manhattan distance to a horizontal or vertical trunk segment.
+
+    Clamp the orthogonal projection to the conductor's finite span. Measuring
+    only endpoints penalizes nearby gateways next to long valid trunks.
+    """
+    if first[0] == second[0]:
+        low, high = sorted((first[1], second[1]))
+        return abs(point[0] - first[0]) + max(low - point[1], 0, point[1] - high)
+    if first[1] == second[1]:
+        low, high = sorted((first[0], second[0]))
+        return abs(point[1] - first[1]) + max(low - point[0], 0, point[0] - high)
+    raise ValueError("Trunk must be axis-aligned")
+
+
 def _gateway_channel(gateway: Gateway) -> Reservation:
     """Reserve the complete bounded-repair escape without inflating its fragment."""
     end = _advance(gateway.point, gateway.escape_direction, PITCH)
@@ -1160,10 +1175,7 @@ def route_between_fragments(
             else:
                 first, second = trunk
                 worst_to_trunk = max(
-                    min(
-                        abs(gateway.point[0] - first[0]) + abs(gateway.point[1] - first[1]),
-                        abs(gateway.point[0] - second[0]) + abs(gateway.point[1] - second[1]),
-                    )
+                    _point_to_trunk_distance(gateway.point, first, second)
                     for gateway in gateways.values()
                 )
             candidates.append(
