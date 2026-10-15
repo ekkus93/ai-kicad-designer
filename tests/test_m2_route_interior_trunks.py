@@ -12,7 +12,12 @@ def test_distribution_plan_count_is_bounded() -> None:
         for index in range(3)
     )
     plans = _distribution_initial_trees(
-        "rail", "tree.rail", gateways[0], gateways, (), (),
+        "rail",
+        "tree.rail",
+        gateways[0],
+        gateways,
+        (),
+        (),
         (-20 * PITCH, -20 * PITCH, 40 * PITCH, 40 * PITCH),
     )
     assert plans[0][0] == "producer_centered"
