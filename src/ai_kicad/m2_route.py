@@ -54,7 +54,10 @@ def _bounded_tracks(values: set[int], a: int, b: int) -> tuple[int, ...]:
     between = sorted(value for value in values if low <= value <= high)
     if len(between) > MAX_TRACKS_PER_SIDE:
         count = MAX_TRACKS_PER_SIDE
-        between = [between[index * (len(between) - 1) // (count - 1)] for index in range(count)]
+        between = [
+            between[index * (len(between) - 1) // (count - 1)]
+            for index in range(count)
+        ]
     return tuple(below + between + above)
 
 
