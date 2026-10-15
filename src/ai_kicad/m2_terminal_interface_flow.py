@@ -25,8 +25,6 @@ def inferred_passive_interface_signal_relations(
                 else:
                     excluded.add(net)
             elif port.role == "passive":
-                # A second passive participant makes direction/ownership
-                # ambiguous; never turn a shared net into a directed link.
                 passive_owners.setdefault(net, set()).add(block.id)
             elif port.role == "signal_out":
                 producers.setdefault(net, set()).add(block.id)
@@ -34,6 +32,8 @@ def inferred_passive_interface_signal_relations(
                 consumers.setdefault(net, set()).add(block.id)
             elif port.role in {"power_in", "power_out", "reference"}:
                 excluded.add(net)
+    excluded.update(item.id for item in plan.presentation_nets if item.role != "signal")
+    excluded.update(edge.net for edge in plan.edges if edge.kind in {"feedback", "power", "support"})
     result: set[tuple[str, str, str]] = set()
     for net, attached in interfaces.items():
         if net in excluded or len(attached) != 1 or passive_owners.get(net):
