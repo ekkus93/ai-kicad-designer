@@ -18,9 +18,7 @@ from analyze_m2h2_historical_composition import _verified_svg_by_case
 from run_m2h2_structural_audit import FIXTURE_LITERAL_PATTERN, audit_paths
 
 EXPECTED_HISTORICAL_CASES = 90
-EXPECTED_HISTORICAL_INVENTORY = (
-    "759f49bf715da357d70f4fb4ae5513594328acb3ba8612031866ac6788a21fe0"
-)
+EXPECTED_HISTORICAL_INVENTORY = "759f49bf715da357d70f4fb4ae5513594328acb3ba8612031866ac6788a21fe0"
 HISTORICAL_MANIFEST = (
     "fixtures/m2h2/human_composition_baseline_2026-10-08/"
     "native_render_archive_manifest_42ab8452.json"
