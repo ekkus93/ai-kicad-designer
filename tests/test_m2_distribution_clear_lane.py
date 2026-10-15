@@ -87,6 +87,7 @@ def test_vertical_interiors_include_two_distinct_legal_corridors() -> None:
             (5 * PITCH, 5 * PITCH),
         ]
 
+
 def test_obstacle_generated_outer_lanes_do_not_starve_vertical_side() -> None:
     gateways = tuple(
         Gateway(
