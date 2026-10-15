@@ -437,6 +437,7 @@ def test_distribution_enumerates_distinct_trunk_topologies() -> None:
         "horizontal_below",
         "horizontal_median",
         "horizontal_clear_lane",
+        "vertical_median",
         "vertical_side",
     }
     assert len(plans) <= 8
