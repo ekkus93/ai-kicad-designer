@@ -1,7 +1,8 @@
-"""Bounded semantic inference checks for passive connector ports."""
+"""Passive connector flow must respect typed net and edge semantics."""
 
 from types import SimpleNamespace
 
+from ai_kicad.m2_semantics import PresentationNet, SemanticEdge, SemanticPlan
 from ai_kicad.m2_terminal_interface_flow import inferred_passive_interface_signal_relations
 
 
@@ -13,15 +14,39 @@ def _block(name: str, kind: str, role: str):
     )
 
 
-def test_unique_passive_connector_input_flow() -> None:
+def _plan(blocks, edges=(), presentation_nets=()):
+    return SemanticPlan(
+        blocks=blocks,
+        edges=edges,
+        owners={},
+        signal_order=(),
+        presentation_nets=presentation_nets,
+    )
+
+
+def test_unique_passive_connector_input_and_output() -> None:
+    a = _block("a", "interface", "passive")
+    for role, expected in (
+        ("signal_in", ("a", "b", "n")),
+        ("signal_out", ("b", "a", "n")),
+    ):
+        b = _block("b", "active", role)
+        assert inferred_passive_interface_signal_relations(_plan((b, a))) == (expected,)
+
+
+def test_distributive_net_does_not_create_primary_flow() -> None:
     a = _block("a", "interface", "passive")
     b = _block("b", "active", "signal_in")
-    plan = SimpleNamespace(blocks=(a, b), edges=(), presentation_nets=())
-    assert inferred_passive_interface_signal_relations(plan) == (("a", "b", "n"),)
+    for role in ("signal", "distributive"):
+        net = PresentationNet("n", (), ("a", "b"), role, False)
+        expected = (("a", "b", "n"),) if role == "signal" else ()
+        assert inferred_passive_interface_signal_relations(
+            _plan((a, b), presentation_nets=(net,))
+        ) == expected
 
 
-def test_unique_passive_connector_output_flow() -> None:
+def test_feedback_edge_is_not_forward_flow() -> None:
     a = _block("a", "interface", "passive")
     b = _block("b", "active", "signal_out")
-    plan = SimpleNamespace(blocks=(b, a), edges=(), presentation_nets=())
-    assert inferred_passive_interface_signal_relations(plan) == (("b", "a", "n"),)
+    edge = SemanticEdge("feedback", "b", "a", "n", ("authored",))
+    assert inferred_passive_interface_signal_relations(_plan((a, b), (edge,))) == ()
