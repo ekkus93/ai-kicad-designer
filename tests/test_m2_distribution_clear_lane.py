@@ -75,14 +75,9 @@ def test_vertical_interiors_include_two_distinct_legal_corridors() -> None:
             "RAIL", "tree.RAIL", gateways[0], ordered, (), (), bounds
         )
         assert len(plans) <= 8
-        vertical = [
-            plan for plan in plans
-            if plan[0] in {"vertical_median", "vertical_clear_lane"}
-        ]
+        vertical = [plan for plan in plans if plan[0] in {"vertical_median", "vertical_clear_lane"}]
         assert len(vertical) == 2
-        assert [plan[0] for plan in vertical] == [
-            "vertical_median", "vertical_clear_lane"
-        ]
+        assert [plan[0] for plan in vertical] == ["vertical_median", "vertical_clear_lane"]
         trunks = [
             next(part for part in plan[1] if part.provenance == (plan[0], "trunk"))
             for plan in vertical
