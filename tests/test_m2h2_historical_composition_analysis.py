@@ -62,9 +62,9 @@ def test_full_historical_report_is_complete_ranked_and_archetype_covered() -> No
     assert len(records) == 90
     # Archived geometry is immutable, and its independent flow observation
     # must not drift when mutable production flow inference changes.
-    assert sum(
-        len(record["interface_flow"]["interface_side_violations"]) for record in records
-    ) == 77
+    assert (
+        sum(len(record["interface_flow"]["interface_side_violations"]) for record in records) == 77
+    )
     assert len(ranked) == 90
     assert len(set(ranked)) == 90
     assert set(ranked) == {record["case"] for record in records}
