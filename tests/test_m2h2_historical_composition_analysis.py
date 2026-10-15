@@ -60,6 +60,11 @@ def test_full_historical_report_is_complete_ranked_and_archetype_covered() -> No
 
     assert report["provenance"]["native_svg_count"] == 90
     assert len(records) == 90
+    # Archived geometry is immutable, and its independent flow observation
+    # must not drift when mutable production flow inference changes.
+    assert sum(
+        len(record["interface_flow"]["interface_side_violations"]) for record in records
+    ) == 77
     assert len(ranked) == 90
     assert len(set(ranked)) == 90
     assert set(ranked) == {record["case"] for record in records}
@@ -135,3 +140,8 @@ def test_repeated_structure_tolerances_are_bound_to_full_corpus_without_retuning
             == record["page"]["tolerance"]["maximum_repeated_alignment_variance_mm"]
         )
         assert repeated["peer_pair_count"] == len(repeated["witnesses"])
+
+def test_historical_interface_flow_does_not_import_mutable_production_inference() -> None:
+    source = (ROOT / "tools/analyze_m2h2_historical_composition.py").read_text()
+    assert "from m2h2_frozen_passive_interface_flow import" in source
+    assert "from ai_kicad.m2_terminal_interface_flow import" not in source

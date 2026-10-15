@@ -31,7 +31,7 @@ from ai_kicad.m2_interface_flow_composition_observer import (
 from ai_kicad.m2_native_render_archive_materialize import load_native_baseline
 from ai_kicad.m2_routing_composition_observer import measure_routing_readability
 from ai_kicad.m2_semantics import semantic_plan
-from ai_kicad.m2_terminal_interface_flow import inferred_passive_interface_signal_relations
+from m2h2_frozen_passive_interface_flow import inferred_passive_interface_signal_relations
 from run_m2h2_qualification import cases as base_cases
 
 MANIFEST = (
