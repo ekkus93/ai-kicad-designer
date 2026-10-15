@@ -35,12 +35,10 @@ def inferred_passive_interface_signal_relations(
             elif port.role in {"power_in", "power_out", "reference"}:
                 excluded.add(net)
     if isinstance(plan, SemanticPlan):
+        excluded.update(net.id for net in plan.presentation_nets if net.role == "distributive")
         excluded.update(
-            net.id for net in plan.presentation_nets if net.role == "distributive"
+            edge.net for edge in plan.edges if edge.kind in {"feedback", "power", "support"}
         )
-    excluded.update(
-        edge.net for edge in plan.edges if edge.kind in {"feedback", "power", "support"}
-    )
     result: set[tuple[str, str, str]] = set()
     for net, attached in interfaces.items():
         if net in excluded or len(attached) != 1 or passive_owners.get(net):
