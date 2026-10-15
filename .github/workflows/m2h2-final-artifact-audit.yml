@@ -34,9 +34,6 @@ jobs:
           python-version: '3.12'
           cache: pip
 
-      - name: Install project
-        run: python -m pip install -e '.[dev]'
-
       - name: Resolve exact persisted qualification root
         id: evidence
         env:
@@ -65,6 +62,29 @@ jobs:
           echo "root=${root}" >> "$GITHUB_OUTPUT"
           echo "report=${report}" >> "$GITHUB_OUTPUT"
           echo "m2h2_persistent_evidence_root=${root}"
+
+      # The push-triggering master commit may contain newer routing/source files
+      # than the already-qualified evidence root. Do not audit an older source
+      # against the moving workflow-trigger checkout.
+      - name: Check out exact persisted qualification source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.evidence.outputs.source_sha }}
+
+      - name: Verify exact qualification source checkout
+        shell: bash
+        env:
+          SOURCE_SHA: ${{ steps.evidence.outputs.source_sha }}
+        run: |
+          set -euo pipefail
+          observed_sha="$(git rev-parse HEAD)"
+          if [[ "$observed_sha" != "$SOURCE_SHA" ]]; then
+            echo "::error::Qualified checkout mismatch: expected $SOURCE_SHA, got $observed_sha"
+            exit 1
+          fi
+
+      - name: Install exact qualification source
+        run: python -m pip install -e '.[dev]'
 
       - name: Audit exact final evidence and report comparison diagnostics
         env:
