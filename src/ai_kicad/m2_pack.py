@@ -22,6 +22,7 @@ ENVELOPE_OUTER_PADDING = 4 * PITCH
 CANDIDATE_BUDGET = 8
 PLACEMENT_LEFT = LEFT + 2 * PITCH
 CHANNEL_GAP = PITCH
+OUTPUT_FRONTIER_CLEARANCE = 14 * PITCH
 MAX_PACKING_WIDTH = RIGHT - LEFT
 MAX_PACKING_HEIGHT = BOTTOM - TOP
 
@@ -1428,6 +1429,20 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
                     if role == "signal_in"
                     else owner.envelope[2] + CHANNEL_GAP
                 )
+                if role == "signal_out":
+                    # Outputs belong on the outside edge of the drawing, not
+                    # merely just beyond their producer. This keeps unrelated
+                    # connectors and their return wiring from visually boxing
+                    # in an output that happens to share the producer's row.
+                    outer_edge = max(
+                        (
+                            item.envelope[2]
+                            for item in baseline.fragments
+                            if item.fragment.block.id != block.id
+                        ),
+                        default=left - CHANNEL_GAP,
+                    )
+                    left = max(left, outer_edge + OUTPUT_FRONTIER_CLEARANCE)
                 # Align both centers and upper edges as separate legal choices.
                 for lane_rank, top in enumerate(frontier_rows(owner, height)):
                     candidate = frontier_repack(baseline, interface, owner, role, left, top, label)

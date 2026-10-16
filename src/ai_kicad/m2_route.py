@@ -218,8 +218,8 @@ def _path_segments(points: tuple[Point, ...]) -> tuple[tuple[Point, Point], ...]
 
 
 def _interface_enclosures(tree, interface_points: tuple[Point, ...]) -> int:
-    """Count foreign interfaces framed on three or more sides by one route tree."""
-    halo = 8 * PITCH
+    """Count foreign interfaces boxed in by adjacent sides of one route tree."""
+    halo = 12 * PITCH
     enclosed = 0
     for x, y in interface_points:
         sides = set()
@@ -251,7 +251,7 @@ def _interface_enclosures(tree, interface_points: tuple[Point, ...]) -> int:
                     sides.add("left")
                 elif 0 < first[0] - x <= halo:
                     sides.add("right")
-        enclosed += len(sides) >= 3
+        enclosed += len(sides) >= 2
     return enclosed
 
 
