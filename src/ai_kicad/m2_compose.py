@@ -44,6 +44,7 @@ from .m2_pack import (
 from .m2_route import (
     RouteBlockedConflict,
     _crosses,
+    _interface_enclosures,
     _routable_edges,
     route_between_fragments,
 )
@@ -1196,6 +1197,46 @@ def _structural_signature(packing: Packing) -> tuple[tuple, ...]:
     )
 
 
+def _route_interface_enclosure_count(plan, draft: Draft, canonical_trees) -> int:
+    """Count route trees that frame a connector belonging to another net."""
+    interface_points = {}
+    for block in plan.blocks:
+        if block.kind != "interface":
+            continue
+        for port in block.ports:
+            interface_points.setdefault(port.net, set()).update(
+                draft.point(*terminal) for terminal in port.terminals
+            )
+    return sum(
+        _interface_enclosures(
+            tree,
+            tuple(
+                point
+                for net, points in interface_points.items()
+                if net != tree.net
+                for point in sorted(points)
+            ),
+        )
+        for tree in canonical_trees
+    )
+
+
+def _missing_interface_output_routes(plan, route_trees) -> int:
+    """Count inferred signal outputs that lack a physical route to a connector."""
+    blocks = {block.id: block for block in plan.blocks}
+    required = {
+        edge.net
+        for edge in _routable_edges(plan)
+        if blocks[edge.source].kind != "interface"
+        and blocks[edge.target].kind == "interface"
+        and any(
+            port.net == edge.net and port.role == "signal_out" for port in blocks[edge.source].ports
+        )
+    }
+    routed = {tree.net for tree in route_trees}
+    return len(required - routed)
+
+
 def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
     """Compose using at most eight seeds and four attempts per seed."""
     plan = semantic_plan(design, resolved)
@@ -1423,12 +1464,22 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
             )
             semantic_penalties = semantic_composition_penalties(plan, working_packing)
             compactness_penalties = compactness_whitespace_penalties(working_packing)
-            selection_key = composition_candidate_key(
-                plan,
-                working_packing,
-                routing_compactness,
-                routing_backtracking=route_backtracking_penalty(canonical_trees),
-                branch_arm_spread=route_branch_arm_spread(canonical_trees),
+            interface_enclosures = _route_interface_enclosure_count(
+                plan, candidate[0], canonical_trees
+            )
+            missing_output_routes = _missing_interface_output_routes(plan, candidate[1])
+            candidate_metrics["interface_enclosure_count"] = interface_enclosures
+            candidate_metrics["missing_interface_output_route_count"] = missing_output_routes
+            selection_key = (
+                missing_output_routes,
+                interface_enclosures,
+                *composition_candidate_key(
+                    plan,
+                    working_packing,
+                    routing_compactness,
+                    routing_backtracking=route_backtracking_penalty(canonical_trees),
+                    branch_arm_spread=route_branch_arm_spread(canonical_trees),
+                ),
             )
             structure = _structural_signature(working_packing)
             proved_candidates.append(

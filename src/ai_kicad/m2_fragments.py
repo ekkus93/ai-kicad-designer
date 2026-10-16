@@ -144,7 +144,23 @@ def _clear_nonpassive_text(design: dict, resolved: dict[str, Asset], draft: Draf
             for dx in (0, 2, -2, 4, -4)
             if dx or dy
         )
+        preferred_connector_slots = ()
+        if component["asset"].startswith("Connector_Generic:"):
+            asset = resolved[component["asset"]]
+            pins = asset.units.get(key[1], asset.units.get(0, ()))
+            if pins:
+                dx, dy = _turn(pins[0], draft.angles.get(key, 0))
+                if dx:
+                    side = -1 if dx > 0 else 1
+                    preferred_connector_slots = tuple(
+                        (sx + side * 8 * PITCH, sy - offset * PITCH) for offset in (2, 4, 6)
+                    )
+                else:
+                    preferred_connector_slots = tuple(
+                        (sx, sy - offset * PITCH) for offset in (6, 5)
+                    )
         candidates = (
+            *preferred_connector_slots,
             draft.text_positions[key],
             *nearby,
             (sx, sy - 12 * PITCH),

@@ -217,6 +217,44 @@ def _path_segments(points: tuple[Point, ...]) -> tuple[tuple[Point, Point], ...]
     return tuple((first, second) for first, second in pairwise(points) if first != second)
 
 
+def _interface_enclosures(tree, interface_points: tuple[Point, ...]) -> int:
+    """Count foreign interfaces framed on three or more sides by one route tree."""
+    halo = 8 * PITCH
+    enclosed = 0
+    for x, y in interface_points:
+        sides = set()
+        for segment in tree.segments:
+            first, second = segment.start, segment.end
+            if (
+                first[1] == second[1]
+                and max(
+                    min(first[0], second[0]) - x,
+                    0,
+                    x - max(first[0], second[0]),
+                )
+                <= 3 * PITCH
+            ):
+                if 0 < y - first[1] <= halo:
+                    sides.add("above")
+                elif 0 < first[1] - y <= halo:
+                    sides.add("below")
+            elif (
+                first[0] == second[0]
+                and max(
+                    min(first[1], second[1]) - y,
+                    0,
+                    y - max(first[1], second[1]),
+                )
+                <= 3 * PITCH
+            ):
+                if 0 < x - first[0] <= halo:
+                    sides.add("left")
+                elif 0 < first[0] - x <= halo:
+                    sides.add("right")
+        enclosed += len(sides) >= 3
+    return enclosed
+
+
 def _compact_collinear(points: tuple[Point, ...]) -> tuple[Point, ...]:
     compact: list[Point] = []
     for point in points:
@@ -958,7 +996,14 @@ def route_between_fragments(
             if (
                 reservation.occupancy == "exclusive"
                 and reservation.clearance_class
-                in {"body", "text", "label", "pin", "wire", "protected"}
+                in {
+                    "body",
+                    "text",
+                    "label",
+                    "pin",
+                    "wire",
+                    "protected",
+                }
                 and not (
                     reservation.clearance_class
                     in ({"label", "wire", "protected"} if net in shared_tree_nets else {"label"})
@@ -1270,8 +1315,17 @@ def route_between_fragments(
                     _point_to_trunk_distance(gateway.point, first, second)
                     for gateway in gateways.values()
                 )
+            foreign_interface_anchors = tuple(
+                gateway.anchor
+                for item in placed
+                if item.fragment.block.kind == "interface"
+                for gateway in item.gateways
+                if gateway.net != net
+            )
+            interface_enclosures = _interface_enclosures(complete, foreign_interface_anchors)
             candidates.append(
                 (
+                    interface_enclosures,
                     complete.length,
                     worst_to_trunk,
                     complete.bends,
@@ -1293,7 +1347,7 @@ def route_between_fragments(
             raise RouteBlockedConflict(
                 net, tuple(sorted(gateways)), aggregate_taps, aggregate_states
             )
-        _, _, _, _, strategy, tree = min(candidates)
+        _, _, _, _, _, strategy, tree = min(candidates)
 
         planned_corridors = tuple(
             Reservation(
