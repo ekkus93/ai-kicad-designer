@@ -174,6 +174,7 @@ def test_single_port_connector_leads_stay_straight_with_labels_on_stubs():
     )
     variants = fragment_variants(design, resolved, semantic_plan(design, resolved))
     stubs = 0
+    lead_end_labels = 0
     for choices in variants.values():
         for variant in choices:
             if variant.block.kind != "interface":
@@ -185,10 +186,13 @@ def test_single_port_connector_leads_stay_straight_with_labels_on_stubs():
                 axis = 1 if gateway.escape_direction in {"left", "right"} else 0
                 assert polyline[0][axis] == polyline[1][axis], (variant.id, polyline)
                 (label_point,) = {point for net, point in variant.labels if net == gateway.net}
-                if label_point != gateway.point:
+                if label_point == gateway.point:
+                    lead_end_labels += 1
+                else:
                     # The label stub leaves the lead's end at a right angle.
                     assert (gateway.point, label_point) in wires, (variant.id, label_point)
                     assert label_point[axis] != gateway.point[axis]
                     assert label_point[1 - axis] == gateway.point[1 - axis]
                     stubs += 1
+    assert lead_end_labels >= 1
     assert stubs >= 1

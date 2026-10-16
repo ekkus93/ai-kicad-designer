@@ -125,7 +125,9 @@ def _body_rect(design: dict, resolved: dict[str, Asset], draft: Draft, key: Occu
     return min(xs), min(ys), max(xs), max(ys)
 
 
-def _clear_nonpassive_text(design: dict, resolved: dict[str, Asset], draft: Draft) -> None:
+def _clear_nonpassive_text(
+    design: dict, resolved: dict[str, Asset], draft: Draft, *, prefer_connector_slots: bool = False
+) -> None:
     components = {component["id"]: component for component in design["components"]}
     for key in sorted(draft.text_positions):
         component = components.get(key[0])
@@ -159,9 +161,18 @@ def _clear_nonpassive_text(design: dict, resolved: dict[str, Asset], draft: Draf
                     preferred_connector_slots = tuple(
                         (sx, sy - offset * PITCH) for offset in (6, 5)
                     )
+        original_slot = (draft.text_positions[key],)
+        # Keep the orthogonal stub as a bounded alternative. The mirrored
+        # interface variant prefers it; the default retains legacy field order
+        # when that slot is clear for reference-side packing.
+        preferred_slots = preferred_connector_slots
+        connector_slot_order = (
+            (*preferred_slots, *original_slot)
+            if prefer_connector_slots
+            else (*original_slot, *preferred_slots)
+        )
         candidates = (
-            *preferred_connector_slots,
-            draft.text_positions[key],
+            *connector_slot_order,
             *nearby,
             (sx, sy - 12 * PITCH),
             (sx, sy - 16 * PITCH),
@@ -568,7 +579,7 @@ def _finish(
         )
         draft.wire_nets.append(gateway.net)
     choose_text_slots(design, draft, alternate=alternate_text_slots)
-    _clear_nonpassive_text(design, resolved, draft)
+    _clear_nonpassive_text(design, resolved, draft, prefer_connector_slots=alternate_text_slots)
     del draft.wires[emitted_wire_count:]
     del draft.wire_nets[emitted_wire_count:]
     occupied = _occupied_geometry(design, resolved, draft, block)
@@ -1366,7 +1377,7 @@ def _interface_fragment(
         end = (point[0] + offset, point[1])
         d.route(port.net, point, end)
         anchors[port.id.rsplit(".", 1)[-1]] = (end, direction)
-    return _finish(design, resolved, block, d, anchors)
+    return _finish(design, resolved, block, d, anchors, alternate_text_slots=mirrored)
 
 
 def _access_alternatives(
