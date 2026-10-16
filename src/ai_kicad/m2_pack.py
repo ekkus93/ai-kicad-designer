@@ -1331,7 +1331,10 @@ def _measured_repack(
     )
 
 
-def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tuple[Packing, ...]:
+def _interface_frontier_candidates(
+    plan: SemanticPlan,
+    baseline: Packing,
+) -> tuple[Packing, ...]:
     """Explore bounded, measured input/output frontier placements.
 
     Inputs attach immediately before their downstream signal stage and outputs
@@ -1374,19 +1377,35 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
             )
         )
 
-    def frontier_rows(owner: PlacedFragment, height: int) -> tuple[int, ...]:
-        """Try measured aligned rows, then immediately adjacent legal lanes.
+    def frontier_rows(
+        owner: PlacedFragment, interface: PlacedFragment, height: int
+    ) -> tuple[int, ...]:
+        """Try the signal row, measured aligned rows, then adjacent legal lanes.
 
-        Crowded circuits can have an unrelated block occupying both aligned
-        options. A one-gap lane above or below the owner's envelope may be
-        legal without displacing any functional stage or relaxing constraints.
+        The connector's lead belongs on the row of the owner gateway it feeds
+        or drains, so that lane comes first; an owner whose envelope hangs a
+        shunt below its signal row is not centred on that row. Crowded
+        circuits can have an unrelated block occupying the aligned options. A
+        one-gap lane above or below the owner's envelope may be legal without
+        displacing any functional stage or relaxing constraints.
         """
+        owner_rows: dict[str, int] = {}
+        for gateway in owner.gateways:
+            owner_rows[gateway.net] = min(
+                owner_rows.get(gateway.net, gateway.point[1]), gateway.point[1]
+            )
+        signal_rows = tuple(
+            owner_rows[gateway.net] - (gateway.point[1] - interface.envelope[1])
+            for gateway in interface.gateways
+            if gateway.net in owner_rows
+        )
         centered = (owner.envelope[1] + owner.envelope[3] - height) // 2
         # Alignment remains preferred; nearby lanes are fallbacks only.
-        # Preserve order while dropping a duplicate centered/top slot.
+        # Preserve order while dropping duplicate slots.
         return tuple(
             dict.fromkeys(
                 (
+                    *signal_rows,
                     centered,
                     owner.envelope[1],
                     owner.envelope[1] - height - CHANNEL_GAP,
@@ -1428,6 +1447,61 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
             return None
         blocker = blockers[0]
         blocker_roles = frontier_roles(blocker.fragment.block)
+        if not blocker_roles & {"signal_in", "signal_out"}:
+            # An undirected connector (a reference or rail pin) has no row of
+            # its own to defend; it yields the directed interface's aligned
+            # slot. The directed interface's side error must not worsen (lane
+            # ranking already prefers its signal row), and the measured
+            # placement proofs still apply.
+            target_violation = (
+                max(0, target.envelope[2] - owner.envelope[0])
+                if role == "signal_in"
+                else max(0, owner.envelope[2] - target.envelope[0])
+            )
+            current_violation = (
+                max(0, interface.envelope[2] - owner.envelope[0])
+                if role == "signal_in"
+                else max(0, owner.envelope[2] - interface.envelope[0])
+            )
+            if target_violation > current_violation:
+                return None
+            # A displaced reference connector belongs beside its reference
+            # rail: the lowest reference escape row of the stages it serves.
+            # Try that measured slot first, then the vacated slot.
+            blocker_nets = {port.net for port in blocker.fragment.block.ports}
+            blocker_gateway = next(iter(blocker.gateways), None)
+            rail_rows = sorted(
+                {
+                    # The rail runs on the escape row just past the gateway.
+                    gateway.point[1]
+                    + {"down": PITCH, "up": -PITCH}.get(gateway.escape_direction, 0)
+                    for item in packing.fragments
+                    if item.fragment.block.kind != "interface"
+                    for gateway in item.gateways
+                    if gateway.net in blocker_nets
+                    and _reference_escape_directions(item.fragment)
+                    and any(
+                        port.port.id == gateway.id and port.port.role == "reference"
+                        for port in item.fragment.ports
+                    )
+                },
+                reverse=True,
+            )
+            if blocker_gateway is not None:
+                pin_offset = blocker_gateway.point[1] - blocker.envelope[1]
+                for rail_y in rail_rows:
+                    beside_rail = _measured_repack(
+                        plan,
+                        packing,
+                        interface,
+                        left,
+                        top,
+                        label,
+                        additional_moves=((blocker, left, rail_y - pin_offset),),
+                    )
+                    if beside_rail is not None:
+                        return beside_rail
+            return _measured_repack(plan, packing, interface, left, top, label, displaced=blocker)
         if blocker_roles not in ({"signal_in"}, {"signal_out"}):
             return None
         blocker_role = next(iter(blocker_roles))
@@ -1514,7 +1588,7 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
                         output_column,
                     )
                 # Align both centers and upper edges as separate legal choices.
-                for lane_rank, top in enumerate(frontier_rows(owner, height)):
+                for lane_rank, top in enumerate(frontier_rows(owner, interface, height)):
                     candidate = frontier_repack(base, interface, owner, role, left, top, label)
                     if candidate is None:
                         continue
@@ -1595,7 +1669,7 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
                         if role == "signal_in"
                         else owner.envelope[2] + CHANNEL_GAP
                     )
-                    for lane_rank, top in enumerate(frontier_rows(owner, height)):
+                    for lane_rank, top in enumerate(frontier_rows(owner, interface, height)):
                         proposal = frontier_repack(
                             selected, interface, owner, role, left, top, label
                         )
@@ -1676,8 +1750,12 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
         # Inputs and outputs reach their frontiers together. A one-role move
         # leaves the other role's connectors in their stacked seed column, so
         # neither single-role candidate shows the drawing with every directed
-        # interface on its own edge. The same measured proofs apply in turn.
-        combined = frontier_search(input_option, "signal_out", "interface-frontier-combined")
+        # interface on its own edge. Outputs move first: they leave the seed
+        # column for the outer edge and free the aligned slots an input needs.
+        # The same measured proofs apply in turn.
+        combined = frontier_search(output_option, "signal_in", "interface-frontier-combined")
+        if combined is None:
+            combined = frontier_search(input_option, "signal_out", "interface-frontier-combined")
         if combined is not None:
             alternatives.append(combined)
     return tuple(alternatives)
@@ -2641,6 +2719,16 @@ def _retain_composition_seed_diversity(
         )
         for label in ("branch-fanout-origin-centered", "branch-fanout-sibling-depth")
     )
+    # Measured structural classes are contracted alternatives in their own
+    # right; the growing set of interface and fanout variants must not push
+    # them past the eight-seed cap.
+    structural = tuple(
+        next(
+            (candidate for candidate in extras if candidate.attempts[-1] == label),
+            None,
+        )
+        for label in ("functional-row-compaction", "precedence-staggered-band")
+    )
     field_slot = next(
         (
             candidate
@@ -2684,6 +2772,7 @@ def _retain_composition_seed_diversity(
             *repeated,
             *frontier,
             *branch,
+            *structural,
             # Keep a legal rigid centering alternative in the bounded beam
             # even when optional field-slot and local-proximity variants are
             # present; routing/electrical proof still decides acceptance.

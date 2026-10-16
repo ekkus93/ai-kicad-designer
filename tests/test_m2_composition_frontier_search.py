@@ -80,7 +80,7 @@ def test_frontier_alternatives_place_interfaces_next_to_signal_owner() -> None:
     # Both directed roles also reach their frontiers in one measured candidate.
     combined = alternatives[2]
     assert combined.attempts[-2:] == (
-        "interface-frontier-input",
+        "interface-frontier-output",
         "interface-frontier-combined",
     )
     by_id = {item.fragment.block.id: item for item in combined.fragments}

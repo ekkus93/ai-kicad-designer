@@ -846,34 +846,15 @@ def _optional_local_visible_edges(
     return tuple(sorted(result, key=lambda edge: (edge.net, edge.source, edge.target)))
 
 
-def route_between_fragments(
-    plan: SemanticPlan,
-    placed: tuple[PlacedFragment, ...],
-    *,
-    retry_index: int = 0,
-) -> tuple[RouteTree, ...]:
-    """Attach all required gateways with one obstacle-checked tree per net/island."""
-    by_id = {item.fragment.block.id: item for item in placed}
+def _optional_reference_nets(plan: SemanticPlan) -> frozenset[str]:
+    """Return external reference nets that may be drawn as one physical tree.
+
+    Such a net is distributive, carries no explicit geometry demand, reaches
+    exactly one interface fragment and at least two internal reference
+    terminals. Its labels remain the proven fallback presentation.
+    """
     block_by_id = {block.id: block for block in plan.blocks}
-    # Keep authored routing on its proved semantic edge inventory. Add only
-    # unique, local passive-interface outputs from the inference pass; routing
-    # every inferred pair broke dual-buffer and V5/V6 layouts.
-    grouped: dict[str, list[SemanticEdge]] = {}
-    for edge in plan.edges:
-        if edge.net and edge.kind in {"signal", "power", "branch"}:
-            grouped.setdefault(edge.net, []).append(edge)
-    optional_output_edges = tuple(
-        edge
-        for edge in _optional_local_visible_edges(plan, placed)
-        if any(
-            port.net == edge.net and port.role == "signal_out"
-            for port in by_id[edge.source].fragment.block.ports
-        )
-    )
-    optional_output_nets = {edge.net for edge in optional_output_edges}
-    for edge in optional_output_edges:
-        grouped.setdefault(edge.net, []).append(edge)
-    optional_reference_nets = set()
+    result = set()
     for presentation in plan.presentation_nets:
         interface_fragments = {
             fragment
@@ -895,14 +876,43 @@ def route_between_fragments(
             and len(interface_fragments) == 1
             and len(reference_fragments) >= 2
         ):
-            # External reference connectors may be represented by matching
-            # labels. Try a complete physical tree; if a local output link is
-            # also routed, keep this reference tree physical in the same layout.
-            optional_reference_nets.add(presentation.id)
-            grouped.setdefault(presentation.id, [])
-    # When an external signal output is routed physically, keep its matching
-    # external reference tree physical as well; otherwise retry placement.
-    required_joint_reference_nets = optional_reference_nets if optional_output_nets else set()
+            result.add(presentation.id)
+    return frozenset(result)
+
+
+def route_between_fragments(
+    plan: SemanticPlan,
+    placed: tuple[PlacedFragment, ...],
+    *,
+    retry_index: int = 0,
+) -> tuple[RouteTree, ...]:
+    """Attach all required gateways with one obstacle-checked tree per net/island."""
+    by_id = {item.fragment.block.id: item for item in placed}
+    # Keep authored routing on its proved semantic edge inventory. Add only
+    # unique, local passive-interface outputs from the inference pass; routing
+    # every inferred pair broke dual-buffer and V5/V6 layouts.
+    grouped: dict[str, list[SemanticEdge]] = {}
+    for edge in plan.edges:
+        if edge.net and edge.kind in {"signal", "power", "branch"}:
+            grouped.setdefault(edge.net, []).append(edge)
+    optional_output_edges = tuple(
+        edge
+        for edge in _optional_local_visible_edges(plan, placed)
+        if any(
+            port.net == edge.net and port.role == "signal_out"
+            for port in by_id[edge.source].fragment.block.ports
+        )
+    )
+    optional_output_nets = {edge.net for edge in optional_output_edges}
+    for edge in optional_output_edges:
+        grouped.setdefault(edge.net, []).append(edge)
+    # External reference connectors may be represented by matching labels. A
+    # complete physical tree is attempted first; when none is legal within the
+    # route bounds the proven label presentation remains, and candidate
+    # ranking prefers layouts whose reference tree is physical.
+    optional_reference_nets = _optional_reference_nets(plan)
+    for net in sorted(optional_reference_nets):
+        grouped.setdefault(net, [])
     # A shared internal reference has no connector and may have no directed
     # edge at all. Its terminal inventory still demands a physical distribution.
     for net in plan.presentation_nets:
@@ -1066,9 +1076,7 @@ def route_between_fragments(
             allowed_contacts=frozenset({seed.point}),
             route_bounds=route_bounds,
         ):
-            if net in optional_output_nets or (
-                net in optional_reference_nets and net not in required_joint_reference_nets
-            ):
+            if net in optional_output_nets or net in optional_reference_nets:
                 continue
             raise RouteBlockedConflict(net, (seed.id,), 0, 0)
         local_conductors = tuple(
@@ -1335,9 +1343,7 @@ def route_between_fragments(
                 )
             )
         if not candidates:
-            if net in optional_output_nets or (
-                net in optional_reference_nets and net not in required_joint_reference_nets
-            ):
+            if net in optional_output_nets or net in optional_reference_nets:
                 continue
             if length_prunes and not blocked_plans:
                 raise RouteLengthBoundConflict(net, min(length_prunes))

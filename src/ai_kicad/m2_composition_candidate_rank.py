@@ -1142,13 +1142,15 @@ def composition_candidate_key(
         # Shared-producer fanout and single-output layouts remain exempt.
         _independent_output_owner_row_drift(plan, packing),
         int(routing_backtracking),
-        int(branch_arm_spread),
         *semantic[16:],
         # Prefer a short, legible route rather than letting one saved bend
         # dominate an arbitrarily long detour. One bend costs eight grid
         # pitches of wire; backtracking and semantic obligations remain higher
         # priorities, and the independent length/clearance gates are unchanged.
         int(union_length) + 8 * PITCH * int(bend_count),
+        # Balanced fanout arms break ties between otherwise equally short and
+        # legible routes; they never buy extra conductor or connector drift.
+        int(branch_arm_spread),
         int(bend_count),
         int(union_length),
         int(worst_length),

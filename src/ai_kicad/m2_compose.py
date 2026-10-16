@@ -46,6 +46,7 @@ from .m2_route import (
     RouteBlockedConflict,
     _crosses,
     _interface_enclosures,
+    _optional_reference_nets,
     _routable_edges,
     route_between_fragments,
 )
@@ -1238,6 +1239,12 @@ def _missing_interface_output_routes(plan, route_trees) -> int:
     return len(required - routed)
 
 
+def _missing_optional_reference_routes(plan, route_trees) -> int:
+    """Count external reference nets left to labels although a tree was eligible."""
+    routed = {tree.net for tree in route_trees}
+    return len(_optional_reference_nets(plan) - routed)
+
+
 def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
     """Compose using at most eight seeds and four attempts per seed."""
     plan = semantic_plan(design, resolved)
@@ -1469,10 +1476,13 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
                 plan, candidate[0], canonical_trees
             )
             missing_output_routes = _missing_interface_output_routes(plan, candidate[1])
+            missing_reference_routes = _missing_optional_reference_routes(plan, candidate[1])
             candidate_metrics["interface_enclosure_count"] = interface_enclosures
             candidate_metrics["missing_interface_output_route_count"] = missing_output_routes
+            candidate_metrics["missing_reference_route_count"] = missing_reference_routes
             selection_key = (
                 missing_output_routes,
+                missing_reference_routes,
                 interface_enclosures,
                 *composition_candidate_key(
                     plan,
