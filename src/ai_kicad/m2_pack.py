@@ -1405,6 +1405,13 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
         return _measured_repack(plan, packing, interface, left, top, label, displaced=blocker)
 
     alternatives: list[Packing] = []
+    output_frontier_ids = {
+        block.id
+        for block in plan.blocks
+        if block.kind == "interface"
+        and "signal_out" in frontier_roles(block)
+        and not {"signal_in", "signal_out"} <= frontier_roles(block)
+    }
     for role, label in (
         ("signal_in", "interface-frontier-input"),
         ("signal_out", "interface-frontier-output"),
@@ -1438,11 +1445,23 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
                         (
                             item.envelope[2]
                             for item in baseline.fragments
-                            if item.fragment.block.id != block.id
+                            if item.fragment.block.id not in output_frontier_ids
                         ),
                         default=left - CHANNEL_GAP,
                     )
-                    left = max(left, outer_edge + OUTPUT_FRONTIER_CLEARANCE)
+                    output_column = max(
+                        (
+                            item.envelope[0]
+                            for item in baseline.fragments
+                            if item.fragment.block.id in output_frontier_ids
+                        ),
+                        default=left,
+                    )
+                    left = max(
+                        left,
+                        outer_edge + OUTPUT_FRONTIER_CLEARANCE,
+                        output_column,
+                    )
                 # Align both centers and upper edges as separate legal choices.
                 for lane_rank, top in enumerate(frontier_rows(owner, height)):
                     candidate = frontier_repack(baseline, interface, owner, role, left, top, label)
@@ -1462,10 +1481,21 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
                         - owner.envelope[1]
                         - owner.envelope[3]
                     )
+                    frontier_deficit = (
+                        max(0, left - interface.envelope[0]) if role == "signal_out" else 0
+                    )
                     distance = abs(left - interface.envelope[0]) + abs(top - interface.envelope[1])
                     options.append(
                         (
-                            (-side_violation, -initial_row_gap, lane_rank, distance, block.id, top),
+                            (
+                                -frontier_deficit,
+                                -side_violation,
+                                -initial_row_gap,
+                                lane_rank,
+                                distance,
+                                block.id,
+                                top,
+                            ),
                             candidate,
                         )
                     )
@@ -1543,6 +1573,44 @@ def _interface_frontier_candidates(plan: SemanticPlan, baseline: Packing) -> tup
                     break
                 selected = min(repairs, key=lambda item: item[0])[1]
             alternatives.append(selected)
+            if role == "signal_out":
+                current = {item.fragment.block.id: item for item in selected.fragments}
+                output_column = max(
+                    (current[block_id].envelope[0] for block_id in output_frontier_ids),
+                    default=0,
+                )
+                for block_id in sorted(output_frontier_ids):
+                    interface = current.get(block_id)
+                    if interface is None or interface.envelope[0] >= output_column:
+                        continue
+                    owners = tuple(
+                        current[owner_id]
+                        for owner_id in frontier_owner_ids(block_id, role)
+                        if owner_id in current
+                        and current[owner_id].fragment.block.kind != "interface"
+                    )
+                    if not owners:
+                        continue
+                    owner = min(
+                        owners,
+                        key=lambda item: (
+                            abs(item.envelope[1] - interface.envelope[1]),
+                            item.fragment.block.id,
+                        ),
+                    )
+                    left = min(interface.envelope[0] + 9 * CHANNEL_GAP, output_column)
+                    proposal = frontier_repack(
+                        selected,
+                        interface,
+                        owner,
+                        role,
+                        left,
+                        interface.envelope[1],
+                        "interface-frontier-output-staggered",
+                    )
+                    if proposal is not None:
+                        alternatives.append(proposal)
+                        break
     return tuple(alternatives)
 
 
@@ -2490,7 +2558,11 @@ def _retain_composition_seed_diversity(
     # eight-seed cap would otherwise discard it after repeated-peer repairs.
     frontier = tuple(
         next((item for item in extras if item.attempts[-1] == label), None)
-        for label in ("interface-frontier-output", "interface-frontier-input")
+        for label in (
+            "interface-frontier-output",
+            "interface-frontier-output-staggered",
+            "interface-frontier-input",
+        )
     )
     branch = tuple(
         next(
@@ -2920,10 +2992,10 @@ def pack_fragment_candidates(
         for baseline in successful:
             for option in _interface_frontier_candidates(plan, baseline):
                 label = option.attempts[-1]
-                if label not in frontier_labels:
+                if label not in frontier_labels and len(frontier_labels) < 3:
                     frontier_labels.add(label)
                     extras.append(option)
-            if len(frontier_labels) == 2:
+            if len(frontier_labels) == 3:
                 break
         extras.extend(_semantic_block_order_candidates(plan, successful[0]))
         extras.extend(_support_affinity_candidates(plan, successful[0]))
