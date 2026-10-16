@@ -179,6 +179,59 @@ def test_external_reference_interface_connects_all_internal_reference_terminals(
     assert all(conductor_reachable(tree, anchors[0], point) for point in anchors[1:])
 
 
+def test_mixed_fanout_keeps_reference_rail_clear_of_the_reference_free_branch():
+    """The series-only branch sits above the shunted stages; no route boxes a connector."""
+    design = validate(
+        json.loads((ROOT / "fixtures/m2h2/interaction/i4/b2_mixed.json").read_text()),
+        assets(),
+    )
+    scene, evidence = compose_with_evidence(design, assets())
+    assert scene.metrics["missing_interface_output_route_count"] == 0
+    assert scene.metrics["interface_enclosure_count"] == 0
+    assert scene.metrics["unrelated_wire_crossing_count"] == 0
+    assert scene.positions[("branch_2_r", 1)][1] < scene.positions[("root_r", 1)][1]
+    assert scene.positions[("branch_1_r", 1)][1] == scene.positions[("root_r", 1)][1]
+    routed = {item["net"] for item in evidence["routes"]}
+    assert {"OUTPUT_1", "OUTPUT_2", "RETURN"} <= routed
+    for variant in evidence["variants"]:
+        if variant["fragment"].startswith("interface."):
+            for gateway in variant["gateways"]:
+                assert len(gateway["escape_polyline"]) == 2, variant["fragment"]
+
+
+@pytest.mark.parametrize(
+    "fixture",
+    ("fixtures/m2b/led_series.json", "fixtures/m2h2/interaction/i4/b2_mixed.json"),
+)
+def test_scene_has_no_unlabeled_dangling_wire_ends(fixture):
+    """Dropping a redundant label must also drop the stub that carried it."""
+    design = validate(json.loads((ROOT / fixture).read_text()), assets())
+    scene, _evidence = compose_with_evidence(design, assets())
+    degree: dict[tuple[int, int], int] = {}
+    for first, second in scene.wires:
+        degree[first] = degree.get(first, 0) + 1
+        degree[second] = degree.get(second, 0) + 1
+    pins = {
+        scene_point
+        for (component, unit), origin in scene.positions.items()
+        for scene_point in _pin_points(
+            design, component, unit, origin, scene.angles.get((component, unit), 0)
+        )
+    }
+    labelled = {point for _net, point in scene.labels}
+    dangling = {point for point, count in degree.items() if count == 1 and point not in pins}
+    assert dangling <= labelled, sorted(dangling - labelled)
+
+
+def _pin_points(design, component, unit, origin, angle):
+    from ai_kicad.m2b import _turn
+
+    asset = assets()[next(c["asset"] for c in design["components"] if c["id"] == component)]
+    for pin in asset.units.get(unit, ()):
+        dx, dy = _turn(pin, angle)
+        yield origin[0] + dx, origin[1] + dy
+
+
 def test_final_text_envelope_and_exact_accounting():
     items = (
         GeometryItem("body", "symbol", "owner", (-2, -3, 7, 5)),

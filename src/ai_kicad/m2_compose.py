@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass, replace
 
 from .ir import InputError
@@ -1620,17 +1621,67 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
         if proof["component_count"] == 1
         and all(component >= 0 for _, component in proof["terminal_components"])
     }
+    # A redundant label on a continuous conductor is dropped. A local escape
+    # stub that only existed to carry such a label would then end in free
+    # space as an unconnected wire end, so dead-end spurs are pruned back to
+    # the first pin, junction or retained label. Terminal connectivity was
+    # proved on the full draft and no spur carries a terminal.
     scene_labels = [
         (net, point) for net, point in draft.labels if net not in physically_connected_nets
     ]
+    pin_points = {
+        draft.point(component["id"], pin.number)
+        for component in design["components"]
+        for unit, pins in resolved[component["asset"]].units.items()
+        if (component["id"], unit) in draft.positions
+        for pin in pins
+    }
+    anchored_points = pin_points | {point for _net, point in scene_labels}
+    scene_conductors = list(zip(draft.wires, draft.wire_nets, strict=True))
+    while True:
+        endpoint_degree: Counter[tuple[int, int]] = Counter()
+        for (first, second), _net in scene_conductors:
+            endpoint_degree[first] += 1
+            endpoint_degree[second] += 1
+        dangling = {
+            point
+            for point, degree in endpoint_degree.items()
+            if degree == 1 and point not in anchored_points
+        }
+        if not dangling:
+            break
+        scene_conductors = [
+            ((first, second), net)
+            for (first, second), net in scene_conductors
+            if first not in dangling and second not in dangling
+        ]
+    scene_wires = [wire for wire, _net in scene_conductors]
+    scene_wire_nets = [net for _wire, net in scene_conductors]
+    # A junction marker that only existed for a pruned spur is dropped too.
+    scene_junctions = [
+        point for point in draft.junctions if endpoint_degree[point] >= 3 or point in pin_points
+    ]
     metrics["label_count"] = len(scene_labels)
+    metrics["pruned_spur_count"] = len(draft.wires) - len(scene_wires)
+    if metrics["pruned_spur_count"]:
+        # Preflight counts describe the emitted conductors, not pruned spurs.
+        metrics["wire_count"] = len(scene_wires)
+        metrics["bend_count"] = sum(
+            1
+            for index, (_start, end) in enumerate(scene_wires)
+            for start, far in scene_wires[index + 1 :]
+            if end == start and ((scene_wires[index][0][0] == end[0]) != (start[0] == far[0]))
+        )
+        metrics["wire_length_mm"] = (
+            sum(abs(a[0] - b[0]) + abs(a[1] - b[1]) for a, b in scene_wires) / 1_000_000
+        )
     scene = certify_scene_geometry(
         Scene(
             draft.positions,
-            draft.wires,
-            draft.wire_nets,
+            scene_wires,
+            scene_wire_nets,
             scene_labels,
-            draft.junctions,
+            scene_junctions,
             metrics,
             draft.angles,
             draft.text_positions,
