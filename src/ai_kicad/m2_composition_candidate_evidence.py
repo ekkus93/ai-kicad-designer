@@ -9,9 +9,8 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from typing import TypeAlias
 
-MetricValue: TypeAlias = int | float
+type MetricValue = int | float
 
 
 @dataclass(frozen=True)

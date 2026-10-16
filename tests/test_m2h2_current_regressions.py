@@ -3,17 +3,15 @@
 from __future__ import annotations
 
 from pathlib import Path
-import sys
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "tools"))
-
-from run_m2h2_current_regressions import (  # noqa: E402
+from run_m2h2_current_regressions import (
     CASES,
     _case_errors,
     _native_route_diagnostic,
     _reference_nets,
 )
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_mixed_branch_is_in_locked_current_source_regressions() -> None:

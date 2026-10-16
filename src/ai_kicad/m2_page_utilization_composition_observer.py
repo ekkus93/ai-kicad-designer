@@ -47,11 +47,13 @@ class PageUtilizationMetrics:
 def measure_page_utilization(
     elements: tuple[VisualElement, ...],
     *,
-    envelope: PageEnvelope = PageEnvelope(),
+    envelope: PageEnvelope | None = None,
     tiny_probe_max_complexity: int = 3,
     edge_bias_threshold: float = 0.35,
 ) -> PageUtilizationMetrics:
     """Report page use, whitespace imbalance, edge bias, and large empty corridors."""
+    if envelope is None:
+        envelope = PageEnvelope()
     if not elements:
         return PageUtilizationMetrics(0, 0, 0, 0.0, (0.0, 0.0), 0, 0, 0, "tiny", True, False, None)
 

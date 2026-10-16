@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import heapq
+from dataclasses import dataclass
 from itertools import pairwise
 
 from .ir import InputError
 from .m2_conflicts import ConflictKind, TypedConflict
-from .m2a import PITCH
 from .m2_fragments import Point
 from .m2_geometry import (
     ConductorSegment,
@@ -21,7 +20,7 @@ from .m2_geometry import (
 from .m2_pack import BOTTOM, LEFT, RIGHT, TOP, PlacedFragment
 from .m2_semantics import SemanticEdge, SemanticPlan
 from .m2_terminal_interface_flow import inferred_passive_interface_signal_relations
-
+from .m2a import PITCH
 
 MAX_TRACKS_PER_SIDE = 8
 MAX_TAPS_PER_ATTACHMENT = 32
@@ -117,7 +116,7 @@ def _gateway(item: PlacedFragment, net: str, output: bool) -> Gateway:
         candidates = [gateway for gateway in item.gateways if gateway.net == net]
     if not candidates:
         raise InputError(f"ROUTE_PORT_MISSING: {item.fragment.block.id}:{net}")
-    return sorted(candidates, key=lambda gateway: gateway.id)[0]
+    return min(candidates, key=lambda gateway: gateway.id)
 
 
 def _advance(point: Point, direction: str, amount: int = PITCH) -> Point:

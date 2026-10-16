@@ -8,6 +8,7 @@ import pytest
 
 import ai_kicad.m2_compose as compose_module
 from ai_kicad.ir import InputError
+from ai_kicad.m2_compose import _reservation_growth_repack, compose_with_evidence
 from ai_kicad.m2_conflicts import ConflictKind, TypedConflict
 from ai_kicad.m2_fragments import (
     FragmentVariant,
@@ -15,9 +16,6 @@ from ai_kicad.m2_fragments import (
     _clear_nonpassive_text,
     fragment_variants,
 )
-from ai_kicad.m2a import Asset, PITCH, ROOT, emit
-from ai_kicad.m2b import Draft, assets, check_observed_layout, validate
-from ai_kicad.m2_compose import _reservation_growth_repack, compose_with_evidence
 from ai_kicad.m2_geometry import (
     Gateway,
     GeometryItem,
@@ -34,6 +32,8 @@ from ai_kicad.m2_semantics import (
     SemanticPort,
     semantic_plan,
 )
+from ai_kicad.m2a import PITCH, ROOT, Asset, emit
+from ai_kicad.m2b import Draft, assets, check_observed_layout, validate
 
 
 def _load_interaction(path: str) -> dict:

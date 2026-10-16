@@ -7,13 +7,14 @@ electrical and M2h2 invariants are established before a candidate is ranked.
 
 from __future__ import annotations
 
+import itertools
 from collections import defaultdict
 from dataclasses import dataclass
 
-from .m2a import PITCH
 from .m2_pack import BOTTOM, LEFT, RIGHT, TOP
 from .m2_route import MAX_LOCAL_VISIBLE_SIGNAL_DISTANCE
 from .m2_terminal_interface_flow import inferred_passive_interface_signal_relations
+from .m2a import PITCH
 
 Rect = tuple[int, int, int, int]
 Point = tuple[int, int]
@@ -160,7 +161,7 @@ def _signal_reachability(plan, signal_relations) -> set[tuple[str, str]]:
             outgoing[source].add(target)
     reachable: set[tuple[str, str]] = set()
     for source in sorted(blocks):
-        pending = list(sorted(outgoing[source]))
+        pending = sorted(outgoing[source])
         seen: set[str] = set()
         while pending:
             target = pending.pop()
@@ -685,7 +686,7 @@ def _passive_reference_axis_alignment_penalty(packing) -> int:
         block = item.fragment.block
         ports = getattr(block, "ports", ())
 
-        def component_ids(role: str) -> set[str]:
+        def component_ids(role: str, ports=ports) -> set[str]:
             return {
                 terminal[0]
                 for port in ports
@@ -792,7 +793,7 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
 
     def signal_lineage_extreme(interface_id: str, *, upstream: bool) -> int | None:
         links = signal_parents if upstream else signal_children
-        pending = list(sorted(links[interface_id]))
+        pending = sorted(links[interface_id])
         visited: set[str] = set()
         positions: list[int] = []
         while pending:
@@ -994,7 +995,7 @@ def _coalesced_route_segments(segments):
             raise ValueError("canonical conductor geometry must be orthogonal")
     result = []
     for (axis, fixed), intervals in sorted(spans.items()):
-        low, high = sorted(intervals)[0]
+        low, high = min(intervals)
         for left, right in sorted(intervals)[1:]:
             if left <= high:
                 high = max(high, right)
@@ -1039,7 +1040,7 @@ def route_backtracking_penalty(canonical_trees) -> int:
                 # legitimate N-way fanout grows quadratically in the score.
                 # Neighbor-only gaps are additive and remain invariant to
                 # segmentation, branch order and conductor direction.
-                for left, right in zip(positions, positions[1:]):
+                for left, right in itertools.pairwise(positions):
                     penalty += max(1, _grid_units(right - left))
     return penalty
 

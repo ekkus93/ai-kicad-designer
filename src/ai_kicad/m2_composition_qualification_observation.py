@@ -9,18 +9,18 @@ counted as successful qualification evidence.
 from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Mapping
 
-from .m2_composition_quality import (
-    CompositionReport,
-    block_envelopes_from_composition_evidence,
-    observe_human_composition,
-)
 from .m2_composition_qualification_matrix import (
     LOCKED_KICAD_VERSION,
     QualificationMatrix,
     matrix_gaps,
+)
+from .m2_composition_quality import (
+    CompositionReport,
+    block_envelopes_from_composition_evidence,
+    observe_human_composition,
 )
 from .m2_semantics import SemanticPlan
 

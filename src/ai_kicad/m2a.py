@@ -1,19 +1,19 @@
 """Bounded multi-unit op-amp experiment; M1's compiler remains independent."""
 
 import copy
+import itertools
 import json
-from dataclasses import dataclass, field
-from pathlib import Path
 import re
-from types import MappingProxyType
 import uuid
 import xml.etree.ElementTree as ET
+from dataclasses import dataclass, field
+from pathlib import Path
+from types import MappingProxyType
 
 from .assets import _extract_symbol, sha256
 from .ir import InputError
 from .schematic import _mm
 from .sexpr import children, one, parse, quote
-
 
 PITCH = 1_270_000
 ROOT = Path(__file__).resolve().parents[2]
@@ -516,7 +516,7 @@ def layout(design: dict, assets: dict[str, Asset]) -> Scene:
     junctions = []
 
     def route(net: str, *points: tuple[int, int]) -> None:
-        segments = [(a, b) for a, b in zip(points, points[1:]) if a != b]
+        segments = [(a, b) for a, b in itertools.pairwise(points) if a != b]
         wires.extend(segments)
         wire_nets.extend([net] * len(segments))
 
@@ -626,12 +626,14 @@ def check_layout(
             elif a[1] == b[1] and c[0] == d[0]:
                 if on_segment((c[0], a[1]), a, b) and on_segment((c[0], a[1]), c, d):
                     raise InputError("unrelated wire crossing")
-            elif a[0] == b[0] == c[0] == d[0]:
-                if max(min(a[1], b[1]), min(c[1], d[1])) <= min(max(a[1], b[1]), max(c[1], d[1])):
-                    raise InputError("unrelated wire overlap")
-            elif a[1] == b[1] == c[1] == d[1]:
-                if max(min(a[0], b[0]), min(c[0], d[0])) <= min(max(a[0], b[0]), max(c[0], d[0])):
-                    raise InputError("unrelated wire overlap")
+            elif (
+                a[0] == b[0] == c[0] == d[0]
+                and max(min(a[1], b[1]), min(c[1], d[1])) <= min(max(a[1], b[1]), max(c[1], d[1]))
+            ) or (
+                a[1] == b[1] == c[1] == d[1]
+                and max(min(a[0], b[0]), min(c[0], d[0])) <= min(max(a[0], b[0]), max(c[0], d[0]))
+            ):
+                raise InputError("unrelated wire overlap")
     connected_endpoints = {p for wire in wires for p in wire}
     connected_endpoints.update(p for _, p in labels)
     for c in design["components"]:

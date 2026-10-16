@@ -1,17 +1,14 @@
 """Independent small falsifications for candidate terminal and graph contracts."""
 
-from collections import defaultdict, deque
 import copy
 import json
+from collections import defaultdict, deque
 from itertools import product
 from types import MappingProxyType
 
 import pytest
 
 from ai_kicad.ir import InputError
-from ai_kicad.m2_fragments import FragmentVariant, PortAnchor, fragment_variants
-from ai_kicad.m2a import ROOT, PITCH, Scene, certify_scene_geometry, emit, verify_serialized_scene
-from ai_kicad.m2b import assets, validate
 from ai_kicad.m2_compose import (
     ConductorLengthConflict,
     _assemble_candidate,
@@ -20,6 +17,7 @@ from ai_kicad.m2_compose import (
     _substitution_repack,
     compose_with_evidence,
 )
+from ai_kicad.m2_fragments import FragmentVariant, PortAnchor, fragment_variants
 from ai_kicad.m2_geometry import (
     AccessWindow,
     ConductorSegment,
@@ -33,6 +31,21 @@ from ai_kicad.m2_geometry import (
     prove_no_cross_net_contacts,
     prove_reservation_allocation,
 )
+from ai_kicad.m2_pack import (
+    CANDIDATE_BUDGET,
+    MAX_CONTENT_HEIGHT,
+    MAX_CONTENT_WIDTH,
+    Packing,
+    _partial_beam_candidates,
+    _place,
+    pack_fragment_candidates,
+)
+from ai_kicad.m2_route import (
+    RouteBlockedConflict,
+    RouteLengthBoundConflict,
+    _distribution_initial_trees,
+    route_between_fragments,
+)
 from ai_kicad.m2_semantics import (
     BlockPlan,
     LocalSpanObligation,
@@ -44,21 +57,8 @@ from ai_kicad.m2_semantics import (
     check_placement_constraints,
     semantic_plan,
 )
-from ai_kicad.m2_route import (
-    RouteBlockedConflict,
-    RouteLengthBoundConflict,
-    _distribution_initial_trees,
-    route_between_fragments,
-)
-from ai_kicad.m2_pack import (
-    CANDIDATE_BUDGET,
-    MAX_CONTENT_HEIGHT,
-    MAX_CONTENT_WIDTH,
-    Packing,
-    _partial_beam_candidates,
-    _place,
-    pack_fragment_candidates,
-)
+from ai_kicad.m2a import PITCH, ROOT, Scene, certify_scene_geometry, emit, verify_serialized_scene
+from ai_kicad.m2b import assets, validate
 
 
 def reference_components(segments: tuple[ConductorSegment, ...]) -> int:

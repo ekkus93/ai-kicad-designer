@@ -6,9 +6,9 @@ import sys
 from .assets import sha256
 from .ir import InputError, load_json
 from .kicad import ToolFailure, run_headless, validate_toolchain
+from .m2_compose import LayoutBudgetError, compose_with_evidence
 from .m2a import ROOT, emit, observe, verify_serialized_scene
 from .m2b import assets, check_observed_layout, compare, validate
-from .m2_compose import LayoutBudgetError, compose_with_evidence
 
 
 def _failure_class(message: str) -> str:
@@ -154,7 +154,7 @@ def build(args) -> int:
         stage.rename(out)
         print(out)
         return 0
-    except Exception as exc:
+    except (InputError, ToolFailure, LayoutBudgetError, OSError, ValueError, TypeError) as exc:
         completed_composition = locals().get("composition")
         attempts = (
             list(exc.attempts)

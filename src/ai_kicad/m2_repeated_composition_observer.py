@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import itertools
+from collections.abc import Hashable
 from dataclasses import dataclass
 from fractions import Fraction
-from typing import Hashable
 
 Point = tuple[int, int]
 
@@ -81,7 +82,7 @@ def measure_repeated_composition(
     channel_centers.sort(key=lambda p: (p[1], p[0]))
     pitches = [
         abs(second[0] - first[0]) + abs(second[1] - first[1])
-        for first, second in zip(channel_centers, channel_centers[1:], strict=False)
+        for first, second in itertools.pairwise(channel_centers)
     ]
 
     return RepeatedCompositionMetrics(

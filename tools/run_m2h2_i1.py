@@ -4,18 +4,19 @@ from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
 import re
 import subprocess
+from pathlib import Path
 
-from ai_kicad.m2a import ROOT, observe
-from ai_kicad.m2b import assets, validate
+from run_m2g2_qualification import _build, _erc_violations, _json, _sha, _signature
+
 from ai_kicad.m2_composition_qualification_observation import (
     observe_composition_evidence,
     observe_native_pin_composition,
 )
 from ai_kicad.m2_semantics import semantic_plan
-from run_m2g2_qualification import _build, _erc_violations, _json, _sha, _signature
+from ai_kicad.m2a import ROOT, observe
+from ai_kicad.m2b import assets, validate
 
 LAYOUT_FAILURE_WITNESS_KEYS = frozenset(
     {
@@ -96,7 +97,7 @@ def validate_real_tool_qualification_evidence(evidence: object) -> list[str]:
         not isinstance(runs, list)
         or len(runs) != 5
         or any(not isinstance(run, str) or not run.strip() for run in runs)
-        or len(set(run for run in runs if isinstance(run, str))) != 5
+        or len({run for run in runs if isinstance(run, str)}) != 5
     ):
         errors.append("real-tool evidence must include exactly five distinct non-empty run links")
     forbidden = sorted(PARSE_ONLY_EVIDENCE_KEYS.intersection(evidence))

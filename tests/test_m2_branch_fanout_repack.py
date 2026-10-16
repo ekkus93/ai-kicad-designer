@@ -1,6 +1,5 @@
 """Bounded semantic fanout packing alternatives and retention controls."""
 
-from ai_kicad.m2a import PITCH
 from ai_kicad.m2_fragments import FragmentVariant
 from ai_kicad.m2_pack import (
     LEFT,
@@ -11,6 +10,7 @@ from ai_kicad.m2_pack import (
     _retain_composition_seed_diversity,
 )
 from ai_kicad.m2_semantics import BlockPlan, SemanticEdge, SemanticPlan
+from ai_kicad.m2a import PITCH
 
 
 def _fragment(block_id: str) -> FragmentVariant:

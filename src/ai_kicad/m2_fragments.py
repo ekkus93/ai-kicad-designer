@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass, field, replace
 from types import MappingProxyType
-from typing import Mapping
 
 from .ir import InputError
 from .m2_geometry import (
@@ -23,16 +23,15 @@ from .m2_geometry import (
     prove_no_cross_net_contacts,
     segment_is_admissible,
 )
-from .m2a import Asset, PITCH, Pin
+from .m2_semantics import BlockPlan, Occurrence, SemanticPlan, SemanticPort
+from .m2a import PITCH, Asset, Pin
 from .m2b import (
     Draft,
+    _turn,
     choose_text_slots,
     orientation_for_flow,
     pin_number_rectangles,
-    _turn,
 )
-from .m2_semantics import BlockPlan, Occurrence, SemanticPlan, SemanticPort
-
 
 Point = tuple[int, int]
 Rect = tuple[int, int, int, int]
@@ -149,7 +148,7 @@ def _clear_nonpassive_text(design: dict, resolved: dict[str, Asset], draft: Draf
             asset = resolved[component["asset"]]
             pins = asset.units.get(key[1], asset.units.get(0, ()))
             if pins:
-                dx, dy = _turn(pins[0], draft.angles.get(key, 0))
+                dx, _dy = _turn(pins[0], draft.angles.get(key, 0))
                 if dx:
                     side = -1 if dx > 0 else 1
                     preferred_connector_slots = tuple(
@@ -1593,34 +1592,41 @@ def fragment_variants(
         construction_trace = []
         construction_uncovered = []
 
-        def construct(factory, *args, **kwargs):
+        def construct(
+            factory,
+            *args,
+            _block=block,
+            _construction_trace=construction_trace,
+            _construction_uncovered=construction_uncovered,
+            **kwargs,
+        ):
             descriptor = (
                 factory.__name__
                 + ":"
                 + ",".join(f"{key}={value}" for key, value in sorted(kwargs.items()))
             )
-            if len(construction_trace) >= 32:
-                construction_uncovered.append(descriptor)
+            if len(_construction_trace) >= 32:
+                _construction_uncovered.append(descriptor)
                 raise InputError("LOCAL_CONSTRUCTION_BUDGET_EXHAUSTED: limit=32")
-            index = len(construction_trace)
-            construction_trace.append(("body_support", descriptor, "attempted", ""))
+            index = len(_construction_trace)
+            _construction_trace.append(("body_support", descriptor, "attempted", ""))
             try:
                 candidate = factory(*args, **kwargs)
             except InputError as exc:
-                construction_trace[index] = ("body_support", descriptor, "rejected", str(exc))
+                _construction_trace[index] = ("body_support", descriptor, "rejected", str(exc))
                 exc.local_construction_evidence = {
-                    "fragment": block.id,
+                    "fragment": _block.id,
                     "proposal_limit": 32,
-                    "proposals_attempted": len(construction_trace),
-                    "attempts": [list(item) for item in construction_trace],
-                    "budget_uncovered": list(construction_uncovered),
+                    "proposals_attempted": len(_construction_trace),
+                    "attempts": [list(item) for item in _construction_trace],
+                    "budget_uncovered": list(_construction_uncovered),
                     "completed_fragments": {
                         block_id: family[0].construction_evidence()
                         for block_id, family in result.items()
                     },
                 }
                 raise
-            construction_trace[index] = ("body_support", descriptor, "certified", "")
+            _construction_trace[index] = ("body_support", descriptor, "certified", "")
             return candidate
 
         if block.kind in {
@@ -1786,7 +1792,7 @@ def fragment_variants(
             narrow = families[2][0]
             retained[-2] = (None, narrow, 2)
 
-        def structural_name(index: int) -> str:
+        def structural_name(index: int, block=block, bases=bases) -> str:
             if block.kind in {"timer", "rc", "led_branch"}:
                 return (
                     "narrow"

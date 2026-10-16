@@ -12,7 +12,6 @@ from pathlib import Path
 
 from ai_kicad.m2b import assets, validate
 
-
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "fixtures/m2h2/development"
 

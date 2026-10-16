@@ -7,9 +7,9 @@ production layout scores as proof.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import hashlib
 import json
+from dataclasses import dataclass
 
 SCHEMA_NAME = "m2h2-human-readable-composition"
 SCHEMA_VERSION = "2026-10-07.1"

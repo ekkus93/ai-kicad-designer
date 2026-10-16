@@ -5,10 +5,10 @@ import copy
 import hashlib
 import json
 import os
-from pathlib import Path
 import shutil
 import subprocess
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 import pytest
 
@@ -17,7 +17,6 @@ from ai_kicad.ir import InputError, load_json, validate
 from ai_kicad.kicad import ToolFailure, run_headless, validate_toolchain
 from ai_kicad.sexpr import ParseError, children, one, parse
 from ai_kicad.verify import observe_electrical, verify_electrical
-
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "fixtures/m1a"

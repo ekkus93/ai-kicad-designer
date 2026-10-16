@@ -5,8 +5,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from ai_kicad.m2a import ROOT
 from ai_kicad.m2_native_render_archive_materialize import materialize_native_baseline
+from ai_kicad.m2a import ROOT
 
 
 def main() -> None:

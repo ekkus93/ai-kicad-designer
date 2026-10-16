@@ -3,13 +3,15 @@
 import re
 import sys
 from pathlib import Path
+
 import pytest
+
 from ai_kicad.ir import InputError
-from ai_kicad.m2b import assets, check_observed_layout, validate
 from ai_kicad.m2_compose import compose_with_evidence
+from ai_kicad.m2b import assets, check_observed_layout, validate
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
-from make_m2h2_i6 import text_support, text_branch  # noqa: E402
+from make_m2h2_i6 import text_branch, text_support
 
 
 @pytest.mark.parametrize(

@@ -1,15 +1,15 @@
 """Small semantic analog profile: strict terminals, shared anchors, deterministic geometry."""
 
 import copy
+import itertools
 import json
-from functools import lru_cache
 import re
 from dataclasses import dataclass
+from functools import lru_cache
 from pathlib import Path
 
 from .assets import _extract_symbol, sha256
 from .ir import InputError
-from .m2a import Asset, Pin, PITCH, ROOT, Scene, _nm, load_assets
 from .m2_geometry import (
     ConductorSegment,
     canonical_conductor_tree,
@@ -17,6 +17,7 @@ from .m2_geometry import (
     label_text_rect,
     label_text_width,
 )
+from .m2a import PITCH, ROOT, Asset, Pin, Scene, _nm, load_assets
 from .sexpr import children, one, parse, quote
 
 EXTRA = {
@@ -454,27 +455,28 @@ def validate(raw: dict, resolved: dict[str, Asset]) -> dict:
             )
             if any((r[role], pin) not in nets[r[net]] for role, pin, net in wanted):
                 raise InputError("timing ladder physical terminal/net mismatch")
-        if r["kind"] == "bridge":
-            if r["purpose"] != "feedback" or (
+        if r["kind"] == "bridge" and (
+            r["purpose"] != "feedback"
+            or (
                 (r["component"], "1") not in nets[r["first"]]
                 or (r["component"], "2") not in nets[r["second"]]
-            ):
-                raise InputError("bridge physical terminal/net mismatch")
-        if r["kind"] == "reference_divider":
-            if (
-                r["upper"] not in components
-                or r["lower"] not in components
-                or any(
-                    (r[component], pin) not in nets[r[net]]
-                    for component, pin, net in (
-                        ("upper", "1", "positive"),
-                        ("upper", "2", "local"),
-                        ("lower", "1", "local"),
-                        ("lower", "2", "negative"),
-                    )
+            )
+        ):
+            raise InputError("bridge physical terminal/net mismatch")
+        if r["kind"] == "reference_divider" and (
+            r["upper"] not in components
+            or r["lower"] not in components
+            or any(
+                (r[component], pin) not in nets[r[net]]
+                for component, pin, net in (
+                    ("upper", "1", "positive"),
+                    ("upper", "2", "local"),
+                    ("lower", "1", "local"),
+                    ("lower", "2", "negative"),
                 )
-            ):
-                raise InputError("reference divider physical terminal/net mismatch")
+            )
+        ):
+            raise InputError("reference divider physical terminal/net mismatch")
     for a in data["power_assertions"]:
         _fields(a, ("id", "refdes", "net"))
         if (
@@ -542,7 +544,7 @@ class Draft:
         return x + dx, y + dy
 
     def route(self, net: str, *points):
-        for a, b in zip(points, points[1:]):
+        for a, b in itertools.pairwise(points):
             if a != b:
                 if a[0] != b[0] and a[1] != b[1]:
                     raise InputError("internal non-orthogonal routing request")
@@ -1722,7 +1724,7 @@ def pin_number_rectangles(definition: str, unit: int, x: int, y: int, angle: int
     rectangles = []
     for px, py, dx, dy, width, height in _local_pin_number_rectangles(definition, unit):
         cx, cy = _turn(Pin("", "", "", px, py), angle)
-        vx, vy = _turn(Pin("", "", "", dx, dy), angle)
+        _vx, vy = _turn(Pin("", "", "", dx, dy), angle)
         cx, cy = x + cx, y + cy
         half = (width + 1) // 2
         # Native horizontal pin numbers are above the pin midpoint;

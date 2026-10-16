@@ -1,12 +1,12 @@
 from types import SimpleNamespace
 
-from ai_kicad.m2a import PITCH
 from ai_kicad.m2_composition_candidate_rank import (
     compactness_whitespace_penalties,
     composition_candidate_key,
-    semantic_composition_penalty_breakdown,
     semantic_composition_penalties,
+    semantic_composition_penalty_breakdown,
 )
+from ai_kicad.m2a import PITCH
 
 
 def _block(block_id: str, kind: str = "stage", roles: tuple[str, ...] = ()):
@@ -1171,6 +1171,7 @@ def test_equal_semantics_prefers_readable_low_bend_routing_over_shorter_maze() -
 
 def test_route_backtracking_penalty_detects_axis_reversal_without_external_oracle():
     from types import SimpleNamespace
+
     from ai_kicad.m2_composition_candidate_rank import route_backtracking_penalty
 
     def route(segments):

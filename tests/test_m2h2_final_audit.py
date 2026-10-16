@@ -1,12 +1,12 @@
 """Independent falsifications for final evidence conductor accounting."""
 
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
-from run_m2h2_final_artifact_audit import graph_distances, union_length  # noqa: E402
+from run_m2h2_final_artifact_audit import graph_distances, union_length
 
 
 def test_union_charges_overlapping_reversed_and_subdivided_intervals_once():

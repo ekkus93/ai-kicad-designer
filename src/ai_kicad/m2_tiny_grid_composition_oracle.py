@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from itertools import permutations
+from itertools import pairwise, permutations
 
 Point = tuple[int, int]
 ScoreVector = tuple[int, int, int, int, int]
@@ -258,7 +258,7 @@ def _stage_order_penalty(nodes: tuple[TinyNode, ...], by_id: dict[str, Point]) -
             (node for node in nodes if node.stage_index is not None and node.channel_id == channel),
             key=lambda item: (item.stage_index, item.node_id),
         )
-        for first, second in zip(staged, staged[1:]):
+        for first, second in pairwise(staged):
             if first.stage_index == second.stage_index:
                 continue
             penalty += max(0, by_id[first.node_id][0] - by_id[second.node_id][0])

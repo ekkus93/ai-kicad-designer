@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import base64
-from dataclasses import dataclass
 import gzip
 import hashlib
 import json
-from typing import Mapping, Sequence
+from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
@@ -43,7 +43,7 @@ def verify_native_render_parts(parts: Sequence[Mapping[str, object]]) -> NativeR
         qualification_heads.add(head)
         renders = part.get("renders")
         if not isinstance(renders, list):
-            raise ValueError("invalid native render records")
+            raise TypeError("invalid native render records")
         for render in renders:
             if not isinstance(render, dict) or render.get("encoding") != "gzip+base64":
                 raise ValueError("invalid native render encoding")
@@ -55,7 +55,7 @@ def verify_native_render_parts(parts: Sequence[Mapping[str, object]]) -> NativeR
             if not isinstance(case, str) or not case:
                 raise ValueError("invalid native render case")
             if not isinstance(digest, str) or not isinstance(payload, str):
-                raise ValueError("invalid native render digest/payload")
+                raise TypeError("invalid native render digest/payload")
             try:
                 svg = gzip.decompress(base64.b64decode(payload, validate=True))
             except (ValueError, OSError) as exc:

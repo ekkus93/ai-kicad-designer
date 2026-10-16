@@ -319,6 +319,7 @@ def test_actual_regulator_and_timer_pin_roles_cannot_validate_themselves(
         text=True,
         env=env,
         timeout=90,
+        check=False,
     )
     assert run.returncode == 0, run.stderr
     observed = observe(mutated, xml)

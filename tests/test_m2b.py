@@ -4,10 +4,10 @@ import argparse
 import copy
 import json
 import os
-from pathlib import Path
 import re
 import subprocess
 import tempfile
+from pathlib import Path
 
 import pytest
 
@@ -252,6 +252,7 @@ def fresh_observation(case: str, source: str, tmp_path: Path, launcher: Path):
         text=True,
         env=env,
         timeout=90,
+        check=False,
     )
     assert result.returncode == 0, result.stderr
     return observe(schematic, xml)

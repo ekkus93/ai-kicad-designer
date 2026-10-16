@@ -9,30 +9,31 @@ from __future__ import annotations
 
 import argparse
 import base64
-from collections import defaultdict
-from dataclasses import asdict
 import gzip
 import hashlib
 import json
-from pathlib import Path
 import re
+from collections import defaultdict
+from dataclasses import asdict
+from pathlib import Path
 from xml.etree import ElementTree as ET
 
-from ai_kicad.m2a import ROOT
-from ai_kicad.m2b import assets, validate
+from m2h2_frozen_passive_interface_flow import inferred_passive_interface_signal_relations
+from run_m2h2_qualification import cases as base_cases
+
 from ai_kicad.m2_composition_tolerances import FROZEN_TOLERANCES, Complexity, tolerance_for
 from ai_kicad.m2_interface_flow_composition_observer import (
-    ExternalInterface,
-    FlowStage,
     SIGNAL_INPUT_ROLE,
     SIGNAL_OUTPUT_ROLE,
+    ExternalInterface,
+    FlowStage,
     measure_interface_flow_composition,
 )
 from ai_kicad.m2_native_render_archive_materialize import load_native_baseline
 from ai_kicad.m2_routing_composition_observer import measure_routing_readability
 from ai_kicad.m2_semantics import semantic_plan
-from m2h2_frozen_passive_interface_flow import inferred_passive_interface_signal_relations
-from run_m2h2_qualification import cases as base_cases
+from ai_kicad.m2a import ROOT
+from ai_kicad.m2b import assets, validate
 
 MANIFEST = (
     ROOT
@@ -410,7 +411,7 @@ def _signal_reachability(plan) -> set[tuple[str, str]]:
             outgoing[item.source_fragment].add(item.target_fragment)
     result = set()
     for source in sorted(outgoing):
-        pending = list(sorted(outgoing[source]))
+        pending = sorted(outgoing[source])
         seen = set()
         while pending:
             target = pending.pop()

@@ -5,7 +5,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from audit_m2h2_persisted_native_renders import (
     inventory_case,
     require_deterministic_geometry,

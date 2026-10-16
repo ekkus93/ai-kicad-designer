@@ -9,13 +9,14 @@ from __future__ import annotations
 
 import ast
 import json
-from pathlib import Path
 import re
+from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
-from ai_kicad.m2a import ROOT
 from analyze_m2h2_historical_composition import _verified_svg_by_case
 from run_m2h2_structural_audit import FIXTURE_LITERAL_PATTERN, audit_paths
+
+from ai_kicad.m2a import ROOT
 
 EXPECTED_HISTORICAL_CASES = 90
 EXPECTED_HISTORICAL_INVENTORY = "759f49bf715da357d70f4fb4ae5513594328acb3ba8612031866ac6788a21fe0"
@@ -92,11 +93,14 @@ def prohibited_source_imports(source: str, filename: str) -> list[str]:
                 check(node.args[0].value, node.lineno)
         elif isinstance(node, ast.Dict):
             for key in node.keys:
-                if isinstance(key, ast.Constant) and isinstance(key.value, str):
-                    if FIXTURE_LITERAL_PATTERN.search(key.value):
-                        problems.append(
-                            f"{filename}:{key.lineno}: fixture-specific lookup key {key.value}"
-                        )
+                if (
+                    isinstance(key, ast.Constant)
+                    and isinstance(key.value, str)
+                    and FIXTURE_LITERAL_PATTERN.search(key.value)
+                ):
+                    problems.append(
+                        f"{filename}:{key.lineno}: fixture-specific lookup key {key.value}"
+                    )
     return problems
 
 

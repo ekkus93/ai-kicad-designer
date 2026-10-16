@@ -5,12 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 
 from .ir import InputError
-from .m2a import PITCH
 from .m2_fragments import FragmentVariant, Point, PortAnchor, Rect
 from .m2_geometry import ConductorSegment, Gateway, Reservation, canonical_conductor_tree
 from .m2_semantics import PlacementConflict, SemanticPlan, check_placement_constraints
 from .m2_terminal_interface_flow import inferred_passive_interface_signal_relations
-
+from .m2a import PITCH
 
 LEFT = 18 * PITCH
 TOP = 23 * PITCH
@@ -650,9 +649,7 @@ def _make_units(
     for fragment_id in sorted(remaining):
         fragment = chosen[fragment_id]
         affinity_source = (
-            sorted(package_sources.get(fragment_id, ()))[-1]
-            if package_sources.get(fragment_id)
-            else None
+            max(package_sources.get(fragment_id, ())) if package_sources.get(fragment_id) else None
         )
         units.append(
             _Unit(
@@ -1651,7 +1648,7 @@ def _interface_frontier_candidates(
                 if not owners:
                     continue
 
-                def worst_violation(placed: PlacedFragment) -> int:
+                def worst_violation(placed: PlacedFragment, owners=owners) -> int:
                     if role == "signal_in":
                         return max(
                             max(0, placed.envelope[2] - owner.envelope[0]) for owner in owners
@@ -1833,7 +1830,7 @@ def _local_signal_proximity_candidates(
             (right, anchor.envelope[3] + CHANNEL_GAP),
             (right, anchor.envelope[1] - height - CHANNEL_GAP),
         ]
-        if not (forward != backward):
+        if forward == backward:
             slots.extend(
                 (
                     (anchor.envelope[0] - width - CHANNEL_GAP, anchor.envelope[1]),

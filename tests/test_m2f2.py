@@ -3,25 +3,25 @@
 from __future__ import annotations
 
 import copy
-from dataclasses import replace
 import json
+from dataclasses import replace
 
 import pytest
 
 from ai_kicad.ir import InputError
-from ai_kicad.m2a import ROOT
 from ai_kicad.m2_compose import compose_layout
 from ai_kicad.m2_fragments import FragmentVariant, fragment_variants
 from ai_kicad.m2_pack import (
     ENVELOPE_OUTER_PADDING,
     MAX_CONTENT_HEIGHT,
     MAX_CONTENT_WIDTH,
-    pack_fragments,
     pack_fragment_candidates,
+    pack_fragments,
 )
-from ai_kicad.m2_semantics import BlockPlan, SemanticEdge, SemanticPlan, semantic_plan
-from ai_kicad.m2b import assets, validate
 from ai_kicad.m2_route import route_between_fragments
+from ai_kicad.m2_semantics import BlockPlan, SemanticEdge, SemanticPlan, semantic_plan
+from ai_kicad.m2a import ROOT
+from ai_kicad.m2b import assets, validate
 
 
 def _block(block_id: str, kind: str = "rc") -> BlockPlan:

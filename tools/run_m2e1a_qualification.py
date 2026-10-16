@@ -6,16 +6,15 @@ import argparse
 import hashlib
 import json
 import platform
-from pathlib import Path
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 from ai_kicad.ir import InputError
 from ai_kicad.m2a import ROOT
 from ai_kicad.m2b import assets, validate
 from ai_kicad.m2b_build import build
-
 
 HISTORICAL_V3_8_SHA256 = "4e0c1f1634a23870b5e50990da49e7f1696113f9544587677c8346a520ffdf1a"
 

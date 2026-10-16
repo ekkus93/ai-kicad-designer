@@ -6,8 +6,8 @@ renders.  They are not user approval records and do not replace observer gates.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 
 REQUIRED_ASSERTIONS = (
     "primary_signal_entry_obvious",

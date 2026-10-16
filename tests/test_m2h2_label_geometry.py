@@ -6,11 +6,11 @@ from pathlib import Path
 import pytest
 
 from ai_kicad.ir import InputError
-from ai_kicad.m2a import ROOT
-from ai_kicad.m2b import assets, check_observed_layout, pin_number_rectangles, validate
 from ai_kicad.m2_fragments import fragment_variants
 from ai_kicad.m2_geometry import label_text_rect, label_text_width
 from ai_kicad.m2_semantics import semantic_plan
+from ai_kicad.m2a import ROOT
+from ai_kicad.m2b import assets, check_observed_layout, pin_number_rectangles, validate
 
 
 @pytest.mark.parametrize("obstacle", ["body", "label"])

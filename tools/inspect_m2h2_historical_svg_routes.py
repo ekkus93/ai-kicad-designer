@@ -4,17 +4,17 @@ from __future__ import annotations
 
 import argparse
 import base64
-from collections import defaultdict
-from decimal import Decimal
 import gzip
 import hashlib
 import json
-from pathlib import Path
 import re
+from collections import defaultdict
+from decimal import Decimal
+from pathlib import Path
 from xml.etree import ElementTree
 
-from ai_kicad.m2a import ROOT
 from ai_kicad.m2_native_render_archive_materialize import load_native_baseline
+from ai_kicad.m2a import ROOT
 
 SCALE = 10000
 WIRE_STYLE = re.compile(r"(?:^|;)\s*stroke\s*:\s*#009600\b", re.IGNORECASE)
@@ -65,7 +65,7 @@ def _merge_intervals(segments: tuple[Segment, ...]) -> tuple[Segment, ...]:
         by_line[key].append(span)
     result: list[Segment] = []
     for (axis, fixed), spans in sorted(by_line.items()):
-        low, high = sorted(spans)[0]
+        low, high = min(spans)
         for left, right in sorted(spans)[1:]:
             if left <= high:
                 high = max(high, right)

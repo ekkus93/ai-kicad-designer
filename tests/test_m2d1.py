@@ -7,9 +7,9 @@ import re
 import pytest
 
 from ai_kicad.ir import InputError
+from ai_kicad.m2_compose import compose_layout, stage_graph
 from ai_kicad.m2a import ROOT
 from ai_kicad.m2b import assets, validate
-from ai_kicad.m2_compose import compose_layout, stage_graph
 
 
 def _case(number, resolved):

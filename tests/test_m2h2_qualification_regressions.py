@@ -1,13 +1,14 @@
 """Preserve structural regressions found by fresh locked qualification."""
 
+import itertools
 import json
 from collections import Counter
 
 import pytest
 
+from ai_kicad.m2_compose import compose_with_evidence
 from ai_kicad.m2a import ROOT
 from ai_kicad.m2b import assets, validate
-from ai_kicad.m2_compose import compose_with_evidence
 
 
 @pytest.mark.parametrize(
@@ -53,9 +54,10 @@ def test_fresh_qualification_failures_have_complete_bounded_composition(path):
 def test_three_timer_whole_band_has_certified_geometry_and_bounded_search():
     from argparse import Namespace
 
+    from run_m2h2_structural_alternative import select_scene
+
     from ai_kicad.m2_fragments import fragment_variants
     from ai_kicad.m2_semantics import semantic_plan
-    from run_m2h2_structural_alternative import select_scene
 
     resolved = assets()
     path = ROOT / "fixtures/m2h2/interaction/i3/a3_one.json"
@@ -78,7 +80,7 @@ def test_three_timer_whole_band_has_certified_geometry_and_bounded_search():
     assert len(cells) == 3
     assert len({item.envelope[1] for item in cells}) == 1
     ordered = sorted(cells, key=lambda item: item.envelope[0])
-    assert all(a.envelope[2] < b.envelope[0] for a, b in zip(ordered, ordered[1:]))
+    assert all(a.envelope[2] < b.envelope[0] for a, b in itertools.pairwise(ordered))
     assert scene.metrics["final_content_width_mm"] <= 210
     assert scene.metrics["final_content_height_mm"] <= 140
     assert all(tree.length <= 250_000_000 for tree in trees)

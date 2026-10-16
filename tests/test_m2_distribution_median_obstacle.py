@@ -1,8 +1,8 @@
 """Interior shared-rail trunk must not cross unrelated fragment bodies."""
 
-from ai_kicad.m2a import PITCH
 from ai_kicad.m2_geometry import Gateway, Reservation
 from ai_kicad.m2_route import _distribution_initial_trees
+from ai_kicad.m2a import PITCH
 
 
 def test_median_trunk_respects_unrelated_obstacles() -> None:

@@ -1,5 +1,6 @@
 """Independent repeated-structure composition observer."""
 
+import itertools
 from collections import defaultdict
 from dataclasses import dataclass
 
@@ -39,11 +40,11 @@ def measure_repeated_structure(members: tuple[RepeatedMember, ...]) -> RepeatedS
     displacement = []
     for group in slots.values():
         ordered = sorted(group, key=lambda m: (m.center[1], m.center[0]))
-        displacement += [abs(b.center[1] - a.center[1]) for a, b in zip(ordered, ordered[1:])]
+        displacement += [abs(b.center[1] - a.center[1]) for a, b in itertools.pairwise(ordered)]
     pitches = []
     for group in channels.values():
         ordered = sorted(group, key=lambda m: (m.center[0], m.center[1]))
-        pitches += [abs(b.center[0] - a.center[0]) for a, b in zip(ordered, ordered[1:])]
+        pitches += [abs(b.center[0] - a.center[0]) for a, b in itertools.pairwise(ordered)]
     return RepeatedStructureMetrics(
         row, column, _spread(displacement), orientation, _spread(pitches)
     )

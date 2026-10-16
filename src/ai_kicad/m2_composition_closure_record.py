@@ -10,7 +10,6 @@ import json
 from dataclasses import dataclass
 from hashlib import sha256
 
-
 LOCKED_TOOLCHAIN = "KiCad 10.0.6"
 SCHEMA_NAME = "m2h2-human-readable-composition-closure"
 SCHEMA_VERSION = "2026-10-07.1"

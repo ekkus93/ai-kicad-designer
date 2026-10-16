@@ -1,9 +1,9 @@
+from types import SimpleNamespace
+
 from ai_kicad.m2_composition_qualification_matrix import (
     LOCKED_KICAD_VERSION,
     build_required_matrix,
 )
-from types import SimpleNamespace
-
 from ai_kicad.m2_composition_qualification_observation import (
     QualificationObservation,
     build_observation_report,

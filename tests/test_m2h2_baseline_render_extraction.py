@@ -7,14 +7,11 @@ import gzip
 import hashlib
 import json
 from pathlib import Path
-import sys
 
 import pytest
+from extract_m2h2_baseline_renders import extract_baseline_renders
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "tools"))
-
-from extract_m2h2_baseline_renders import extract_baseline_renders  # noqa: E402
 
 
 def _hash(data: bytes) -> str:

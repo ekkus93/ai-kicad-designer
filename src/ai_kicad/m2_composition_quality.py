@@ -8,8 +8,9 @@ human-readable schematic-composition remediation.
 
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from typing import Iterable, Mapping, Literal
+from typing import Literal
 
 from .m2_pack import LEFT, MAX_CONTENT_HEIGHT, MAX_CONTENT_WIDTH, TOP
 from .m2_semantics import SemanticPlan

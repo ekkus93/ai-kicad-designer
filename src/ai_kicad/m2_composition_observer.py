@@ -137,7 +137,7 @@ def primary_precedence_pairs(graph: SemanticFlowGraph) -> tuple[tuple[str, str],
 
     pairs: set[tuple[str, str]] = set()
     for start in graph.nodes:
-        pending = list(sorted(adjacency.get(start, ())))
+        pending = sorted(adjacency.get(start, ()))
         seen: set[str] = set()
         while pending:
             target = pending.pop(0)

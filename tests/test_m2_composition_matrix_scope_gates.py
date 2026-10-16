@@ -11,7 +11,6 @@ from ai_kicad.m2_composition_qualification_observation import (
     build_observation_report,
 )
 
-
 SOURCE = "a" * 40
 BASE = tuple(f"base-{index:02d}" for index in range(56))
 

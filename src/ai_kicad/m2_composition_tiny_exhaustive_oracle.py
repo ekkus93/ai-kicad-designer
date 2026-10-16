@@ -7,10 +7,10 @@ directly, so small counterexamples can falsify production ranking decisions.
 
 from __future__ import annotations
 
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from itertools import permutations
 from math import perm
-from typing import Callable, Mapping, Sequence
 
 
 @dataclass(frozen=True)

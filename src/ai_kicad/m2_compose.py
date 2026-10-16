@@ -6,24 +6,22 @@ from collections import Counter
 from dataclasses import dataclass, replace
 
 from .ir import InputError
-from .m2_conflicts import ConflictKind, TypedConflict
 from .m2_composition_candidate_rank import (
-    route_backtracking_penalty,
-    route_branch_arm_spread,
     compactness_whitespace_penalties,
     composition_candidate_key,
-    semantic_composition_penalty_breakdown,
+    route_backtracking_penalty,
+    route_branch_arm_spread,
     semantic_composition_penalties,
+    semantic_composition_penalty_breakdown,
 )
-from .m2a import PITCH, Scene, certify_scene_geometry, certify_scene_inputs
-from .m2b import Draft, measure
-from .m2_geometry import label_text_rect
+from .m2_conflicts import ConflictKind, TypedConflict
 from .m2_fragments import fragment_variants
 from .m2_geometry import (
     ConductorSegment,
     GeometryItem,
     Reservation,
     canonical_conductor_tree,
+    label_text_rect,
     prove_conductor_graph,
     prove_gateway_witnesses,
     prove_no_cross_net_contacts,
@@ -51,6 +49,8 @@ from .m2_route import (
     route_between_fragments,
 )
 from .m2_semantics import PlacementConflict, check_placement_constraints, semantic_plan
+from .m2a import PITCH, Scene, certify_scene_geometry, certify_scene_inputs
+from .m2b import Draft, measure
 
 
 class ConductorLengthConflict(InputError):
@@ -1311,15 +1311,15 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
                             working_packing, substitution = _distribution_repack(
                                 design, resolved, plan, working_packing, last_conflict
                             )
-                    elif round_index == 2 and isinstance(last_conflict, ConductorLengthConflict):
-                        working_packing, substitution = _distribution_repack(
-                            design, resolved, plan, working_packing, last_conflict
-                        )
                     elif (
                         round_index == 2
-                        and isinstance(last_conflict, TypedConflict)
-                        and last_conflict.net is not None
-                        and "distribution_placement" in last_conflict.repair_classes
+                        and isinstance(last_conflict, ConductorLengthConflict)
+                        or (
+                            round_index == 2
+                            and isinstance(last_conflict, TypedConflict)
+                            and last_conflict.net is not None
+                            and "distribution_placement" in last_conflict.repair_classes
+                        )
                     ):
                         working_packing, substitution = _distribution_repack(
                             design, resolved, plan, working_packing, last_conflict

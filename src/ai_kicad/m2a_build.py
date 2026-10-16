@@ -1,8 +1,8 @@
 """M2a qualification command using the locked M1 KiCad subprocess boundary."""
 
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 
 from .assets import sha256
 from .ir import InputError, load_json
@@ -56,7 +56,7 @@ def build(args) -> int:
         stages.append({"stage": "layout_schematic", "status": "ok"})
         schematic = emit(design, assets, scene, stage)
         stages.append({"stage": "emit_schematic", "status": "ok"})
-        netlist, erc, svgs = run_headless(
+        netlist, _, _ = run_headless(
             schematic, launcher, stage, ROOT / "fixtures/m2a/sym-lib-table"
         )
         stages.append({"stage": "kicad_cli", "status": "ok"})
@@ -105,7 +105,7 @@ def build(args) -> int:
         stage.rename(out)
         print(out)
         return 0
-    except Exception as exc:
+    except (InputError, ToolFailure, OSError, ValueError, TypeError) as exc:
         report = stage / "reports"
         report.mkdir(exist_ok=True)
         (report / "failure.json").write_text(

@@ -4,19 +4,11 @@ from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
 import subprocess
 import sys
 import time
+from pathlib import Path
 
-from ai_kicad.m2a import ROOT, observe
-from ai_kicad.m2b import assets, validate
-from ai_kicad.m2_composition_qualification_observation import (
-    observe_composition_evidence,
-    observe_native_pin_composition,
-    witnessed_invalid_build_rejection,
-)
-from ai_kicad.m2_semantics import semantic_plan
 from run_m2g2_qualification import (
     _anti_overfitting_audit,
     _build,
@@ -27,6 +19,15 @@ from run_m2g2_qualification import (
     _sha,
     _signature,
 )
+
+from ai_kicad.m2_composition_qualification_observation import (
+    observe_composition_evidence,
+    observe_native_pin_composition,
+    witnessed_invalid_build_rejection,
+)
+from ai_kicad.m2_semantics import semantic_plan
+from ai_kicad.m2a import ROOT, observe
+from ai_kicad.m2b import assets, validate
 
 
 def cases() -> list[tuple[str, Path, str]]:

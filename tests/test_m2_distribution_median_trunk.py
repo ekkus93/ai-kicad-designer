@@ -1,8 +1,8 @@
 """Controls for deterministic bounded interior distribution trunks."""
 
-from ai_kicad.m2a import PITCH
 from ai_kicad.m2_geometry import Gateway
 from ai_kicad.m2_route import _distribution_initial_trees
+from ai_kicad.m2a import PITCH
 
 
 def test_flat_distribution_has_no_redundant_median() -> None:

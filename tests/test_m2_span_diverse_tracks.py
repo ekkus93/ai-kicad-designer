@@ -1,7 +1,7 @@
 """Source-neutral bounded track sampling across dense routing obstacles."""
 
-from ai_kicad.m2a import PITCH
 from ai_kicad.m2_route import MAX_TRACKS_PER_SIDE, _bounded_tracks, _direct_paths
+from ai_kicad.m2a import PITCH
 
 
 def test_dense_interior_tracks_keep_both_extremes_and_middle() -> None:
@@ -12,7 +12,7 @@ def test_dense_interior_tracks_keep_both_extremes_and_middle() -> None:
     assert tracks[-1] == 24 * PITCH
     assert tracks == tuple(sorted(tracks))
     assert any(9 * PITCH <= track <= 16 * PITCH for track in tracks)
-    assert tracks == _bounded_tracks(set(reversed(sorted(values))), 25 * PITCH, 0)
+    assert tracks == _bounded_tracks(set(values), 25 * PITCH, 0)
 
 
 def test_sparse_and_outside_tracks_keep_existing_near_first_priority() -> None:

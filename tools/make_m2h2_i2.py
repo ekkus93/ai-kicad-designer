@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import json
 
-from ai_kicad.m2a import ROOT
 from make_m2h2_probes import Circuit, rc
+
+from ai_kicad.m2a import ROOT
 
 
 def case(reference: str, consumers: int) -> tuple[dict, dict]:

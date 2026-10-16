@@ -7,13 +7,14 @@ that a measured fragment cannot be mutated after packing.
 
 from __future__ import annotations
 
+import itertools
 from collections import defaultdict, deque
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable, Literal
+from typing import Literal
 
 from .ir import InputError
 from .m2_conflicts import ConflictKind, TypedConflict
-
 
 Point = tuple[int, int]
 Rect = tuple[int, int, int, int]
@@ -517,7 +518,7 @@ def canonical_conductor_tree(
             if segment.start[0] == segment.end[0]
             else sorted(points)
         )
-        for first, second in zip(ordered, ordered[1:]):
+        for first, second in itertools.pairwise(ordered):
             if first != second:
                 atoms[_ordered_segment(first, second)].append(segment)
     normalized = []
@@ -590,7 +591,7 @@ def canonical_conductor_tree(
                     and low < (point[1] if vertical else point[0]) < high
                 )
                 ordered_cuts = sorted(cuts)
-                for a, b in zip(ordered_cuts, ordered_cuts[1:]):
+                for a, b in itertools.pairwise(ordered_cuts):
                     first = (fixed, a) if vertical else (a, fixed)
                     second = (fixed, b) if vertical else (b, fixed)
                     signature_parts.append(_ordered_segment(first, second))

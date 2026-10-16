@@ -7,19 +7,11 @@ import json
 import subprocess
 from pathlib import Path
 
+from run_m2g2_qualification import _erc_violations, _normalized_svg, _sha
+
 from ai_kicad.assets import sha256
+from ai_kicad.ir import InputError
 from ai_kicad.kicad import run_headless, validate_toolchain
-from ai_kicad.m2a import (
-    PITCH,
-    ROOT,
-    Scene,
-    certify_scene_geometry,
-    certify_scene_inputs,
-    emit,
-    observe,
-    verify_serialized_scene,
-)
-from ai_kicad.m2b import assets, check_observed_layout, compare, validate
 from ai_kicad.m2_compose import _assemble_candidate
 from ai_kicad.m2_composition_qualification_observation import (
     observe_composition_packing,
@@ -36,7 +28,17 @@ from ai_kicad.m2_pack import (
     pack_fragment_candidates,
 )
 from ai_kicad.m2_semantics import semantic_plan
-from run_m2g2_qualification import _erc_violations, _normalized_svg, _sha
+from ai_kicad.m2a import (
+    PITCH,
+    ROOT,
+    Scene,
+    certify_scene_geometry,
+    certify_scene_inputs,
+    emit,
+    observe,
+    verify_serialized_scene,
+)
+from ai_kicad.m2b import assets, check_observed_layout, compare, validate
 
 
 def band_count(packing, *, core_only: bool = False) -> int:
@@ -217,7 +219,7 @@ def extra_packings(baseline: Packing, variants=None) -> tuple[Packing, ...]:
                     proposal.attempts + ("measured-peer-separation",),
                 )
             )
-    return tuple((*candidates, *repaired))
+    return (*candidates, *repaired)
 
 
 def interleaved(packing: Packing) -> bool:
@@ -362,7 +364,7 @@ def select_scene(design: dict, emitted_assets: dict, args) -> tuple:
                         "grid_pitch_nm": PITCH,
                     },
                 )
-            except Exception as exc:
+            except (InputError, ValueError, TypeError) as exc:
                 attempts.append(
                     {
                         "seed": seed,

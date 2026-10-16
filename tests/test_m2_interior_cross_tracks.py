@@ -1,7 +1,7 @@
 """Generic bounded interior cross-track alternatives for legal routed escapes."""
 
-from ai_kicad.m2a import PITCH
 from ai_kicad.m2_route import _direct_paths
+from ai_kicad.m2a import PITCH
 
 
 def test_interior_cross_tracks_provide_both_orthogonal_escape_orders() -> None:

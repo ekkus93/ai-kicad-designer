@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
+import itertools
 from dataclasses import dataclass
 from typing import Literal
 
 from .ir import InputError
 from .m2_conflicts import ConflictKind
 from .m2a import Asset
-
 
 Occurrence = tuple[str, int]
 Terminal = tuple[str, str]
@@ -715,7 +715,7 @@ def semantic_plan(design: dict, resolved: dict[str, Asset]) -> SemanticPlan:
                     )
                     edges.add(SemanticEdge(kind, source.fragment, target.fragment, net, ()))
         references = [p for p in on_net if p.role == "reference"]
-        for first, second in zip(references, references[1:]):
+        for first, second in itertools.pairwise(references):
             if first.fragment != second.fragment:
                 edges.add(SemanticEdge("reference", first.fragment, second.fragment, net, ()))
 

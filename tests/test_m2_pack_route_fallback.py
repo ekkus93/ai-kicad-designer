@@ -2,8 +2,8 @@
 
 from types import SimpleNamespace
 
-from ai_kicad.ir import InputError
 from ai_kicad import m2_pack, m2_route
+from ai_kicad.ir import InputError
 
 
 def _candidates(monkeypatch):

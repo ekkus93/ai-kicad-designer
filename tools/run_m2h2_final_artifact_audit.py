@@ -6,20 +6,26 @@ import argparse
 import base64
 import gzip
 import hashlib
-import json
-from pathlib import Path
 import heapq
+import itertools
+import json
 import re
 import subprocess
+from pathlib import Path
 
-from ai_kicad.m2a import ROOT, observe
-from ai_kicad.m2b import assets
 from analyze_m2h2_historical_composition import (
     _design_paths as historical_design_paths,
+)
+from analyze_m2h2_historical_composition import (
     analyze_case as analyze_native_composition,
+)
+from analyze_m2h2_historical_composition import (
     build_report as build_historical_composition_report,
 )
 from run_m2h2_structural_audit import audit_paths
+
+from ai_kicad.m2a import ROOT, observe
+from ai_kicad.m2b import assets
 
 
 def digest(path: Path) -> str:
@@ -145,7 +151,7 @@ def union_length(segments):
         lines.setdefault(key, []).append(interval)
     total = 0
     for intervals in lines.values():
-        start, end = sorted(intervals)[0]
+        start, end = min(intervals)
         for low, high in sorted(intervals)[1:]:
             if low > end:
                 total += end - start
@@ -171,7 +177,7 @@ def graph_distances(segments, source, terminals):
             ),
             key=lambda point: point[axis],
         )
-        for first, second in zip(nodes, nodes[1:]):
+        for first, second in itertools.pairwise(nodes):
             distance = abs(first[axis] - second[axis])
             graph[first][second] = graph[second][first] = distance
     distances = {source: 0}
@@ -844,13 +850,16 @@ def main() -> None:
     metrics = {}
     for detail in details:
         for name, value in detail["layout"].items():
-            if isinstance(value, (int, float)) and not isinstance(value, bool):
-                if name not in metrics or value > metrics[name]["value"]:
-                    metrics[name] = {
-                        "group": detail["group"],
-                        "case": detail["case"],
-                        "value": value,
-                    }
+            if (
+                isinstance(value, (int, float))
+                and not isinstance(value, bool)
+                and (name not in metrics or value > metrics[name]["value"])
+            ):
+                metrics[name] = {
+                    "group": detail["group"],
+                    "case": detail["case"],
+                    "value": value,
+                }
     report = {
         "details": details,
         "worst_metrics": metrics,

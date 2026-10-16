@@ -1,15 +1,15 @@
 """KiCad 10.0.6 headless subprocess boundary."""
 
 import json
-from importlib.metadata import PackageNotFoundError, version
 import os
 import platform
 import re
-from pathlib import Path
 import subprocess
 import tempfile
 import time
 import xml.etree.ElementTree as ET
+from importlib.metadata import PackageNotFoundError, version
+from pathlib import Path
 
 from .assets import sha256
 from .ir import InputError, load_json
@@ -109,6 +109,7 @@ def validate_toolchain(path: Path, python_lock: Path) -> Path:
             text=True,
             timeout=30,
             env=environment,
+            check=False,
         )
     if version_probe.returncode or version_probe.stdout.strip() != "10.0.6":
         raise ToolFailure(
@@ -177,7 +178,12 @@ def run_headless(
         invocation = [str(launcher), "kicad-cli", *args]
         try:
             result = subprocess.run(
-                invocation, capture_output=True, text=True, env=environment, timeout=90
+                invocation,
+                capture_output=True,
+                text=True,
+                env=environment,
+                timeout=90,
+                check=False,
             )
         except (OSError, subprocess.TimeoutExpired) as exc:
             raise ToolFailure(f"{label} invocation failed: {exc}") from exc

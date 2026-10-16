@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import json
 
-from ai_kicad.m2a import ROOT
 from make_m2h2_probes import Circuit, amplifier, rc, timer
+
+from ai_kicad.m2a import ROOT
 
 
 def selected_triple() -> tuple[dict, dict]:

@@ -6,10 +6,10 @@ import argparse
 import hashlib
 import json
 import platform
-from pathlib import Path
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 from ai_kicad.m2a import ROOT
 from ai_kicad.m2b_build import build
