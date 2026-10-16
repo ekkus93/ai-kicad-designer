@@ -1,0 +1,20 @@
+"""Shared constants and public type aliases for the facade."""
+
+from __future__ import annotations
+
+MAX_TRACKS_PER_SIDE = 8
+
+
+MAX_TAPS_PER_ATTACHMENT = 32
+
+
+MAX_ROUTE_STATES_PER_TAP = 4_096
+
+
+MAX_CANONICAL_LENGTH = 250_000_000
+
+
+MAX_LOCAL_VISIBLE_SIGNAL_DISTANCE = 80_000_000
+
+
+MAX_LOCAL_VISIBLE_SIGNAL_ROUTE_LENGTH = 150_000_000
