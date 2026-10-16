@@ -163,3 +163,32 @@ def test_connector_gateway_labels_clear_native_visible_pin_number_keepouts():
                     max(box[0], r[0]) >= min(box[2], r[2]) or max(box[1], r[1]) >= min(box[3], r[3])
                     for r in obstacles
                 ), (variant.id, net)
+
+
+def test_single_port_connector_leads_stay_straight_with_labels_on_stubs():
+    """A connector lead is one straight conductor; a long label hangs on a side stub."""
+    resolved = assets()
+    design = validate(
+        json.loads((ROOT / "fixtures/m2h2/interaction/i4/b2_mixed.json").read_text()),
+        resolved,
+    )
+    variants = fragment_variants(design, resolved, semantic_plan(design, resolved))
+    stubs = 0
+    for choices in variants.values():
+        for variant in choices:
+            if variant.block.kind != "interface":
+                continue
+            wires = set(variant.wires) | {(second, first) for first, second in variant.wires}
+            for gateway in variant.gateways:
+                polyline = gateway.escape_polyline
+                assert len(polyline) == 2, (variant.id, polyline)
+                axis = 1 if gateway.escape_direction in {"left", "right"} else 0
+                assert polyline[0][axis] == polyline[1][axis], (variant.id, polyline)
+                (label_point,) = {point for net, point in variant.labels if net == gateway.net}
+                if label_point != gateway.point:
+                    # The label stub leaves the lead's end at a right angle.
+                    assert (gateway.point, label_point) in wires, (variant.id, label_point)
+                    assert label_point[axis] != gateway.point[axis]
+                    assert label_point[1 - axis] == gateway.point[1 - axis]
+                    stubs += 1
+    assert stubs >= 1

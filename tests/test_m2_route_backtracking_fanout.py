@@ -3,7 +3,10 @@
 from types import SimpleNamespace
 
 from ai_kicad.m2a import PITCH
-from ai_kicad.m2_composition_candidate_rank import route_backtracking_penalty
+from ai_kicad.m2_composition_candidate_rank import (
+    route_backtracking_penalty,
+    route_branch_arm_spread,
+)
 
 
 def _route(*segments):
@@ -50,3 +53,27 @@ def test_two_leg_u_detour_keeps_original_penalty() -> None:
         ((3 * PITCH, 2 * PITCH), (3 * PITCH, 0)),
     )
     assert route_backtracking_penalty((source,)) == 3
+
+
+def test_branch_arm_spread_prefers_balanced_fanout_and_ignores_segmentation() -> None:
+    balanced = _route(
+        ((-2 * PITCH, 0), (0, 0)),
+        ((0, -2 * PITCH), (0, 0)),
+        ((0, 0), (0, 2 * PITCH)),
+    )
+    unbalanced = _route(
+        ((-4 * PITCH, 0), (0, 0)),
+        ((0, -2 * PITCH), (0, 0)),
+        ((0, 0), (0, 2 * PITCH)),
+    )
+    split_balanced = _route(
+        ((-2 * PITCH, 0), (-PITCH, 0)),
+        ((-PITCH, 0), (0, 0)),
+        ((0, -PITCH), (0, 0)),
+        ((0, -2 * PITCH), (0, -PITCH)),
+        ((0, 0), (0, PITCH)),
+        ((0, PITCH), (0, 2 * PITCH)),
+    )
+    assert route_branch_arm_spread((balanced,)) == 0
+    assert route_branch_arm_spread((unbalanced,)) == 2
+    assert route_branch_arm_spread((split_balanced,)) == 0

@@ -144,7 +144,23 @@ def _clear_nonpassive_text(design: dict, resolved: dict[str, Asset], draft: Draf
             for dx in (0, 2, -2, 4, -4)
             if dx or dy
         )
+        preferred_connector_slots = ()
+        if component["asset"].startswith("Connector_Generic:"):
+            asset = resolved[component["asset"]]
+            pins = asset.units.get(key[1], asset.units.get(0, ()))
+            if pins:
+                dx, dy = _turn(pins[0], draft.angles.get(key, 0))
+                if dx:
+                    side = -1 if dx > 0 else 1
+                    preferred_connector_slots = tuple(
+                        (sx + side * 8 * PITCH, sy - offset * PITCH) for offset in (2, 4, 6)
+                    )
+                else:
+                    preferred_connector_slots = tuple(
+                        (sx, sy - offset * PITCH) for offset in (6, 5)
+                    )
         candidates = (
+            *preferred_connector_slots,
             draft.text_positions[key],
             *nearby,
             (sx, sy - 12 * PITCH),
@@ -420,6 +436,7 @@ def _finish(
         }[direction]
         gateway_point = (anchor[0] + dx, anchor[1] + dy)
         escape_polyline = (anchor, gateway_point)
+        label_stub: tuple[Point, Point] | None = None
         if emit_label:
             bodies = [
                 _body_rect(design, resolved, draft, occurrence)
@@ -464,24 +481,27 @@ def _finish(
                 for r in pin_text
             ):
                 original = gateway_point
-                candidates = (
-                    (
+                if len(block.ports) > 1:
+                    candidates = tuple(
                         (original[0] + step * step_x, original[1] + step * step_y)
                         for step in range(1, 9)
                     )
-                    if len(block.ports) > 1
-                    else (
-                        (
-                            (original[0], original[1] + step * PITCH)
-                            for step in (2, -2, 3, -3, 4, -4, 6, -6)
+                else:
+                    # A single port keeps one straight outward lead. Its label
+                    # hangs from the lead's end on a short orthogonal label
+                    # stub that exists only to carry the label; composition
+                    # drops the stub together with a redundant label, so a
+                    # physically routed lead never folds back on itself.
+                    orthogonal_steps = (2, -2, 3, -3, 4, -4, 6, -6)
+                    candidates = (
+                        tuple(
+                            (original[0], original[1] + step * PITCH) for step in orthogonal_steps
                         )
                         if direction in {"left", "right"}
-                        else (
-                            (original[0] + step * PITCH, original[1])
-                            for step in (2, -2, 3, -3, 4, -4, 6, -6)
+                        else tuple(
+                            (original[0] + step * PITCH, original[1]) for step in orthogonal_steps
                         )
                     )
-                )
                 for candidate in candidates:
                     box = label_text_rect(port.net, candidate)
                     if all(
@@ -489,21 +509,22 @@ def _finish(
                         or max(box[1], r[1]) >= min(box[3], r[3])
                         for r in bodies + pin_text
                     ):
-                        gateway_point = candidate
-                        escape_polyline = (
-                            (anchor, gateway_point)
-                            if len(block.ports) > 1
-                            else (anchor, original, gateway_point)
-                        )
+                        if len(block.ports) > 1:
+                            gateway_point = candidate
+                            escape_polyline = (anchor, gateway_point)
+                        else:
+                            label_stub = (original, candidate)
                         break
                 else:
                     raise InputError(f"LABEL_PIN_TEXT_ESCAPE_INFEASIBLE: {port.id}")
         draft.route(port.net, *escape_polyline)
+        if label_stub is not None:
+            draft.route(port.net, *label_stub)
         if emit_label:
             # A label at the gateway's source is redundant on the same escape
             # conductor and can overlap the final gateway label.
             draft.labels = [item for item in draft.labels if item != (port.net, anchor)]
-            draft.label(port.net, gateway_point)
+            draft.label(port.net, label_stub[1] if label_stub is not None else gateway_point)
         access_end = gateway_point
         access = AccessWindow(
             (
@@ -1390,6 +1411,15 @@ def _access_alternatives(
     }
     variants = [base]
     gateway_points = {gateway.point for gateway in base.gateways}
+    # Every alternative re-draws its port escapes and their labels, so the
+    # base's port labels are stale: those at gateway points and those at the
+    # far end of a label stub hung from a gateway point.
+    stale_label_points = set(gateway_points)
+    for first, second in base.wires[len(base.protected_wires) :]:
+        if first in gateway_points:
+            stale_label_points.add(second)
+        if second in gateway_points:
+            stale_label_points.add(first)
     alternatives = [
         (name, direction)
         for name in configurable
@@ -1417,7 +1447,7 @@ def _access_alternatives(
             dict(base.angles),
             list(base.wires[: len(base.protected_wires)]),
             list(base.wire_nets[: len(base.protected_wires)]),
-            [item for item in base.labels if item[1] not in gateway_points],
+            [item for item in base.labels if item[1] not in stale_label_points],
             list(base.junctions),
             dict(base.text_positions),
         )
@@ -1471,7 +1501,7 @@ def _access_alternatives(
                 dict(base.angles),
                 list(base.wires[: len(base.protected_wires)]),
                 list(base.wire_nets[: len(base.protected_wires)]),
-                [item for item in base.labels if item[1] not in gateway_points],
+                [item for item in base.labels if item[1] not in stale_label_points],
                 list(base.junctions),
                 dict(base.text_positions),
             )

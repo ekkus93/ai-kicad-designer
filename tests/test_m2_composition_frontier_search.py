@@ -66,8 +66,8 @@ def _layout():
 def test_frontier_alternatives_place_interfaces_next_to_signal_owner() -> None:
     plan, baseline = _layout()
     alternatives = _interface_frontier_candidates(plan, baseline)
-    assert len(alternatives) == 2
-    for candidate, role in zip(alternatives, ("input", "output"), strict=True):
+    assert len(alternatives) == 3
+    for candidate, role in zip(alternatives[:2], ("input", "output"), strict=True):
         by_id = {item.fragment.block.id: item for item in candidate.fragments}
         interface = by_id[role].envelope
         owner = by_id["stage"].envelope
@@ -77,6 +77,19 @@ def test_frontier_alternatives_place_interfaces_next_to_signal_owner() -> None:
             assert interface[2] < owner[0]
         else:
             assert interface[0] > owner[2]
+    # Both directed roles also reach their frontiers in one measured candidate.
+    combined = alternatives[2]
+    assert combined.attempts[-2:] == (
+        "interface-frontier-output",
+        "interface-frontier-combined",
+    )
+    by_id = {item.fragment.block.id: item for item in combined.fragments}
+    owner = by_id["stage"].envelope
+    assert by_id["input"].envelope[2] < owner[0]
+    assert by_id["output"].envelope[0] > owner[2]
+    for role in ("input", "output"):
+        interface = by_id[role].envelope
+        assert abs((interface[1] + interface[3]) - (owner[1] + owner[3])) <= PITCH
 
 
 def test_frontier_search_is_independent_of_semantic_declaration_order() -> None:
@@ -146,11 +159,16 @@ def test_frontier_search_repairs_two_reversed_outputs_in_one_bounded_candidate()
     )
     plan = SemanticPlan(blocks, edges, {}, ())
     candidates = _interface_frontier_candidates(plan, baseline)
-    assert len(candidates) == 1
-    by_id = {item.fragment.block.id: item for item in candidates[0].fragments}
-    assert candidates[0].attempts[-1] == "interface-frontier-output"
-    for suffix in ("a", "b"):
-        assert by_id[f"output-{suffix}"].envelope[0] > by_id[f"stage-{suffix}"].envelope[2]
+    # One output-frontier candidate repairs both outputs; a staggered variant
+    # of that same candidate may follow it, never a second partial repair.
+    assert [candidate.attempts[-1] for candidate in candidates] in (
+        ["interface-frontier-output"],
+        ["interface-frontier-output", "interface-frontier-output-staggered"],
+    )
+    for candidate in candidates:
+        by_id = {item.fragment.block.id: item for item in candidate.fragments}
+        for suffix in ("a", "b"):
+            assert by_id[f"output-{suffix}"].envelope[0] > by_id[f"stage-{suffix}"].envelope[2]
     reversed_plan = SemanticPlan(tuple(reversed(blocks)), tuple(reversed(edges)), {}, ())
     assert _interface_frontier_candidates(reversed_plan, baseline) == candidates
 
@@ -175,11 +193,25 @@ def test_opposing_interfaces_exchange_blocked_frontier_slots() -> None:
     )
     plan = SemanticPlan(blocks, edges, {}, ())
     candidates = _interface_frontier_candidates(plan, baseline)
-    assert len(candidates) == 2
-    for candidate in candidates:
+    assert [candidate.attempts[-1] for candidate in candidates] == [
+        "interface-frontier-input",
+        "interface-frontier-output",
+        "interface-frontier-combined",
+    ]
+    # The input move exchanges slots with the blocking output. The output
+    # move reaches the outer frontier beyond the misplaced input, so only the
+    # combined candidate shows both interfaces on their own sides.
+    for candidate, repaired in zip(
+        candidates,
+        ({"incoming"}, {"outgoing"}, {"incoming", "outgoing"}),
+        strict=True,
+    ):
         by_id = {item.fragment.block.id: item for item in candidate.fragments}
-        assert by_id["incoming"].envelope[2] < by_id["stage"].envelope[0]
-        assert by_id["outgoing"].envelope[0] > by_id["stage"].envelope[2]
+        stage = by_id["stage"].envelope
+        if "incoming" in repaired:
+            assert by_id["incoming"].envelope[2] < stage[0]
+        if "outgoing" in repaired:
+            assert by_id["outgoing"].envelope[0] > stage[2]
     assert (
         _interface_frontier_candidates(
             SemanticPlan(tuple(reversed(blocks)), tuple(reversed(edges)), {}, ()), baseline

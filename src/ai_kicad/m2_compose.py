@@ -2,12 +2,14 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass, replace
 
 from .ir import InputError
 from .m2_conflicts import ConflictKind, TypedConflict
 from .m2_composition_candidate_rank import (
     route_backtracking_penalty,
+    route_branch_arm_spread,
     compactness_whitespace_penalties,
     composition_candidate_key,
     semantic_composition_penalty_breakdown,
@@ -43,6 +45,8 @@ from .m2_pack import (
 from .m2_route import (
     RouteBlockedConflict,
     _crosses,
+    _interface_enclosures,
+    _optional_reference_nets,
     _routable_edges,
     route_between_fragments,
 )
@@ -1195,6 +1199,52 @@ def _structural_signature(packing: Packing) -> tuple[tuple, ...]:
     )
 
 
+def _route_interface_enclosure_count(plan, draft: Draft, canonical_trees) -> int:
+    """Count route trees that frame a connector belonging to another net."""
+    interface_points = {}
+    for block in plan.blocks:
+        if block.kind != "interface":
+            continue
+        for port in block.ports:
+            interface_points.setdefault(port.net, set()).update(
+                draft.point(*terminal) for terminal in port.terminals
+            )
+    return sum(
+        _interface_enclosures(
+            tree,
+            tuple(
+                point
+                for net, points in interface_points.items()
+                if net != tree.net
+                for point in sorted(points)
+            ),
+        )
+        for tree in canonical_trees
+    )
+
+
+def _missing_interface_output_routes(plan, route_trees) -> int:
+    """Count inferred signal outputs that lack a physical route to a connector."""
+    blocks = {block.id: block for block in plan.blocks}
+    required = {
+        edge.net
+        for edge in _routable_edges(plan)
+        if blocks[edge.source].kind != "interface"
+        and blocks[edge.target].kind == "interface"
+        and any(
+            port.net == edge.net and port.role == "signal_out" for port in blocks[edge.source].ports
+        )
+    }
+    routed = {tree.net for tree in route_trees}
+    return len(required - routed)
+
+
+def _missing_optional_reference_routes(plan, route_trees) -> int:
+    """Count external reference nets left to labels although a tree was eligible."""
+    routed = {tree.net for tree in route_trees}
+    return len(_optional_reference_nets(plan) - routed)
+
+
 def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
     """Compose using at most eight seeds and four attempts per seed."""
     plan = semantic_plan(design, resolved)
@@ -1422,11 +1472,25 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
             )
             semantic_penalties = semantic_composition_penalties(plan, working_packing)
             compactness_penalties = compactness_whitespace_penalties(working_packing)
-            selection_key = composition_candidate_key(
-                plan,
-                working_packing,
-                routing_compactness,
-                routing_backtracking=route_backtracking_penalty(canonical_trees),
+            interface_enclosures = _route_interface_enclosure_count(
+                plan, candidate[0], canonical_trees
+            )
+            missing_output_routes = _missing_interface_output_routes(plan, candidate[1])
+            missing_reference_routes = _missing_optional_reference_routes(plan, candidate[1])
+            candidate_metrics["interface_enclosure_count"] = interface_enclosures
+            candidate_metrics["missing_interface_output_route_count"] = missing_output_routes
+            candidate_metrics["missing_reference_route_count"] = missing_reference_routes
+            selection_key = (
+                missing_output_routes,
+                missing_reference_routes,
+                interface_enclosures,
+                *composition_candidate_key(
+                    plan,
+                    working_packing,
+                    routing_compactness,
+                    routing_backtracking=route_backtracking_penalty(canonical_trees),
+                    branch_arm_spread=route_branch_arm_spread(canonical_trees),
+                ),
             )
             structure = _structural_signature(working_packing)
             proved_candidates.append(
@@ -1561,13 +1625,73 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
     metrics["layout_repair_count"] = sum(
         bool(item.get("repair_state_changed")) for item in attempts
     )
+    physically_connected_nets = {
+        proof["net"]
+        for proof in metrics["pre_emission_net_witnesses"]
+        if proof["component_count"] == 1
+        and all(component >= 0 for _, component in proof["terminal_components"])
+    }
+    # A redundant label on a continuous conductor is dropped. A local escape
+    # stub that only existed to carry such a label would then end in free
+    # space as an unconnected wire end, so dead-end spurs are pruned back to
+    # the first pin, junction or retained label. Terminal connectivity was
+    # proved on the full draft and no spur carries a terminal.
+    scene_labels = [
+        (net, point) for net, point in draft.labels if net not in physically_connected_nets
+    ]
+    pin_points = {
+        draft.point(component["id"], pin.number)
+        for component in design["components"]
+        for unit, pins in resolved[component["asset"]].units.items()
+        if (component["id"], unit) in draft.positions
+        for pin in pins
+    }
+    anchored_points = pin_points | {point for _net, point in scene_labels}
+    scene_conductors = list(zip(draft.wires, draft.wire_nets, strict=True))
+    while True:
+        endpoint_degree: Counter[tuple[int, int]] = Counter()
+        for (first, second), _net in scene_conductors:
+            endpoint_degree[first] += 1
+            endpoint_degree[second] += 1
+        dangling = {
+            point
+            for point, degree in endpoint_degree.items()
+            if degree == 1 and point not in anchored_points
+        }
+        if not dangling:
+            break
+        scene_conductors = [
+            ((first, second), net)
+            for (first, second), net in scene_conductors
+            if first not in dangling and second not in dangling
+        ]
+    scene_wires = [wire for wire, _net in scene_conductors]
+    scene_wire_nets = [net for _wire, net in scene_conductors]
+    # A junction marker that only existed for a pruned spur is dropped too.
+    scene_junctions = [
+        point for point in draft.junctions if endpoint_degree[point] >= 3 or point in pin_points
+    ]
+    metrics["label_count"] = len(scene_labels)
+    metrics["pruned_spur_count"] = len(draft.wires) - len(scene_wires)
+    if metrics["pruned_spur_count"]:
+        # Preflight counts describe the emitted conductors, not pruned spurs.
+        metrics["wire_count"] = len(scene_wires)
+        metrics["bend_count"] = sum(
+            1
+            for index, (_start, end) in enumerate(scene_wires)
+            for start, far in scene_wires[index + 1 :]
+            if end == start and ((scene_wires[index][0][0] == end[0]) != (start[0] == far[0]))
+        )
+        metrics["wire_length_mm"] = (
+            sum(abs(a[0] - b[0]) + abs(a[1] - b[1]) for a, b in scene_wires) / 1_000_000
+        )
     scene = certify_scene_geometry(
         Scene(
             draft.positions,
-            draft.wires,
-            draft.wire_nets,
-            draft.labels,
-            draft.junctions,
+            scene_wires,
+            scene_wire_nets,
+            scene_labels,
+            scene_junctions,
             metrics,
             draft.angles,
             draft.text_positions,

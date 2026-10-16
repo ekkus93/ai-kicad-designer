@@ -67,11 +67,15 @@ def test_directed_frontier_uses_adjacent_lane_when_aligned_slots_blocked(
     assert relocated["unrelated"].delta == _placed(unrelated, blocked_x, 50).delta
     interface_rect = relocated["interface"].envelope
     owner_rect = relocated["owner"].envelope
-    # An adjacent lane must be clear of both the unrelated blocker and owner.
-    assert interface_rect[1] in {45 * PITCH, 55 * PITCH}
+    unrelated_rect = relocated["unrelated"].envelope
     if role == "signal_out":
-        assert interface_rect[0] > owner_rect[2]
+        # An output belongs on the outer frontier beyond every unrelated
+        # block, where its aligned row is free; no adjacent lane is needed.
+        assert interface_rect[1] == 50 * PITCH
+        assert interface_rect[0] > max(owner_rect[2], unrelated_rect[2])
     else:
+        # An adjacent lane must be clear of both the unrelated blocker and owner.
+        assert interface_rect[1] in {45 * PITCH, 55 * PITCH}
         assert interface_rect[2] < owner_rect[0]
     shuffled = SemanticPlan(tuple(reversed(plan.blocks)), tuple(reversed(plan.edges)), {}, ())
     assert _interface_frontier_candidates(shuffled, baseline) == options
