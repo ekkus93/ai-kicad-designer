@@ -658,7 +658,7 @@ At the start of every run:
    - this specification;
    - the canonical human-readable composition TODO;
    - `fixtures/m2h2/STATUS.md`;
-3. inspect current master state and relevant CI through Ralph Bridge;
+3. inspect the local `master` checkout and relevant CI with authenticated `gh`/`git` on the project's self-hosted runner;
 4. preserve existing M2h2 PASS authority;
 5. select the highest-value actionable unchecked composition item;
 6. prefer coherent vertical slices over one-checkbox commits;
@@ -673,6 +673,6 @@ After each coherent slice:
 - update TODO checkboxes only from current-source evidence;
 - add exact evidence references;
 - update `fixtures/m2h2/STATUS.md` only when material remediation status changes;
-- commit coherent code/tests/evidence/TODO reconciliation directly to `master` through Ralph Bridge using exact-head compare-and-swap semantics.
+- commit coherent code/tests/evidence/TODO reconciliation directly to `master` from the self-hosted runner using exact-head compare-and-swap semantics: fetch `origin/master`, verify it matches the inspected head, commit, then push the expected parent.
 
 Do not finish merely to report progress. Finish only when every TODO item is checked with final-source evidence and human-readable composition is PASS, or a genuine blocker as defined above requires the user.

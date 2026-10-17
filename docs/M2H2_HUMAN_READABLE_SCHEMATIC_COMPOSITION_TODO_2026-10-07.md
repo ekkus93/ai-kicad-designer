@@ -102,7 +102,7 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Confirm `.local/` remains ignored.
 - [x] Confirm `research/legacy_openclaw/` is not inspected or used.
 - [x] Confirm locked KiCad 10.0.6 remains the governed real-tool version.
-- [x] Confirm all GitHub/repository/CI reads and writes use Ralph Bridge.
+- [x] Confirm GitHub, repository, and CI operations run through authenticated `gh`/`git` on the project's self-hosted runner.
 - [x] Confirm direct-`master` exact-head compare-and-swap workflow.
 
 ## 1. Baseline freeze and composition characterization
