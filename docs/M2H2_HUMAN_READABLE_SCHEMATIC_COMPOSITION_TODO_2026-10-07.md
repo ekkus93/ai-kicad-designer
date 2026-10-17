@@ -21,6 +21,8 @@
 
 **Status:** IN PROGRESS / INCOMPLETE
 
+**2026-10-17 exact-source structural qualification PASS; final acceptance remains OPEN:** Structural Qualification [39014637072](https://github.com/ekkus93/ai-kicad-designer/actions/runs/39014637072) passed all nine measured I3 structural classes ×5 on exact production source `ee4c37a711b1107085acaed5e58bf3e7ae78bd50`; all nine accepted, reproducible reports are persisted at `$HOME/m2h2-evidence/ee4c37a711b1107085acaed5e58bf3e7ae78bd50/structural/`. Engineering inspection of all nine source-matched native SVGs and their SHA-256 hashes is recorded in `docs/reviews/M2H2_STRUCTURAL_NATIVE_RENDER_INSPECTION_ee4c37a.md`. The inspection flags material upper-left page-use concerns in `a0_interleaved`, `a0_multiple`, and `a1_interleaved`; these renders are not aesthetic acceptance. Exact-source I1–I6 qualification [39014637051](https://github.com/ekkus93/ai-kicad-designer/actions/runs/39014637051) remains in progress (I1: 5/22 cases accepted at last check); exact-source 56-base×5 qualification [39014637046](https://github.com/ekkus93/ai-kicad-designer/actions/runs/39014637046) remains queued. The independent 90-case comparison, 137-case×5 native-render inventory, full engineering inspection, and sections 15–21 final closure remain OPEN. Do not weaken thresholds or infer visual acceptance from structural/electrical pass.
+
 **2026-10-14 exact-head three-suite qualification PASS; independent comparison and render inventory REQUESTED (not yet accepted):** Current unchanged behavior/qualification source `e0da993190fc51a1ad1249c7e9a22855319c9172` passed locked KiCad 10.0.6 five-run base 56/V3-8-negative ([38602260592](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38602260592)), I1–I6 ([38602260383](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38602260383)), and nine structural classes ([38602260751](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38602260751)), plus exact-head Fast Validation ([38602260439](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38602260439)), locked toolchain identity ([38602260921](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38602260921)), and base/structural native-render transfers ([38605333444](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38605333444), [38602803801](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38602803801)). This documentation-only descendant requests independent full 90-case preserved-baseline artifact comparison and 137-case ×5 normalized native render inventory against exact persisted evidence root `$HOME/m2h2-evidence/e0da993190fc51a1ad1249c7e9a22855319c9172/`. Those audit results are PENDING; prior independent comparison still FAILS five frozen criteria, and case-by-case engineering inspection and sections 15–21 remain OPEN. No frozen tolerances, baseline evidence, observer/oracle or production behavior is modified.
 
 **2026-10-13 generic route geometry balance — EXACT-SOURCE FAST QUALIFICATION PASS; full five-run suites LAUNCHED:** Production ranking source `4061a9e4384fa28a42313c792adeb337265dfc00` and Ruff-formatted test descendant `4d64b42ed26b29638df39ca4ab2faec73299b75c` now compare routed union length plus a generic eight-grid-pitch-per-bend cost after higher-priority semantic obligations and backtracking, rather than permitting one saved bend to dominate arbitrary conductor detours. New regression tests verify both a gross detour rejection and retention of low-turn/backtracking priorities. [Exact-head Fast Validation 38460169304](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38460169304) **PASSED all three jobs**, [locked KiCad 10.0.6 identity 38460169320](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38460169320) **PASSED**, and [development probe 38460169403](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38460169403) **PASSED**. V4-7 now selects equally flow/side-correct seed 2/round 0, saving **26.67 mm** routed union (697.23→670.56 mm) at one additional bend (19→20). V6-3 still has only one proved candidate and a remaining wrong-side interface violation; `i4__b2_mixed` still selects seed 1/round 0. This is a measurable generic candidate-selection improvement, **not** evidence of comparative or visual acceptance. This documentation-only commit requests new full base 56×5/V3-8, I1–I6×5, and structural×5 locked-KiCad qualification for unchanged exact production behavior. Re-audit the frozen 90-case historical comparison and native render inventory only after all three qualify. Sections 15–21 remain unchecked.
@@ -464,7 +466,8 @@ Exact-source validation checkpoint (not final qualification or a source freeze):
 ## 18. Native-render engineering inspection
 
 - [ ] Generate final native KiCad renders from stabilized source.
-- [ ] Archive hashes for every inspected render.
+- [x] Archive hashes for every inspected render.
+  - The nine exact-source structural-class render hashes are recorded in `docs/reviews/M2H2_STRUCTURAL_NATIVE_RENDER_INSPECTION_ee4c37a.md`; final 137-case render hashes remain outstanding.
 - [ ] Inspect at least one representative render for every distinct governed case.
 - [ ] Explicitly inspect all mixed/high-density cases.
 - [ ] Explicitly inspect all repeated-channel cases.
@@ -473,7 +476,8 @@ Exact-source validation checkpoint (not final qualification or a source freeze):
 
 - [ ] Explicitly inspect all shared-rail/reference cases.
 - [ ] Explicitly inspect all long-field cases.
-- [ ] Explicitly inspect all structural band-class cases.
+- [x] Explicitly inspect all structural band-class cases.
+  - All nine exact-source structural-class SVGs were inspected; findings and unresolved page-use concerns are recorded in `docs/reviews/M2H2_STRUCTURAL_NATIVE_RENDER_INSPECTION_ee4c37a.md`.
 - [ ] For every applicable inspected case, record:
   - [ ] primary signal entry is obvious;
   - [ ] primary signal progression is obvious;
@@ -487,7 +491,8 @@ Exact-source validation checkpoint (not final qualification or a source freeze):
   - [ ] whitespace is intentional;
   - [ ] fields/labels are aligned/readable;
   - [ ] no obvious unmodelled computer-generated layout defect remains.
-- [ ] Record inspection as engineering/agent inspection, not user approval.
+- [x] Record inspection as engineering/agent inspection, not user approval.
+  - The cited record explicitly identifies this as Codex engineering inspection and documents its limited scope.
 - [ ] Any hard visual defect falsifies the candidate and reopens affected qualification.
 
 
