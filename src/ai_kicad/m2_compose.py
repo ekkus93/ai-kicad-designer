@@ -1719,6 +1719,9 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
             "grid_pitch_nm": PITCH,
         },
     )
+    emitted_by_net: dict[str, list[list[list[int]]]] = {}
+    for (first, second), net in zip(scene.wires, scene.wire_nets, strict=True):
+        emitted_by_net.setdefault(net, []).append([list(first), list(second)])
     evidence = {
         "schema_version": "m2g2.composition.1",
         "best_rejected_candidate": min(
@@ -1880,6 +1883,12 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
                 "provenance": [list(segment.provenance) for segment in tree.segments],
             }
             for tree in canonical_trees
+        ],
+        # The emitter may prune dead-end label stubs after canonical routing
+        # is proved. Record the serialized inventory separately so independent
+        # artifact audits compare schematic bytes with exactly what was emitted.
+        "emitted_conductors": [
+            {"net": net, "segments": segments} for net, segments in sorted(emitted_by_net.items())
         ],
         "reservations": [
             {

@@ -211,13 +211,13 @@ def conductor_accounting(canonical, proposed_global, reported_length, pruned_cou
     }
 
 
-def verify_emitted_conductors(canonical_trees, observed_wires):
+def verify_emitted_conductors(emitted_conductors, observed_wires):
     def normalized(segments):
         return sorted(tuple(sorted(tuple(point) for point in segment)) for segment in segments)
 
-    canonical = [segment for tree in canonical_trees for segment in tree["segments"]]
-    if normalized(canonical) != normalized(observed_wires):
-        raise ValueError("canonical conductor inventory differs from emitted schematic bytes")
+    emitted = [segment for conductor in emitted_conductors for segment in conductor["segments"]]
+    if normalized(emitted) != normalized(observed_wires):
+        raise ValueError("recorded emitted conductor inventory differs from schematic bytes")
 
 
 def _fresh_case_directory(
@@ -527,7 +527,7 @@ def case_detail(group, case_id, signature, directory, design_path):
     layout = signature["layout"]
     schematic = next((directory / "project").glob("*.kicad_sch"))
     observed = observe(schematic, directory / "reports/netlist.xml")
-    verify_emitted_conductors(composition["canonical_trees"], observed["wires"])
+    verify_emitted_conductors(composition["emitted_conductors"], observed["wires"])
     design = json.loads(design_path.read_text())
     refs = {part["id"]: part["refdes"] for part in design["components"]}
     obligations = composition["obligation_certificate"]["semantic_obligations"]
