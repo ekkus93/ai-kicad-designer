@@ -1,5 +1,7 @@
 # M2h2 Human-Readable Schematic Composition TODO — 2026-10-07
 
+**2026-10-17 current-refactor verification (not qualification or acceptance):** Exact checkout `54c90e88d838bc4e86f83bc70b5a8fffaf72e62d` on `review/m2h2-routing-visual-review-2026-10-15` passes full local pytest (**875 passed in 15m14s**) under Python 3.12.12 with the local locked KiCad 10.0.6 executable available; Ruff lint passes, all 258 Python files are formatted, and `git diff --check` passes. Current-head source stabilization audit passes (91 M2 modules, 90 historical SVGs/inventory hash verified, and local documentation links valid); historical preservation matches across 7,221 protected tracked files (aggregate SHA-256 `f1dcfc89822b37c6c376f844adf6a43295ffd716ad64921f44d687dfb880200e`); literal and structural anti-overfitting audits pass with zero findings, and CP-SAT is absent. These checks cover the module/test split on this checkout, but do not satisfy source-matched base ×5, I1–I6 ×5, structural ×5, the 90-case frozen comparison, normalized render inventory, or engineering inspection. No section 15–21 acceptance item is closed by this result.
+
 **2026-10-16 straight connector leads, reference-side fanout columns, combined frontier — LOCAL FULL PYTEST 874/875 (not qualification, not acceptance):** Behavior/regression source `0ac53915` on branch `review/m2h2-routing-visual-review-2026-10-15` (unmerged) adds three generic rules: single-port connector leads stay straight with long labels on droppable orthogonal label stubs (connector envelopes byte-identical to the prior revision); composition prunes a dropped label's stub and every other dead-end spur plus its junction marker, which repairs the ERC "unconnected wire endpoint" regression that label omission had introduced on 15 `test_m2b`/`test_m2c1` real builds; a fanout column stacks a reference-free sibling opposite the column's reference escapes with the signal row aligned to the reference-bearing siblings; and an `interface-frontier-combined` seed moves inputs and outputs together. I4 B2 mixed now routes both outputs with zero interface enclosures, zero crossings, RETURN 165.10 mm (was 203.20 mm), total 443.23 mm; the four review artifacts under `docs/reviews/m2h2-routing-review-2026-10-15/` were rebuilt with locked KiCad 10.0.6 at zero ERC violations each. Local full pytest: 874 passed, 1 failed — `test_measured_row_compaction_and_stagger_are_legal_structural_classes` (VMINUS `ROUTE_LENGTH_LOWER_BOUND`), which also failed on the unmodified branch head `c1bc5256` and passes on `master`; it is an OPEN branch regression. Three frontier test expectations were updated for the branch's outer-edge output rule (one output-frontier candidate plus an optional staggered variant; the combined candidate is the one that shows both roles on their own sides). No locked five-run suites, independent 90-case comparison, native render inventory, or human visual review have been run for this source; sections 15–21, frozen tolerances, baselines and observers are unchanged.
 
 **2026-10-14 generic vertical-interior distribution trunk — EXACT-SOURCE FAST PASS; three five-run qualification suites and probe REQUESTED (not acceptance):** Behavior/regression source `2c029336e135856419cde3c2ea0055e0c7701aff` searches one additional seed-connected legal vertical interior trunk, including a deterministic nearby clear lane when the vertical median is obstructed, within the existing eight-plan cap. New controls cover median availability, obstacle-checked fallback and cap retention. The old exact strategy-set contract was reconciled at that source without weakening any routing or observer gate. Exact-source [Fast Validation 38679796266](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38679796266) **PASSED all three jobs** (complete locked-runner pytest/current-source regressions, hosted contracts, Ruff/static); [pinned KiCad 10.0.6 diagnostic 38679796161](https://github.com/ekkus93/ai-kicad-designer/actions/runs/38679796161) **PASSED**. This documentation-only descendant requests fresh 56-base×5/V3-8-negative, I1–I6×5, nine structural classes×5, and the generic composition probe for the unchanged production behavior. If all qualify, run the independent full 90-case historical comparison and 137-case×5 normalized native render inventory against one exact preserved evidence root. The latest independent comparison still **FAILED five frozen criteria**, and engineering visual inspection plus sections 15–21 remain OPEN. Do not infer V6-3 hard-defect closure or alter frozen baselines, observers, tolerances, or qualification toolchain from a passing fast gate.
@@ -100,7 +102,7 @@ A checkbox may be checked only from current-source evidence. “Implemented,” 
 - [x] Confirm `.local/` remains ignored.
 - [x] Confirm `research/legacy_openclaw/` is not inspected or used.
 - [x] Confirm locked KiCad 10.0.6 remains the governed real-tool version.
-- [x] Confirm all GitHub/repository/CI reads and writes use Ralph Bridge.
+- [x] Confirm GitHub and repository operations use the authenticated local GitHub CLI/API and the project's self-hosted runner; the ChatGPT-only Ralph Bridge is not part of this computer-side workflow.
 - [x] Confirm direct-`master` exact-head compare-and-swap workflow.
 
 ## 1. Baseline freeze and composition characterization
@@ -418,11 +420,11 @@ Exact-source validation checkpoint (not final qualification or a source freeze):
 - [x] Run scoped Ruff format check.
 - [x] Run `git diff --check`.
 - [x] Run scoped whitespace checks.
-- [ ] Run applicable link checks.
-- [ ] Run historical preservation audit.
-- [ ] Run literal anti-overfitting audit.
+- [x] Run applicable link checks.
+- [x] Run historical preservation audit.
+- [x] Run literal anti-overfitting audit.
 - [x] Run structural anti-overfitting audit.
-- [ ] Confirm CP-SAT remains absent.
+- [x] Confirm CP-SAT remains absent.
 - [x] Run current-source V6-3 real-tool regression.
 - [x] Run current-source DP2 real-tool regression.
 - [ ] Record final behavior-affecting source hashes.
