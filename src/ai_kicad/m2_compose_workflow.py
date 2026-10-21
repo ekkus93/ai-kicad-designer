@@ -28,6 +28,7 @@ from .m2_composition_candidate_rank import (
     semantic_composition_penalties,
     semantic_composition_penalty_breakdown,
 )
+from .m2_composition_qualification_observation import observe_composition_packing_envelopes
 from .m2_conflicts import ConflictKind, TypedConflict
 from .m2_fragments import fragment_variants
 from .m2_pack import (
@@ -39,8 +40,18 @@ from .m2_pack import (
 from .m2_route import (
     RouteBlockedConflict,
 )
+from .m2_routing_composition_observer import measure_routing_readability
 from .m2_semantics import PlacementConflict, semantic_plan
 from .m2a import PITCH, Scene, certify_scene_geometry, certify_scene_inputs
+
+
+def _candidate_observer_priority(observed_composition) -> tuple[int, int, int]:
+    """Keep observer failures ahead of routing-quality tie-breaks."""
+    return (
+        observed_composition.primary_stage_order_inversions,
+        observed_composition.input_side_violations,
+        observed_composition.output_side_violations,
+    )
 
 
 def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
@@ -48,6 +59,13 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
     from . import m2_compose as facade
 
     plan = semantic_plan(design, resolved)
+    block_kind = {block.id: block.kind for block in plan.blocks}
+    external_output_nets = {
+        obligation.net
+        for obligation in plan.precedence
+        if block_kind.get(obligation.source_fragment) != "interface"
+        and block_kind.get(obligation.target_fragment) == "interface"
+    }
     variants = fragment_variants(design, resolved, plan)
     seeds = pack_fragment_candidates(plan, variants)
     attempts = []
@@ -207,7 +225,26 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
                     continue
                 repair_changed = True
             working_packing = _worksheet_clearance_packing(working_packing)
-            route_retry = 1 if round_index == 1 else 2 if round_index == 3 else 0
+            from .m2_composition_qualification_observation import observe_composition_packing
+
+            if observe_composition_packing(plan, working_packing).metrics.output_side_violations:
+                from .m2_pack_search import _observed_output_corridor_candidate
+
+                corridor = _observed_output_corridor_candidate(plan, variants, working_packing)
+                if corridor is not None:
+                    working_packing = corridor
+            route_retry = (
+                1
+                if round_index == 1
+                else (
+                    1
+                    if round_index == 3
+                    and getattr(last_conflict, "net", None) in external_output_nets
+                    else 2
+                    if round_index == 3
+                    else 0
+                )
+            )
             digest = (
                 tuple((item.fragment.id, item.delta) for item in working_packing.fragments),
                 route_retry,
@@ -270,7 +307,19 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
                 seed_index,
                 round_index,
             )
+            route_segments = tuple(
+                (segment.start, segment.end)
+                for tree in canonical_trees
+                for segment in tree.segments
+            )
+            routing_readability = measure_routing_readability(
+                route_segments,
+                semantic_local_length=sum(tree.length for tree in canonical_trees),
+            )
             semantic_penalties = semantic_composition_penalties(plan, working_packing)
+            observed_composition = observe_composition_packing_envelopes(
+                plan, working_packing
+            ).metrics
             compactness_penalties = compactness_whitespace_penalties(working_packing)
             interface_enclosures = _route_interface_enclosure_count(
                 plan, candidate[0], canonical_trees
@@ -281,6 +330,7 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
             candidate_metrics["missing_interface_output_route_count"] = missing_output_routes
             candidate_metrics["missing_reference_route_count"] = missing_reference_routes
             selection_key = (
+                *_candidate_observer_priority(observed_composition),
                 missing_output_routes,
                 missing_reference_routes,
                 interface_enclosures,
@@ -290,6 +340,10 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
                     routing_compactness,
                     routing_backtracking=route_backtracking_penalty(canonical_trees),
                     branch_arm_spread=route_branch_arm_spread(canonical_trees),
+                    routing_u_shaped_detours=routing_readability.u_shaped_detours,
+                    routing_branch_inconsistency=(
+                        routing_readability.sibling_branch_geometry_inconsistency
+                    ),
                 ),
             )
             structure = _structural_signature(working_packing)

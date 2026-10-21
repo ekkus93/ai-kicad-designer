@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
-
 import itertools
+from dataclasses import dataclass
 
 from .ir import InputError
 from .m2a import PITCH, Asset, Pin, Scene

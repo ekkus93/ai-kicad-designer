@@ -44,7 +44,7 @@ def test_passive_output_interface_prefers_final_producer_right_frontier() -> Non
         plan, _packing((producer, 2 * PITCH), (terminal, 0))
     )
     assert correct.stage_order_violations == correct.interface_side_violations == 0
-    assert reversed_output.stage_order_violations == 1
+    assert reversed_output.stage_order_violations == 0
     assert reversed_output.interface_side_violations == 1
 
 
@@ -59,8 +59,32 @@ def test_passive_input_interface_prefers_first_consumer_left_frontier() -> None:
         plan, _packing((terminal, 4 * PITCH), (consumer, 2 * PITCH))
     )
     assert correct.stage_order_violations == correct.interface_side_violations == 0
-    assert reversed_input.stage_order_violations == 1
+    assert reversed_input.stage_order_violations == 0
     assert reversed_input.interface_side_violations == 1
+
+
+def test_passive_interface_with_input_and_output_nets_is_not_a_primary_stage() -> None:
+    terminal = SimpleNamespace(
+        id="terminal",
+        kind="interface",
+        ports=(
+            SimpleNamespace(net="IN", role="passive"),
+            SimpleNamespace(net="OUT", role="passive"),
+        ),
+    )
+    consumer = _block("consumer", "active", "IN", "signal_in")
+    producer = _block("producer", "active", "OUT", "signal_out")
+    plan = _plan(terminal, consumer, producer)
+    score = semantic_composition_penalty_breakdown(
+        plan,
+        _packing(
+            (terminal, 4 * PITCH),
+            (consumer, 0),
+            (producer, 8 * PITCH),
+        ),
+    )
+    assert score.stage_order_violations == 0
+    assert score.interface_side_violations == 0
 
 
 def test_ambiguous_or_power_related_passive_interface_is_not_direction_guessed() -> None:

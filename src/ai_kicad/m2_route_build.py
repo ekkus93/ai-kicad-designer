@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from .m2_conflicts import ConflictKind, TypedConflict
-from .m2_fragments import Point
+from .m2_fragments_types import Point
 from .m2_geometry import (
     ConductorSegment,
     Gateway,
@@ -11,8 +13,8 @@ from .m2_geometry import (
     canonical_conductor_tree,
     point_on_segment,
 )
-from .m2_pack import PlacedFragment
-from .m2_route import (
+from .m2_pack_core import PlacedFragment
+from .m2_route_constants import (
     MAX_CANONICAL_LENGTH,
     MAX_LOCAL_VISIBLE_SIGNAL_ROUTE_LENGTH,
     MAX_TAPS_PER_ATTACHMENT,
@@ -36,8 +38,11 @@ from .m2_route_trees import (
     _optional_reference_nets,
     _route_class,
 )
-from .m2_semantics import SemanticEdge, SemanticPlan
-from .m2a import PITCH
+from .m2_semantics_core import SemanticEdge
+from .m2a_constants import PITCH
+
+if TYPE_CHECKING:
+    from .m2_semantics_core import SemanticPlan
 
 
 def route_between_fragments(
@@ -658,7 +663,9 @@ def route_between_fragments(
                 raise RouteLengthBoundConflict(net, complete.length)
             continue
         if required_output and complete.length > MAX_LOCAL_VISIBLE_SIGNAL_ROUTE_LENGTH:
-            raise RouteLengthBoundConflict(net, complete.length)
+            raise RouteLengthBoundConflict(
+                net, complete.length, limit=MAX_LOCAL_VISIBLE_SIGNAL_ROUTE_LENGTH
+            )
         tree = canonical_conductor_tree(conductors)
         planned_corridors = tuple(
             Reservation(

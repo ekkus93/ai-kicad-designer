@@ -46,8 +46,15 @@ def test_distributive_net_does_not_create_primary_flow() -> None:
         )
 
 
-def test_feedback_edge_is_not_forward_flow() -> None:
+def test_feedback_edge_does_not_erase_explicit_signal_output_direction() -> None:
     a = _block("a", "interface", "passive")
     b = _block("b", "active", "signal_out")
+    edge = SemanticEdge("feedback", "b", "a", "n", ("authored",))
+    assert inferred_passive_interface_signal_relations(_plan((a, b), (edge,))) == (("b", "a", "n"),)
+
+
+def test_feedback_relation_alone_does_not_infer_interface_direction() -> None:
+    a = _block("a", "interface", "passive")
+    b = _block("b", "active", "passive")
     edge = SemanticEdge("feedback", "b", "a", "n", ("authored",))
     assert inferred_passive_interface_signal_relations(_plan((a, b), (edge,))) == ()

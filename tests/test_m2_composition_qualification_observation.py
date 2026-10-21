@@ -9,6 +9,7 @@ from ai_kicad.m2_composition_qualification_observation import (
     build_observation_report,
     observe_composition_evidence,
     observe_composition_packing,
+    observe_composition_packing_envelopes,
     observe_native_pin_composition,
     witnessed_invalid_build_rejection,
 )
@@ -251,7 +252,7 @@ def test_runtime_observer_reads_emitted_block_envelopes_independently() -> None:
 def test_runtime_observer_reads_measured_packing_without_candidate_scores() -> None:
     def placed(block_id: str, rect: tuple[int, int, int, int]):
         return SimpleNamespace(
-            fragment=SimpleNamespace(block=SimpleNamespace(id=block_id)),
+            fragment=SimpleNamespace(block=SimpleNamespace(id=block_id, occurrences=())),
             content_envelope=rect,
             envelope=rect,
         )
@@ -265,6 +266,42 @@ def test_runtime_observer_reads_measured_packing_without_candidate_scores() -> N
     report = observe_composition_packing(_composition_plan(), packing)
     assert report.passed
     assert report.metrics.visible_block_count == 2
+
+
+def test_candidate_selection_observes_envelopes_like_emitted_evidence() -> None:
+    plan = SemanticPlan(
+        blocks=(
+            BlockPlan("stage", "filter", (), frozenset(), ()),
+            BlockPlan("output", "interface", (), frozenset(), ()),
+        ),
+        edges=(SemanticEdge("signal", "stage", "output", "final", ()),),
+        owners={},
+        signal_order=(),
+    )
+
+    def placed(block_id: str, rect: tuple[int, int, int, int], text_x: int):
+        occurrence = (block_id, 1)
+        return SimpleNamespace(
+            fragment=SimpleNamespace(
+                block=SimpleNamespace(id=block_id, occurrences=(occurrence,)),
+                text_positions={occurrence: (text_x, 5)},
+            ),
+            content_envelope=rect,
+            envelope=rect,
+            delta=(0, 0),
+        )
+
+    packing = SimpleNamespace(
+        fragments=(
+            placed("stage", (50, 0, 60, 10), 55),
+            placed("output", (0, 0, 10, 10), 100),
+        )
+    )
+
+    assert observe_composition_packing(plan, packing).passed
+    emitted_geometry = observe_composition_packing_envelopes(plan, packing)
+    assert not emitted_geometry.passed
+    assert emitted_geometry.metrics.output_side_violations == 1
 
 
 def _native_pin_plan() -> SemanticPlan:

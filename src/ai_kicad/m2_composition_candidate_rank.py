@@ -7,14 +7,6 @@ electrical and M2h2 invariants are established before a candidate is ranked.
 
 from __future__ import annotations
 
-from .m2_composition_rank_types import (
-    Rect,
-    Point,
-    SemanticPenaltyVector,
-    CompactnessPenaltyVector,
-    CandidateKey,
-)
-
 from .m2_composition_rank_metrics import (
     _block_semantic_signature,
     _branch_readability_penalty,
@@ -50,6 +42,13 @@ from .m2_composition_rank_scoring import (
     route_branch_arm_spread,
     semantic_composition_penalties,
     semantic_composition_penalty_breakdown,
+)
+from .m2_composition_rank_types import (
+    CandidateKey,
+    CompactnessPenaltyVector,
+    Point,
+    Rect,
+    SemanticPenaltyVector,
 )
 
 __all__ = [

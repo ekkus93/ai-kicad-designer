@@ -3,20 +3,23 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-
+from typing import TYPE_CHECKING
 
 from .ir import InputError
-from .m2_fragments import FragmentVariant, Point, PortAnchor, Rect
+from .m2_fragments_base import FragmentVariant, PortAnchor
+from .m2_fragments_types import Point, Rect
 from .m2_geometry import Gateway, Reservation
-from .m2_pack import (
+from .m2_pack_constants import (
     BOTTOM,
     CHANNEL_GAP,
     LEFT,
     RIGHT,
     TOP,
 )
-from .m2_semantics import SemanticPlan
-from .m2a import PITCH
+from .m2a_constants import PITCH
+
+if TYPE_CHECKING:
+    from .m2_semantics_core import SemanticPlan
 
 
 @dataclass(frozen=True)

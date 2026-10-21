@@ -1,6 +1,11 @@
 """Small generic frontier-search contracts for the bounded M2 composition placer."""
 
-from ai_kicad.m2_fragments import FragmentVariant
+import json
+from types import SimpleNamespace
+
+from ai_kicad.m2_composition_candidate_rank import semantic_composition_penalties
+from ai_kicad.m2_composition_qualification_observation import observe_composition_packing
+from ai_kicad.m2_fragments import FragmentVariant, fragment_variants
 from ai_kicad.m2_pack import (
     LEFT,
     Packing,
@@ -8,9 +13,19 @@ from ai_kicad.m2_pack import (
     _place,
     _repeated_peer_alignment_candidates,
     _support_affinity_candidates,
+    pack_fragment_candidates,
 )
-from ai_kicad.m2_semantics import BlockPlan, SemanticEdge, SemanticPlan, SemanticPort
-from ai_kicad.m2a import PITCH
+from ai_kicad.m2_pack_frontier import _observed_x
+from ai_kicad.m2_route import route_between_fragments
+from ai_kicad.m2_semantics import (
+    BlockPlan,
+    SemanticEdge,
+    SemanticPlan,
+    SemanticPort,
+    semantic_plan,
+)
+from ai_kicad.m2a import PITCH, ROOT
+from ai_kicad.m2b import assets, validate
 
 
 def _block(block_id: str, kind: str, role: str | None = None) -> BlockPlan:
@@ -37,6 +52,20 @@ def _fragment(block: BlockPlan) -> FragmentVariant:
         (0, 0, 8 * PITCH, 4 * PITCH),
         frozenset(),
     )
+
+
+def test_frontier_observed_x_centers_all_occurrences_deterministically():
+    first, second = ("left_part", 1), ("right_part", 1)
+    item = SimpleNamespace(
+        fragment=SimpleNamespace(
+            block=SimpleNamespace(occurrences=frozenset((first, second))),
+            text_positions={first: (100, 200), second: (300, 400)},
+        ),
+        delta=(10, -5),
+        envelope=(0, 0, 500, 500),
+    )
+
+    assert _observed_x(item) == 210
 
 
 def _layout():
@@ -77,6 +106,14 @@ def test_frontier_alternatives_place_interfaces_next_to_signal_owner() -> None:
             assert interface[2] < owner[0]
         else:
             assert interface[0] > owner[2]
+            # A far-right unrelated connector must not force this output past
+            # the whole drawing when a legal owner-local exit is available.
+            assert (
+                interface[2]
+                < {item.fragment.block.id: item for item in candidate.fragments}["input"].envelope[
+                    0
+                ]
+            )
     # Both directed roles also reach their frontiers in one measured candidate.
     combined = alternatives[2]
     assert combined.attempts[-2:] == (
@@ -98,6 +135,154 @@ def test_frontier_search_is_independent_of_semantic_declaration_order() -> None:
     candidates = _interface_frontier_candidates(plan, baseline)
     reordered = _interface_frontier_candidates(reversed_plan, baseline)
     assert candidates == reordered
+
+
+def test_output_frontier_keeps_a_routable_right_side_lane_for_v2_3() -> None:
+    design = json.loads((ROOT / "fixtures/m2blind/ir/H3.json").read_text())
+    resolved = assets()
+    plan = semantic_plan(validate(design, resolved), resolved)
+    variants = fragment_variants(design, resolved, plan)
+
+    output_frontiers = [
+        candidate
+        for candidate in pack_fragment_candidates(plan, variants)
+        if candidate.attempts[-1] == "interface-frontier-output"
+    ]
+
+    assert len(output_frontiers) == 1
+    frontier = output_frontiers[0]
+    assert semantic_composition_penalties(plan, frontier)[3] == 0
+    route_between_fragments(plan, frontier.fragments)
+
+
+def test_output_frontier_repairs_a_legal_output_when_its_sibling_is_blocked() -> None:
+    design = json.loads((ROOT / "fixtures/m2h2/interaction/i6/pkg2_distinct.json").read_text())
+    resolved = assets()
+    plan = semantic_plan(validate(design, resolved), resolved)
+    variants = fragment_variants(design, resolved, plan)
+
+    output_frontiers = [
+        candidate
+        for candidate in pack_fragment_candidates(plan, variants)
+        if candidate.attempts[-1] == "interface-frontier-output"
+    ]
+
+    assert output_frontiers
+    frontier = output_frontiers[0]
+    assert semantic_composition_penalties(plan, frontier)[3] == 0
+    route_between_fragments(plan, frontier.fragments)
+
+
+def test_frontier_repairs_branch_output_by_observed_centers_not_envelope_edges() -> None:
+    resolved = assets()
+    for stem in ("d2_b3", "d3_b3"):
+        design = json.loads((ROOT / f"fixtures/m2h2/interaction/i1/{stem}.json").read_text())
+        plan = semantic_plan(validate(design, resolved), resolved)
+        variants = fragment_variants(design, resolved, plan)
+        candidates = pack_fragment_candidates(plan, variants)
+
+        assert any(observe_composition_packing(plan, candidate).passed for candidate in candidates)
+
+
+def test_fanout_output_corridor_keeps_d3_b3_observer_clean_and_routeable() -> None:
+    from ai_kicad.m2_compose import _assemble_candidate
+
+    resolved = assets()
+    design = json.loads((ROOT / "fixtures/m2h2/interaction/i1/d3_b3.json").read_text())
+    design = validate(design, resolved)
+    plan = semantic_plan(design, resolved)
+    variants = fragment_variants(design, resolved, plan)
+
+    candidates = pack_fragment_candidates(plan, variants)
+    corridor = next(
+        candidate for candidate in candidates if candidate.attempts[-1] == "fanout-output-corridor"
+    )
+
+    assert observe_composition_packing(plan, corridor).passed
+    _draft, _routes, trees, _reservations, _metrics = _assemble_candidate(
+        design, resolved, plan, corridor, retry=0
+    )
+    assert all(tree.length <= 250_000_000 for tree in trees)
+
+
+def test_fanout_output_corridor_repairs_routeable_but_observer_failing_frontier() -> None:
+    design = json.loads((ROOT / "fixtures/m2h2/development/dp1_long_fields.json").read_text())
+    resolved = assets()
+    design = validate(design, resolved)
+    plan = semantic_plan(design, resolved)
+    variants = fragment_variants(design, resolved, plan)
+
+    candidates = pack_fragment_candidates(plan, variants)
+    corridor = next(
+        candidate for candidate in candidates if candidate.attempts[-1] == "fanout-output-corridor"
+    )
+
+    assert observe_composition_packing(plan, corridor).passed
+    route_between_fragments(plan, corridor.fragments)
+
+
+def test_observed_output_corridor_repairs_m2f2_load3_without_breaking_routes() -> None:
+    design = json.loads((ROOT / "fixtures/m2f2/ir/regulator_three_consumers.json").read_text())
+    resolved = assets()
+    design = validate(design, resolved)
+    plan = semantic_plan(design, resolved)
+    variants = fragment_variants(design, resolved, plan)
+
+    corridor = next(
+        candidate
+        for candidate in pack_fragment_candidates(plan, variants)
+        if candidate.attempts[-1] == "observed-output-corridor"
+    )
+
+    assert observe_composition_packing(plan, corridor).passed
+    route_between_fragments(plan, corridor.fragments)
+
+
+def test_observed_output_corridor_compensates_for_v6_5_grid_center_rounding() -> None:
+    """Preserve a routeable V6-5 seed whose interface needs a sub-grid correction."""
+    from ai_kicad.m2_pack_search import _observed_output_corridor_candidate
+
+    design = json.loads((ROOT / "fixtures/m2blind_v6/ir/V6-5.json").read_text())
+    resolved = assets()
+    design = validate(design, resolved)
+    plan = semantic_plan(design, resolved)
+    variants = fragment_variants(design, resolved, plan)
+    seed_translations = {
+        "function.amp.a": ("function.amp.a.v0", 48_260_000, 24_130_000),
+        "function.amp.b": ("function.amp.b.v0", -46_990_000, 104_140_000),
+        "interface.active_output": ("interface.active_output.v0", 172_720_000, 48_260_000),
+        "interface.filtered_output": ("interface.filtered_output.v0", 20_320_000, 30_480_000),
+        "interface.input": ("interface.input.v0", 20_320_000, 46_990_000),
+        "interface.negative": ("interface.negative.v0", 20_320_000, 62_230_000),
+        "interface.positive": ("interface.positive.v0", 20_320_000, 78_740_000),
+        "interface.return": ("interface.return.v0", 20_320_000, 87_630_000),
+        "package.amp.power": ("package.amp.power.v0", 36_830_000, 82_550_000),
+        "passive.indicator.series": (
+            "passive.indicator.series.v7",
+            135_890_000,
+            100_330_000,
+        ),
+        "passive.output_filter.series": (
+            "passive.output_filter.series.v0",
+            161_290_000,
+            66_040_000,
+        ),
+    }
+    placed = []
+    for block_id, (variant_id, dx, dy) in seed_translations.items():
+        variant = next(choice for choice in variants[block_id] if choice.id == variant_id)
+        placed.append(_place(variant, variant.envelope[0] + dx, variant.envelope[1] + dy))
+    baseline = Packing(
+        tuple(sorted(placed, key=lambda item: item.fragment.block.id)),
+        ("v6-5-grid-phase-regression-seed",),
+    )
+
+    assert not observe_composition_packing(plan, baseline).passed
+    corridor = _observed_output_corridor_candidate(plan, variants, baseline)
+
+    assert corridor is not None
+    assert observe_composition_packing(plan, corridor).passed
+    route_between_fragments(plan, corridor.fragments)
 
 
 def test_output_frontier_search_fixes_worst_row_misalignment_first() -> None:
@@ -122,7 +307,10 @@ def test_output_frontier_search_fixes_worst_row_misalignment_first() -> None:
         (),
     )
     candidates = _interface_frontier_candidates(plan, baseline)
-    assert len(candidates) == 1
+    assert [candidate.attempts[-1] for candidate in candidates] in (
+        ["interface-frontier-output"],
+        ["interface-frontier-output", "interface-frontier-output-staggered"],
+    )
     by_id = {item.fragment.block.id: item for item in candidates[0].fragments}
     original = {item.fragment.block.id: item for item in baseline.fragments}
     assert by_id["far-output"].delta != original["far-output"].delta

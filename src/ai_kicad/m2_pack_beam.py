@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
-from .m2_fragments import FragmentVariant, Point
-from .m2_pack import (
+from typing import TYPE_CHECKING
+
+from .m2_fragments_base import FragmentVariant
+from .m2_fragments_types import Point
+from .m2_pack_constants import (
     BOTTOM,
     CANDIDATE_BUDGET,
     LEFT,
@@ -12,14 +15,12 @@ from .m2_pack import (
     RIGHT,
     TOP,
 )
-from .m2_pack_core import (
-    Packing,
-    PlacedFragment,
-    _place,
-)
+from .m2_pack_core import Packing, PlacedFragment, _place
 from .m2_pack_distribution import _measured_repack
-from .m2_semantics import SemanticPlan
-from .m2a import PITCH
+from .m2a_constants import PITCH
+
+if TYPE_CHECKING:
+    from .m2_semantics_core import SemanticPlan
 
 
 def _band_count(packing: Packing) -> int:
@@ -503,6 +504,25 @@ def _retain_composition_seed_diversity(
             "interface-frontier-input",
         )
     )
+    fanout_output = next(
+        (item for item in extras if item.attempts[-1] == "fanout-output-corridor"),
+        None,
+    )
+    partial_frontier = next(
+        (
+            item
+            for item in extras
+            if item.attempts[0] == "partial-beam"
+            and item.attempts[-1]
+            in {
+                "interface-frontier-combined",
+                "interface-frontier-output",
+                "interface-frontier-output-staggered",
+                "interface-frontier-input",
+            }
+        ),
+        None,
+    )
     branch = tuple(
         next(
             (candidate for candidate in extras if candidate.attempts[-1] == label),
@@ -551,6 +571,10 @@ def _retain_composition_seed_diversity(
         ),
         None,
     )
+    observed_output = next(
+        (candidate for candidate in extras if candidate.attempts[-1] == "observed-output-corridor"),
+        None,
+    )
     partial = next(
         (candidate for candidate in extras if candidate.attempts[0] == "partial-beam"),
         None,
@@ -560,8 +584,11 @@ def _retain_composition_seed_diversity(
         for candidate in (
             distribution,
             partial,
+            partial_frontier,
             *repeated,
             *frontier,
+            fanout_output,
+            observed_output,
             *branch,
             *structural,
             # Keep a legal rigid centering alternative in the bounded beam

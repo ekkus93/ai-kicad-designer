@@ -3,6 +3,7 @@
 from itertools import product
 
 import pytest
+from m2h2_contract_helpers import reference_components, segment
 
 from ai_kicad.ir import InputError
 from ai_kicad.m2_fragments import FragmentVariant
@@ -33,9 +34,6 @@ from ai_kicad.m2_semantics import (
     check_placement_constraints,
 )
 from ai_kicad.m2a import PITCH
-
-
-from m2h2_contract_helpers import reference_components, segment
 
 
 def test_disconnected_internal_islands_reject_matching_net_strings() -> None:

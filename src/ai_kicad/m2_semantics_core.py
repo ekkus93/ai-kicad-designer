@@ -3,13 +3,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-
-
 from typing import Literal
 
 from .ir import InputError
 from .m2_conflicts import ConflictKind
-from .m2_semantics import (
+from .m2_semantics_types import (
     EdgeKind,
     Occurrence,
     PortRole,

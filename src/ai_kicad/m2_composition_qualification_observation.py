@@ -11,6 +11,7 @@ from __future__ import annotations
 from collections import defaultdict
 from collections.abc import Mapping
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from .m2_composition_qualification_matrix import (
     LOCKED_KICAD_VERSION,
@@ -22,7 +23,9 @@ from .m2_composition_quality import (
     block_envelopes_from_composition_evidence,
     observe_human_composition,
 )
-from .m2_semantics import SemanticPlan
+
+if TYPE_CHECKING:
+    from .m2_semantics import SemanticPlan
 
 
 @dataclass(frozen=True)
@@ -155,9 +158,49 @@ def observe_native_pin_composition(
 def observe_composition_packing(plan: SemanticPlan, packing) -> CompositionReport:
     """Run the same observer over an independently selected measured packing."""
     envelopes: dict[str, tuple[int, int, int, int]] = {}
+    occurrence_centers: dict[str, list[tuple[int, int]]] = defaultdict(list)
     for item in packing.fragments:
         block_id = item.fragment.block.id
         rect = item.content_envelope or item.envelope
+        if block_id in envelopes:
+            prior = envelopes[block_id]
+            envelopes[block_id] = (
+                min(prior[0], rect[0]),
+                min(prior[1], rect[1]),
+                max(prior[2], rect[2]),
+                max(prior[3], rect[3]),
+            )
+        else:
+            envelopes[block_id] = rect
+        for occurrence in item.fragment.block.occurrences:
+            point = item.fragment.text_positions.get(occurrence)
+            if point is not None:
+                occurrence_centers[block_id].append(
+                    (point[0] + item.delta[0], point[1] + item.delta[1])
+                )
+    observed_centers = {
+        block_id: (
+            sum(point[0] for point in points) // len(points),
+            sum(point[1] for point in points) // len(points),
+        )
+        for block_id, points in occurrence_centers.items()
+        if points
+    }
+    return observe_human_composition(plan, envelopes, observed_centers=observed_centers)
+
+
+def observe_composition_packing_envelopes(plan: SemanticPlan, packing) -> CompositionReport:
+    """Rank a packing with the same envelope centers used by emitted evidence.
+
+    Candidate-generation heuristics may use visible text centers to place
+    connectors, but qualification observes each block's measured envelope.
+    Selection must use that same geometry or it can prefer a candidate whose
+    text happens to be on the correct side while its physical block is not.
+    """
+    envelopes: dict[str, tuple[int, int, int, int]] = {}
+    for item in packing.fragments:
+        block_id = item.fragment.block.id
+        rect = item.envelope
         if block_id in envelopes:
             prior = envelopes[block_id]
             envelopes[block_id] = (

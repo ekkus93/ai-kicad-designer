@@ -9,6 +9,7 @@ import pytest
 import ai_kicad.m2_compose as compose_module
 from ai_kicad.ir import InputError
 from ai_kicad.m2_compose import _reservation_growth_repack, compose_with_evidence
+from ai_kicad.m2_composition_candidate_rank import semantic_composition_penalty_breakdown
 from ai_kicad.m2_conflicts import ConflictKind, TypedConflict
 from ai_kicad.m2_fragments import (
     FragmentVariant,
@@ -32,7 +33,7 @@ from ai_kicad.m2_semantics import (
     SemanticPort,
     semantic_plan,
 )
-from ai_kicad.m2a import PITCH, ROOT, Asset, emit
+from ai_kicad.m2a import PITCH, ROOT, Asset, Pin, emit
 from ai_kicad.m2b import Draft, assets, check_observed_layout, validate
 
 
@@ -446,6 +447,110 @@ def test_external_interface_on_internally_produced_net_is_not_a_signal_source() 
     )
 
 
+def test_external_output_is_routed_for_internal_signal_fanout() -> None:
+    resolved = assets()
+    design = validate(
+        _load_interaction("fixtures/m2h2/development/dp1.json"),
+        resolved,
+    )
+    plan = semantic_plan(design, resolved)
+    assert {
+        (edge.source, edge.target, edge.net)
+        for edge in plan.edges
+        if edge.target.startswith("interface.")
+    } == {("passive.a.series", "interface.out_a", "A")}
+    assert {
+        (item.source_fragment, item.target_fragment, item.net)
+        for item in plan.precedence
+        if item.target_fragment.startswith("interface.")
+    } == {("passive.a.series", "interface.out_a", "A")}
+
+
+def test_feedback_output_connectors_remain_directed_output_boundaries() -> None:
+    from ai_kicad.m2_terminal_interface_flow import inferred_passive_interface_signal_relations
+
+    resolved = assets()
+    design = validate(
+        _load_interaction("fixtures/m2h2/interaction/i3/three_amplifier_one_band.json"),
+        resolved,
+    )
+    plan = semantic_plan(design, resolved)
+
+    output_relations = {
+        ("function.pair.a", "interface.output_1", "OUTPUT_1"),
+        ("function.pair.b", "interface.output_2", "OUTPUT_2"),
+        ("function.single.a", "interface.output_3", "OUTPUT_3"),
+    }
+    assert {
+        relation
+        for relation in inferred_passive_interface_signal_relations(plan)
+        if relation[1].startswith("interface.output_")
+    } == output_relations
+    assert not any(edge.target.startswith("interface.output_") for edge in plan.edges)
+    assert not any(item.target_fragment.startswith("interface.output_") for item in plan.precedence)
+
+
+def test_multi_output_frontier_retains_side_correct_structural_candidate() -> None:
+    resolved = assets()
+    design = validate(
+        _load_interaction("fixtures/m2h2/interaction/i3/three_amplifier_one_band.json"),
+        resolved,
+    )
+    plan = semantic_plan(design, resolved)
+    variants = fragment_variants(design, resolved, plan)
+    candidates = pack_fragment_candidates(plan, variants)
+
+    output_frontiers = [
+        candidate
+        for candidate in candidates
+        if candidate.attempts[-1] in {"interface-frontier-output", "interface-frontier-combined"}
+    ]
+    assert output_frontiers
+    assert (
+        min(
+            semantic_composition_penalty_breakdown(plan, candidate).interface_side_violations
+            for candidate in output_frontiers
+        )
+        == 0
+    )
+
+
+def test_partial_beam_frontier_survives_when_distribution_repair_is_needed() -> None:
+    """Keep a side-correct output move available to the route repair pass."""
+    resolved = assets()
+    design = validate(
+        json.loads((ROOT / "fixtures/m2blind_v6/ir/V6-3.json").read_text()),
+        resolved,
+    )
+    plan = semantic_plan(design, resolved)
+    variants = fragment_variants(design, resolved, plan)
+    candidates = pack_fragment_candidates(plan, variants)
+
+    output_frontiers = [
+        candidate
+        for candidate in candidates
+        if candidate.attempts[0] == "partial-beam"
+        and candidate.attempts[-1] == "interface-frontier-output"
+    ]
+    assert len(candidates) <= 8
+    assert output_frontiers
+    assert (
+        semantic_composition_penalty_breakdown(plan, output_frontiers[0]).interface_side_violations
+        == 0
+    )
+
+
+def test_multi_pin_interface_is_not_reclassified_as_a_single_output() -> None:
+    resolved = assets()
+    design = validate(
+        json.loads((ROOT / "fixtures/m2blind_v3/ir/V3-1.json").read_text()),
+        resolved,
+    )
+    plan = semantic_plan(design, resolved)
+    assert not any(edge.target == "interface.interface" for edge in plan.edges)
+    assert not any(item.target_fragment == "interface.interface" for item in plan.precedence)
+
+
 def test_reference_and_supply_interfaces_do_not_create_signal_precedence() -> None:
     resolved = assets()
     design = validate(
@@ -494,6 +599,75 @@ def test_required_field_slot_avoids_non_wire_obstacles(obstacle_kind):
     assert draft.text_positions[("active", 1)] != initial
     assert draft.wires == []
     assert draft.positions[("active", 1)] == (50 * PITCH, 50 * PITCH)
+
+
+def test_long_connector_text_keeps_clear_existing_slot_before_preferred_slot():
+    existing = (50 * PITCH, 42 * PITCH)
+    design = {
+        "components": [
+            {
+                "id": "connector",
+                "refdes": "J1",
+                "value": "Long Input Label",
+                "asset": "Connector_Generic:Conn_01x02",
+            }
+        ]
+    }
+    resolved = {
+        "Connector_Generic:Conn_01x02": Asset(
+            "Connector_Generic:Conn_01x02",
+            "",
+            {1: (Pin("1", "1", "passive", 5 * PITCH, 0),)},
+            {1: (-PITCH // 2, -PITCH // 2, PITCH // 2, PITCH // 2)},
+        )
+    }
+    draft = Draft(
+        design,
+        resolved,
+        {("connector", 1): (50 * PITCH, 50 * PITCH)},
+        {},
+        [],
+        [],
+        [],
+        [],
+        {("connector", 1): existing},
+    )
+
+    _clear_nonpassive_text(design, resolved, draft)
+    assert draft.text_positions[("connector", 1)] == existing
+
+
+def test_short_connector_text_keeps_preferred_slot_ahead_of_existing_slot():
+    existing = (50 * PITCH, 42 * PITCH)
+    component = {
+        "id": "connector",
+        "refdes": "J1",
+        "value": "Input",
+        "asset": "Connector_Generic:Conn_01x02",
+    }
+    design = {"components": [component]}
+    resolved = {
+        component["asset"]: Asset(
+            component["asset"],
+            "",
+            {1: (Pin("1", "1", "passive", 5 * PITCH, 0),)},
+            {1: (-PITCH // 2, -PITCH // 2, PITCH // 2, PITCH // 2)},
+        )
+    }
+    draft = Draft(
+        design,
+        resolved,
+        {("connector", 1): (50 * PITCH, 50 * PITCH)},
+        {},
+        [],
+        [],
+        [],
+        [],
+        {("connector", 1): existing},
+    )
+
+    _clear_nonpassive_text(design, resolved, draft)
+    assert draft.text_positions[("connector", 1)] == (42 * PITCH, 48 * PITCH)
 
 
 @pytest.mark.parametrize("obstacle_kind", ["body", "label"])

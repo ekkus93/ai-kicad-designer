@@ -61,27 +61,53 @@ def qualification_passed(payload: dict) -> bool:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="continue an interrupted run from its verified progress.json and run directories",
+    )
     args = parser.parse_args()
     output = args.out.resolve()
-    if output.exists() and any(output.iterdir()):
+    if output.exists() and any(output.iterdir()) and not args.resume:
         raise SystemExit(f"refusing to overwrite evidence: {output}")
+    if args.resume and output.exists() and (output / "results.json").exists():
+        raise SystemExit(f"refusing to resume completed qualification: {output}")
     output.mkdir(parents=True, exist_ok=True)
+    prior_results = []
+    progress_path = output / "progress.json"
+    if args.resume and progress_path.exists():
+        prior_results = _json(progress_path)
+    prior_by_id = {result["id"]: result for result in prior_results}
+    if len(prior_by_id) != len(prior_results):
+        raise SystemExit(f"duplicate case IDs in progress manifest: {progress_path}")
     results = []
     resolved = assets()
     for case_id, design, classification in cases():
+        if case_id in prior_by_id:
+            results.append(prior_by_id[case_id])
+            continue
         plan = semantic_plan(validate(json.loads(design.read_text()), resolved), resolved)
         signatures = []
         runs = []
         for index in range(1, 6):
             destination = output / case_id / f"run{index}"
-            started = time.perf_counter()
-            rc = _build(design, destination)
+            failed_destination = destination.with_name(destination.name + ".failed")
+            if destination.is_dir():
+                rc = 0
+                runtime_seconds = 0.0
+            elif failed_destination.is_dir():
+                rc = 1
+                runtime_seconds = 0.0
+            else:
+                started = time.perf_counter()
+                rc = _build(design, destination)
+                runtime_seconds = round(time.perf_counter() - started, 6)
             actual = destination if rc == 0 else destination.with_name(destination.name + ".failed")
             record = {
                 "run": index,
                 "returncode": rc,
                 "path": str(actual.relative_to(ROOT)),
-                "runtime_seconds": round(time.perf_counter() - started, 6),
+                "runtime_seconds": runtime_seconds,
             }
             if rc == 0:
                 signature = _signature(actual)

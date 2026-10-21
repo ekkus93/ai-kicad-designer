@@ -2,17 +2,16 @@
 
 from __future__ import annotations
 
+from .m2_route_build import (
+    route_between_fragments,
+)
 from .m2_route_constants import (
-    MAX_TRACKS_PER_SIDE,
-    MAX_TAPS_PER_ATTACHMENT,
-    MAX_ROUTE_STATES_PER_TAP,
     MAX_CANONICAL_LENGTH,
     MAX_LOCAL_VISIBLE_SIGNAL_DISTANCE,
     MAX_LOCAL_VISIBLE_SIGNAL_ROUTE_LENGTH,
-)
-
-from .m2_route_build import (
-    route_between_fragments,
+    MAX_ROUTE_STATES_PER_TAP,
+    MAX_TAPS_PER_ATTACHMENT,
+    MAX_TRACKS_PER_SIDE,
 )
 from .m2_route_core import (
     RouteBlockedConflict,

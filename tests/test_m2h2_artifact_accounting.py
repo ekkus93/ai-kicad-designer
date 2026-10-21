@@ -47,3 +47,69 @@ def test_emitted_wire_inventory_is_independent_of_report():
     verify_emitted_conductors(trees, [[[10, 0], [0, 0]]])
     with pytest.raises(ValueError, match="emitted schematic bytes"):
         verify_emitted_conductors(trees, [[[0, 0], [11, 0]]])
+
+
+def test_emitted_wire_inventory_accounts_for_proved_terminal_free_leaf_pruning():
+    trees = [
+        {
+            "net": "N",
+            "segments": [
+                [[0, 0], [10, 0]],
+                [[10, 0], [15, 0]],
+            ],
+        }
+    ]
+    result = verify_emitted_conductors(
+        trees,
+        [[[10, 0], [0, 0]]],
+        pruned_spur_count=1,
+        pin_positions={("U1", "1"): (0, 0)},
+    )
+
+    assert result == {
+        "serialized_segment_count": 1,
+        "pruned_leaf_segments": [
+            {
+                "net": "N",
+                "segments_nm": [((10, 0), (15, 0))],
+                "attachment_nm": (10, 0),
+                "free_endpoints_nm": [(15, 0)],
+            }
+        ],
+    }
+
+
+def test_emitted_wire_inventory_rejects_pruned_pin_or_branch_segments():
+    trees = [
+        {
+            "net": "N",
+            "segments": [
+                [[0, 0], [10, 0]],
+                [[10, 0], [15, 0]],
+            ],
+        }
+    ]
+    with pytest.raises(ValueError, match="terminal-free"):
+        verify_emitted_conductors(
+            trees,
+            [[[0, 0], [10, 0]]],
+            pruned_spur_count=1,
+            pin_positions={("U1", "1"): (15, 0)},
+        )
+
+    branch = [
+        {
+            "net": "N",
+            "segments": [
+                [[0, 0], [10, 0]],
+                [[10, 0], [20, 0]],
+                [[20, 0], [30, 0]],
+            ],
+        }
+    ]
+    with pytest.raises(ValueError, match="terminal-free"):
+        verify_emitted_conductors(
+            branch,
+            [[[0, 0], [10, 0]], [[20, 0], [30, 0]]],
+            pruned_spur_count=1,
+        )

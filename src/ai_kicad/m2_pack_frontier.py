@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
-from .m2_fragments import Rect
-from .m2_pack import (
+from typing import TYPE_CHECKING
+
+from .ir import InputError
+from .m2_fragments_types import Rect
+from .m2_pack_constants import (
     CANDIDATE_BUDGET,
     CHANNEL_GAP,
     OUTPUT_FRONTIER_CLEARANCE,
@@ -15,14 +18,91 @@ from .m2_pack_core import (
     _reference_escape_directions,
 )
 from .m2_pack_distribution import _measured_repack
-from .m2_semantics import SemanticPlan
 from .m2_terminal_interface_flow import inferred_passive_interface_signal_relations
-from .m2a import PITCH
+from .m2a_constants import PITCH
+
+if TYPE_CHECKING:
+    from .m2_semantics_core import SemanticPlan
+
+
+def _has_package_blocked_reference_output(plan: SemanticPlan, packing: Packing) -> bool:
+    """Return whether a directed output's owner-local lane is blocked by a reference package."""
+    by_id = {item.fragment.block.id: item for item in packing.fragments}
+    relations = {
+        (edge.source, edge.target, edge.net)
+        for edge in plan.edges
+        if edge.kind in {"signal", "branch"}
+    }
+    relations.update(
+        (item.source_fragment, item.target_fragment, item.net) for item in plan.precedence
+    )
+    relations.update(inferred_passive_interface_signal_relations(plan))
+    generated_references = {
+        net.id
+        for net in plan.presentation_nets
+        if net.internally_generated and len(net.fragments) >= 4
+    }
+    generated_references = {
+        net.id
+        for net in plan.presentation_nets
+        if net.internally_generated and len(net.fragments) >= 4
+    }
+    for source_id, target_id, net_id in relations:
+        owner = by_id.get(source_id)
+        interface = by_id.get(target_id)
+        if (
+            owner is None
+            or interface is None
+            or interface.fragment.block.kind != "interface"
+            or not any(gateway.net == net_id for gateway in owner.gateways)
+        ):
+            continue
+        output_gateway = next(
+            (gateway for gateway in interface.gateways if gateway.net == net_id), None
+        )
+        if output_gateway is None:
+            continue
+        row = min(gateway.point[1] for gateway in owner.gateways if gateway.net == net_id)
+        top = row - (output_gateway.point[1] - interface.envelope[1])
+        target = _place(
+            interface.fragment,
+            owner.envelope[2] + CHANNEL_GAP,
+            top,
+        )
+        for blocker in packing.fragments:
+            if blocker.fragment.block.kind != "package_power":
+                continue
+            overlaps = max(target.envelope[0], blocker.envelope[0]) < min(
+                target.envelope[2], blocker.envelope[2]
+            ) and max(target.envelope[1], blocker.envelope[1]) < min(
+                target.envelope[3], blocker.envelope[3]
+            )
+            if overlaps and any(
+                gateway.id.rsplit(".", 1)[-1] == "reference" and gateway.net in generated_references
+                for gateway in blocker.gateways
+            ):
+                return True
+    return False
+
+
+def _observed_x(item: PlacedFragment) -> int:
+    """Return the stable horizontal center of a fragment's measured text."""
+    positions = item.fragment.text_positions
+    xs = sorted(
+        positions[occurrence][0] + item.delta[0]
+        for occurrence in item.fragment.block.occurrences
+        if occurrence in positions
+    )
+    if xs:
+        return (xs[0] + xs[-1]) // 2
+    return (item.envelope[0] + item.envelope[2]) // 2
 
 
 def _interface_frontier_candidates(
     plan: SemanticPlan,
     baseline: Packing,
+    *,
+    route_check: bool = False,
 ) -> tuple[Packing, ...]:
     """Explore bounded, measured input/output frontier placements.
 
@@ -42,6 +122,11 @@ def _interface_frontier_candidates(
         (item.source_fragment, item.target_fragment, item.net) for item in plan.precedence
     )
     relations.update(inferred_passive_interface_signal_relations(plan))
+    generated_references = {
+        net.id
+        for net in plan.presentation_nets
+        if net.internally_generated and len(net.fragments) >= 4
+    }
 
     def frontier_roles(block) -> set[str]:
         roles = {port.role for port in block.ports}
@@ -88,6 +173,9 @@ def _interface_frontier_candidates(
             for gateway in interface.gateways
             if gateway.net in owner_rows
         )
+        signal_lanes = tuple(
+            row + offset * PITCH for row in signal_rows for offset in (-4, -3, -2, -1, 1, 2, 3, 4)
+        )
         centered = (owner.envelope[1] + owner.envelope[3] - height) // 2
         # Alignment remains preferred; nearby lanes are fallbacks only.
         # Preserve order while dropping duplicate slots.
@@ -95,6 +183,7 @@ def _interface_frontier_candidates(
             dict.fromkeys(
                 (
                     *signal_rows,
+                    *signal_lanes,
                     centered,
                     owner.envelope[1],
                     owner.envelope[1] - height - CHANNEL_GAP,
@@ -102,6 +191,11 @@ def _interface_frontier_candidates(
                 )
             )
         )
+
+    def side_violation(placed: PlacedFragment, peers: tuple[PlacedFragment, ...], side: str) -> int:
+        if side == "signal_in":
+            return max(max(0, _observed_x(placed) - _observed_x(peer)) for peer in peers)
+        return max(max(0, _observed_x(peer) - _observed_x(placed)) for peer in peers)
 
     def frontier_repack(
         packing: Packing,
@@ -132,6 +226,89 @@ def _interface_frontier_candidates(
             and max(target.envelope[1], item.envelope[1])
             < min(target.envelope[3], item.envelope[3])
         ]
+        if (
+            route_check
+            and role == "signal_out"
+            and len(blockers) == 1
+            and blockers[0].fragment.block.kind == "package_power"
+        ):
+            blocker = blockers[0]
+            clearance = max(0, target.envelope[2] - blocker.envelope[0])
+            package_dx = ((clearance + PITCH - 1) // PITCH) * PITCH
+            reference_gateway = next(
+                (
+                    gateway
+                    for gateway in blocker.gateways
+                    if gateway.id.rsplit(".", 1)[-1] == "reference"
+                ),
+                None,
+            )
+            reference_net = next(
+                (
+                    net
+                    for net in plan.presentation_nets
+                    if reference_gateway is not None
+                    and net.id == reference_gateway.net
+                    and net.internally_generated
+                    and net.id in generated_references
+                    and len(net.fragments) >= 4
+                ),
+                None,
+            )
+            if package_dx and reference_gateway is not None and reference_net is not None:
+                by_id = {item.fragment.block.id: item for item in packing.fragments}
+                cluster = tuple(
+                    by_id[fragment_id]
+                    for fragment_id in reference_net.fragments
+                    if fragment_id in by_id
+                    and fragment_id != blocker.fragment.block.id
+                    and fragment_id != interface.fragment.block.id
+                )
+                peer_x = [
+                    gateway.point[0]
+                    for item in cluster
+                    for gateway in item.gateways
+                    if gateway.net == reference_net.id
+                ]
+                anchor_x = reference_gateway.point[0] + package_dx
+                direction = 1 if not peer_x or anchor_x >= sum(peer_x) // len(peer_x) else -1
+                for cluster_steps in range(17):
+                    additional_moves = (
+                        (blocker, blocker.envelope[0] + package_dx, blocker.envelope[1]),
+                        *(
+                            (
+                                item,
+                                item.envelope[0] + direction * cluster_steps * PITCH,
+                                item.envelope[1],
+                            )
+                            for item in cluster
+                        ),
+                    )
+                    proposal = _measured_repack(
+                        plan,
+                        packing,
+                        interface,
+                        left,
+                        top,
+                        label,
+                        additional_moves=additional_moves,
+                    )
+                    if proposal is None:
+                        continue
+                    from .m2_route import route_between_fragments
+
+                    try:
+                        route_between_fragments(plan, proposal.fragments)
+                    except InputError:
+                        continue
+                    return Packing(
+                        proposal.fragments,
+                        (
+                            *proposal.attempts[:-1],
+                            "coupled-reference-frontier",
+                            proposal.attempts[-1],
+                        ),
+                    )
         if len(blockers) != 1 or blockers[0].fragment.block.kind != "interface":
             return None
         blocker = blockers[0]
@@ -203,13 +380,6 @@ def _interface_frontier_candidates(
         if not blocker_owners:
             return None
 
-        def side_violation(
-            placed: PlacedFragment, peers: tuple[PlacedFragment, ...], side: str
-        ) -> int:
-            if side == "signal_in":
-                return max(max(0, placed.envelope[2] - peer.envelope[0]) for peer in peers)
-            return max(max(0, peer.envelope[2] - placed.envelope[0]) for peer in peers)
-
         if side_violation(interface, (owner,), role) <= side_violation(target, (owner,), role):
             return None
         relocated = _place(blocker.fragment, interface.envelope[0], interface.envelope[1])
@@ -227,12 +397,21 @@ def _interface_frontier_candidates(
         and not {"signal_in", "signal_out"} <= frontier_roles(block)
     }
 
-    def frontier_search(base: Packing, role: str, label: str) -> Packing | None:
+    def frontier_search(
+        base: Packing,
+        role: str,
+        label: str,
+        *,
+        only_interface_ids: frozenset[str] | None = None,
+    ) -> Packing | None:
         """Move every directed interface of one role to its measured frontier."""
         by_id = {item.fragment.block.id: item for item in base.fragments}
         options: list[tuple[tuple[int, int, int, int, str, int], Packing]] = []
+        coupled_reference_options: list[Packing] = []
         for block in sorted(plan.blocks, key=lambda item: item.id):
             if block.kind != "interface" or block.id not in by_id:
+                continue
+            if only_interface_ids is not None and block.id not in only_interface_ids:
                 continue
             roles = frontier_roles(block)
             if role not in roles or {"signal_in", "signal_out"} <= roles:
@@ -245,23 +424,24 @@ def _interface_frontier_candidates(
                 owner = by_id.get(owner_id)
                 if owner is None or owner.fragment.block.kind == "interface":
                     continue
-                left = (
-                    owner.envelope[0] - width - CHANNEL_GAP
+                local_left = (
+                    owner.envelope[0] - width - CHANNEL_GAP - 2 * PITCH
                     if role == "signal_in"
                     else owner.envelope[2] + CHANNEL_GAP
                 )
+                left_choices = (local_left,)
                 if role == "signal_out":
-                    # Outputs belong on the outside edge of the drawing, not
-                    # merely just beyond their producer. This keeps unrelated
-                    # connectors and their return wiring from visually boxing
-                    # in an output that happens to share the producer's row.
+                    # Prefer the nearest legal point beyond the producer. Keep
+                    # the outside edge as a fallback when nearby geometry
+                    # blocks the direct route or leaves the output visually
+                    # boxed in by unrelated content.
                     outer_edge = max(
                         (
                             item.envelope[2]
                             for item in base.fragments
                             if item.fragment.block.id not in output_frontier_ids
                         ),
-                        default=left - CHANNEL_GAP,
+                        default=local_left - CHANNEL_GAP,
                     )
                     output_column = max(
                         (
@@ -269,53 +449,104 @@ def _interface_frontier_candidates(
                             for item in base.fragments
                             if item.fragment.block.id in output_frontier_ids
                         ),
-                        default=left,
+                        default=local_left,
                     )
-                    left = max(
-                        left,
+                    outer_left = max(
+                        local_left,
                         outer_edge + OUTPUT_FRONTIER_CLEARANCE,
                         output_column,
                     )
+                    left_choices = (
+                        tuple(dict.fromkeys((local_left, outer_left)))
+                        if len(output_frontier_ids) == 1 or len(output_frontier_ids) >= 3
+                        else (outer_left,)
+                    )
+                    package_blocks_local = (
+                        role == "signal_out"
+                        and len(output_frontier_ids) == 2
+                        and _has_package_blocked_reference_output(plan, base)
+                    )
                 # Align both centers and upper edges as separate legal choices.
                 for lane_rank, top in enumerate(frontier_rows(owner, interface, height)):
-                    candidate = frontier_repack(base, interface, owner, role, left, top, label)
-                    if candidate is None:
-                        continue
-                    # Repair semantic side violations before cosmetic row drift:
-                    # one output slot must not ignore a left-of-producer output
-                    # in favor of aligning an already right-side connector.
-                    side_violation = (
-                        max(0, interface.envelope[2] - owner.envelope[0])
-                        if role == "signal_in"
-                        else max(0, owner.envelope[2] - interface.envelope[0])
-                    )
-                    initial_row_gap = abs(
-                        interface.envelope[1]
-                        + interface.envelope[3]
-                        - owner.envelope[1]
-                        - owner.envelope[3]
-                    )
-                    frontier_deficit = (
-                        max(0, left - interface.envelope[0]) if role == "signal_out" else 0
-                    )
-                    distance = abs(left - interface.envelope[0]) + abs(top - interface.envelope[1])
-                    options.append(
-                        (
-                            (
-                                -frontier_deficit,
-                                -side_violation,
-                                -initial_row_gap,
-                                lane_rank,
-                                distance,
-                                block.id,
-                                top,
-                            ),
-                            candidate,
+                    for left in left_choices:
+                        if (
+                            route_check
+                            and role == "signal_out"
+                            and package_blocks_local
+                            and left == local_left
+                            and lane_rank > 0
+                        ):
+                            continue
+                        candidate = frontier_repack(base, interface, owner, role, left, top, label)
+                        if candidate is None:
+                            continue
+                        if "coupled-reference-frontier" in candidate.attempts:
+                            coupled_reference_options.append(candidate)
+                        # Correct side and owner-row alignment outrank travel to
+                        # the outer edge; that edge remains a fallback for
+                        # crowded multi-output layouts.
+                        observed_side_violation = (
+                            max(0, _observed_x(interface) - _observed_x(owner))
+                            if role == "signal_in"
+                            else max(0, _observed_x(owner) - _observed_x(interface))
                         )
-                    )
+                        initial_row_gap = abs(
+                            interface.envelope[1]
+                            + interface.envelope[3]
+                            - owner.envelope[1]
+                            - owner.envelope[3]
+                        )
+                        frontier_deficit = (
+                            max(0, left - interface.envelope[0]) if role == "signal_out" else 0
+                        )
+                        distance = abs(left - interface.envelope[0]) + abs(
+                            top - interface.envelope[1]
+                        )
+                        options.append(
+                            (
+                                (
+                                    -observed_side_violation,
+                                    -initial_row_gap,
+                                    lane_rank,
+                                    distance,
+                                    -frontier_deficit,
+                                    block.id,
+                                    top,
+                                ),
+                                candidate,
+                            )
+                        )
         if not options:
             return None
         selected = min(options, key=lambda item: item[0])[1]
+        needs_output_side_repair = role == "signal_out" and any(
+            owner_id in by_id
+            and by_id[owner_id].fragment.block.kind != "interface"
+            and by_id[owner_id].envelope[2] >= by_id[block_id].envelope[0]
+            for block_id in output_frontier_ids
+            for owner_id in frontier_owner_ids(block_id, role)
+        )
+        if route_check and needs_output_side_repair and len(output_frontier_ids) <= 3:
+            # An aligned interface lane can still block its conductor. Check
+            # only a small, output-side repair frontier for up to three
+            # outputs; keep route generation bounded and leave the final
+            # candidate proof authoritative.
+            from .m2_route import route_between_fragments
+
+            route_candidates = (
+                *coupled_reference_options,
+                *(candidate for _rank, candidate in sorted(options, key=lambda item: item[0])[:8]),
+            )
+            for candidate in route_candidates:
+                try:
+                    route_between_fragments(plan, candidate.fragments)
+                except InputError:
+                    continue
+                selected = Packing(
+                    candidate.fragments,
+                    (*candidate.attempts[:-1], "route-proof:pass", candidate.attempts[-1]),
+                )
+                break
         # One frontier candidate may need to repair several distinct
         # directed interfaces. Apply further *measured* improvements to
         # the same candidate; a single-interface-only move leaves other
@@ -327,6 +558,8 @@ def _interface_frontier_candidates(
             repairs: list[tuple[tuple[int, int, int, int, str, int], Packing]] = []
             for block in sorted(plan.blocks, key=lambda item: item.id):
                 if block.kind != "interface" or block.id not in current:
+                    continue
+                if only_interface_ids is not None and block.id not in only_interface_ids:
                     continue
                 roles = frontier_roles(block)
                 if role not in roles or {"signal_in", "signal_out"} <= roles:
@@ -341,11 +574,7 @@ def _interface_frontier_candidates(
                     continue
 
                 def worst_violation(placed: PlacedFragment, owners=owners) -> int:
-                    if role == "signal_in":
-                        return max(
-                            max(0, placed.envelope[2] - owner.envelope[0]) for owner in owners
-                        )
-                    return max(max(0, owner.envelope[2] - placed.envelope[0]) for owner in owners)
+                    return side_violation(placed, owners, role)
 
                 before = worst_violation(interface)
                 if before == 0:
@@ -432,9 +661,53 @@ def _interface_frontier_candidates(
     output_option = frontier_search(baseline, "signal_out", "interface-frontier-output")
     if output_option is not None:
         alternatives.append(output_option)
-        staggered = staggered_output(output_option)
-        if staggered is not None:
-            alternatives.append(staggered)
+        # A staggered output variant is useful only when every output needs
+        # the same column repair. Otherwise it can spend a bounded seed on
+        # moving a correctly placed sibling after the wrong-side output has
+        # already been fixed.
+        output_positions = {item.fragment.block.id: item for item in baseline.fragments}
+        all_outputs_misplaced = all(
+            any(
+                owner_id in output_positions
+                and output_positions[owner_id].envelope[2] >= output_positions[block_id].envelope[0]
+                for owner_id in frontier_owner_ids(block_id, "signal_out")
+            )
+            for block_id in output_frontier_ids
+            if block_id in output_positions
+        )
+        if all_outputs_misplaced:
+            staggered = staggered_output(output_option)
+            if staggered is not None:
+                alternatives.append(staggered)
+    # A blocked sibling must not suppress an independently legal directed
+    # output move, and a partially successful combined move must not suppress
+    # a repair for a still-reversed connector. Avoid spending candidate slots
+    # on outputs whose observed centers already satisfy their direction.
+    output_basis = output_option or baseline
+    output_positions = {item.fragment.block.id: item for item in output_basis.fragments}
+    residual_output_ids = {
+        block_id
+        for block_id in output_frontier_ids
+        if block_id in output_positions
+        and (
+            owners := tuple(
+                output_positions[owner_id]
+                for owner_id in frontier_owner_ids(block_id, "signal_out")
+                if owner_id in output_positions
+                and output_positions[owner_id].fragment.block.kind != "interface"
+            )
+        )
+        and side_violation(output_positions[block_id], owners, "signal_out") > 0
+    }
+    for block_id in sorted(residual_output_ids):
+        single_output = frontier_search(
+            output_basis,
+            "signal_out",
+            "interface-frontier-output",
+            only_interface_ids=frozenset({block_id}),
+        )
+        if single_output is not None:
+            alternatives.append(single_output)
     if input_option is not None and output_option is not None:
         # Inputs and outputs reach their frontiers together. A one-role move
         # leaves the other role's connectors in their stacked seed column, so

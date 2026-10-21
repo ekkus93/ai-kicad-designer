@@ -20,6 +20,15 @@ def test_mixed_branch_is_in_locked_current_source_regressions() -> None:
     )
 
 
+def test_dp1_label_disconnect_regression_is_in_locked_current_source_regressions() -> None:
+    assert CASES["dp1"].relative_to(ROOT).as_posix() == "fixtures/m2h2/development/dp1.json"
+
+
+def test_multi_pin_output_precedence_regressions_are_in_locked_current_source_regressions() -> None:
+    assert CASES["v3-1"].relative_to(ROOT).as_posix() == "fixtures/m2blind_v3/ir/V3-1.json"
+    assert CASES["v3-5"].relative_to(ROOT).as_posix() == "fixtures/m2blind_v3/ir/V3-5.json"
+
+
 def test_reference_free_design_does_not_invent_vref() -> None:
     design = {"nets": [{"id": "INPUT"}, {"id": "OUTPUT_1"}]}
     assert _reference_nets(design) == []

@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
-from .m2_fragments import FragmentVariant, Point
+from typing import TYPE_CHECKING
+
+from .m2_fragments_base import FragmentVariant
+from .m2_fragments_types import Point
 from .m2_geometry import ConductorSegment, canonical_conductor_tree
-from .m2_pack import (
+from .m2_pack_constants import (
     BOTTOM,
     LEFT,
     MAX_CONTENT_HEIGHT,
@@ -18,8 +21,11 @@ from .m2_pack_core import (
     PlacedFragment,
     _place,
 )
-from .m2_semantics import PlacementConflict, SemanticPlan, check_placement_constraints
-from .m2a import PITCH
+from .m2_semantics_core import PlacementConflict, check_placement_constraints
+from .m2a_constants import PITCH
+
+if TYPE_CHECKING:
+    from .m2_semantics_core import SemanticPlan
 
 
 def _distribution_column_candidate(

@@ -2,19 +2,17 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-
-
 import copy
 import itertools
 import json
 import re
 import uuid
+from dataclasses import dataclass, field
 from types import MappingProxyType
 
 from .assets import _extract_symbol, sha256
 from .ir import InputError
-from .m2a import (
+from .m2a_constants import (
     ASSETS,
     FILES,
     PITCH,

@@ -2,11 +2,6 @@
 
 from __future__ import annotations
 
-from .m2_fragments_types import (
-    Point,
-    Rect,
-)
-
 from .m2_fragments_base import (
     FragmentVariant,
     PortAnchor,
@@ -31,6 +26,10 @@ from .m2_fragments_builders import (
 )
 from .m2_fragments_geometry import (
     _finish,
+)
+from .m2_fragments_types import (
+    Point,
+    Rect,
 )
 from .m2_fragments_variants import (
     _access_alternatives,

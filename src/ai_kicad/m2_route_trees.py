@@ -2,14 +2,16 @@
 
 from __future__ import annotations
 
-from .m2_fragments import Point
+from typing import TYPE_CHECKING
+
+from .m2_fragments_types import Point
 from .m2_geometry import (
     ConductorSegment,
     Gateway,
     Reservation,
 )
-from .m2_pack import PlacedFragment
-from .m2_route import MAX_LOCAL_VISIBLE_SIGNAL_DISTANCE
+from .m2_pack_core import PlacedFragment
+from .m2_route_constants import MAX_LOCAL_VISIBLE_SIGNAL_DISTANCE
 from .m2_route_core import (
     _advance,
     _ceil_grid,
@@ -18,9 +20,12 @@ from .m2_route_core import (
     _gateway,
     _path_legal,
 )
-from .m2_semantics import SemanticEdge, SemanticPlan
+from .m2_semantics_core import SemanticEdge
 from .m2_terminal_interface_flow import inferred_passive_interface_signal_relations
-from .m2a import PITCH
+from .m2a_constants import PITCH
+
+if TYPE_CHECKING:
+    from .m2_semantics_core import SemanticPlan
 
 
 def _route_class(edges: list[SemanticEdge]) -> int:

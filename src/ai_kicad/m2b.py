@@ -5,7 +5,6 @@ from .m2b_constants import (
     LOCKED_PIN_ROLES,
     POWER_STAGE_ASSETS,
 )
-
 from .m2b_evaluation import (
     active_layout,
     compare,

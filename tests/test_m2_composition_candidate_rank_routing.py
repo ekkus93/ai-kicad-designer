@@ -69,6 +69,38 @@ def test_branch_arm_spread_breaks_routing_ties():
     assert balanced < uneven
 
 
+def test_observed_route_shape_precedes_length_and_bend_compactness() -> None:
+    plan = _plan(())
+    packing = SimpleNamespace(fragments=())
+    compact = (80, 50, 2, 1.0, 0, 0)
+    longer = (120, 70, 4, 1.0, 1, 0)
+
+    clear_route = composition_candidate_key(
+        plan,
+        packing,
+        compact,
+        routing_u_shaped_detours=0,
+        routing_branch_inconsistency=0,
+    )
+    detoured_route = composition_candidate_key(
+        plan,
+        packing,
+        longer,
+        routing_u_shaped_detours=1,
+        routing_branch_inconsistency=0,
+    )
+    inconsistent_fanout = composition_candidate_key(
+        plan,
+        packing,
+        longer,
+        routing_u_shaped_detours=0,
+        routing_branch_inconsistency=1,
+    )
+
+    assert clear_route < detoured_route
+    assert clear_route < inconsistent_fanout
+
+
 def test_serial_row_exempts_explicit_signal_stage_before_fanout() -> None:
     """The fanout junction is not forced onto its upstream stage row."""
     first = _block("first", "filter", ("signal_in", "signal_out"))
@@ -258,6 +290,34 @@ def test_parallel_output_frontiers_follow_their_own_signal_producers() -> None:
         ),
     )
     assert semantic_composition_penalty_breakdown(renamed, attached) == proper
+
+
+def test_interface_side_ranking_uses_rendered_occurrence_centers() -> None:
+    """Envelope centers can misstate the side of a multi-occurrence stage."""
+    producer = _block("producer", "filter")
+    producer.occurrences = frozenset({("stage", 1)})
+    output = _block("output", "interface", ("signal_out",))
+    output.occurrences = frozenset({("connector", 1)})
+    plan = _plan(
+        (producer, output),
+        (_edge("signal", "producer", "output"),),
+    )
+    placed = _packing(
+        _placed(
+            producer,
+            100,
+            width=10,
+            text_positions={("stage", 1): (0, 0)},
+        ),
+        _placed(
+            output,
+            0,
+            width=10,
+            text_positions={("connector", 1): (200, 0)},
+        ),
+    )
+
+    assert semantic_composition_penalty_breakdown(plan, placed).interface_side_violations == 0
 
 
 def test_single_output_still_prefers_global_page_frontier() -> None:

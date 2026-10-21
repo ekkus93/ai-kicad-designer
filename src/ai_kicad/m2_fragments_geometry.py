@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from .ir import InputError
-from .m2_fragments import Point
 from .m2_fragments_base import (
     FragmentVariant,
     PortAnchor,
@@ -14,6 +15,7 @@ from .m2_fragments_base import (
     _placed_terminal_points,
     _reservation_envelope,
 )
+from .m2_fragments_types import Point
 from .m2_geometry import (
     AccessWindow,
     ConductorSegment,
@@ -28,13 +30,16 @@ from .m2_geometry import (
     prove_no_cross_net_contacts,
     segment_is_admissible,
 )
-from .m2_semantics import BlockPlan
-from .m2a import PITCH, Asset
+from .m2a_constants import PITCH
 from .m2b import (
     Draft,
     choose_text_slots,
     pin_number_rectangles,
 )
+
+if TYPE_CHECKING:
+    from .m2_semantics_core import BlockPlan
+    from .m2a_core import Asset
 
 
 def _finish(

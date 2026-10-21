@@ -2,18 +2,10 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
-
 import itertools
 from collections import defaultdict
+from dataclasses import dataclass
 
-from .m2_composition_candidate_rank import (
-    CandidateKey,
-    CompactnessPenaltyVector,
-    Point,
-    SemanticPenaltyVector,
-)
 from .m2_composition_rank_metrics import (
     _branch_readability_penalty,
     _center,
@@ -33,8 +25,14 @@ from .m2_composition_rank_metrics import (
     _support_axis_alignment_penalty,
     _unrelated_block_proximity,
 )
-from .m2_pack import BOTTOM, LEFT, RIGHT, TOP
-from .m2a import PITCH
+from .m2_composition_rank_types import (
+    CandidateKey,
+    CompactnessPenaltyVector,
+    Point,
+    SemanticPenaltyVector,
+)
+from .m2_pack_constants import BOTTOM, LEFT, RIGHT, TOP
+from .m2a_constants import PITCH
 
 
 @dataclass(frozen=True)
@@ -110,6 +108,28 @@ class SemanticPenaltyBreakdown:
         }
 
 
+def _placed_occurrence_centers(packing) -> dict[str, Point]:
+    """Measure block centers from rendered reference anchors when available."""
+    observed: dict[str, list[Point]] = defaultdict(list)
+    for placed in packing.fragments:
+        fragment = placed.fragment
+        text_positions = getattr(fragment, "text_positions", {})
+        for occurrence in getattr(fragment.block, "occurrences", ()):
+            position = text_positions.get(occurrence)
+            if position is not None:
+                observed[fragment.block.id].append(
+                    (position[0] + placed.delta[0], position[1] + placed.delta[1])
+                )
+    return {
+        block_id: (
+            sum(point[0] for point in points) // len(points),
+            sum(point[1] for point in points) // len(points),
+        )
+        for block_id, points in observed.items()
+        if points
+    }
+
+
 def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBreakdown:
     """Return semantic readability penalties for one fully proved placement.
 
@@ -121,13 +141,28 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
 
     rects = _placed_rects(packing)
     centers = {block_id: _center(rect) for block_id, rect in rects.items()}
+    observed_centers = _placed_occurrence_centers(packing)
     missing_geometry = sum(1 for block in plan.blocks if block.id not in centers)
     signal_relations = _signal_relations(plan)
+    block_by_id = {block.id: block for block in plan.blocks}
+    explicit_stage_relations = {
+        (edge.source, edge.target, edge.net)
+        for edge in plan.edges
+        if edge.kind in {"signal", "branch"}
+    }
+    explicit_stage_relations.update(
+        (item.source_fragment, item.target_fragment, item.net) for item in plan.precedence
+    )
 
     stage_order_violations = 0
     reversal_distance = 0
     for source, target, _net in signal_relations:
         if source not in centers or target not in centers:
+            continue
+        if (source, target, _net) not in explicit_stage_relations and (
+            getattr(block_by_id.get(source), "kind", None) == "interface"
+            or getattr(block_by_id.get(target), "kind", None) == "interface"
+        ):
             continue
         delta = centers[target][0] - centers[source][0]
         if delta < 0:
@@ -141,8 +176,8 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
     for source, target, _net in signal_relations:
         if source not in centers or target not in centers:
             continue
-        source_x = centers[source][0]
-        target_x = centers[target][0]
+        source_x = observed_centers.get(source, centers[source])[0]
+        target_x = observed_centers.get(target, centers[target])[0]
         source_roles = roles.get(source, set())
         target_roles = roles.get(target, set())
         if "signal_in" in source_roles and "signal_out" not in source_roles and source_x > target_x:
@@ -271,9 +306,7 @@ def semantic_composition_penalty_breakdown(plan, packing) -> SemanticPenaltyBrea
     ) = _signal_row_alignment_components(plan, centers, signal_relations)
     support_axis_drift = _support_axis_alignment_penalty(plan, centers)
     passive_reference_axis_drift = _passive_reference_axis_alignment_penalty(packing)
-    # Nearest directed connector-to-owner gap is a soft signal-neighbor
-    # preference, not a wrong-side violation. Keep it below fragmentation,
-    # grouping, and all stronger semantic obligations in the lexicographic key.
+    # Correct-side connector gaps remain a soft signal-neighbor preference.
     local_signal_neighbor_gap = _local_signal_neighbor_gap(plan, rects) + _grid_units(
         interface_soft_gap
     )
@@ -514,6 +547,8 @@ def composition_candidate_key(
     *,
     routing_backtracking: int = 0,
     branch_arm_spread: int = 0,
+    routing_u_shaped_detours: int = 0,
+    routing_branch_inconsistency: int = 0,
 ) -> CandidateKey:
     """Build the production lexicographic key for a fully proved candidate."""
 
@@ -543,6 +578,10 @@ def composition_candidate_key(
         _independent_output_owner_row_drift(plan, packing),
         int(routing_backtracking),
         *semantic[16:],
+        # Rank the emitted route geometry measured by the independent observer
+        # before compactness can trade visual clarity for shorter geometry.
+        int(routing_u_shaped_detours),
+        int(routing_branch_inconsistency),
         # Prefer a short, legible route rather than letting one saved bend
         # dominate an arbitrarily long detour. One bend costs eight grid
         # pitches of wire; backtracking and semantic obligations remain higher

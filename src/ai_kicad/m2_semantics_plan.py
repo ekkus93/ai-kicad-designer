@@ -3,12 +3,9 @@
 from __future__ import annotations
 
 import itertools
+from typing import TYPE_CHECKING
 
 from .ir import InputError
-from .m2_semantics import (
-    EdgeKind,
-    Occurrence,
-)
 from .m2_semantics_core import (
     BlockPlan,
     LocalSpanObligation,
@@ -23,7 +20,13 @@ from .m2_semantics_core import (
     _indices,
     _port,
 )
-from .m2a import Asset
+from .m2_semantics_types import (
+    EdgeKind,
+    Occurrence,
+)
+
+if TYPE_CHECKING:
+    from .m2a_core import Asset
 
 
 def semantic_plan(design: dict, resolved: dict[str, Asset]) -> SemanticPlan:
@@ -349,6 +352,15 @@ def semantic_plan(design: dict, resolved: dict[str, Asset]) -> SemanticPlan:
         raise InputError(f"SEMANTIC_OWNER_INCOMPLETE: missing={missing} extra={extra}")
 
     ports = [p for block in blocks for p in block.ports]
+    interface_pin_counts: dict[str, int] = {}
+    for port in ports:
+        if port.fragment.startswith("interface."):
+            interface_pin_counts[port.fragment] = interface_pin_counts.get(port.fragment, 0) + 1
+    single_pin_interface_ports = {
+        port.id
+        for port in ports
+        if port.fragment.startswith("interface.") and interface_pin_counts[port.fragment] == 1
+    }
     edges: set[SemanticEdge] = set()
     for net in sorted(nets):
         on_net = [p for p in ports if p.net == net]
@@ -357,7 +369,16 @@ def semantic_plan(design: dict, resolved: dict[str, Asset]) -> SemanticPlan:
         power_outputs = [p for p in on_net if p.role == "power_out"]
         power_inputs = [p for p in on_net if p.role == "power_in"]
         for source in signal_outputs:
-            for target in signal_inputs:
+            # An external connector on an internally produced signal is an
+            # output boundary when the net also feeds a declared consumer.
+            # Associate it with the producer instead of relying on a nearby
+            # repeated net label.
+            output_interfaces = (
+                [port for port in on_net if port.id in single_pin_interface_ports]
+                if signal_inputs
+                else []
+            )
+            for target in signal_inputs + output_interfaces:
                 if source.fragment != target.fragment:
                     kind: EdgeKind = (
                         "branch" if target.fragment.startswith("passive.") else "signal"
@@ -414,6 +435,14 @@ def semantic_plan(design: dict, resolved: dict[str, Asset]) -> SemanticPlan:
     # invented signal direction. Keep sibling consumers incomparable.
     block_by_id = {block.id: block for block in blocks}
     signal_sources = [port for port in ports if port.role == "signal_out"]
+    output_interface_targets = {
+        port.id
+        for net in sorted(nets)
+        for port in ports
+        if port.net == net
+        and port.id in single_pin_interface_ports
+        and any(candidate.net == net and candidate.role == "signal_in" for candidate in ports)
+    }
     for net in sorted(nets):
         on_net = [port for port in ports if port.net == net]
         if not any(port.role == "signal_in" for port in on_net):
@@ -447,7 +476,7 @@ def semantic_plan(design: dict, resolved: dict[str, Asset]) -> SemanticPlan:
         )
         for source in sorted(signal_sources, key=lambda port: port.id)
         for target in sorted(ports, key=lambda port: port.id)
-        if target.role == "signal_in"
+        if (target.role == "signal_in" or target.id in output_interface_targets)
         and target.net == source.net
         and target.fragment != source.fragment
     )

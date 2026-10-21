@@ -2,13 +2,6 @@
 
 from __future__ import annotations
 
-from .m2_semantics_types import (
-    Occurrence,
-    Terminal,
-    PortRole,
-    EdgeKind,
-)
-
 from .m2_semantics_core import (
     BlockPlan,
     LocalSpanObligation,
@@ -28,6 +21,12 @@ from .m2_semantics_core import (
 )
 from .m2_semantics_plan import (
     semantic_plan,
+)
+from .m2_semantics_types import (
+    EdgeKind,
+    Occurrence,
+    PortRole,
+    Terminal,
 )
 
 __all__ = [

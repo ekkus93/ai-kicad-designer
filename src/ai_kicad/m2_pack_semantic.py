@@ -2,16 +2,20 @@
 
 from __future__ import annotations
 
-from .m2_fragments import Point
-from .m2_pack import (
+from typing import TYPE_CHECKING
+
+from .m2_fragments_types import Point
+from .m2_pack_constants import (
     CANDIDATE_BUDGET,
     CHANNEL_GAP,
     LEFT,
 )
 from .m2_pack_core import Packing
 from .m2_pack_distribution import _measured_repack
-from .m2_semantics import SemanticPlan
-from .m2a import PITCH
+from .m2a_constants import PITCH
+
+if TYPE_CHECKING:
+    from .m2_semantics_core import SemanticPlan
 
 
 def _semantic_block_order_candidates(plan: SemanticPlan, baseline: Packing) -> tuple[Packing, ...]:

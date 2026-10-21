@@ -2,27 +2,26 @@
 
 from __future__ import annotations
 
-from .m2_pack_constants import (
-    LEFT,
-    TOP,
-    RIGHT,
-    BOTTOM,
-    MAX_CONTENT_WIDTH,
-    MAX_CONTENT_HEIGHT,
-    ENVELOPE_OUTER_PADDING,
-    CANDIDATE_BUDGET,
-    PLACEMENT_LEFT,
-    CHANNEL_GAP,
-    OUTPUT_FRONTIER_CLEARANCE,
-    MAX_PACKING_WIDTH,
-    MAX_PACKING_HEIGHT,
-)
-
 from .m2_pack_beam import (
     _band_count,
     _branch_fanout_repack_candidates,
     _partial_beam_candidates,
     _retain_composition_seed_diversity,
+)
+from .m2_pack_constants import (
+    BOTTOM,
+    CANDIDATE_BUDGET,
+    CHANNEL_GAP,
+    ENVELOPE_OUTER_PADDING,
+    LEFT,
+    MAX_CONTENT_HEIGHT,
+    MAX_CONTENT_WIDTH,
+    MAX_PACKING_HEIGHT,
+    MAX_PACKING_WIDTH,
+    OUTPUT_FRONTIER_CLEARANCE,
+    PLACEMENT_LEFT,
+    RIGHT,
+    TOP,
 )
 from .m2_pack_core import (
     Packing,

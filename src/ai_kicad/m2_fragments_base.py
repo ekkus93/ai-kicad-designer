@@ -2,17 +2,13 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-
-
 from collections.abc import Mapping
+from dataclasses import dataclass, field
 from types import MappingProxyType
+from typing import TYPE_CHECKING
 
 from .ir import InputError
-from .m2_fragments import (
-    Point,
-    Rect,
-)
+from .m2_fragments_types import Point, Rect
 from .m2_geometry import (
     Gateway,
     GeometryItem,
@@ -21,12 +17,16 @@ from .m2_geometry import (
     Reservation,
     label_text_rect,
 )
-from .m2_semantics import BlockPlan, Occurrence, SemanticPort
-from .m2a import PITCH, Asset, Pin
+from .m2a_constants import PITCH
+from .m2a_core import Asset, Pin
 from .m2b import (
     Draft,
     _turn,
 )
+
+if TYPE_CHECKING:
+    from .m2_semantics_core import BlockPlan, SemanticPort
+    from .m2_semantics_types import Occurrence
 
 
 @dataclass(frozen=True)
@@ -150,9 +150,17 @@ def _clear_nonpassive_text(design: dict, resolved: dict[str, Asset], draft: Draf
                     preferred_connector_slots = tuple(
                         (sx, sy - offset * PITCH) for offset in (6, 5)
                     )
+        keep_long_connector_text_local = (
+            component["asset"].startswith("Connector_Generic:")
+            and max(len(component["refdes"]), len(component["value"])) > 10
+        )
+        connector_text_candidates = (
+            (draft.text_positions[key], *preferred_connector_slots)
+            if keep_long_connector_text_local
+            else (*preferred_connector_slots, draft.text_positions[key])
+        )
         candidates = (
-            *preferred_connector_slots,
-            draft.text_positions[key],
+            *connector_text_candidates,
             *nearby,
             (sx, sy - 12 * PITCH),
             (sx, sy - 16 * PITCH),

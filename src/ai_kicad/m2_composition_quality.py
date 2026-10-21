@@ -10,10 +10,13 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
-from .m2_pack import LEFT, MAX_CONTENT_HEIGHT, MAX_CONTENT_WIDTH, TOP
-from .m2_semantics import SemanticPlan
+from .m2_pack_constants import LEFT, MAX_CONTENT_HEIGHT, MAX_CONTENT_WIDTH, TOP
+from .m2_terminal_interface_flow import inferred_passive_interface_signal_relations
+
+if TYPE_CHECKING:
+    from .m2_semantics import SemanticPlan
 
 Rect = tuple[int, int, int, int]
 Point = tuple[int, int]
@@ -143,6 +146,11 @@ def _signal_edges(plan: SemanticPlan):
         if identity not in seen:
             seen.add(identity)
             yield *identity, f"precedence:{item.id}"
+    for source, target, net in inferred_passive_interface_signal_relations(plan):
+        identity = (source, target, net)
+        if identity not in seen:
+            seen.add(identity)
+            yield *identity, "terminal-backed-passive-interface"
 
 
 def _interface_signal_roles(plan: SemanticPlan) -> dict[str, set[str]]:
@@ -172,6 +180,7 @@ def observe_human_composition(
     *,
     envelope_width_nm: int = MAX_CONTENT_WIDTH,
     envelope_height_nm: int = MAX_CONTENT_HEIGHT,
+    observed_centers: Mapping[str, Point] | None = None,
 ) -> CompositionReport:
     """Evaluate first-order human-readable composition defects.
 
@@ -198,6 +207,10 @@ def observe_human_composition(
             )
 
     centers = {block_id: _center(rect) for block_id, rect in visible.items()}
+    if observed_centers is not None:
+        centers.update(
+            {block_id: point for block_id, point in observed_centers.items() if block_id in visible}
+        )
     roles = _interface_signal_roles(plan)
     signal_edges = tuple(_signal_edges(plan))
     for source, target, net, origin in signal_edges:
@@ -206,7 +219,10 @@ def observe_human_composition(
         source_x = centers[source][0]
         target_x = centers[target][0]
         delta = target_x - source_x
-        if delta < 0:
+        # Terminal-backed passive-interface direction is useful for the
+        # separate interface-side checks below, but the boundary itself is
+        # not a functional stage in primary left-to-right ordering.
+        if delta < 0 and origin != "terminal-backed-passive-interface":
             violations.append(
                 CompositionViolation(
                     "primary_stage_order_inversion",

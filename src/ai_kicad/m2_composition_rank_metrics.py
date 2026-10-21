@@ -4,13 +4,10 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from .m2_composition_candidate_rank import (
-    Point,
-    Rect,
-)
-from .m2_route import MAX_LOCAL_VISIBLE_SIGNAL_DISTANCE
+from .m2_composition_rank_types import Point, Rect
+from .m2_route_constants import MAX_LOCAL_VISIBLE_SIGNAL_DISTANCE
 from .m2_terminal_interface_flow import inferred_passive_interface_signal_relations
-from .m2a import PITCH
+from .m2a_constants import PITCH
 
 
 def _grid_units(distance: int) -> int:

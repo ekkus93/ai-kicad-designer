@@ -41,7 +41,7 @@ M2h2 finalization must preserve all of the following:
 - Do not inspect or use `research/legacy_openclaw/`.
 - Use locked KiCad **10.0.6** for real-tool qualification.
 - Work directly on `master`; no per-task branch/PR churn.
-- Use Ralph Bridge for GitHub/repository/CI operations.
+- Use the authenticated local GitHub CLI/API and this project's self-hosted runner for GitHub/repository/CI operations. The ChatGPT-only Ralph Bridge is not part of the computer-side workflow.
 
 ## 4. Current baseline
 
@@ -205,7 +205,7 @@ At the start of every Ralph run:
    - `docs/M2H2_FINALIZATION_TODO_2026-09-27.md`;
    - `docs/M2H2_HANDOFF_2026-09-27.md`;
    - `fixtures/m2h2/STATUS.md`;
-2. inspect current master SHA/state and relevant CI through Ralph Bridge;
+2. inspect current master SHA/state with local Git and inspect relevant CI through the authenticated GitHub CLI/API; confirm the project's self-hosted runner and locked KiCad toolchain are available;
 3. select the earliest actionable unchecked TODO item while advancing independent qualification/audit work concurrently when safe;
 4. prefer completing/fixing existing M2h2 work over duplicating it.
 
@@ -218,7 +218,7 @@ After each coherent completion slice:
 - reconcile TODO checkboxes only from current-source evidence;
 - add exact evidence references;
 - update `fixtures/m2h2/STATUS.md` only for material status changes;
-- commit coherent code/tests/evidence/TODO reconciliation to `master` through Ralph Bridge using exact-head compare-and-swap semantics.
+- commit coherent code/tests/evidence/TODO reconciliation directly to `master` using exact-head compare-and-swap semantics and the authenticated local GitHub workflow.
 
 ## 7. Evidence roots
 

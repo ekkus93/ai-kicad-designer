@@ -7,7 +7,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 from .ir import InputError
-from .m2a import PITCH
+from .m2a_constants import PITCH
 from .m2a_core import (
     Asset,
     Scene,

@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from .m2_fragments import FragmentVariant
-from .m2_pack import (
+from typing import TYPE_CHECKING
+
+from .m2_fragments_base import FragmentVariant
+from .m2_pack_constants import (
     BOTTOM,
     CHANNEL_GAP,
     LEFT,
@@ -22,7 +24,9 @@ from .m2_pack_core import (
     _typed_unit_order,
     _Unit,
 )
-from .m2_semantics import SemanticPlan
+
+if TYPE_CHECKING:
+    from .m2_semantics_core import SemanticPlan
 
 
 def _arrangements(

@@ -26,6 +26,9 @@ KICAD_VERSION = "10.0.6"
 
 CASES = {
     "v6-3": ROOT / "fixtures/m2blind_v6/ir/V6-3.json",
+    "v3-1": ROOT / "fixtures/m2blind_v3/ir/V3-1.json",
+    "v3-5": ROOT / "fixtures/m2blind_v3/ir/V3-5.json",
+    "dp1": ROOT / "fixtures/m2h2/development/dp1.json",
     "dp2": ROOT / "fixtures/m2h2/development/dp2.json",
     "i4__b2_mixed": ROOT / "fixtures/m2h2/interaction/i4/b2_mixed.json",
 }

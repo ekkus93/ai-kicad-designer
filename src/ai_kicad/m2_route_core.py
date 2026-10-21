@@ -2,29 +2,28 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
-
 import heapq
+from dataclasses import dataclass
 from itertools import pairwise
 
 from .ir import InputError
 from .m2_conflicts import ConflictKind, TypedConflict
-from .m2_fragments import Point
+from .m2_fragments_types import Point
 from .m2_geometry import (
     Gateway,
     Reservation,
     point_on_segment,
     segment_is_admissible,
 )
-from .m2_pack import BOTTOM, LEFT, RIGHT, TOP, PlacedFragment
-from .m2_route import (
+from .m2_pack_constants import BOTTOM, LEFT, RIGHT, TOP
+from .m2_pack_core import PlacedFragment
+from .m2_route_constants import (
     MAX_CANONICAL_LENGTH,
     MAX_ROUTE_STATES_PER_TAP,
     MAX_TRACKS_PER_SIDE,
 )
-from .m2_semantics import SemanticEdge
-from .m2a import PITCH
+from .m2_semantics_core import SemanticEdge
+from .m2a_constants import PITCH
 
 
 def _floor_grid(value: int) -> int:
@@ -87,14 +86,18 @@ class RouteBlockedConflict(InputError):
 class RouteLengthBoundConflict(TypedConflict):
     """A fixed partial conductor union already exceeds the unchanged net gate."""
 
-    def __init__(self, net: str, lower_bound: int):
+    def __init__(
+        self,
+        net: str,
+        lower_bound: int,
+        limit: int = MAX_CANONICAL_LENGTH,
+    ):
         super().__init__(
             ConflictKind.CANONICAL_LENGTH,
-            f"ROUTE_LENGTH_LOWER_BOUND: net={net} lower_bound={lower_bound} "
-            f"limit={MAX_CANONICAL_LENGTH}",
+            f"ROUTE_LENGTH_LOWER_BOUND: net={net} lower_bound={lower_bound} limit={limit}",
             net=net,
             actual=lower_bound,
-            limit=MAX_CANONICAL_LENGTH,
+            limit=limit,
             lower_bound=lower_bound,
             repair_classes=("distribution_placement", "gateway_access"),
         )

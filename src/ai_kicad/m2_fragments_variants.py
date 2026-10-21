@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from typing import TYPE_CHECKING
 
 from .ir import InputError
 from .m2_fragments_base import FragmentVariant
@@ -16,11 +17,13 @@ from .m2_fragments_builders import (
     _timer_fragment,
 )
 from .m2_fragments_geometry import _finish
-from .m2_semantics import SemanticPlan
-from .m2a import Asset
 from .m2b import (
     Draft,
 )
+
+if TYPE_CHECKING:
+    from .m2_semantics_core import SemanticPlan
+    from .m2a_core import Asset
 
 
 def _access_alternatives(

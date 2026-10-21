@@ -212,13 +212,98 @@ def conductor_accounting(canonical, proposed_global, reported_length, pruned_cou
     }
 
 
-def verify_emitted_conductors(canonical_trees, observed_wires):
+def verify_emitted_conductors(
+    canonical_trees,
+    observed_wires,
+    *,
+    pruned_spur_count=0,
+    pin_positions=(),
+    labels=(),
+):
+    """Reconcile canonical routes with native wires, proving any removed spurs.
+
+    Composition removes dead-end, terminal-free wire spurs after routing. A
+    missing canonical segment is accepted only when it is a native-free leaf
+    segment covered by the compositor's independently recorded prune count.
+    """
+
     def normalized(segments):
         return sorted(tuple(sorted(tuple(point) for point in segment)) for segment in segments)
 
-    canonical = [segment for tree in canonical_trees for segment in tree["segments"]]
-    if normalized(canonical) != normalized(observed_wires):
+    canonical_by_net = {
+        tree.get("net", str(index)): normalized(tree["segments"])
+        for index, tree in enumerate(canonical_trees)
+    }
+    canonical = [segment for segments in canonical_by_net.values() for segment in segments]
+    expected_set = set(normalized(canonical))
+    observed_set = set(normalized(observed_wires))
+    extra = sorted(observed_set - expected_set)
+    missing = sorted(expected_set - observed_set)
+    if extra:
         raise ValueError("canonical conductor inventory differs from emitted schematic bytes")
+    if not missing:
+        return {"serialized_segment_count": len(observed_set), "pruned_leaf_segments": []}
+    if len(missing) > pruned_spur_count:
+        raise ValueError("canonical conductor inventory differs from emitted schematic bytes")
+
+    pins = (
+        {tuple(point) for point in pin_positions.values()}
+        if isinstance(pin_positions, dict)
+        else {tuple(point) for point in pin_positions}
+    )
+    label_points = {tuple(label[1]) for label in labels}
+    native_points = pins | label_points | {point for segment in observed_set for point in segment}
+    pruned = []
+    missing_set = set(missing)
+    for net, segments in canonical_by_net.items():
+        net_missing = missing_set.intersection(segments)
+        if not net_missing:
+            continue
+        adjacency = {}
+        for segment in net_missing:
+            first, second = segment
+            adjacency.setdefault(first, set()).add(segment)
+            adjacency.setdefault(second, set()).add(segment)
+        remaining = set(net_missing)
+        while remaining:
+            component = set()
+            frontier = [next(iter(remaining))]
+            while frontier:
+                segment = frontier.pop()
+                if segment in component:
+                    continue
+                component.add(segment)
+                remaining.discard(segment)
+                for point in segment:
+                    frontier.extend(adjacency[point] - component)
+            points = {point for segment in component for point in segment}
+            boundary = {
+                point
+                for point in points
+                if any(segment not in missing_set and point in segment for segment in segments)
+            }
+            if len(boundary) != 1:
+                raise ValueError("omitted conductor is not a terminal-free dead-end spur")
+            attachment = next(iter(boundary))
+            free_points = points - boundary
+            if not free_points or free_points.intersection(pins | label_points):
+                raise ValueError("omitted conductor is not a terminal-free dead-end spur")
+            if attachment not in native_points:
+                raise ValueError("pruned conductor has no emitted attachment witness")
+            free_endpoints = sorted(
+                point
+                for point in free_points
+                if sum(point in segment for segment in component) == 1
+            )
+            pruned.append(
+                {
+                    "net": net,
+                    "segments_nm": sorted(component),
+                    "attachment_nm": attachment,
+                    "free_endpoints_nm": free_endpoints,
+                }
+            )
+    return {"serialized_segment_count": len(observed_set), "pruned_leaf_segments": pruned}
 
 
 def _fresh_case_directory(
@@ -528,7 +613,13 @@ def case_detail(group, case_id, signature, directory, design_path):
     layout = signature["layout"]
     schematic = next((directory / "project").glob("*.kicad_sch"))
     observed = observe(schematic, directory / "reports/netlist.xml")
-    verify_emitted_conductors(composition["canonical_trees"], observed["wires"])
+    emitted_conductors = verify_emitted_conductors(
+        composition["canonical_trees"],
+        observed["wires"],
+        pruned_spur_count=layout.get("pruned_spur_count", 0),
+        pin_positions=observed["pin_positions"],
+        labels=observed["labels"],
+    )
     design = json.loads(design_path.read_text())
     refs = {part["id"]: part["refdes"] for part in design["components"]}
     obligations = composition["obligation_certificate"]["semantic_obligations"]
@@ -596,6 +687,7 @@ def case_detail(group, case_id, signature, directory, design_path):
         "group": group,
         "case": case_id,
         "layout": layout,
+        "emitted_conductor_reconciliation": emitted_conductors,
         "net_lengths": lengths,
         "physical_component_count": len(refs),
         "observed_terminal_count": sum(len(members) for members in observed["nets"].values()),

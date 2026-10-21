@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-
 from .ir import InputError
 from .m2_compose_repairs import ConductorLengthConflict
 from .m2_conflicts import ConflictKind, TypedConflict

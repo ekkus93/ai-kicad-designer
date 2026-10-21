@@ -4,6 +4,7 @@ import json
 from types import MappingProxyType
 
 import pytest
+from m2h2_contract_helpers import reference_components
 
 from ai_kicad.ir import InputError
 from ai_kicad.m2_compose import (
@@ -35,7 +36,12 @@ from ai_kicad.m2a import PITCH, ROOT, Scene, certify_scene_geometry, emit, verif
 from ai_kicad.m2b import assets, validate
 
 
-from m2h2_contract_helpers import reference_components
+def test_local_visible_route_conflict_reports_its_own_limit():
+    conflict = RouteLengthBoundConflict("OUT", 150_000_001, limit=150_000_000)
+
+    assert conflict.lower_bound == 150_000_001
+    assert conflict.limit == 150_000_000
+    assert "limit=150000000" in str(conflict)
 
 
 def test_certified_scene_rejects_mutation_and_serialized_endpoint_change(tmp_path) -> None:
