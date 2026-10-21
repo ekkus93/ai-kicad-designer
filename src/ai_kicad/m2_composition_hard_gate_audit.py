@@ -6,8 +6,8 @@ hard policies that must remain unchanged before final closure can be considered.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 
 EXPECTED_HARD_GATES = {
     "content_spread_width_mm": 210,

@@ -8,8 +8,8 @@ remaining hard defect, a new defect, or a per-case regression.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 
 from .m2_composition_baseline_comparison import BaselineComparison
 

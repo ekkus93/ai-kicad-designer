@@ -3,23 +3,30 @@
 from __future__ import annotations
 
 from pathlib import Path
-import sys
 
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "tools"))
-
-from run_m2h2_current_regressions import (  # noqa: E402
+from run_m2h2_current_regressions import (
     CASES,
     _case_errors,
     _native_route_diagnostic,
     _reference_nets,
 )
 
+ROOT = Path(__file__).resolve().parents[1]
+
 
 def test_mixed_branch_is_in_locked_current_source_regressions() -> None:
     assert CASES["i4__b2_mixed"].relative_to(ROOT).as_posix() == (
         "fixtures/m2h2/interaction/i4/b2_mixed.json"
     )
+
+
+def test_dp1_label_disconnect_regression_is_in_locked_current_source_regressions() -> None:
+    assert CASES["dp1"].relative_to(ROOT).as_posix() == "fixtures/m2h2/development/dp1.json"
+
+
+def test_multi_pin_output_precedence_regressions_are_in_locked_current_source_regressions() -> None:
+    assert CASES["v3-1"].relative_to(ROOT).as_posix() == "fixtures/m2blind_v3/ir/V3-1.json"
+    assert CASES["v3-5"].relative_to(ROOT).as_posix() == "fixtures/m2blind_v3/ir/V3-5.json"
 
 
 def test_reference_free_design_does_not_invent_vref() -> None:

@@ -74,6 +74,36 @@ def test_distinct_nets_and_distinct_precedence_relations_are_not_lost():
     assert {item.net for item in report.violations} == {"a", "b"}
 
 
+def test_unique_passive_terminal_interface_is_observed_as_directed_flow():
+    interface = SimpleNamespace(
+        id="output",
+        kind="interface",
+        ports=(SimpleNamespace(role="passive", net="OUT"),),
+    )
+    producer = SimpleNamespace(
+        id="producer",
+        kind="stage",
+        ports=(SimpleNamespace(role="signal_out", net="OUT"),),
+    )
+    plan = SimpleNamespace(
+        blocks=(interface, producer),
+        edges=(),
+        precedence=(),
+        presentation_nets=(),
+    )
+
+    report = observe_human_composition(
+        plan,
+        {"output": (0, 0, 10, 10), "producer": (50, 0, 60, 10)},
+    )
+
+    assert report.metrics.output_side_violations == 1
+    side_violation = next(
+        item for item in report.violations if item.kind == "output_side_violation"
+    )
+    assert side_violation.witness.startswith("terminal-backed-passive-interface:")
+
+
 def test_page_centroid_uses_absolute_placement_origin():
     center_x = LEFT + 105_000_000
     center_y = TOP + 70_000_000

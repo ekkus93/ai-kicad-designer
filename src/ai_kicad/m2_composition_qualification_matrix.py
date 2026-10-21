@@ -6,9 +6,9 @@ claim a PASS; it records the exact matrix shape needed before final closure.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import json
 import re
+from dataclasses import dataclass
 
 LOCKED_KICAD_VERSION = "KiCad 10.0.6"
 REQUIRED_REPETITIONS = 5

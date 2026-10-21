@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
-from dataclasses import replace
+import itertools
 import json
+from dataclasses import replace
 from types import MappingProxyType
 
 import pytest
 
 from ai_kicad.ir import InputError
+from ai_kicad.m2_compose import LayoutBudgetError, compose_with_evidence
+from ai_kicad.m2_fragments import FragmentVariant, PortAnchor, fragment_variants
 from ai_kicad.m2_geometry import (
     AccessWindow,
     ConductorSegment,
@@ -22,8 +25,6 @@ from ai_kicad.m2_geometry import (
     envelope_contains,
     segment_is_admissible,
 )
-from ai_kicad.m2_compose import LayoutBudgetError, compose_with_evidence
-from ai_kicad.m2_fragments import FragmentVariant, PortAnchor, fragment_variants
 from ai_kicad.m2_pack import (
     CANDIDATE_BUDGET,
     ENVELOPE_OUTER_PADDING,
@@ -46,7 +47,6 @@ from ai_kicad.m2_semantics import (
 )
 from ai_kicad.m2a import ROOT
 from ai_kicad.m2b import assets, validate
-
 
 P = 1_270_000
 PROBES = ROOT / "fixtures/m2g2/probes"
@@ -388,7 +388,7 @@ def test_universal_escape_single_and_multi_sink_with_blocked_entry(support_y):
     escape = ((0, 0), (10, 0))
     assert all(
         segment_is_admissible(a, b, (support,), (), net="N", owner="tree.N")
-        for a, b in zip(escape, escape[1:])
+        for a, b in itertools.pairwise(escape)
     )
     assert segment_is_admissible((10, 0), (20, 0), (support,), (), net="N", owner="tree.N")
     assert segment_is_admissible((10, 0), (10, 10), (support,), (), net="N", owner="tree.N")

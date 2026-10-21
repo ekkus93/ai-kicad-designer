@@ -3,19 +3,16 @@
 from __future__ import annotations
 
 from pathlib import Path
-import sys
 
 import pytest
-
-ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "tools"))
-
-from run_m2h2_i1 import (  # noqa: E402
+from run_m2h2_i1 import (
     observed_structural_class,
     validate_coverage_ledger_evidence,
     validate_coverage_ledger_impossibilities,
     validate_real_tool_qualification_evidence,
 )
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_observed_structural_class_uses_selected_run_evidence_not_requested_label() -> None:

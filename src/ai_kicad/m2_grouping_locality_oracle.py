@@ -8,7 +8,7 @@ scores, candidate ranks, fixture names, refdes strings, and literal net names.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from itertools import combinations
+from itertools import combinations, pairwise
 
 Point = tuple[int, int]
 PenaltyVector = tuple[int, int, int, int, int]
@@ -171,7 +171,7 @@ def _series_order_penalty(
         (member for member in members if member.chain_rank is not None),
         key=lambda item: (item.block_id, item.chain_rank, item.member_id),
     )
-    for previous, current in zip(ranked, ranked[1:], strict=False):
+    for previous, current in pairwise(ranked):
         if previous.block_id != current.block_id:
             continue
         if current.center[0] < previous.center[0]:

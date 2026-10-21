@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import json
 
-from ai_kicad.m2a import ROOT
 from make_m2h2_probes import Circuit, amplifier, rc
+
+from ai_kicad.m2a import ROOT
 
 
 def case(depth: int, degree: int) -> tuple[dict, list[dict]]:
@@ -40,7 +41,7 @@ def case(depth: int, degree: int) -> tuple[dict, list[dict]]:
 
 def expectations(design: dict, paths: list[dict], depth: int, degree: int) -> dict:
     partitions = {net["id"]: sorted(net["members"]) for net in design["nets"]}
-    terminal_inventory = sorted((member for members in partitions.values() for member in members))
+    terminal_inventory = sorted(member for members in partitions.values() for member in members)
     source = "INPUT" if depth == 1 else f"MID_{depth - 1}"
     producer = ["input", "1"] if depth == 1 else [f"prefix_{depth - 1}_r", "2"]
     precedence = [

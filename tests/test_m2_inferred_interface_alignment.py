@@ -2,11 +2,11 @@
 
 from types import SimpleNamespace
 
-from ai_kicad.m2a import PITCH
 from ai_kicad.m2_composition_candidate_rank import (
     _interface_roles,
     _signal_row_alignment_penalties,
 )
+from ai_kicad.m2a import PITCH
 
 
 def _block(name: str, kind: str, *roles: str):

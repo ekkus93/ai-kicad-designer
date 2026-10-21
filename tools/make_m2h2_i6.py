@@ -5,11 +5,12 @@ from __future__ import annotations
 import copy
 import json
 
-from ai_kicad.m2a import ROOT
 from make_m2h2_i2 import case as reference_without_package
 from make_m2h2_i4 import case as branch_case
 from make_m2h2_i5 import case as support_case
 from make_m2h2_probes import Circuit, amplifier
+
+from ai_kicad.m2a import ROOT
 
 
 def _expected(design: dict, paths: list[dict], cell: str) -> dict:

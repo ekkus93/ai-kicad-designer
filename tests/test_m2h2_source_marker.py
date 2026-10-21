@@ -1,13 +1,13 @@
 """Native source-marker clearance must be measured and independently observed."""
 
-import pytest
-
 import json
 
+import pytest
+
 from ai_kicad.ir import InputError
-from ai_kicad.m2a import ROOT, observe
 from ai_kicad.m2_compose import _source_marker_placement
 from ai_kicad.m2_geometry import label_text_rect
+from ai_kicad.m2a import ROOT, observe
 from ai_kicad.m2b import assets, check_observed_layout, validate
 
 

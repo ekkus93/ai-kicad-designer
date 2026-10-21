@@ -1,10 +1,10 @@
 """Fanout columns keep reference-free siblings away from the reference rail."""
 
-from ai_kicad.m2a import PITCH
 from ai_kicad.m2_fragments import FragmentVariant, PortAnchor
 from ai_kicad.m2_geometry import Gateway
 from ai_kicad.m2_pack import _fanout_column_groups, _make_units
 from ai_kicad.m2_semantics import BlockPlan, SemanticEdge, SemanticPlan, SemanticPort
+from ai_kicad.m2a import PITCH
 
 
 def _fragment(block_id: str, kind: str, reference: str | None) -> FragmentVariant:

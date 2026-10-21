@@ -651,14 +651,14 @@ Only then may this remediation be marked **COMPLETE / PASS**.
 
 At the start of every run:
 
-1. reload current `master`;
+1. reload the current local checkout and its exact Git head;
 2. reload:
    - `docs/M2_GENERALIZATION_REMEDIATION_SPEC.md`;
    - `docs/M2H2_FINALIZATION_SPEC_2026-09-27.md`;
    - this specification;
    - the canonical human-readable composition TODO;
    - `fixtures/m2h2/STATUS.md`;
-3. inspect the local `master` checkout and relevant CI with authenticated `gh`/`git` on the project's self-hosted runner;
+3. inspect the local worktree and use the authenticated local GitHub CLI/API and the project's self-hosted runner for repository and CI state; Ralph Bridge is a ChatGPT-only integration and is not used from this computer;
 4. preserve existing M2h2 PASS authority;
 5. select the highest-value actionable unchecked composition item;
 6. prefer coherent vertical slices over one-checkbox commits;
@@ -673,6 +673,6 @@ After each coherent slice:
 - update TODO checkboxes only from current-source evidence;
 - add exact evidence references;
 - update `fixtures/m2h2/STATUS.md` only when material remediation status changes;
-- commit coherent code/tests/evidence/TODO reconciliation directly to `master` from the self-hosted runner using exact-head compare-and-swap semantics: fetch `origin/master`, verify it matches the inspected head, commit, then push the expected parent.
+- commit coherent code/tests/evidence/TODO reconciliation directly to `master` using exact-head compare-and-swap semantics, and push through the authenticated local GitHub CLI/API. Run qualification on the project's self-hosted runner with its locked KiCad toolchain.
 
 Do not finish merely to report progress. Finish only when every TODO item is checked with final-source evidence and human-readable composition is PASS, or a genuine blocker as defined above requires the user.

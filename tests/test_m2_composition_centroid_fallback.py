@@ -2,7 +2,6 @@
 
 from types import SimpleNamespace
 
-from ai_kicad.m2a import PITCH
 from ai_kicad.m2_pack import (
     BOTTOM,
     LEFT,
@@ -13,6 +12,7 @@ from ai_kicad.m2_pack import (
     _centroid_balanced_packing,
     _place,
 )
+from ai_kicad.m2a import PITCH
 
 
 def _fragment(name: str):

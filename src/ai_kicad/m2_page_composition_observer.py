@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 from dataclasses import dataclass
 from math import isclose
 
@@ -114,10 +115,10 @@ def _largest_internal_void_area(rects: tuple[Rect, ...], bbox: Rect) -> int:
     x_edges = sorted({bbox[0], bbox[2], *(rect[0] for rect in rects), *(rect[2] for rect in rects)})
     y_edges = sorted({bbox[1], bbox[3], *(rect[1] for rect in rects), *(rect[3] for rect in rects)})
     largest = 0
-    for left, right in zip(x_edges, x_edges[1:], strict=False):
+    for left, right in itertools.pairwise(x_edges):
         if left == right:
             continue
-        for top, bottom in zip(y_edges, y_edges[1:], strict=False):
+        for top, bottom in itertools.pairwise(y_edges):
             if top == bottom:
                 continue
             cell = (left, top, right, bottom)

@@ -1,7 +1,6 @@
 """Keep source-level audit findings authoritative in locked M2h2 qualification."""
 
 import pytest
-
 import run_m2g2_qualification as m2g2
 from run_m2h2_qualification import qualification_passed
 

@@ -2,10 +2,10 @@
 
 import pytest
 
-from ai_kicad.m2a import PITCH
 from ai_kicad.m2_fragments import FragmentVariant
 from ai_kicad.m2_pack import LEFT, Packing, _interface_frontier_candidates, _place
 from ai_kicad.m2_semantics import BlockPlan, SemanticEdge, SemanticPlan, SemanticPort
+from ai_kicad.m2a import PITCH
 
 
 def _block(name: str, role: str | None = None) -> BlockPlan:

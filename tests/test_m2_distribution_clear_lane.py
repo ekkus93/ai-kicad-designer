@@ -2,9 +2,9 @@
 
 from itertools import permutations
 
-from ai_kicad.m2a import PITCH
 from ai_kicad.m2_geometry import Gateway, Reservation
 from ai_kicad.m2_route import _distribution_initial_trees
+from ai_kicad.m2a import PITCH
 
 
 def test_blocked_median_selects_adjacent_legal_interior_lane() -> None:

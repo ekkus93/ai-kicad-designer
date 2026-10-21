@@ -1,13 +1,14 @@
 """Preserve structural regressions found by fresh locked qualification."""
 
+import itertools
 import json
 from collections import Counter
 
 import pytest
 
+from ai_kicad.m2_compose import compose_with_evidence
 from ai_kicad.m2a import ROOT
 from ai_kicad.m2b import assets, validate
-from ai_kicad.m2_compose import compose_with_evidence
 
 
 @pytest.mark.parametrize(
@@ -53,9 +54,10 @@ def test_fresh_qualification_failures_have_complete_bounded_composition(path):
 def test_three_timer_whole_band_has_certified_geometry_and_bounded_search():
     from argparse import Namespace
 
+    from run_m2h2_structural_alternative import observe_composition_packing, select_scene
+
     from ai_kicad.m2_fragments import fragment_variants
     from ai_kicad.m2_semantics import semantic_plan
-    from run_m2h2_structural_alternative import select_scene
 
     resolved = assets()
     path = ROOT / "fixtures/m2h2/interaction/i3/a3_one.json"
@@ -73,18 +75,110 @@ def test_three_timer_whole_band_has_certified_geometry_and_bounded_search():
     scene, _routes, trees, _reservations, packing, _index, _retry, ledger = select_scene(
         design, resolved, args
     )
+    assert observe_composition_packing(semantic_plan(design, resolved), packing).passed
     # Independent envelope check includes every non-interface cell, not only cores.
     cells = [item for item in packing.fragments if item.fragment.block.kind != "interface"]
     assert len(cells) == 3
     assert len({item.envelope[1] for item in cells}) == 1
     ordered = sorted(cells, key=lambda item: item.envelope[0])
-    assert all(a.envelope[2] < b.envelope[0] for a, b in zip(ordered, ordered[1:]))
+    assert all(a.envelope[2] < b.envelope[0] for a, b in itertools.pairwise(ordered))
     assert scene.metrics["final_content_width_mm"] <= 210
     assert scene.metrics["final_content_height_mm"] <= 140
     assert all(tree.length <= 250_000_000 for tree in trees)
     assert ledger["candidate_budget"] == 8
     assert ledger["slot_ceiling"] == 32
     assert 0 < ledger["complete_attempts"] <= 32
+
+
+def test_interleaved_two_timer_alternative_keeps_observer_clean():
+    from argparse import Namespace
+
+    from run_m2h2_structural_alternative import (
+        band_count,
+        interleaved,
+        observe_composition_packing,
+        select_scene,
+    )
+
+    from ai_kicad.m2_semantics import semantic_plan
+
+    resolved = assets()
+    path = ROOT / "fixtures/m2h2/interaction/i3/a2_interleaved.json"
+    design = validate(json.loads(path.read_text()), resolved)
+    args = Namespace(bands=2, core_bands=False, minimum_bands=True, interleaved=True)
+    _scene, _routes, _trees, _reservations, packing, _index, _retry, ledger = select_scene(
+        design, resolved, args
+    )
+
+    report = observe_composition_packing(semantic_plan(design, resolved), packing)
+    assert report.passed
+    assert report.metrics.output_side_violations == 0
+    assert band_count(packing) >= 2
+    assert interleaved(packing)
+    assert 0 < ledger["complete_attempts"] <= 32
+
+
+def test_interleaved_three_timer_alternative_finds_output_corridor():
+    from argparse import Namespace
+
+    from run_m2h2_structural_alternative import (
+        band_count,
+        interleaved,
+        observe_composition_packing,
+        select_scene,
+    )
+
+    from ai_kicad.m2_semantics import semantic_plan
+
+    resolved = assets()
+    path = ROOT / "fixtures/m2h2/interaction/i3/a3_interleaved.json"
+    design = validate(json.loads(path.read_text()), resolved)
+    args = Namespace(bands=2, core_bands=False, minimum_bands=True, interleaved=True)
+    _scene, _routes, _trees, _reservations, packing, _index, _retry, ledger = select_scene(
+        design, resolved, args
+    )
+
+    report = observe_composition_packing(semantic_plan(design, resolved), packing)
+    assert report.passed
+    assert report.metrics.output_side_violations == 0
+    assert band_count(packing) >= 2
+    assert interleaved(packing)
+    assert 0 < ledger["complete_attempts"] <= 32
+
+
+def test_three_amplifier_whole_band_search_removes_interface_side_reversals():
+    from argparse import Namespace
+
+    from run_m2h2_structural_alternative import observe_composition_packing, select_scene
+
+    from ai_kicad.m2_composition_rank_scoring import semantic_composition_penalty_breakdown
+    from ai_kicad.m2_semantics import semantic_plan
+
+    resolved = assets()
+    path = ROOT / "fixtures/m2h2/interaction/i3/three_amplifier_one_band.json"
+    design = validate(json.loads(path.read_text()), resolved)
+    args = Namespace(bands=1, core_bands=True, minimum_bands=False, interleaved=False)
+
+    _scene, _routes, _trees, _reservations, packing, _index, _retry, ledger = select_scene(
+        design, resolved, args
+    )
+
+    observer = observe_composition_packing(semantic_plan(design, resolved), packing)
+    assert (
+        observer.metrics.input_side_violations,
+        observer.metrics.output_side_violations,
+    ) == (0, 0)
+    assert (
+        semantic_composition_penalty_breakdown(
+            semantic_plan(design, resolved), packing
+        ).interface_side_violations
+        == 0
+    )
+    assert ledger["candidate_budget"] == 8
+    assert ledger["page_envelope_rejected_candidate_indices"]
+    rejected = [attempt for attempt in ledger["attempts"] if attempt["proof"] != "pass"]
+    assert all(attempt["reason"].startswith("ROUTE_LENGTH_LOWER_BOUND:") for attempt in rejected)
+    assert any(attempt["proof"] == "pass" for attempt in ledger["attempts"])
 
 
 def test_local_construction_budget_counts_rejections_and_preserves_uncovered(monkeypatch):

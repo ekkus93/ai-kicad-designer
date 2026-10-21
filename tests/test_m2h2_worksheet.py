@@ -1,7 +1,9 @@
 """Falsify native worksheet collisions without trusting planner geometry."""
 
 import re
+
 import pytest
+
 from ai_kicad.ir import InputError
 from ai_kicad.m2b import assets, check_observed_layout
 

@@ -7,7 +7,6 @@ import json
 
 from ai_kicad.m2a import ROOT
 
-
 OUTPUT = ROOT / "fixtures/m2f2/ir"
 
 

@@ -2,8 +2,8 @@
 
 import copy
 import os
-from pathlib import Path
 import subprocess
+from pathlib import Path
 
 import pytest
 
@@ -13,8 +13,8 @@ from ai_kicad.m2a import (
     ROOT,
     _extract_symbol,
     _mm,
-    compare,
     check_observed_layout,
+    compare,
     emit,
     fixture,
     layout,
@@ -98,6 +98,7 @@ def _fresh_xml(schematic: Path, launcher: Path, target: Path) -> Path:
         text=True,
         env=env,
         timeout=90,
+        check=False,
     )
     assert result.returncode == 0, result.stderr
     assert xml.is_file() and xml.stat().st_size

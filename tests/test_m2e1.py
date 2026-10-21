@@ -3,23 +3,22 @@
 from __future__ import annotations
 
 import copy
-from dataclasses import replace
 import hashlib
 import json
-from pathlib import Path
 import re
+from dataclasses import replace
+from pathlib import Path
 
 import pytest
 
 from ai_kicad.ir import InputError
-from ai_kicad.m2a import ROOT
+from ai_kicad.m2_compose import compose_layout
 from ai_kicad.m2_fragments import fragment_variants
 from ai_kicad.m2_pack import LEFT, TOP, pack_fragments
 from ai_kicad.m2_route import route_between_fragments
 from ai_kicad.m2_semantics import semantic_plan
+from ai_kicad.m2a import ROOT
 from ai_kicad.m2b import assets, validate
-from ai_kicad.m2_compose import compose_layout
-
 
 PROBES = ROOT / "fixtures/m2e1/ir"
 CORRECTED = ROOT / "fixtures/m2e1a/ir/regulator_timer_led_corrected.json"
@@ -52,7 +51,7 @@ def _duplicate(base: dict) -> dict:
             net["id"] = net_map[net["id"]]
             net["members"] = [[component_map[cid], pin] for cid, pin in net["members"]]
 
-        def renamed(value):
+        def renamed(value, component_map=component_map, net_map=net_map):
             if isinstance(value, str):
                 return component_map.get(value, net_map.get(value, value))
             if isinstance(value, list):

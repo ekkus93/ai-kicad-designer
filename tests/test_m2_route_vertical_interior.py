@@ -1,8 +1,8 @@
 """Source-neutral controls for bounded interior vertical distribution trunks."""
 
-from ai_kicad.m2a import PITCH
 from ai_kicad.m2_geometry import Gateway, Reservation
 from ai_kicad.m2_route import _distribution_initial_trees
+from ai_kicad.m2a import PITCH
 
 
 def _gateway(name: str, x: int, y: int) -> Gateway:

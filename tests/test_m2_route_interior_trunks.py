@@ -2,8 +2,8 @@
 
 from types import SimpleNamespace
 
-from ai_kicad.m2a import PITCH
 from ai_kicad.m2_route import _distribution_initial_trees
+from ai_kicad.m2a import PITCH
 
 
 def test_distribution_plan_count_is_bounded() -> None:

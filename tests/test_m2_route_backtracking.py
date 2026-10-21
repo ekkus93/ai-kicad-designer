@@ -4,8 +4,8 @@ from types import SimpleNamespace
 
 import pytest
 
-from ai_kicad.m2a import PITCH
 from ai_kicad.m2_composition_candidate_rank import route_backtracking_penalty
+from ai_kicad.m2a import PITCH
 
 
 def _score(segments):

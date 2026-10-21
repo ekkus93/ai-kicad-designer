@@ -1,0 +1,43 @@
+"""Shared constants and public type aliases for the facade."""
+
+from __future__ import annotations
+
+from .m2a_constants import PITCH
+
+LEFT = 18 * PITCH
+
+
+TOP = 23 * PITCH
+
+
+RIGHT = 215 * PITCH
+
+
+BOTTOM = 144 * PITCH
+
+
+MAX_CONTENT_WIDTH = 210_000_000
+
+
+MAX_CONTENT_HEIGHT = 140_000_000
+
+
+ENVELOPE_OUTER_PADDING = 4 * PITCH
+
+
+CANDIDATE_BUDGET = 8
+
+
+PLACEMENT_LEFT = LEFT + 2 * PITCH
+
+
+CHANNEL_GAP = PITCH
+
+
+OUTPUT_FRONTIER_CLEARANCE = 14 * PITCH
+
+
+MAX_PACKING_WIDTH = RIGHT - LEFT
+
+
+MAX_PACKING_HEIGHT = BOTTOM - TOP

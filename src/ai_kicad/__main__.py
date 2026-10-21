@@ -2,8 +2,8 @@
 
 import argparse
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 
 from pydantic import ValidationError
 
@@ -203,7 +203,15 @@ def build(args: argparse.Namespace) -> int:
         stage.rename(out)
         print(out)
         return 0
-    except Exception as exc:
+    except (
+        InputError,
+        ValidationError,
+        Infeasible,
+        ToolFailure,
+        OSError,
+        ValueError,
+        TypeError,
+    ) as exc:
         # Preserve all generated evidence under a visibly rejected directory.
         code = (
             2

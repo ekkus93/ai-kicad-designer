@@ -4,7 +4,6 @@ These controls prove relative geometry and search-budget invariants only, not
 native-render aesthetics or final KiCad acceptance.
 """
 
-from ai_kicad.m2a import PITCH
 from ai_kicad.m2_composition_candidate_rank import compactness_whitespace_penalties
 from ai_kicad.m2_fragments import FragmentVariant
 from ai_kicad.m2_pack import (
@@ -17,6 +16,7 @@ from ai_kicad.m2_pack import (
     _retain_composition_seed_diversity,
 )
 from ai_kicad.m2_semantics import BlockPlan
+from ai_kicad.m2a import PITCH
 
 
 def _fragment(block_id: str) -> FragmentVariant:

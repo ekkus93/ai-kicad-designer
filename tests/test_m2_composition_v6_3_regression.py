@@ -2,10 +2,10 @@
 
 import json
 
-from ai_kicad.m2a import ROOT
-from ai_kicad.m2b import assets, validate
 from ai_kicad.m2_compose import compose_with_evidence
 from ai_kicad.m2_semantics import semantic_plan
+from ai_kicad.m2a import ROOT
+from ai_kicad.m2b import assets, validate
 
 
 def test_v6_3_internal_reference_and_filter_feedback_remain_composable() -> None:

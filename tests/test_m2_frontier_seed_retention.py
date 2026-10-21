@@ -2,8 +2,8 @@
 
 from types import SimpleNamespace
 
-from ai_kicad.m2a import PITCH
 from ai_kicad.m2_pack import Packing, _retain_composition_seed_diversity
+from ai_kicad.m2a import PITCH
 
 
 def _seed(label: str, index: int) -> Packing:

@@ -7,8 +7,8 @@ cases that would make composition behavior benchmark-specific.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 import re
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)

@@ -15,7 +15,7 @@ def test_shared_rail_dispersion_and_multi_consumer_span_are_reported() -> None:
 
     metrics = obs.measure_power_reference_composition(nodes, edges, primary_row_y=20)
 
-    supply = [item for item in metrics.infrastructure_dispersion if item.role == "supply"][0]
+    supply = next(item for item in metrics.infrastructure_dispersion if item.role == "supply")
     assert (supply.node_count, supply.manhattan_diameter) == (1, 0)
     assert metrics.producer_coherence == (obs.ProducerCoherence("rail", "supply", 2, 140),)
 

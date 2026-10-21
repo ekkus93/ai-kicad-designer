@@ -3,8 +3,8 @@
 import argparse
 import hashlib
 import json
-from pathlib import Path
 import shutil
+from pathlib import Path
 
 import pytest
 
@@ -12,7 +12,6 @@ from ai_kicad.__main__ import build
 from ai_kicad.ir import InputError, load_json, validate
 from ai_kicad.kicad import ToolFailure, run_headless, validate_toolchain
 from ai_kicad.verify import observe_electrical, verify_electrical
-
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "fixtures/m1a"

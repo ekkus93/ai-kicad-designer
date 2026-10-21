@@ -2,11 +2,11 @@
 
 from types import SimpleNamespace
 
-from ai_kicad.m2a import PITCH
 from ai_kicad.m2_composition_candidate_rank import (
     route_backtracking_penalty,
     route_branch_arm_spread,
 )
+from ai_kicad.m2a import PITCH
 
 
 def _route(*segments):

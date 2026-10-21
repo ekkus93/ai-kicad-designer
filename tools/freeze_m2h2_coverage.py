@@ -8,7 +8,6 @@ import subprocess
 from itertools import product
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "fixtures/m2h2/development"
 FACTORS = {

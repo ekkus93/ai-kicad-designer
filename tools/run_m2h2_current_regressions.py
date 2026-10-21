@@ -4,27 +4,31 @@ from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
 import subprocess
 import sys
 import time
+from pathlib import Path
 from typing import Any
 
-from ai_kicad.m2a import ROOT, observe
-from ai_kicad.m2b import assets, validate
+from run_m2g2_qualification import _build, _erc_violations, _json, _sha, _signature
+
 from ai_kicad.m2_composition_qualification_observation import (
     observe_composition_evidence,
     observe_native_pin_composition,
 )
 from ai_kicad.m2_routing_composition_observer import measure_routing_readability
 from ai_kicad.m2_semantics import semantic_plan
-from run_m2g2_qualification import _build, _erc_violations, _json, _sha, _signature
+from ai_kicad.m2a import ROOT, observe
+from ai_kicad.m2b import assets, validate
 
 CANONICAL_LIMIT_NM = 250_000_000
 KICAD_VERSION = "10.0.6"
 
 CASES = {
     "v6-3": ROOT / "fixtures/m2blind_v6/ir/V6-3.json",
+    "v3-1": ROOT / "fixtures/m2blind_v3/ir/V3-1.json",
+    "v3-5": ROOT / "fixtures/m2blind_v3/ir/V3-5.json",
+    "dp1": ROOT / "fixtures/m2h2/development/dp1.json",
     "dp2": ROOT / "fixtures/m2h2/development/dp2.json",
     "i4__b2_mixed": ROOT / "fixtures/m2h2/interaction/i4/b2_mixed.json",
 }

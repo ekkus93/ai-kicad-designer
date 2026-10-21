@@ -1,19 +1,20 @@
 from __future__ import annotations
 
-from ai_kicad.m2a import ROOT
-
 import sys
+
+from ai_kicad.m2a import ROOT
 
 sys.path.insert(0, str(ROOT / "tools"))
 
-from analyze_m2h2_historical_composition import (  # noqa: E402
+from analyze_m2h2_historical_composition import (
     MANIFEST,
     _design_paths,
     _verified_svg_by_case,
     analyze_case,
     build_report,
 )
-from ai_kicad.m2b import assets  # noqa: E402
+
+from ai_kicad.m2b import assets
 
 
 def test_frozen_native_inventory_maps_every_archived_render_to_authored_design() -> None:

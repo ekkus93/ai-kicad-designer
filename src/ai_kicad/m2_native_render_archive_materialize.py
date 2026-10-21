@@ -9,8 +9,8 @@ import base64
 import gzip
 import hashlib
 import json
-from pathlib import Path
 import re
+from pathlib import Path
 from xml.etree import ElementTree
 
 from .m2_composition_native_archive import NativeRenderInventory, verify_native_render_parts
@@ -32,11 +32,11 @@ def load_native_baseline(
     seen_paths: set[str] = set()
     for item in records:
         if not isinstance(item, dict):
-            raise ValueError("invalid native-render part manifest entry")
+            raise TypeError("invalid native-render part manifest entry")
         relative = item.get("path")
         digest = item.get("sha256")
         if not isinstance(relative, str) or not isinstance(digest, str):
-            raise ValueError("missing native-render part identity")
+            raise TypeError("missing native-render part identity")
         source = (resolved_root / relative).resolve()
         if not source.is_relative_to(resolved_root) or not source.is_file():
             raise ValueError("native-render part is outside the verified repository root")
@@ -48,7 +48,7 @@ def load_native_baseline(
             raise ValueError(f"native-render archive part digest mismatch: {relative}")
         part = json.loads(payload)
         if not isinstance(part, dict):
-            raise ValueError("native-render part must be an object")
+            raise TypeError("native-render part must be an object")
         parts.append(part)
 
     inventory = verify_native_render_parts(parts)

@@ -3,12 +3,10 @@
 from __future__ import annotations
 
 from pathlib import Path
-import sys
+
+from run_m2h2_structural_audit import audit_paths
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(ROOT / "tools"))
-
-from run_m2h2_structural_audit import audit_paths  # noqa: E402
 
 
 def _write(path: Path, text: str) -> Path:

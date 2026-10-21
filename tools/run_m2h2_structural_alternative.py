@@ -7,8 +7,37 @@ import json
 import subprocess
 from pathlib import Path
 
+from run_m2g2_qualification import _erc_violations, _normalized_svg, _sha
+
 from ai_kicad.assets import sha256
+from ai_kicad.ir import InputError
 from ai_kicad.kicad import run_headless, validate_toolchain
+from ai_kicad.m2_compose import _assemble_candidate
+from ai_kicad.m2_composition_qualification_observation import (
+    observe_composition_packing,
+    observe_native_pin_composition,
+)
+from ai_kicad.m2_composition_rank_scoring import semantic_composition_penalty_breakdown
+from ai_kicad.m2_fragments import fragment_variants
+from ai_kicad.m2_route import route_between_fragments
+from ai_kicad.m2_pack import (
+    BOTTOM,
+    CHANNEL_GAP,
+    LEFT,
+    MAX_CONTENT_HEIGHT,
+    MAX_CONTENT_WIDTH,
+    RIGHT,
+    TOP,
+    Packing,
+    _interface_frontier_candidates,
+    _partial_beam_candidates,
+    _place,
+    _worksheet_clearance_packing,
+    pack_fragment_candidates,
+)
+from ai_kicad.m2_route_core import RouteLengthBoundConflict
+from ai_kicad.m2_semantics import semantic_plan
+from ai_kicad.m2_terminal_interface_flow import inferred_passive_interface_signal_relations
 from ai_kicad.m2a import (
     PITCH,
     ROOT,
@@ -20,23 +49,6 @@ from ai_kicad.m2a import (
     verify_serialized_scene,
 )
 from ai_kicad.m2b import assets, check_observed_layout, compare, validate
-from ai_kicad.m2_compose import _assemble_candidate
-from ai_kicad.m2_composition_qualification_observation import (
-    observe_composition_packing,
-    observe_native_pin_composition,
-)
-from ai_kicad.m2_fragments import fragment_variants
-from ai_kicad.m2_pack import (
-    MAX_CONTENT_HEIGHT,
-    MAX_CONTENT_WIDTH,
-    Packing,
-    _partial_beam_candidates,
-    _place,
-    _worksheet_clearance_packing,
-    pack_fragment_candidates,
-)
-from ai_kicad.m2_semantics import semantic_plan
-from run_m2g2_qualification import _erc_violations, _normalized_svg, _sha
 
 
 def band_count(packing, *, core_only: bool = False) -> int:
@@ -217,7 +229,75 @@ def extra_packings(baseline: Packing, variants=None) -> tuple[Packing, ...]:
                     proposal.attempts + ("measured-peer-separation",),
                 )
             )
-    return tuple((*candidates, *repaired))
+    return (*candidates, *repaired)
+
+
+def interface_variant_packings(packing: Packing, variants, plan) -> tuple[Packing, ...]:
+    """Offer certified connector alternatives, including combined input text slots."""
+    current = {item.fragment.block.id: item for item in packing.fragments}
+    input_owners = {
+        source: target
+        for source, target, _net in inferred_passive_interface_signal_relations(plan)
+        if source in current and target in current
+    }
+
+    def position(block_id: str, fragment, original):
+        owner_id = input_owners.get(block_id)
+        owner = current.get(owner_id) if owner_id is not None else None
+        if owner is None:
+            return original.envelope[0], original.envelope[1]
+        width = fragment.envelope[2] - fragment.envelope[0]
+        return (
+            owner.envelope[0] - width - CHANNEL_GAP - 2 * PITCH,
+            owner.envelope[1],
+        )
+
+    alternatives = []
+    for block_id, family in sorted(variants.items()):
+        item = current.get(block_id)
+        if item is None or item.fragment.block.kind != "interface":
+            continue
+        for fragment in family:
+            if fragment.id == item.fragment.id:
+                continue
+            left, top = position(block_id, fragment, item)
+            replacement = _place(fragment, left, top)
+            alternatives.append(
+                Packing(
+                    tuple(
+                        replacement if other.fragment.block.id == block_id else other
+                        for other in packing.fragments
+                    ),
+                    (*packing.attempts, f"interface-variant:{block_id}:{fragment.id}"),
+                )
+            )
+    return tuple(alternatives)
+
+
+def input_side_translation_candidates(packing: Packing, plan) -> tuple[Packing, ...]:
+    """Move the connected composition right while keeping directed inputs fixed."""
+    if not observe_composition_packing(plan, packing).metrics.input_side_violations:
+        return ()
+    input_interfaces = {
+        source
+        for source, _target, _net in inferred_passive_interface_signal_relations(plan)
+        if source.startswith("interface.")
+    }
+    alternatives = []
+    for shift in (2 * PITCH, 4 * PITCH):
+        moved = tuple(
+            item
+            if item.fragment.block.id in input_interfaces
+            else _place(item.fragment, item.envelope[0] + shift, item.envelope[1])
+            for item in packing.fragments
+        )
+        alternatives.append(
+            Packing(
+                moved,
+                (*packing.attempts, f"input-side-core-translation:{shift}"),
+            )
+        )
+    return tuple(alternatives)
 
 
 def interleaved(packing: Packing) -> bool:
@@ -229,6 +309,72 @@ def interleaved(packing: Packing) -> bool:
         for index, first in enumerate(cells)
         for second in cells[index + 1 :]
     )
+
+
+def _grid_output_corridor_candidate(plan, baseline: Packing) -> Packing | None:
+    """Scan free grid slots for output interfaces when local corridors are blocked."""
+    current = baseline
+    seen = {tuple((item.fragment.id, item.delta) for item in current.fragments)}
+    for _ in range(len(current.fragments)):
+        observation = observe_composition_packing(plan, current)
+        if not observation.metrics.output_side_violations:
+            try:
+                route_between_fragments(plan, current.fragments)
+            except InputError:
+                return None
+            return current
+        violation = next(
+            item for item in observation.violations if item.kind == "output_side_violation"
+        )
+        placed = {item.fragment.block.id: item for item in current.fragments}
+        interface = placed.get(violation.source)
+        owner = placed.get(violation.target)
+        if interface is None or owner is None:
+            return None
+        width = interface.envelope[2] - interface.envelope[0]
+        moved = None
+        for desired_left in range(LEFT, RIGHT - width + 1, PITCH):
+            replacement = _place(interface.fragment, desired_left, interface.envelope[1])
+            if replacement.envelope[0] < LEFT or replacement.envelope[2] > RIGHT:
+                continue
+            if any(
+                max(replacement.envelope[0], other.envelope[0])
+                < min(replacement.envelope[2], other.envelope[2])
+                and max(replacement.envelope[1], other.envelope[1])
+                < min(replacement.envelope[3], other.envelope[3])
+                for block_id, other in placed.items()
+                if block_id != violation.source
+            ):
+                continue
+            changed = {
+                **placed,
+                violation.source: replacement,
+            }
+            candidate = Packing(
+                tuple(sorted(changed.values(), key=lambda item: item.fragment.block.id)),
+                (*current.attempts, "structural-output-corridor-grid-scan"),
+            )
+            content = [item.content_envelope for item in candidate.fragments]
+            if (
+                max(rect[2] for rect in content) - min(rect[0] for rect in content)
+                > MAX_CONTENT_WIDTH
+                or max(rect[3] for rect in content) - min(rect[1] for rect in content)
+                > MAX_CONTENT_HEIGHT
+            ):
+                continue
+            score = observe_composition_packing(plan, candidate).metrics.output_side_violations
+            if score >= observation.metrics.output_side_violations:
+                continue
+            identity = tuple((item.fragment.id, item.delta) for item in candidate.fragments)
+            if identity in seen:
+                continue
+            seen.add(identity)
+            moved = candidate
+            break
+        if moved is None:
+            return None
+        current = moved
+    return None
 
 
 def frozen_obligations(observed: dict, design: dict, expected: dict) -> dict:
@@ -297,12 +443,28 @@ def select_scene(design: dict, emitted_assets: dict, args) -> tuple:
     plan = semantic_plan(design, emitted_assets)
     variants = fragment_variants(design, emitted_assets, plan)
     seeds = pack_fragment_candidates(plan, variants)
+    frontier_packings = tuple(
+        option
+        for seed in seeds[:8]
+        for variant_packing in (seed, *interface_variant_packings(seed, variants, plan))
+        for option in (
+            variant_packing,
+            *_interface_frontier_candidates(plan, variant_packing),
+        )
+    )
     packings = (
         *seeds,
         *_partial_beam_candidates(plan, variants),
         *extra_packings(seeds[0], variants),
+        *frontier_packings,
+        *(
+            translated
+            for packing in frontier_packings
+            for translated in input_side_translation_candidates(packing, plan)
+        ),
     )
     candidates = []
+    page_envelope_rejections = []
     seen = set()
     for index, packing in enumerate(packings):
         packing = _worksheet_clearance_packing(packing)
@@ -325,9 +487,79 @@ def select_scene(design: dict, emitted_assets: dict, args) -> tuple:
             for second in cells[ordinal + 1 :]
         ):
             continue
+        envelope = (
+            min(item.envelope[0] for item in cells),
+            min(item.envelope[1] for item in cells),
+            max(item.envelope[2] for item in cells),
+            max(item.envelope[3] for item in cells),
+        )
+        if (
+            envelope[0] < LEFT
+            or envelope[1] < TOP
+            or envelope[2] > RIGHT
+            or envelope[3] > BOTTOM
+            or envelope[2] - envelope[0] > MAX_CONTENT_WIDTH
+            or envelope[3] - envelope[1] > MAX_CONTENT_HEIGHT
+        ):
+            page_envelope_rejections.append(index)
+            continue
         candidates.append((index, packing))
-    # The finite alternatives beyond eight seeds remain explicitly uncovered.
-    retained = candidates[:8]
+    # Class-constrained packings often have a valid core arrangement but leave
+    # one or more output interfaces on the wrong side of their producer. Reuse
+    # the measured production corridor repair for the bounded seed set, then
+    # retain only repairs that still satisfy the requested structural class.
+    from ai_kicad.m2_pack_search import _observed_output_corridor_candidate
+
+    repair_seeds = sorted(
+        candidates,
+        key=lambda candidate: (
+            len(observe_composition_packing(plan, candidate[1]).violations),
+            semantic_composition_penalty_breakdown(plan, candidate[1]).interface_side_violations,
+            semantic_composition_penalty_breakdown(plan, candidate[1]).interface_owner_distance,
+            candidate[0],
+        ),
+    )[:8]
+    repaired_candidates = []
+    for index, packing in repair_seeds:
+        if not observe_composition_packing(plan, packing).metrics.output_side_violations:
+            continue
+        repaired = _observed_output_corridor_candidate(plan, variants, packing)
+        if repaired is None:
+            repaired = _grid_output_corridor_candidate(plan, packing)
+        if repaired is None:
+            continue
+        repaired_bands = band_count(repaired, core_only=args.core_bands)
+        if repaired_bands < args.bands if args.minimum_bands else repaired_bands != args.bands:
+            continue
+        if args.interleaved and not interleaved(repaired):
+            continue
+        repaired_candidates.append((index + len(packings), repaired))
+        break
+    candidates.extend(repaired_candidates)
+    # Observer failures are hard acceptance defects, so exclude those
+    # candidates before spending the bounded assembly and routing budget.
+    observer_rejected = []
+    observer_clean = []
+    for index, packing in candidates:
+        observation = observe_composition_packing(plan, packing)
+        if not observation.passed:
+            observer_rejected.append(index)
+            continue
+        semantic = semantic_composition_penalty_breakdown(plan, packing)
+        observer_clean.append(
+            (
+                (
+                    len(observation.violations),
+                    semantic.interface_side_violations,
+                    semantic.interface_owner_distance,
+                    index,
+                ),
+                index,
+                packing,
+            )
+        )
+    ranked_clean = sorted(observer_clean)
+    retained = [(index, packing) for _key, index, packing in ranked_clean[:8]]
     attempts = []
     proved = []
     for seed, (index, packing) in enumerate(retained):
@@ -362,7 +594,7 @@ def select_scene(design: dict, emitted_assets: dict, args) -> tuple:
                         "grid_pitch_nm": PITCH,
                     },
                 )
-            except Exception as exc:
+            except (InputError, ValueError, TypeError) as exc:
                 attempts.append(
                     {
                         "seed": seed,
@@ -372,9 +604,19 @@ def select_scene(design: dict, emitted_assets: dict, args) -> tuple:
                         "reason": str(exc),
                     }
                 )
+                if isinstance(exc, RouteLengthBoundConflict):
+                    # Retries cannot repair a fixed conductor union that is
+                    # already over the canonical length limit.
+                    break
                 continue
             attempts.append({"seed": seed, "candidate": index, "retry": retry, "proof": "pass"})
+            composition = observe_composition_packing(plan, packing)
+            semantic = semantic_composition_penalty_breakdown(plan, packing)
             quality = (
+                len(composition.violations),
+                sum(abs(item.actual_nm) for item in composition.violations),
+                semantic.interface_side_violations,
+                semantic.interface_owner_distance,
                 max((tree.length for tree in trees), default=0),
                 sum(tree.length for tree in trees),
                 scene.certificate_digest,
@@ -390,8 +632,11 @@ def select_scene(design: dict, emitted_assets: dict, args) -> tuple:
         },
         "attempts": attempts,
         "available_class_candidates": len(candidates),
+        "observer_clean_class_candidates": len(observer_clean),
+        "observer_rejected_candidate_indices": observer_rejected,
         "retained_seeds": len(retained),
-        "budget_uncovered_candidate_indices": [index for index, _ in candidates[8:]],
+        "page_envelope_rejected_candidate_indices": page_envelope_rejections,
+        "budget_uncovered_candidate_indices": [index for _key, index, _packing in ranked_clean[8:]],
     }
     if not proved:
         raise RuntimeError(f"no proved class candidate: {json.dumps(ledger)}")

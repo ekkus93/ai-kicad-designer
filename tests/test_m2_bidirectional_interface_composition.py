@@ -2,9 +2,9 @@
 
 from types import SimpleNamespace
 
-from ai_kicad.m2a import PITCH
 from ai_kicad.m2_composition_candidate_rank import semantic_composition_penalty_breakdown
 from ai_kicad.m2_composition_quality import observe_human_composition
+from ai_kicad.m2a import PITCH
 
 
 def _interface(*roles: str):

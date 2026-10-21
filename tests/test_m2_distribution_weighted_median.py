@@ -2,9 +2,9 @@
 
 from itertools import permutations
 
-from ai_kicad.m2a import PITCH
 from ai_kicad.m2_geometry import Gateway
 from ai_kicad.m2_route import _distribution_initial_trees
+from ai_kicad.m2a import PITCH
 
 
 def test_skewed_gateway_rows_choose_shorter_interior_trunk() -> None:

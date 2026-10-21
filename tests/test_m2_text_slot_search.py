@@ -2,11 +2,11 @@
 
 from dataclasses import replace
 
-from ai_kicad.m2a import PITCH
-from ai_kicad.m2b import Draft, choose_text_slots
 from ai_kicad.m2_fragments import FragmentVariant
 from ai_kicad.m2_pack import pack_fragment_candidates
 from ai_kicad.m2_semantics import BlockPlan, SemanticPlan
+from ai_kicad.m2a import PITCH
+from ai_kicad.m2b import Draft, choose_text_slots
 
 
 def test_alternate_passive_text_slot_is_distinct_and_deterministic() -> None:

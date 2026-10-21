@@ -2,7 +2,6 @@
 
 from types import SimpleNamespace
 
-from ai_kicad.m2a import PITCH
 from ai_kicad.m2_composition_candidate_rank import (
     _local_signal_neighbor_gap,
     semantic_composition_penalty_breakdown,
@@ -17,6 +16,7 @@ from ai_kicad.m2_pack import (
     _retain_composition_seed_diversity,
 )
 from ai_kicad.m2_semantics import BlockPlan, PresentationNet, SemanticEdge, SemanticPlan
+from ai_kicad.m2a import PITCH
 
 
 def test_local_signal_pair_gap_prefers_proximity() -> None:

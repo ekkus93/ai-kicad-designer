@@ -7,7 +7,6 @@ from ai_kicad.m2_composition_closure_record import (
     QualificationOutcome,
 )
 
-
 DIGEST_A = "a" * 64
 DIGEST_B = "b" * 64
 DIGEST_C = "c" * 64
