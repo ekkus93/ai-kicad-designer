@@ -43,6 +43,19 @@ def finalize(root: Path, source_id: str, package_id: str, reviewer: str) -> Path
                 "observation": observation,
             }
         )
+    schematic_preview = output / "previews" / "schematic.png"
+    if schematic_preview.is_file():
+        images.append(
+            {
+                "path": "previews/schematic.png",
+                "sha256": sha256(schematic_preview),
+                "observation": (
+                    "The external supply, return, and output connectors are drawn at their "
+                    "circuit nodes with visible wires. This rendering observation is not an "
+                    "independent electrical sign-off."
+                ),
+            }
+        )
     visual_review = {
         "schema_version": "visual-inspection.v1",
         "reviewed_at_utc": datetime.now(timezone.utc).isoformat(),
@@ -50,7 +63,7 @@ def finalize(root: Path, source_id: str, package_id: str, reviewer: str) -> Path
         "revision_id": verification["revision_id"],
         "images": images,
         "decision": "REVIEW_NOTE",
-        "review_note": "C1 reference readability should be checked in KiCad before any physical order. This review does not authorize fabrication.",
+        "review_note": "C1 reference readability should be checked in KiCad before any physical order. This review does not authorize fabrication or order placement.",
     }
     (output / "visual_inspection.json").write_text(json.dumps(visual_review, indent=2) + "\n")
     write_manifest(

@@ -7,6 +7,7 @@ from pathlib import Path
 from tools.pivot.verify_fixture import verify_manifest
 from tools.pivot.experiment_paths import create_experiment_dir
 from tools.pivot.verify_native_project import verify_native_project
+from tools.pivot.redraw_external_ports import redraw_external_ports
 
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "fixtures/pivot/reference_555_led_flasher_v1/manifest.json"
@@ -87,3 +88,18 @@ def test_native_project_reference_files_are_locked_and_tamper_evident(tmp_path: 
     shutil.copytree(native, target)
     (target / "Reference555LedFlasher.kicad_pcb").write_bytes(b"tampered")
     assert any("hash mismatch" in error for error in verify_native_project(target))
+
+
+def test_redrawn_fixture_preserves_v1_and_is_reproducible(tmp_path: Path) -> None:
+    v1 = ROOT / "fixtures/pivot/reference_555_led_flasher_v1/native_project"
+    v2 = ROOT / "fixtures/pivot/reference_555_led_flasher_v2/native_project"
+    assert verify_native_project(v1) == []
+    assert verify_native_project(v2) == []
+    output = tmp_path / "Reference555LedFlasher.kicad_sch"
+    redraw_external_ports(v1 / "Reference555LedFlasher.kicad_sch", output)
+    assert output.read_bytes() == (v2 / "Reference555LedFlasher.kicad_sch").read_bytes()
+
+
+def test_redrawn_fixture_manifest_is_locked() -> None:
+    manifest = ROOT / "fixtures/pivot/reference_555_led_flasher_v2/manifest.json"
+    assert verify_manifest(manifest, ROOT) == []

@@ -96,7 +96,12 @@ def _dfm(board_report: dict, fabrication_report: dict, profile: dict, drill_repo
     }
 
 
-def execute(root: Path, experiment_id: str, cli: Path) -> Path:
+def execute(
+    root: Path,
+    experiment_id: str,
+    cli: Path,
+    fixture_path: Path = Path("fixtures/pivot/reference_555_led_flasher_v1"),
+) -> Path:
     output = create_experiment_dir(root, experiment_id)
     workspace = output / "editable_project"
     fabrication = output / "fabrication"
@@ -104,8 +109,10 @@ def execute(root: Path, experiment_id: str, cli: Path) -> Path:
     previews = output / "previews"
     for directory in (workspace, reports, previews):
         directory.mkdir()
-    fixture = root / "fixtures/pivot/reference_555_led_flasher_v1"
-    source = root / "fixtures/pivot/reference_555_led_flasher_v1/native_project"
+    fixture = (root / fixture_path).resolve()
+    if not fixture.is_relative_to((root / "fixtures/pivot").resolve()):
+        raise ValueError("fixture must remain under fixtures/pivot")
+    source = fixture / "native_project"
     if errors := verify_native_project(source):
         raise RuntimeError(f"native project fixture failed verification: {errors}")
     for name in (
@@ -410,8 +417,21 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--experiment-id", required=True)
     parser.add_argument("--cli", required=True, type=Path)
+    parser.add_argument(
+        "--fixture",
+        type=Path,
+        default=Path("fixtures/pivot/reference_555_led_flasher_v1"),
+        help="hash-locked reference fixture under fixtures/pivot",
+    )
     args = parser.parse_args()
-    print(execute(Path(__file__).resolve().parents[2], args.experiment_id, args.cli.resolve()))
+    print(
+        execute(
+            Path(__file__).resolve().parents[2],
+            args.experiment_id,
+            args.cli.resolve(),
+            args.fixture,
+        )
+    )
 
 
 if __name__ == "__main__":

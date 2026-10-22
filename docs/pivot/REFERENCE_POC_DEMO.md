@@ -1,11 +1,14 @@
 # Reproduce the reference design-to-fabrication review package
 
 This demonstration starts from the hash-locked native KiCad fixture at
-`fixtures/pivot/reference_555_led_flasher_v1/native_project/`. It runs the
-phase-gated workflow through the local logical MCP server, calls the pinned
-KiCad CLI for ERC, DRC, netlist and Gerber/drill export, independently inspects
-native connectivity and fabrication geometry, and creates a review ZIP. It
-does not place an order or claim physical acceptance.
+`fixtures/pivot/reference_555_led_flasher_v2/native_project/`. It keeps v1 as
+an immutable record of the label-only external-port layout and uses v2, where
+J1, J2 and J3 are drawn at their circuit nodes with visible wires. The v2
+redraw preserves the v1 pin-to-net partition. The phase-gated workflow runs
+through the local logical MCP server, calls the pinned KiCad CLI for ERC, DRC,
+netlist and Gerber/drill export, independently inspects native connectivity
+and fabrication geometry, and creates a review ZIP. It does not place an
+order or claim physical acceptance.
 
 ## Host setup
 
@@ -16,7 +19,8 @@ extracted at `/home/phil/Applications/kicad-10.0.6/`. The checked-in
 ```sh
 uv sync --locked --python 3.12 --extra dev
 uv run --locked --python 3.12 python tools/pivot/preflight.py
-uv run --locked --python 3.12 python -m tools.pivot.verify_native_project
+uv run --locked --python 3.12 python -m tools.pivot.verify_native_project \
+  --fixture fixtures/pivot/reference_555_led_flasher_v2/native_project
 ```
 
 The environment manifest records tool and asset hashes. If the AppImage is at
@@ -29,7 +33,19 @@ Experiment directories are write-once. Choose a new identifier on every run:
 ```sh
 uv run --locked python -m tools.pivot.run_reference_poc \
   --experiment-id reference_poc_manual_run1 \
-  --cli /home/phil/Applications/kicad-10.0.6/AppDir/bin/kicad-cli
+  --fixture fixtures/pivot/reference_555_led_flasher_v2 \
+  --cli /home/phil/Applications/kicad-10.0.6/kicad-cli
+```
+
+Render a close schematic preview from that output before finalizing a review
+package:
+
+```sh
+uv run --locked python -m tools.pivot.render_schematic_preview \
+  --cli /home/phil/Applications/kicad-10.0.6/kicad-cli \
+  --schematic fixtures/pivot/experiments/reference_poc_manual_run1/editable_project/Reference555LedFlasher.kicad_sch \
+  --output fixtures/pivot/experiments/reference_poc_manual_run1/previews/schematic.png \
+  --metadata fixtures/pivot/experiments/reference_poc_manual_run1/reports/schematic-preview.json
 ```
 
 The command prints the experiment directory under
