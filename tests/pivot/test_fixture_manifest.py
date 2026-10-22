@@ -8,6 +8,7 @@ from tools.pivot.verify_fixture import verify_manifest
 from tools.pivot.experiment_paths import create_experiment_dir
 from tools.pivot.verify_native_project import verify_native_project
 from tools.pivot.redraw_external_ports import redraw_external_ports
+from tools.pivot.connect_led_branch import connect_led_branch
 
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "fixtures/pivot/reference_555_led_flasher_v1/manifest.json"
@@ -103,3 +104,13 @@ def test_redrawn_fixture_preserves_v1_and_is_reproducible(tmp_path: Path) -> Non
 def test_redrawn_fixture_manifest_is_locked() -> None:
     manifest = ROOT / "fixtures/pivot/reference_555_led_flasher_v2/manifest.json"
     assert verify_manifest(manifest, ROOT) == []
+
+
+def test_led_branch_redraw_is_reproducible_and_fixture_is_locked(tmp_path: Path) -> None:
+    v2 = ROOT / "fixtures/pivot/reference_555_led_flasher_v2/native_project"
+    v3 = ROOT / "fixtures/pivot/reference_555_led_flasher_v3/native_project"
+    assert verify_native_project(v3) == []
+    output = tmp_path / "Reference555LedFlasher.kicad_sch"
+    connect_led_branch(v2 / "Reference555LedFlasher.kicad_sch", output)
+    assert output.read_bytes() == (v3 / "Reference555LedFlasher.kicad_sch").read_bytes()
+    assert verify_manifest(ROOT / "fixtures/pivot/reference_555_led_flasher_v3/manifest.json", ROOT) == []

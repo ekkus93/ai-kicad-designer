@@ -1,10 +1,12 @@
 # Reproduce the reference design-to-fabrication review package
 
 This demonstration starts from the hash-locked native KiCad fixture at
-`fixtures/pivot/reference_555_led_flasher_v2/native_project/`. It keeps v1 as
-an immutable record of the label-only external-port layout and uses v2, where
-J1, J2 and J3 are drawn at their circuit nodes with visible wires. The v2
-redraw preserves the v1 pin-to-net partition. The phase-gated workflow runs
+`fixtures/pivot/reference_555_led_flasher_v3/native_project/`. It keeps v1 as
+an immutable record of the label-only external-port layout and v2 as the
+connector-redraw iteration. In v3, J1, J2 and J3 sit at their circuit nodes,
+and the R3/LED branch is moved beside the 555 and wired directly into the VCC
+bus and output run. The redraws preserve the v1 pin-to-net partition. The
+phase-gated workflow runs
 through the local logical MCP server, calls the pinned KiCad CLI for ERC, DRC,
 netlist and Gerber/drill export, independently inspects native connectivity
 and fabrication geometry, and creates a review ZIP. It does not place an
@@ -20,7 +22,7 @@ extracted at `/home/phil/Applications/kicad-10.0.6/`. The checked-in
 uv sync --locked --python 3.12 --extra dev
 uv run --locked --python 3.12 python tools/pivot/preflight.py
 uv run --locked --python 3.12 python -m tools.pivot.verify_native_project \
-  --fixture fixtures/pivot/reference_555_led_flasher_v2/native_project
+  --fixture fixtures/pivot/reference_555_led_flasher_v3/native_project
 ```
 
 The environment manifest records tool and asset hashes. If the AppImage is at
@@ -33,7 +35,7 @@ Experiment directories are write-once. Choose a new identifier on every run:
 ```sh
 uv run --locked python -m tools.pivot.run_reference_poc \
   --experiment-id reference_poc_manual_run1 \
-  --fixture fixtures/pivot/reference_555_led_flasher_v2 \
+  --fixture fixtures/pivot/reference_555_led_flasher_v3 \
   --cli /home/phil/Applications/kicad-10.0.6/kicad-cli
 ```
 
