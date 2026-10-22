@@ -1,0 +1,617 @@
+{
+  "recorded_at_utc": "2026-10-22T19:56:04.434668+00:00",
+  "source_commit": "c18476df48ced94893f33cf4acad39cdfc258141",
+  "kicad_cli_sha256": "883b0b2833e8d73a0f59dad2b79c83c37b3f334db70c91bf872079492eaab0e8",
+  "backend_manifest": {
+    "backend_id": "direct-kicad-v0",
+    "backend_version": "design-backend.v1",
+    "capabilities": [
+      {
+        "operation": "create_schematic",
+        "schema_version": "schematic.create.v1",
+        "support": "verified",
+        "runtime": "headless",
+        "kicad_versions": [
+          "10.0.6"
+        ],
+        "transactional": true,
+        "rollback": true,
+        "notes": [
+          "preserved M2b compiler, locked toolchain, ERC, exported netlist and independent comparison"
+        ]
+      },
+      {
+        "operation": "create_project",
+        "schema_version": "project.create.v1",
+        "support": "verified",
+        "runtime": "headless",
+        "kicad_versions": [
+          "10.0.6"
+        ],
+        "transactional": true,
+        "rollback": true,
+        "notes": []
+      },
+      {
+        "operation": "apply_schematic_transaction",
+        "schema_version": "schematic.transaction.v1",
+        "support": "verified",
+        "runtime": "headless",
+        "kicad_versions": [
+          "10.0.6"
+        ],
+        "transactional": true,
+        "rollback": true,
+        "notes": [
+          "structured native file candidate plus independent parse/readback"
+        ]
+      },
+      {
+        "operation": "apply_placements",
+        "schema_version": "placement.apply.v1",
+        "support": "verified",
+        "runtime": "headless",
+        "kicad_versions": [
+          "10.0.6"
+        ],
+        "transactional": true,
+        "rollback": true,
+        "notes": [
+          "revision-bound native-board candidate; atomic write to a new output path"
+        ]
+      },
+      {
+        "operation": "assign_footprints",
+        "schema_version": "footprint.assign.v1",
+        "support": "verified",
+        "runtime": "headless",
+        "kicad_versions": [
+          "10.0.6"
+        ],
+        "transactional": true,
+        "rollback": true,
+        "notes": [
+          "revision-bound approved footprint files and complete pin/pad maps"
+        ]
+      },
+      {
+        "operation": "verify_pin_pad_map",
+        "schema_version": "pin-pad-map.verify.v1",
+        "support": "verified",
+        "runtime": "headless",
+        "kicad_versions": [
+          "10.0.6"
+        ],
+        "transactional": false,
+        "rollback": false,
+        "notes": [
+          "checks locked footprint bytes, all symbol pins, unique pads and pin-one identity"
+        ]
+      },
+      {
+        "operation": "sync_pcb",
+        "schema_version": "pcb.sync-import.v1",
+        "support": "experimental",
+        "runtime": "headless",
+        "kicad_versions": [
+          "10.0.6"
+        ],
+        "transactional": true,
+        "rollback": true,
+        "notes": [
+          "imports a separately synchronized board after exact schematic, model, footprint, pad/net partition and DRC checks; does not synthesize footprints"
+        ]
+      },
+      {
+        "operation": "route_nets",
+        "schema_version": "router.import.v1",
+        "support": "experimental",
+        "runtime": "headless",
+        "kicad_versions": [
+          "10.0.6"
+        ],
+        "transactional": true,
+        "rollback": true,
+        "notes": [
+          "imports a separately produced route candidate after revision, geometry, netlist, DRC and connectivity checks; does not implement a general autorouter"
+        ]
+      },
+      {
+        "operation": "run_erc",
+        "schema_version": "verification.erc.v1",
+        "support": "verified",
+        "runtime": "headless",
+        "kicad_versions": [
+          "10.0.6"
+        ],
+        "transactional": false,
+        "rollback": false,
+        "notes": []
+      },
+      {
+        "operation": "run_drc",
+        "schema_version": "verification.drc.v1",
+        "support": "verified",
+        "runtime": "headless",
+        "kicad_versions": [
+          "10.0.6"
+        ],
+        "transactional": false,
+        "rollback": false,
+        "notes": []
+      },
+      {
+        "operation": "export_fabrication",
+        "schema_version": "manufacturing.export.v1",
+        "support": "verified",
+        "runtime": "headless",
+        "kicad_versions": [
+          "10.0.6"
+        ],
+        "transactional": false,
+        "rollback": false,
+        "notes": []
+      },
+      {
+        "operation": "native_schematic_ipc",
+        "schema_version": "schematic.ipc.experimental.v1",
+        "support": "experimental",
+        "runtime": "headless",
+        "kicad_versions": [
+          "10.99.0 development snapshot"
+        ],
+        "transactional": true,
+        "rollback": true,
+        "notes": []
+      }
+    ]
+  },
+  "mcp_tools": [
+    {
+      "tool": "request_phase_transition",
+      "response": {
+        "status": "applied",
+        "phase": "CIRCUIT_DESIGN",
+        "trace_id": "e55abc962af7fceb501e1c94",
+        "mutation_occurred": true
+      }
+    },
+    {
+      "tool": "request_phase_transition",
+      "response": {
+        "status": "applied",
+        "phase": "SCHEMATIC",
+        "trace_id": "00fa9257063c6f08cc949ec3",
+        "mutation_occurred": true
+      }
+    },
+    {
+      "tool": "request_phase_transition",
+      "response": {
+        "status": "applied",
+        "phase": "FOOTPRINTS",
+        "trace_id": "d66618452576ce25e4de97f7",
+        "mutation_occurred": true
+      }
+    },
+    {
+      "tool": "request_phase_transition",
+      "response": {
+        "status": "applied",
+        "phase": "PCB_PLACEMENT",
+        "trace_id": "57266e31790b0f8582db7a78",
+        "mutation_occurred": true
+      }
+    },
+    {
+      "tool": "request_phase_transition",
+      "response": {
+        "status": "applied",
+        "phase": "PCB_ROUTING",
+        "trace_id": "f5b64bf8f0ec7e09108948d9",
+        "mutation_occurred": true
+      }
+    },
+    {
+      "tool": "request_phase_transition",
+      "response": {
+        "status": "applied",
+        "phase": "MANUFACTURING_REVIEW",
+        "trace_id": "e1485109eec115aed269d615",
+        "mutation_occurred": true
+      }
+    },
+    {
+      "tool": "run_erc",
+      "response": {
+        "status": "PASS",
+        "operation": "run_erc",
+        "command": [
+          "/home/phil/Applications/kicad-10.0.6/kicad-cli",
+          "sch",
+          "erc",
+          "--format",
+          "json",
+          "--output",
+          "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/reports/erc.json",
+          "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/editable_project/Reference555LedFlasher.kicad_sch"
+        ],
+        "stdout": "Found 0 violations\nSaved ERC Report to /home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/reports/erc.json\n",
+        "stderr": "",
+        "mutation_occurred": false,
+        "report": {
+          "$schema": "https://schemas.kicad.org/erc.v1.json",
+          "coordinate_units": "mm",
+          "date": "2026-10-22T19:56:01",
+          "ignored_checks": [
+            {
+              "description": "Global label only appears once in the schematic",
+              "key": "single_global_label"
+            },
+            {
+              "description": "Four connection points are joined together",
+              "key": "four_way_junction"
+            },
+            {
+              "description": "SPICE model issue",
+              "key": "simulation_model_issue"
+            },
+            {
+              "description": "Assigned footprint doesn't match footprint filters",
+              "key": "footprint_filter"
+            }
+          ],
+          "included_severities": [
+            "error",
+            "warning"
+          ],
+          "kicad_version": "10.0.6",
+          "sheets": [
+            {
+              "path": "/",
+              "uuid_path": "/67f9fc10-0a66-5669-bb17-4da3d7e288a2",
+              "violations": []
+            }
+          ],
+          "source": "Reference555LedFlasher.kicad_sch"
+        },
+        "trace_id": "0ae9433eae54819124c5bd1e"
+      }
+    },
+    {
+      "tool": "run_drc",
+      "response": {
+        "status": "PASS",
+        "operation": "run_drc",
+        "command": [
+          "/home/phil/Applications/kicad-10.0.6/kicad-cli",
+          "pcb",
+          "drc",
+          "--format",
+          "json",
+          "--output",
+          "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/reports/drc.json",
+          "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/editable_project/Reference555LedFlasher.kicad_pcb"
+        ],
+        "stdout": "Found 0 violations\nFound 0 unconnected items\nSaved DRC Report to /home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/reports/drc.json\n",
+        "stderr": "",
+        "mutation_occurred": false,
+        "report": {
+          "$schema": "https://schemas.kicad.org/drc.v1.json",
+          "coordinate_units": "mm",
+          "date": "2026-10-22T19:56:03",
+          "ignored_checks": [
+            {
+              "description": "Footprint has no courtyard defined",
+              "key": "missing_courtyard"
+            },
+            {
+              "description": "Track endpoint not centered on via",
+              "key": "track_not_centered_on_via"
+            },
+            {
+              "description": "Tuning profile track geometries",
+              "key": "tuning_profile_track_geometries"
+            },
+            {
+              "description": "Footprint doesn't match symbol's footprint filters",
+              "key": "footprint_filters_mismatch"
+            },
+            {
+              "description": "Footprint component type doesn't match footprint pads",
+              "key": "footprint_type_mismatch"
+            }
+          ],
+          "included_severities": [
+            "error",
+            "warning"
+          ],
+          "kicad_version": "10.0.6",
+          "schematic_parity": [],
+          "source": "Reference555LedFlasher.kicad_pcb",
+          "unconnected_items": [],
+          "violations": []
+        },
+        "trace_id": "350c4dd9bdb231b20c8558cd"
+      }
+    },
+    {
+      "tool": "prepare_fabrication_package",
+      "response": {
+        "status": "PASS",
+        "operation": "export_fabrication",
+        "calls": [
+          {
+            "status": "PASS",
+            "operation": "export_fabrication",
+            "command": [
+              "/home/phil/Applications/kicad-10.0.6/kicad-cli",
+              "pcb",
+              "export",
+              "gerbers",
+              "--output",
+              "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication",
+              "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/editable_project/Reference555LedFlasher.kicad_pcb"
+            ],
+            "stdout": "Plotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-F_Cu.gtl'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-B_Cu.gbl'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-F_Adhesive.gta'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-B_Adhesive.gba'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-F_Paste.gtp'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-B_Paste.gbp'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-F_Silkscreen.gto'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-B_Silkscreen.gbo'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-F_Mask.gts'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-B_Mask.gbs'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-User_Drawings.gbr'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-User_Comments.gbr'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-User_Eco1.gbr'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-User_Eco2.gbr'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-Edge_Cuts.gm1'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-Margin.gbr'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-F_Courtyard.gbr'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-B_Courtyard.gbr'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-F_Fab.gbr'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-B_Fab.gbr'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-User_1.gbr'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-User_2.gbr'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-User_3.gbr'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-User_4.gbr'.\n",
+            "stderr": "",
+            "mutation_occurred": false
+          },
+          {
+            "status": "PASS",
+            "operation": "export_fabrication",
+            "command": [
+              "/home/phil/Applications/kicad-10.0.6/kicad-cli",
+              "pcb",
+              "export",
+              "drill",
+              "--output",
+              "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication",
+              "--generate-map",
+              "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/editable_project/Reference555LedFlasher.kicad_pcb"
+            ],
+            "stdout": "Created file '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher.drl'\nCreated file '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-drl_map.pdf'.\nDone.\n",
+            "stderr": "",
+            "mutation_occurred": false
+          }
+        ],
+        "mutation_occurred": true,
+        "trace_id": "68b6cd38c9b79eaa4dcbc736"
+      }
+    },
+    {
+      "tool": "request_phase_transition",
+      "response": {
+        "status": "applied",
+        "phase": "REVIEW_READY",
+        "trace_id": "583dd263fc2bbc93a7b36d6c",
+        "mutation_occurred": true
+      }
+    }
+  ],
+  "controller_state": {
+    "phase": "REVIEW_READY",
+    "design_id": "reference_555_led_flasher_v1",
+    "revision_id": "sha256:5ae52d6d65ce36c1e2eeb1821f43f33db09c068ece350f0dcc73b1a987befb05",
+    "gates": {
+      "requirements_explicit": {
+        "status": "PASS",
+        "revision_id": "sha256:5ae52d6d65ce36c1e2eeb1821f43f33db09c068ece350f0dcc73b1a987befb05"
+      },
+      "circuit_design_validated": {
+        "status": "PASS",
+        "revision_id": "sha256:5ae52d6d65ce36c1e2eeb1821f43f33db09c068ece350f0dcc73b1a987befb05"
+      },
+      "schematic_validated": {
+        "status": "PASS",
+        "revision_id": "sha256:5ae52d6d65ce36c1e2eeb1821f43f33db09c068ece350f0dcc73b1a987befb05"
+      },
+      "footprints_validated": {
+        "status": "PASS",
+        "revision_id": "sha256:5ae52d6d65ce36c1e2eeb1821f43f33db09c068ece350f0dcc73b1a987befb05"
+      },
+      "placement_validated": {
+        "status": "PASS",
+        "revision_id": "sha256:5ae52d6d65ce36c1e2eeb1821f43f33db09c068ece350f0dcc73b1a987befb05"
+      },
+      "pcb_validated": {
+        "status": "PASS",
+        "revision_id": "sha256:5ae52d6d65ce36c1e2eeb1821f43f33db09c068ece350f0dcc73b1a987befb05"
+      },
+      "package_ready_for_review": {
+        "status": "PASS",
+        "revision_id": "sha256:5ae52d6d65ce36c1e2eeb1821f43f33db09c068ece350f0dcc73b1a987befb05"
+      }
+    },
+    "checkpoints": {},
+    "operations": 10,
+    "idempotency": {
+      "phase:CIRCUIT_DESIGN": {
+        "status": "COMPLETED",
+        "response": {
+          "status": "applied",
+          "phase": "CIRCUIT_DESIGN",
+          "trace_id": "e55abc962af7fceb501e1c94",
+          "mutation_occurred": true
+        }
+      },
+      "phase:SCHEMATIC": {
+        "status": "COMPLETED",
+        "response": {
+          "status": "applied",
+          "phase": "SCHEMATIC",
+          "trace_id": "00fa9257063c6f08cc949ec3",
+          "mutation_occurred": true
+        }
+      },
+      "phase:FOOTPRINTS": {
+        "status": "COMPLETED",
+        "response": {
+          "status": "applied",
+          "phase": "FOOTPRINTS",
+          "trace_id": "d66618452576ce25e4de97f7",
+          "mutation_occurred": true
+        }
+      },
+      "phase:PCB_PLACEMENT": {
+        "status": "COMPLETED",
+        "response": {
+          "status": "applied",
+          "phase": "PCB_PLACEMENT",
+          "trace_id": "57266e31790b0f8582db7a78",
+          "mutation_occurred": true
+        }
+      },
+      "phase:PCB_ROUTING": {
+        "status": "COMPLETED",
+        "response": {
+          "status": "applied",
+          "phase": "PCB_ROUTING",
+          "trace_id": "f5b64bf8f0ec7e09108948d9",
+          "mutation_occurred": true
+        }
+      },
+      "phase:MANUFACTURING_REVIEW": {
+        "status": "COMPLETED",
+        "response": {
+          "status": "applied",
+          "phase": "MANUFACTURING_REVIEW",
+          "trace_id": "e1485109eec115aed269d615",
+          "mutation_occurred": true
+        }
+      },
+      "fabrication:sha256:5ae52d6d65ce36c1e2eeb1821f43f33db09c068ece350f0dcc73b1a987befb05": {
+        "status": "COMPLETED",
+        "response": {
+          "status": "PASS",
+          "operation": "export_fabrication",
+          "calls": [
+            {
+              "status": "PASS",
+              "operation": "export_fabrication",
+              "command": [
+                "/home/phil/Applications/kicad-10.0.6/kicad-cli",
+                "pcb",
+                "export",
+                "gerbers",
+                "--output",
+                "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication",
+                "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/editable_project/Reference555LedFlasher.kicad_pcb"
+              ],
+              "stdout": "Plotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-F_Cu.gtl'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-B_Cu.gbl'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-F_Adhesive.gta'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-B_Adhesive.gba'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-F_Paste.gtp'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-B_Paste.gbp'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-F_Silkscreen.gto'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-B_Silkscreen.gbo'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-F_Mask.gts'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-B_Mask.gbs'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-User_Drawings.gbr'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-User_Comments.gbr'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-User_Eco1.gbr'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-User_Eco2.gbr'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-Edge_Cuts.gm1'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-Margin.gbr'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-F_Courtyard.gbr'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-B_Courtyard.gbr'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-F_Fab.gbr'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-B_Fab.gbr'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-User_1.gbr'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-User_2.gbr'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-User_3.gbr'.\nPlotted to '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-User_4.gbr'.\n",
+              "stderr": "",
+              "mutation_occurred": false
+            },
+            {
+              "status": "PASS",
+              "operation": "export_fabrication",
+              "command": [
+                "/home/phil/Applications/kicad-10.0.6/kicad-cli",
+                "pcb",
+                "export",
+                "drill",
+                "--output",
+                "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication",
+                "--generate-map",
+                "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/editable_project/Reference555LedFlasher.kicad_pcb"
+              ],
+              "stdout": "Created file '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher.drl'\nCreated file '/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/fabrication/Reference555LedFlasher-drl_map.pdf'.\nDone.\n",
+              "stderr": "",
+              "mutation_occurred": false
+            }
+          ],
+          "mutation_occurred": true,
+          "trace_id": "68b6cd38c9b79eaa4dcbc736"
+        }
+      },
+      "phase:REVIEW_READY:sha256:5ae52d6d65ce36c1e2eeb1821f43f33db09c068ece350f0dcc73b1a987befb05": {
+        "status": "COMPLETED",
+        "response": {
+          "status": "applied",
+          "phase": "REVIEW_READY",
+          "trace_id": "583dd263fc2bbc93a7b36d6c",
+          "mutation_occurred": true
+        }
+      }
+    },
+    "unresolved_issues": []
+  },
+  "calls": [
+    {
+      "command": [
+        "/home/phil/Applications/kicad-10.0.6/kicad-cli",
+        "version"
+      ],
+      "returncode": 0,
+      "stdout": "10.0.6\n",
+      "stderr": "",
+      "elapsed_seconds": 0.106338
+    },
+    {
+      "command": [
+        "/home/phil/Applications/kicad-10.0.6/kicad-cli",
+        "sch",
+        "export",
+        "netlist",
+        "--format",
+        "kicadxml",
+        "--output",
+        "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/reports/netlist.xml",
+        "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/editable_project/Reference555LedFlasher.kicad_sch"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": "",
+      "elapsed_seconds": 0.303643
+    },
+    {
+      "command": [
+        "/home/phil/Applications/kicad-10.0.6/kicad-cli",
+        "pcb",
+        "render",
+        "--output",
+        "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/previews/board-top.png",
+        "--side",
+        "top",
+        "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/editable_project/Reference555LedFlasher.kicad_pcb"
+      ],
+      "returncode": 0,
+      "stdout": "Loading...\nBuild board outline\n\nCreate layers\nCreate tracks and vias\nCreate zones\nBuild Tech layers\nBuild Tech layer 11\nBuild Tech layer 9\nBuild Tech layer 15\nBuild Tech layer 13\nBuild Tech layer 7\nBuild Tech layer 5\nBuild Tech layer 3\nBuild Tech layer 1\nBuild Tech layer 17\nBuild Tech layer 19\nBuild Tech layer 21\nBuild Tech layer 23\nBuild Tech layer 39\nBuild Tech layer 41\nBuild Tech layer 43\nBuild Tech layer 45\nBuild Tech layer 47\nBuild Tech layer 49\nBuild Tech layer 51\nBuild Tech layer 53\nBuild Tech layer 55\nBuild Tech layer 57\nBuild Tech layer 59\nBuild Tech layer 61\nBuild Tech layer 63\nBuild Tech layer 65\nBuild Tech layer 67\nBuild Tech layer 69\nBuild Tech layer 71\nBuild Tech layer 73\nBuild Tech layer 75\nBuild Tech layer 77\nBuild Tech layer 79\nBuild Tech layer 81\nBuild Tech layer 83\nBuild Tech layer 85\nBuild Tech layer 87\nBuild Tech layer 89\nBuild Tech layer 91\nBuild Tech layer 93\nBuild Tech layer 95\nBuild Tech layer 97\nBuild Tech layer 99\nBuild Tech layer 101\nBuild Tech layer 103\nBuild Tech layer 105\nBuild Tech layer 107\nBuild Tech layer 109\nBuild Tech layer 111\nBuild Tech layer 113\nBuild Tech layer 115\nBuild Tech layer 117\nBuild Tech layer 119\nBuild Tech layer 121\nBuild Tech layer 123\nBuild Tech layer 125\nBuild Tech layer 127\nSimplifying copper layer polygons\nCalculating plated copper\nSimplify holes contours\nBuild BVH for holes and vias\nLoad Raytracing: board\nLoad Raytracing: layers\nLoading 3D models...\nReload time 0.074 s\nRendering: 100 %\nRendering time 0.150 s\nSuccessfully created 3D render image\n",
+      "stderr": "",
+      "elapsed_seconds": 0.622056
+    },
+    {
+      "command": [
+        "/home/phil/Applications/kicad-10.0.6/kicad-cli",
+        "pcb",
+        "render",
+        "--output",
+        "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/previews/board-bottom.png",
+        "--side",
+        "bottom",
+        "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/reference_poc_tight_labels_2026-10-22_run1/editable_project/Reference555LedFlasher.kicad_pcb"
+      ],
+      "returncode": 0,
+      "stdout": "Loading...\nBuild board outline\n\nCreate layers\nCreate tracks and vias\nCreate zones\nBuild Tech layers\nBuild Tech layer 11\nBuild Tech layer 9\nBuild Tech layer 15\nBuild Tech layer 13\nBuild Tech layer 7\nBuild Tech layer 5\nBuild Tech layer 3\nBuild Tech layer 1\nBuild Tech layer 17\nBuild Tech layer 19\nBuild Tech layer 21\nBuild Tech layer 23\nBuild Tech layer 39\nBuild Tech layer 41\nBuild Tech layer 43\nBuild Tech layer 45\nBuild Tech layer 47\nBuild Tech layer 49\nBuild Tech layer 51\nBuild Tech layer 53\nBuild Tech layer 55\nBuild Tech layer 57\nBuild Tech layer 59\nBuild Tech layer 61\nBuild Tech layer 63\nBuild Tech layer 65\nBuild Tech layer 67\nBuild Tech layer 69\nBuild Tech layer 71\nBuild Tech layer 73\nBuild Tech layer 75\nBuild Tech layer 77\nBuild Tech layer 79\nBuild Tech layer 81\nBuild Tech layer 83\nBuild Tech layer 85\nBuild Tech layer 87\nBuild Tech layer 89\nBuild Tech layer 91\nBuild Tech layer 93\nBuild Tech layer 95\nBuild Tech layer 97\nBuild Tech layer 99\nBuild Tech layer 101\nBuild Tech layer 103\nBuild Tech layer 105\nBuild Tech layer 107\nBuild Tech layer 109\nBuild Tech layer 111\nBuild Tech layer 113\nBuild Tech layer 115\nBuild Tech layer 117\nBuild Tech layer 119\nBuild Tech layer 121\nBuild Tech layer 123\nBuild Tech layer 125\nBuild Tech layer 127\nSimplifying copper layer polygons\nCalculating plated copper\nSimplify holes contours\nBuild BVH for holes and vias\nLoad Raytracing: board\nLoad Raytracing: layers\nLoading 3D models...\nReload time 0.074 s\nRendering: 100 %\nRendering time 0.145 s\nSuccessfully created 3D render image\n",
+      "stderr": "",
+      "elapsed_seconds": 0.619081
+    }
+  ],
+  "elapsed_seconds": 1.651118,
+  "source_hashes": {
+    "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+    "Reference555LedFlasher.kicad_pcb": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+    "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+    "Reference555LedFlasher.kicad_sch": "9090a26505b7ab164214b319c21ba66cad93effa99bdf8a1ade3d0738f3c9980",
+    "footprints/Capacitor_THT.pretty/CP_Radial_D8.0mm_P5.00mm.kicad_mod": "08b9e57077b1f259a08ca16018e320d50c6c0ac30f5d11f7a1cbb1547bed19b2",
+    "footprints/Capacitor_THT.pretty/C_Disc_D3.0mm_W1.6mm_P2.50mm.kicad_mod": "20f0649b7c52102c5bd6618c7233a8a1b8fdd1a2cd229ba34c2e46a18a478e26",
+    "footprints/Connector_PinHeader_2.54mm.pretty/PinHeader_1x01_P2.54mm_Vertical.kicad_mod": "4fc60019e8f0bb2c220af4980349e0a9968f5bf9b8f068d769139c3939e7a86b",
+    "footprints/LED_THT.pretty/LED_D5.0mm.kicad_mod": "efba51d29b26d31bbf3957a5813ee41872a071099d3f28bf6354a857f7129392",
+    "footprints/Package_DIP.pretty/DIP-8_W7.62mm.kicad_mod": "222fb44370968119abbd978176814cc43a71bc32ac2de275d8a3c418c0830fc6",
+    "footprints/Resistor_THT.pretty/R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal.kicad_mod": "58b4bad35c78cb7f33c76c99b8d8f08bb836b0ba742bcbbaffb6f7f73e5ffbe6",
+    "fp-lib-table": "5bdcbc66932f9e45859b54b5049e8e959590286c9c4705fb9528febb8772047b",
+    "manifest.json": "ecc2158afce86246e360480af57af503e7b53008d69ef4c01a7f1eb54eb5d136",
+    "placement_source.kicad_pcb": "55d69b8d0c808780c96517120327bab46024888b8c9f9ea17d59435068467e4a",
+    "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+  }
+}
