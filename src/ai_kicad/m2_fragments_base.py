@@ -21,6 +21,7 @@ from .m2_text_layout import (
     candidate_text_anchors,
     first_clear_text_anchor,
     property_envelopes,
+    property_page_angle,
 )
 from .m2a_constants import PITCH
 from .m2a_core import Asset, Pin
@@ -165,13 +166,15 @@ def _place_component_text(design: dict, resolved: dict[str, Asset], draft: Draft
         )
         candidates = tuple(
             dict.fromkeys(
-                (*connector_text_candidates,
-                 *candidate_text_anchors(
-                     (sx, sy),
-                     (tx, ty),
-                     body=_body_rect(design, resolved, draft, key),
-                     longest_field=max(component["refdes"], component["value"], key=len),
-                 )[1:])
+                (
+                    *connector_text_candidates,
+                    *candidate_text_anchors(
+                        (sx, sy),
+                        (tx, ty),
+                        body=_body_rect(design, resolved, draft, key),
+                        longest_field=max(component["refdes"], component["value"], key=len),
+                    )[1:],
+                )
             )
         )
         obstacles = list(symbol_obstacles)
@@ -180,10 +183,21 @@ def _place_component_text(design: dict, resolved: dict[str, Asset], draft: Draft
             if other == key or other[0] not in components:
                 continue
             other_component = components[other[0]]
-            obstacles.extend(property_envelopes(other_component["refdes"], other_component["value"], (ox, oy)))
+            other_angle = property_page_angle(draft.angles.get(other, 0))
+            obstacles.extend(
+                property_envelopes(
+                    other_component["refdes"],
+                    other_component["value"],
+                    (ox, oy),
+                    other_angle,
+                )
+            )
+        text_angle = property_page_angle(draft.angles.get(key, 0))
         chosen = first_clear_text_anchor(
             candidates,
-            lambda anchor: property_envelopes(component["refdes"], component["value"], anchor),
+            lambda anchor: property_envelopes(
+                component["refdes"], component["value"], anchor, text_angle
+            ),
             obstacles=obstacles,
             wires=draft.wires,
         )
@@ -218,7 +232,12 @@ def _occupied_geometry(
         )
         for field_name, rect in zip(
             ("reference", "value"),
-            property_envelopes(component["refdes"], component["value"], draft.text_positions[key]),
+            property_envelopes(
+                component["refdes"],
+                component["value"],
+                draft.text_positions[key],
+                property_page_angle(draft.angles.get(key, 0)),
+            ),
             strict=True,
         ):
             items.append(

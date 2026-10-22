@@ -11,6 +11,7 @@ from .m2a_constants import PITCH
 FONT_HEIGHT = 1_700_000
 TEXT_CLEARANCE = 1_000_000
 _MIN_HALF_WIDTH = 635_000
+MAX_LOCAL_SEARCH_RADIUS = 80
 
 
 def readable_property_angle(symbol_angle: int) -> int:
@@ -21,13 +22,23 @@ def readable_property_angle(symbol_angle: int) -> int:
     return 90 if normalized in (90, 270) else 0
 
 
-def readable_property_angles(symbol_angles: dict[tuple[str, int], int]) -> dict[tuple[str, int], int]:
+def readable_property_angles(
+    symbol_angles: dict[tuple[str, int], int],
+) -> dict[tuple[str, int], int]:
     """Normalize every rotated symbol occurrence without asset/refdes exceptions."""
     return {
         occurrence: text_angle
         for occurrence, angle in sorted(symbol_angles.items())
         if (text_angle := readable_property_angle(angle))
     }
+
+
+def property_page_angle(symbol_angle: int, property_angle: int | None = None) -> int:
+    """Resolve KiCad's symbol-relative field angle to its page orientation."""
+    field_angle = (
+        readable_property_angle(symbol_angle) if property_angle is None else property_angle
+    )
+    return (field_angle - symbol_angle) % 180
 
 
 def text_half_width(value: str) -> int:
@@ -41,17 +52,42 @@ def text_height(value: str) -> int:
     return FONT_HEIGHT * max(1, len(value.splitlines()))
 
 
-def property_envelopes(reference: str, value: str, anchor: tuple[int, int]) -> tuple[Rect, Rect]:
-    """Return unpadded reference/value envelopes at the shared field anchor."""
+def property_positions(
+    reference: str, value: str, anchor: tuple[int, int], angle: int = 0
+) -> tuple[tuple[int, int], tuple[int, int]]:
+    """Return independent field anchors, separating multiline fields vertically."""
     x, y = anchor
+    ref_height = text_extents(reference, angle)[1]
+    value_height = text_extents(value, angle)[1]
+    nominal_offset = 2 * PITCH
+    collision_free_offset = (ref_height + value_height) // 2 + TEXT_CLEARANCE
+    return (anchor, (x, y + max(nominal_offset, collision_free_offset)))
+
+
+def text_extents(value: str, angle: int = 0) -> tuple[int, int]:
+    """Return conservative axis-aligned width/height for a page-oriented field."""
+    if angle % 180 == 0:
+        return 2 * text_half_width(value), text_height(value)
+    if angle % 180 == 90:
+        return text_height(value), 2 * text_half_width(value)
+    raise ValueError(f"unsupported text angle: {angle}")
+
+
+def property_envelopes(
+    reference: str, value: str, anchor: tuple[int, int], angle: int = 0
+) -> tuple[Rect, Rect]:
+    """Return unpadded envelopes for reference/value fields at their own anchors."""
+    reference_position, value_position = property_positions(reference, value, anchor, angle)
     return tuple(
         (
-            x - text_half_width(text),
-            line_y - text_height(text) // 2,
-            x + text_half_width(text),
-            line_y + text_height(text) // 2,
+            field_x - text_extents(text, angle)[0] // 2,
+            field_y - text_extents(text, angle)[1] // 2,
+            field_x + text_extents(text, angle)[0] // 2,
+            field_y + text_extents(text, angle)[1] // 2,
         )
-        for text, line_y in ((reference, y), (value, y + 2 * PITCH))
+        for text, (field_x, field_y) in zip(
+            (reference, value), (reference_position, value_position), strict=True
+        )
     )  # type: ignore[return-value]
 
 
@@ -61,9 +97,8 @@ def padded(rect: Rect, clearance: int = TEXT_CLEARANCE) -> Rect:
 
 
 def overlaps(first: Rect, second: Rect) -> bool:
-    return (
-        max(first[0], second[0]) < min(first[2], second[2])
-        and max(first[1], second[1]) < min(first[3], second[3])
+    return max(first[0], second[0]) < min(first[2], second[2]) and max(first[1], second[1]) < min(
+        first[3], second[3]
     )
 
 
@@ -93,17 +128,25 @@ def candidate_text_anchors(
     ox, oy = origin
     ordered = [preferred]
     offsets = [
-        (0, -8), (8, -2), (-8, -2), (0, 5),
-        (12, -2), (-12, -2), (12, -10), (-12, -10),
-        (0, -12), (0, -16), (0, -20),
+        (0, -8),
+        (8, -2),
+        (-8, -2),
+        (0, 5),
+        (12, -2),
+        (-12, -2),
+        (12, -10),
+        (-12, -10),
+        (0, -12),
+        (0, -16),
+        (0, -20),
     ]
-    # Bounded outward expansion gives crowded layouts room to clear obstacles;
-    # the selected envelope then participates in normal block packing.
-    for radius in range(24, 41, 4):
+    # Bounded outward expansion gives crowded layouts room to clear obstacles.
+    # Fragment reservations include the selected field envelope, so the packer
+    # expands and repositions the owning block around this local placement.
+    for radius in range(24, MAX_LOCAL_SEARCH_RADIUS + 1, 4):
         offsets.extend(
             (dx * radius, dy * radius)
-            for dx, dy in ((0, -1), (1, 0), (0, 1), (-1, 0),
-                           (1, -1), (1, 1), (-1, 1), (-1, -1))
+            for dx, dy in ((0, -1), (1, 0), (0, 1), (-1, 0), (1, -1), (1, 1), (-1, 1), (-1, -1))
         )
     ordered.extend((ox + dx * pitch, oy + dy * pitch) for dx, dy in offsets)
     if body is not None:
@@ -143,8 +186,7 @@ def first_clear_text_anchor(
             continue
         fields = tuple(padded(rect) for rect in raw_fields)
         if bounds is not None and any(
-            rect[0] < bounds[0] or rect[1] < bounds[1]
-            or rect[2] > bounds[2] or rect[3] > bounds[3]
+            rect[0] < bounds[0] or rect[1] < bounds[1] or rect[2] > bounds[2] or rect[3] > bounds[3]
             for rect in fields
         ):
             continue

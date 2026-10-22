@@ -15,6 +15,7 @@ from .m2a_core import (
     _nm,
     _uid,
 )
+from .m2_text_layout import property_page_angle, property_positions
 from .schematic import _mm
 from .sexpr import children, one, parse, quote
 
@@ -72,13 +73,17 @@ def emit(design: dict, assets: dict[str, Asset], scene: Scene, out: Path) -> Pat
         )
         tx, ty = scene.text_positions.get((component, unit), (x + 10 * PITCH, y - 8 * PITCH))
         text_angle = scene.text_angles.get((component, unit), 0)
+        page_text_angle = property_page_angle(scene.angles.get((component, unit), 0), text_angle)
+        _reference_position, value_position = property_positions(
+            ref, c["value"], (tx, ty), page_text_angle
+        )
         hidden = "(hide yes) " if c["asset"] == "power:PWR_FLAG" else ""
         lines.append(
             f'    (property "Reference" {quote(ref)} (at {_mm(tx)} {_mm(ty)} {text_angle}) '
             f"{hidden}(effects (font (size 1.27 1.27))))"
         )
         lines.append(
-            f'    (property "Value" {quote(c["value"])} (at {_mm(tx)} {_mm(ty + 2 * PITCH)} {text_angle}) '
+            f'    (property "Value" {quote(c["value"])} (at {_mm(value_position[0])} {_mm(value_position[1])} {text_angle}) '
             f"{hidden}(effects (font (size 1.27 1.27))))"
         )
         for pin in asset.units.get(unit, asset.units.get(0, ())):
@@ -130,6 +135,14 @@ def verify_serialized_scene(design: dict, scene: Scene, schematic: Path) -> None
     references.update(
         (assertion["refdes"], assertion["id"]) for assertion in design["power_assertions"]
     )
+    components_by_id = {component["id"]: component for component in design["components"]}
+    components_by_id.update(
+        (
+            assertion["id"],
+            {"id": assertion["id"], "refdes": assertion["refdes"], "value": "PWR_FLAG"},
+        )
+        for assertion in design["power_assertions"]
+    )
     serialized_positions = {}
     serialized_angles = {}
     serialized_text = {}
@@ -150,10 +163,15 @@ def verify_serialized_scene(design: dict, scene: Scene, schematic: Path) -> None
         text_at = one(reference, "at")
         value_at = one(value, "at")
         text_point = (_nm(text_at[1]), _nm(text_at[2]))
-        if (_nm(value_at[1]), _nm(value_at[2])) != (
-            text_point[0],
-            text_point[1] + 2 * PITCH,
-        ):
+        component_id = references[reference[2]]
+        component = components_by_id[component_id]
+        expected_value_position = property_positions(
+            component["refdes"],
+            component["value"],
+            text_point,
+            property_page_angle(int(at[3]), int(text_at[3])),
+        )[1]
+        if (_nm(value_at[1]), _nm(value_at[2])) != expected_value_position:
             raise InputError(f"SERIALIZED_SCENE_VALUE_POSITION: {key}")
         if int(value_at[3]) != int(text_at[3]):
             raise InputError(f"SERIALIZED_SCENE_VALUE_ANGLE: {key}")

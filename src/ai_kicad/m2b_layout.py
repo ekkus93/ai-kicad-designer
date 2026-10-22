@@ -12,6 +12,7 @@ from .m2_text_layout import (
     candidate_text_anchors,
     first_clear_text_anchor,
     property_envelopes,
+    property_page_angle,
 )
 
 
@@ -713,12 +714,21 @@ def _place_all_component_text_slots(design: dict, draft: Draft) -> None:
             if other == key:
                 continue
             other_component = components[other[0]]
+            other_angle = property_page_angle(draft.angles.get(other, 0))
             obstacles.extend(
-                property_envelopes(other_component["refdes"], other_component["value"], (x, y))
+                property_envelopes(
+                    other_component["refdes"],
+                    other_component["value"],
+                    (x, y),
+                    other_angle,
+                )
             )
+        text_angle = property_page_angle(draft.angles.get(key, 0))
         selected = first_clear_text_anchor(
             candidates,
-            lambda anchor: property_envelopes(component["refdes"], component["value"], anchor),
+            lambda anchor: property_envelopes(
+                component["refdes"], component["value"], anchor, text_angle
+            ),
             obstacles=obstacles,
             wires=draft.wires,
         )
