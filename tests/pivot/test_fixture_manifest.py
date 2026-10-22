@@ -12,6 +12,7 @@ from tools.pivot.connect_led_branch import connect_led_branch
 from tools.pivot.center_schematic import center_schematic
 from tools.pivot.connect_power_rails import connect_power_rails
 from tools.pivot.tighten_component_labels import tighten_component_labels
+from tools.pivot.orient_led_fields import orient_led_fields
 
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "fixtures/pivot/reference_555_led_flasher_v1/manifest.json"
@@ -147,3 +148,13 @@ def test_component_label_tightening_is_reproducible_and_fixture_is_locked(tmp_pa
     tighten_component_labels(v5 / "Reference555LedFlasher.kicad_sch", output)
     assert output.read_bytes() == (v6 / "Reference555LedFlasher.kicad_sch").read_bytes()
     assert verify_manifest(ROOT / "fixtures/pivot/reference_555_led_flasher_v6/manifest.json", ROOT) == []
+
+
+def test_rotated_led_fields_are_horizontal_and_fixture_is_locked(tmp_path: Path) -> None:
+    v6 = ROOT / "fixtures/pivot/reference_555_led_flasher_v6/native_project"
+    v7 = ROOT / "fixtures/pivot/reference_555_led_flasher_v7/native_project"
+    assert verify_native_project(v7) == []
+    output = tmp_path / "Reference555LedFlasher.kicad_sch"
+    orient_led_fields(v6 / "Reference555LedFlasher.kicad_sch", output)
+    assert output.read_bytes() == (v7 / "Reference555LedFlasher.kicad_sch").read_bytes()
+    assert verify_manifest(ROOT / "fixtures/pivot/reference_555_led_flasher_v7/manifest.json", ROOT) == []

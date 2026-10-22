@@ -1,0 +1,11 @@
+{
+  "schema_version":"pivot-behavior.v1",
+  "source":"https://www.ti.com/lit/ds/symlink/ne555.pdf",
+  "method":"TI NE555 astable equations; arithmetic independently evaluated with Python Decimal",
+  "nominal_inputs":{"ra_ohm":10000,"rb_ohm":47000,"c_f":0.00001,"resistor_tolerance_fraction":0.05,"capacitor_tolerance_fraction":0.20},
+  "equations":{"high_s":"0.693 * (RA + RB) * C","low_s":"0.693 * RB * C","period_s":"high_s + low_s","frequency_hz":"1 / period_s"},
+  "nominal":{"high_s":0.395010,"low_s":0.325710,"period_s":0.720720,"frequency_hz":1.387501,"output_high_fraction":0.548077,"output_low_fraction":0.451923},
+  "tolerance_envelope":{"frequency_min_hz":1.217,"frequency_max_hz":1.652,"high_s_min":0.300,"high_s_max":0.498,"low_s_min":0.247,"low_s_max":0.411},
+  "indicator":{"on_state":"U1 output low; current flows from VCC through R3 and D1 into pin 3","supply_min_v":4.75,"supply_max_v":5.25,"resistor_ohm":1000,"resistor_tolerance_fraction":0.05,"led_vf_typical_at_10mA_v":1.9,"led_vf_max_at_10mA_v":2.3,"estimated_nominal_current_ma_at_5v_and_1.9v_vf":3.1,"conservative_current_upper_bound_ma_ignoring_led_drop":5.527,"resistor_power_upper_bound_w":0.0291,"led_max_dc_current_ma":30,"resistor_rated_power_w":0.25},
+  "limitations":["Timing estimates use nominal equations and component tolerance bounds; no SPICE or physical measurement has been performed.","LED voltage is specified at 10mA; actual low-current current/brightness is not guaranteed by that test point.","555 output low voltage, supply ripple, capacitor leakage, temperature, and component aging are not included in the timing/current estimates.","The supply bypass capacitor is absent because the current compiler semantic profile cannot own that new support occurrence; its failed attempt is retained in fixtures/pivot/runs/reference_555_led_flasher_v1_run2.failed."]
+}
