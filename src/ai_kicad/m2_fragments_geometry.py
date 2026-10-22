@@ -9,7 +9,7 @@ from .m2_fragments_base import (
     FragmentVariant,
     PortAnchor,
     _body_rect,
-    _clear_nonpassive_text,
+    _place_component_text,
     _component,
     _occupied_geometry,
     _placed_terminal_points,
@@ -271,7 +271,7 @@ def _finish(
         )
         draft.wire_nets.append(gateway.net)
     choose_text_slots(design, draft, alternate=alternate_text_slots)
-    _clear_nonpassive_text(design, resolved, draft)
+    _place_component_text(design, resolved, draft)
     del draft.wires[emitted_wire_count:]
     del draft.wire_nets[emitted_wire_count:]
     occupied = _occupied_geometry(design, resolved, draft, block)

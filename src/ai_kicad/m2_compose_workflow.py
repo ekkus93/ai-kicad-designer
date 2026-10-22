@@ -43,6 +43,7 @@ from .m2_route import (
 from .m2_routing_composition_observer import measure_routing_readability
 from .m2_semantics import PlacementConflict, semantic_plan
 from .m2a import PITCH, Scene, certify_scene_geometry, certify_scene_inputs
+from .m2_text_layout import readable_property_angles
 
 
 def _candidate_observer_priority(observed_composition) -> tuple[int, int, int]:
@@ -465,14 +466,7 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
             metrics,
             draft.angles,
             draft.text_positions,
-            {
-                (component["id"], unit): angle
-                for component in design["components"]
-                if component["asset"] in {"Device:R", "Device:C"}
-                and max(len(component["refdes"]), len(component["value"])) > 4
-                for (cid, unit), angle in draft.angles.items()
-                if cid == component["id"] and angle % 180
-            },
+            readable_property_angles(draft.angles),
         )
     )
     scene = certify_scene_inputs(

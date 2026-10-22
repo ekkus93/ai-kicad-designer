@@ -6,7 +6,13 @@ import itertools
 from dataclasses import dataclass
 
 from .ir import InputError
+from .m2_geometry import label_text_rect
 from .m2a import PITCH, Asset, Pin, Scene
+from .m2_text_layout import (
+    candidate_text_anchors,
+    first_clear_text_anchor,
+    property_envelopes,
+)
 
 
 def _turn(pin: Pin, angle: int) -> tuple[int, int]:
@@ -658,3 +664,69 @@ def choose_text_slots(design: dict, draft: Draft, *, alternate: bool = False) ->
                 break
         else:
             raise InputError(f"no clear value/reference slot for {c['id']}")
+    _place_all_component_text_slots(design, draft)
+
+
+def _place_all_component_text_slots(design: dict, draft: Draft) -> None:
+    """Validate every component field against transformed symbol geometry."""
+    components = {component["id"]: component for component in design["components"]}
+    body_rects = {}
+    pin_obstacles = []
+    for key, (sx, sy) in draft.positions.items():
+        component = components[key[0]]
+        asset = draft.resolved.get(component["asset"])
+        if asset is None:
+            continue
+        body = asset.bodies.get(key[1]) or asset.bodies.get(0)
+        if body is None:
+            body_rects[key] = (sx - 3 * PITCH, sy - 3 * PITCH, sx + 3 * PITCH, sy + 3 * PITCH)
+        else:
+            left, top, right, bottom = body
+            corners = [
+                _turn(Pin("", "", "", x, y), draft.angles.get(key, 0))
+                for x in (left, right)
+                for y in (top, bottom)
+            ]
+            xs = [sx + point[0] for point in corners]
+            ys = [sy + point[1] for point in corners]
+            body_rects[key] = (min(xs), min(ys), max(xs), max(ys))
+        for pin in asset.units.get(key[1], asset.units.get(0, ())):
+            px, py = draft.point(key[0], pin.number)
+            pin_obstacles.append((px - 500_000, py - 500_000, px + 500_000, py + 500_000))
+
+    label_obstacles = [label_text_rect(net, point) for net, point in draft.labels]
+    for key in sorted(draft.text_positions):
+        component = components[key[0]]
+        origin = draft.positions[key]
+        preferred = draft.text_positions[key]
+        body = body_rects.get(key)
+        candidates = candidate_text_anchors(
+            origin,
+            preferred,
+            body=body,
+            longest_field=max(component["refdes"], component["value"], key=len),
+        )
+        obstacles = list(pin_obstacles)
+        obstacles.extend(label_obstacles)
+        obstacles.extend(body_rects.values())
+        for other, (x, y) in draft.text_positions.items():
+            if other == key:
+                continue
+            other_component = components[other[0]]
+            obstacles.extend(
+                property_envelopes(other_component["refdes"], other_component["value"], (x, y))
+            )
+        selected = first_clear_text_anchor(
+            candidates,
+            lambda anchor: property_envelopes(component["refdes"], component["value"], anchor),
+            obstacles=obstacles,
+            wires=draft.wires,
+        )
+        if selected is None:
+            raise InputError(f"TEXT_SLOT_INFEASIBLE: {component['id']} unit {key[1]}")
+        draft.text_positions[key] = selected
+
+
+def _place_nonpassive_text_slots(design: dict, draft: Draft) -> None:
+    """Compatibility wrapper retained for focused geometry tests."""
+    _place_all_component_text_slots(design, draft)

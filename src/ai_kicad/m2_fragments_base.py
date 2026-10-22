@@ -17,6 +17,11 @@ from .m2_geometry import (
     Reservation,
     label_text_rect,
 )
+from .m2_text_layout import (
+    candidate_text_anchors,
+    first_clear_text_anchor,
+    property_envelopes,
+)
 from .m2a_constants import PITCH
 from .m2a_core import Asset, Pin
 from .m2b import (
@@ -116,25 +121,24 @@ def _body_rect(design: dict, resolved: dict[str, Asset], draft: Draft, key: Occu
     return min(xs), min(ys), max(xs), max(ys)
 
 
-def _clear_nonpassive_text(design: dict, resolved: dict[str, Asset], draft: Draft) -> None:
+def _place_component_text(design: dict, resolved: dict[str, Asset], draft: Draft) -> None:
     components = {component["id"]: component for component in design["components"]}
+    symbol_obstacles = []
+    for occurrence in draft.positions:
+        if occurrence[0] not in components:
+            continue
+        symbol_obstacles.append(_body_rect(design, resolved, draft, occurrence))
+        asset = resolved[components[occurrence[0]]["asset"]]
+        for pin in asset.units.get(occurrence[1], asset.units.get(0, ())):
+            px, py = draft.point(occurrence[0], pin.number)
+            symbol_obstacles.append((px - 500_000, py - 500_000, px + 500_000, py + 500_000))
+    label_obstacles = [label_text_rect(net, point) for net, point in draft.labels]
     for key in sorted(draft.text_positions):
         component = components.get(key[0])
         if component is None:
             continue
-        if (
-            component["asset"] in {"Device:C", "Device:R"}
-            and max(len(component["refdes"]), len(component["value"])) <= 4
-        ):
-            continue
         sx, sy = draft.positions[key]
         tx, ty = draft.text_positions[key]
-        nearby = tuple(
-            (tx + dx * PITCH, ty + dy * PITCH)
-            for dy in (-2, -4, 0, 2, 4)
-            for dx in (0, 2, -2, 4, -4)
-            if dx or dy
-        )
         preferred_connector_slots = ()
         if component["asset"].startswith("Connector_Generic:"):
             asset = resolved[component["asset"]]
@@ -159,77 +163,38 @@ def _clear_nonpassive_text(design: dict, resolved: dict[str, Asset], draft: Draf
             if keep_long_connector_text_local
             else (*preferred_connector_slots, draft.text_positions[key])
         )
-        candidates = (
-            *connector_text_candidates,
-            *nearby,
-            (sx, sy - 12 * PITCH),
-            (sx, sy - 16 * PITCH),
-            (sx, sy - 20 * PITCH),
-            (sx + 12 * PITCH, sy - 8 * PITCH),
-            (sx - 12 * PITCH, sy - 8 * PITCH),
-            (sx + 12 * PITCH, sy + 6 * PITCH),
-            (sx - 12 * PITCH, sy + 6 * PITCH),
+        candidates = tuple(
+            dict.fromkeys(
+                (*connector_text_candidates,
+                 *candidate_text_anchors(
+                     (sx, sy),
+                     (tx, ty),
+                     body=_body_rect(design, resolved, draft, key),
+                     longest_field=max(component["refdes"], component["value"], key=len),
+                 )[1:])
+            )
         )
-        for x, y in candidates:
-            rectangles = []
-            for value, py in (
-                (component["refdes"], y),
-                (component["value"], y + 2 * PITCH),
-            ):
-                half = max(635_000, len(value) * 445_000)
-                rectangles.append(
-                    (
-                        x - half - 1_000_000,
-                        py - 1_850_000,
-                        x + half + 1_000_000,
-                        py + 1_850_000,
-                    )
-                )
-            # Wires alone miss a field on a neighbouring body or net label.
-            # Use the same transformed physical bodies that the fragment owns.
-            obstacles = [
-                _body_rect(design, resolved, draft, other)
-                for other in draft.positions
-                if other[0] in components
-            ]
-            obstacles.extend(label_text_rect(net, point) for net, point in draft.labels)
-            for other, (ox, oy) in draft.text_positions.items():
-                if other == key or other[0] not in components:
-                    continue
-                other_component = components[other[0]]
-                for value, py in (
-                    (other_component["refdes"], oy),
-                    (other_component["value"], oy + 2 * PITCH),
-                ):
-                    half = max(635_000, len(value) * 445_000)
-                    obstacles.append((ox - half, py - 850_000, ox + half, py + 850_000))
-            if any(
-                max(rect[0], obstacle[0]) < min(rect[2], obstacle[2])
-                and max(rect[1], obstacle[1]) < min(rect[3], obstacle[3])
-                for rect in rectangles
-                for obstacle in obstacles
-            ):
+        obstacles = list(symbol_obstacles)
+        obstacles.extend(label_obstacles)
+        for other, (ox, oy) in draft.text_positions.items():
+            if other == key or other[0] not in components:
                 continue
-            if all(
-                not (
-                    (
-                        a[0] == b[0]
-                        and rect[0] < a[0] < rect[2]
-                        and max(min(a[1], b[1]), rect[1]) < min(max(a[1], b[1]), rect[3])
-                    )
-                    or (
-                        a[1] == b[1]
-                        and rect[1] < a[1] < rect[3]
-                        and max(min(a[0], b[0]), rect[0]) < min(max(a[0], b[0]), rect[2])
-                    )
-                )
-                for rect in rectangles
-                for a, b in draft.wires
-            ):
-                draft.text_positions[key] = (x, y)
-                break
-        else:
+            other_component = components[other[0]]
+            obstacles.extend(property_envelopes(other_component["refdes"], other_component["value"], (ox, oy)))
+        chosen = first_clear_text_anchor(
+            candidates,
+            lambda anchor: property_envelopes(component["refdes"], component["value"], anchor),
+            obstacles=obstacles,
+            wires=draft.wires,
+        )
+        if chosen is None:
             raise InputError(f"TEXT_SLOT_INFEASIBLE: {component['id']} unit {key[1]}")
+        draft.text_positions[key] = chosen
+
+
+def _clear_nonpassive_text(design: dict, resolved: dict[str, Asset], draft: Draft) -> None:
+    """Compatibility name retained for existing repair tests and probes."""
+    _place_component_text(design, resolved, draft)
 
 
 def _occupied_geometry(
@@ -251,18 +216,17 @@ def _occupied_geometry(
                 (component["asset"],),
             )
         )
-        x, y = draft.text_positions[key]
-        for field_name, value, py in (
-            ("reference", component["refdes"], y),
-            ("value", component["value"], y + 2 * PITCH),
+        for field_name, rect in zip(
+            ("reference", "value"),
+            property_envelopes(component["refdes"], component["value"], draft.text_positions[key]),
+            strict=True,
         ):
-            half = max(635_000, len(value) * 445_000)
             items.append(
                 GeometryItem(
                     f"{key}.{field_name}",
                     "text",
                     owner,
-                    (x - half, py - 850_000, x + half, py + 850_000),
+                    rect,
                     ("pinned-stroke-estimator.v1",),
                 )
             )
