@@ -1,0 +1,46 @@
+{
+  "schema_version": "pivot-evidence.v1",
+  "evidence_id": "P0-006-konnect-desktop-live-2026-10-22",
+  "task_id": "P0-006",
+  "recorded_at_utc": "2026-10-22T08:10:00Z",
+  "source_commit": "92734ff7e3a8575fda8c5fb418a9b968fb50e042",
+  "revision_kind": "other",
+  "revision_id": "konnect-desktop-live-probe-run1",
+  "action": {
+    "summary": "Exercise pinned Konnect through real KiCad 10 GUI-hosted IPC and independently verify saved schematic, board, ERC, DRC, export, rejection and restoration",
+    "command": "python -m tools.pivot.backend_probe ... && python -m tools.pivot.assess_konnect_probe ...",
+    "backend": "Konnect external MCP + KiCad IPC/CLI",
+    "backend_version": "Konnect 0.13.0 commit 9488e5f09717cb508cb25779dc16586d1f06f758",
+    "toolchain": "byte-matched KiCad AppImage 10.0.6 on isolated Xvfb desktop session"
+  },
+  "status": "PASS",
+  "artifacts": [
+    {
+      "path": "fixtures/pivot/experiments/konnect_desktop_live_probe_2026-10-22_run1/independent_assessment.json",
+      "sha256": "223a2475946297d29437b0fbd1e8ec0a915da570605ba216adb74f2f4951a611",
+      "media_type": "application/json",
+      "role": "independent native assessment"
+    },
+    {
+      "path": "fixtures/pivot/experiments/konnect_desktop_live_probe_2026-10-22_run1/calls.json",
+      "sha256": "aea6a03d8de47ea419b53a1ce6696cb8aace6ea11e6e137b1d8432acda19b492",
+      "media_type": "application/json",
+      "role": "actual MCP call and readback trace"
+    }
+  ],
+  "checks": [
+    {
+      "check_id": "independent-native-gates",
+      "status": "PASS",
+      "summary": "Independent KiCad CLI and native parsers pass connectivity, zero ERC/DRC, export inventory, restored values and frozen-source integrity.",
+      "evidence_paths": ["fixtures/pivot/experiments/konnect_desktop_live_probe_2026-10-22_run1/independent_assessment.json"],
+      "independent": true
+    }
+  ],
+  "ci_links": [],
+  "blockers": [],
+  "notes": [
+    "Konnect remains unsuitable as the canonical connectivity observer because earlier probes show unnamed component nets as null.",
+    "No fabrication readiness or physical result is claimed."
+  ]
+}

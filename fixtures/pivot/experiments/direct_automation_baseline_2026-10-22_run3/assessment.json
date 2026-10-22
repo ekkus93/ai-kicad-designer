@@ -1,0 +1,135 @@
+{
+  "schema_version": "pivot-direct-baseline.v1",
+  "recorded_at_utc": "2026-10-22T08:00:54.422071+00:00",
+  "source_commit": "92734ff7e3a8575fda8c5fb418a9b968fb50e042",
+  "backend": "existing ai_kicad compiler + structured native file + kicad-cli",
+  "kicad_version": {
+    "command": [
+      "/home/phil/Applications/kicad-10.0.6/kicad-cli",
+      "version"
+    ],
+    "returncode": 0,
+    "stdout": "10.0.6\n",
+    "stderr": "",
+    "elapsed_seconds": 0.10206724399176892
+  },
+  "calls": [
+    {
+      "command": [
+        "/home/phil/Applications/kicad-10.0.6/kicad-cli",
+        "sch",
+        "erc",
+        "--format",
+        "json",
+        "--output",
+        "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/direct_automation_baseline_2026-10-22_run3/workspace/reports/erc.json",
+        "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/direct_automation_baseline_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_sch"
+      ],
+      "returncode": 0,
+      "stdout": "Found 11 violations\nSaved ERC Report to /home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/direct_automation_baseline_2026-10-22_run3/workspace/reports/erc.json\n",
+      "stderr": "",
+      "elapsed_seconds": 0.31878424099704716
+    },
+    {
+      "command": [
+        "/home/phil/Applications/kicad-10.0.6/kicad-cli",
+        "sch",
+        "export",
+        "netlist",
+        "--format",
+        "kicadxml",
+        "--output",
+        "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/direct_automation_baseline_2026-10-22_run3/workspace/reports/netlist.xml",
+        "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/direct_automation_baseline_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_sch"
+      ],
+      "returncode": 0,
+      "stdout": "",
+      "stderr": "",
+      "elapsed_seconds": 0.31544354200013913
+    },
+    {
+      "command": [
+        "/home/phil/Applications/kicad-10.0.6/kicad-cli",
+        "pcb",
+        "drc",
+        "--format",
+        "json",
+        "--output",
+        "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/direct_automation_baseline_2026-10-22_run3/workspace/reports/drc.json",
+        "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/direct_automation_baseline_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_pcb"
+      ],
+      "returncode": 0,
+      "stdout": "Found 10 violations\nFound 0 unconnected items\nSaved DRC Report to /home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/direct_automation_baseline_2026-10-22_run3/workspace/reports/drc.json\n",
+      "stderr": "",
+      "elapsed_seconds": 0.5860573409881908
+    },
+    {
+      "command": [
+        "/home/phil/Applications/kicad-10.0.6/kicad-cli",
+        "pcb",
+        "gerbers",
+        "--output",
+        "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/direct_automation_baseline_2026-10-22_run3/workspace/fabrication",
+        "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/direct_automation_baseline_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_pcb"
+      ],
+      "returncode": 1,
+      "stdout": "Failed to parse 'gerbers', did you mean 'render'\nUsage: kicad-cli pcb [--help] {drc,export,import,render,upgrade}\n\nPCB\n\nOptional arguments:\n  -h, --help  Shows help message and exits \n\nSubcommands:\n  drc        Runs the Design Rules Check (DRC) on the PCB and creates a report\n  export     Export utilities (Gerbers, drill, position files, etc)\n  import     Import a non-KiCad PCB file to KiCad format\n  render     Renders the PCB in 3D view to PNG or JPEG image\n  upgrade    Upgrade the board file's format to the latest one\n",
+      "stderr": "",
+      "elapsed_seconds": 0.10370871699706186
+    },
+    {
+      "command": [
+        "/home/phil/Applications/kicad-10.0.6/kicad-cli",
+        "pcb",
+        "drill",
+        "--output",
+        "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/direct_automation_baseline_2026-10-22_run3/workspace/fabrication",
+        "--generate-map",
+        "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/direct_automation_baseline_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_pcb"
+      ],
+      "returncode": 1,
+      "stdout": "Failed to parse 'drill', did you mean 'drc'\nUsage: kicad-cli pcb [--help] {drc,export,import,render,upgrade}\n\nPCB\n\nOptional arguments:\n  -h, --help  Shows help message and exits \n\nSubcommands:\n  drc        Runs the Design Rules Check (DRC) on the PCB and creates a report\n  export     Export utilities (Gerbers, drill, position files, etc)\n  import     Import a non-KiCad PCB file to KiCad format\n  render     Renders the PCB in 3D view to PNG or JPEG image\n  upgrade    Upgrade the board file's format to the latest one\n",
+      "stderr": "",
+      "elapsed_seconds": 0.10860607499489561
+    }
+  ],
+  "metrics": {
+    "elapsed_seconds": 1.4325999159773346,
+    "tool_call_count": 5,
+    "invalid_call_count": 2,
+    "token_count": 0,
+    "human_edit_minutes": 0
+  },
+  "gates": {
+    "native_schematic_parse": "PASS",
+    "bounded_edit_parse": "PASS",
+    "rollback_byte_identity": "PASS",
+    "pin_net_equivalence": "PASS",
+    "erc": "PASS",
+    "drc": "FAIL",
+    "fabrication_inventory": "FAIL",
+    "source_fixture_unchanged": "PASS"
+  },
+  "source_hashes": {
+    "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+    "Reference555LedFlasher.kicad_pcb": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+    "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+    "Reference555LedFlasher.kicad_sch": "9d819329416ae990c9ba1b9feddc5eca91c6220650259ea740b8fdc38f31903f",
+    "sym-lib-table": "ab4d8d12acfba15a9e96cd3b2f91cba3a38b89e50ad7f2347d03d73dbfa1359a"
+  },
+  "mutation_hash": "fb820f8ea1c513e3a50fbc0a9d50547d25d3143d285d5ac46b4b6fe6d33f667b",
+  "rollback_hash": "9d819329416ae990c9ba1b9feddc5eca91c6220650259ea740b8fdc38f31903f",
+  "artifacts": {
+    "workspace/NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+    "workspace/Reference555LedFlasher.kicad_pcb": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+    "workspace/Reference555LedFlasher.kicad_prl": "a61f9786f0934d13bc3efa5ef75250845c08a8c4ee1bfc2a4b9b25e7f5fbdd80",
+    "workspace/Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+    "workspace/Reference555LedFlasher.kicad_sch": "9d819329416ae990c9ba1b9feddc5eca91c6220650259ea740b8fdc38f31903f",
+    "workspace/reports/drc.json": "31f656cab722f1774a4faeb6b0c26469a07ae68176bca24a7b3943d90b5d320e",
+    "workspace/reports/electrical.json": "ba94626f9e2c363d9adc5b9a5eaf1177b18625a41fb0a5628d1ddc9de555d6e1",
+    "workspace/reports/erc.json": "b2120c00fd1925bdabfe91306d72c4bc0f2d6f5ba9d96f2688520710b5c3dc2f",
+    "workspace/reports/netlist.xml": "72ff43e424aa2e91b28e2b78bf86a9ff34693832929f3f214bc77682e0e9df95",
+    "workspace/sym-lib-table": "ab4d8d12acfba15a9e96cd3b2f91cba3a38b89e50ad7f2347d03d73dbfa1359a"
+  },
+  "status": "FAIL"
+}

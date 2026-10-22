@@ -1,0 +1,501 @@
+{
+  "$defs": {
+    "Component": {
+      "additionalProperties": false,
+      "properties": {
+        "component_id": {
+          "minLength": 1,
+          "title": "Component Id",
+          "type": "string"
+        },
+        "footprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Footprint"
+        },
+        "footprint_sha256": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Footprint Sha256"
+        },
+        "mpn": {
+          "minLength": 1,
+          "title": "Mpn",
+          "type": "string"
+        },
+        "pin_pad_map": {
+          "items": {
+            "$ref": "#/$defs/PinPad"
+          },
+          "title": "Pin Pad Map",
+          "type": "array"
+        },
+        "pins": {
+          "items": {
+            "$ref": "#/$defs/Pin"
+          },
+          "minItems": 1,
+          "title": "Pins",
+          "type": "array"
+        },
+        "reference": {
+          "pattern": "^[A-Z#][A-Z0-9#]*[0-9]+$",
+          "title": "Reference",
+          "type": "string"
+        },
+        "symbol": {
+          "minLength": 1,
+          "title": "Symbol",
+          "type": "string"
+        },
+        "symbol_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Symbol Sha256",
+          "type": "string"
+        },
+        "value": {
+          "minLength": 1,
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "component_id",
+        "reference",
+        "value",
+        "symbol",
+        "symbol_sha256",
+        "mpn",
+        "pins"
+      ],
+      "title": "Component",
+      "type": "object"
+    },
+    "ElectricalAssertion": {
+      "additionalProperties": false,
+      "properties": {
+        "assertion_id": {
+          "minLength": 1,
+          "title": "Assertion Id",
+          "type": "string"
+        },
+        "kind": {
+          "minLength": 1,
+          "title": "Kind",
+          "type": "string"
+        },
+        "parameters": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              }
+            ]
+          },
+          "title": "Parameters",
+          "type": "object"
+        },
+        "source": {
+          "minLength": 1,
+          "title": "Source",
+          "type": "string"
+        }
+      },
+      "required": [
+        "assertion_id",
+        "kind",
+        "parameters",
+        "source"
+      ],
+      "title": "ElectricalAssertion",
+      "type": "object"
+    },
+    "ManufacturingProfile": {
+      "additionalProperties": false,
+      "properties": {
+        "board_height_mm": {
+          "exclusiveMinimum": 0,
+          "title": "Board Height Mm",
+          "type": "number"
+        },
+        "board_width_mm": {
+          "exclusiveMinimum": 0,
+          "title": "Board Width Mm",
+          "type": "number"
+        },
+        "copper_layers": {
+          "const": 2,
+          "title": "Copper Layers",
+          "type": "integer"
+        },
+        "copper_to_edge_mm": {
+          "exclusiveMinimum": 0,
+          "title": "Copper To Edge Mm",
+          "type": "number"
+        },
+        "copper_weight_oz": {
+          "exclusiveMinimum": 0,
+          "title": "Copper Weight Oz",
+          "type": "number"
+        },
+        "material": {
+          "minLength": 1,
+          "title": "Material",
+          "type": "string"
+        },
+        "min_clearance_mm": {
+          "exclusiveMinimum": 0,
+          "title": "Min Clearance Mm",
+          "type": "number"
+        },
+        "min_drill_mm": {
+          "exclusiveMinimum": 0,
+          "title": "Min Drill Mm",
+          "type": "number"
+        },
+        "min_track_mm": {
+          "exclusiveMinimum": 0,
+          "title": "Min Track Mm",
+          "type": "number"
+        },
+        "min_via_diameter_mm": {
+          "exclusiveMinimum": 0,
+          "title": "Min Via Diameter Mm",
+          "type": "number"
+        },
+        "profile_id": {
+          "minLength": 1,
+          "title": "Profile Id",
+          "type": "string"
+        },
+        "qualification_status": {
+          "enum": [
+            "reference",
+            "fabricator_vetted"
+          ],
+          "title": "Qualification Status",
+          "type": "string"
+        },
+        "silkscreen_sides": {
+          "const": 2,
+          "title": "Silkscreen Sides",
+          "type": "integer"
+        },
+        "solder_mask_sides": {
+          "const": 2,
+          "title": "Solder Mask Sides",
+          "type": "integer"
+        },
+        "source": {
+          "minLength": 1,
+          "title": "Source",
+          "type": "string"
+        },
+        "thickness_mm": {
+          "exclusiveMinimum": 0,
+          "title": "Thickness Mm",
+          "type": "number"
+        }
+      },
+      "required": [
+        "profile_id",
+        "board_width_mm",
+        "board_height_mm",
+        "copper_layers",
+        "thickness_mm",
+        "min_track_mm",
+        "min_clearance_mm",
+        "min_drill_mm",
+        "min_via_diameter_mm",
+        "copper_to_edge_mm",
+        "copper_weight_oz",
+        "material",
+        "solder_mask_sides",
+        "silkscreen_sides",
+        "qualification_status",
+        "source"
+      ],
+      "title": "ManufacturingProfile",
+      "type": "object"
+    },
+    "Net": {
+      "additionalProperties": false,
+      "properties": {
+        "net_id": {
+          "minLength": 1,
+          "title": "Net Id",
+          "type": "string"
+        },
+        "role": {
+          "minLength": 1,
+          "title": "Role",
+          "type": "string"
+        },
+        "terminals": {
+          "items": {
+            "$ref": "#/$defs/Terminal"
+          },
+          "minItems": 2,
+          "title": "Terminals",
+          "type": "array"
+        }
+      },
+      "required": [
+        "net_id",
+        "role",
+        "terminals"
+      ],
+      "title": "Net",
+      "type": "object"
+    },
+    "Pin": {
+      "additionalProperties": false,
+      "properties": {
+        "electrical_type": {
+          "minLength": 1,
+          "title": "Electrical Type",
+          "type": "string"
+        },
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "number": {
+          "minLength": 1,
+          "title": "Number",
+          "type": "string"
+        }
+      },
+      "required": [
+        "number",
+        "name",
+        "electrical_type"
+      ],
+      "title": "Pin",
+      "type": "object"
+    },
+    "PinPad": {
+      "additionalProperties": false,
+      "properties": {
+        "pad": {
+          "minLength": 1,
+          "title": "Pad",
+          "type": "string"
+        },
+        "pin": {
+          "minLength": 1,
+          "title": "Pin",
+          "type": "string"
+        }
+      },
+      "required": [
+        "pin",
+        "pad"
+      ],
+      "title": "PinPad",
+      "type": "object"
+    },
+    "Sheet": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "parent_sheet_id": {
+          "anyOf": [
+            {
+              "pattern": "^/",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Sheet Id"
+        },
+        "sheet_id": {
+          "pattern": "^/",
+          "title": "Sheet Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "sheet_id",
+        "name"
+      ],
+      "title": "Sheet",
+      "type": "object"
+    },
+    "Terminal": {
+      "additionalProperties": false,
+      "properties": {
+        "component_id": {
+          "minLength": 1,
+          "title": "Component Id",
+          "type": "string"
+        },
+        "pin": {
+          "minLength": 1,
+          "title": "Pin",
+          "type": "string"
+        },
+        "sheet": {
+          "default": "/",
+          "pattern": "^/",
+          "title": "Sheet",
+          "type": "string"
+        },
+        "unit": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Unit",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "component_id",
+        "pin"
+      ],
+      "title": "Terminal",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "components": {
+      "items": {
+        "$ref": "#/$defs/Component"
+      },
+      "minItems": 1,
+      "title": "Components",
+      "type": "array"
+    },
+    "design_id": {
+      "minLength": 1,
+      "title": "Design Id",
+      "type": "string"
+    },
+    "electrical_assertions": {
+      "items": {
+        "$ref": "#/$defs/ElectricalAssertion"
+      },
+      "title": "Electrical Assertions",
+      "type": "array"
+    },
+    "hierarchy": {
+      "items": {
+        "$ref": "#/$defs/Sheet"
+      },
+      "minItems": 1,
+      "title": "Hierarchy",
+      "type": "array"
+    },
+    "manufacturing_profile": {
+      "$ref": "#/$defs/ManufacturingProfile"
+    },
+    "native_artifacts": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Native Artifacts",
+      "type": "object"
+    },
+    "nets": {
+      "items": {
+        "$ref": "#/$defs/Net"
+      },
+      "minItems": 1,
+      "title": "Nets",
+      "type": "array"
+    },
+    "parent_revision": {
+      "anyOf": [
+        {
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Revision"
+    },
+    "requirements": {
+      "additionalProperties": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "integer"
+          },
+          {
+            "type": "number"
+          },
+          {
+            "type": "boolean"
+          }
+        ]
+      },
+      "title": "Requirements",
+      "type": "object"
+    },
+    "revision_id": {
+      "pattern": "^sha256:[0-9a-f]{64}$",
+      "title": "Revision Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "design-model.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "title": {
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "design_id",
+    "revision_id",
+    "title",
+    "requirements",
+    "hierarchy",
+    "components",
+    "nets",
+    "electrical_assertions",
+    "manufacturing_profile"
+  ],
+  "title": "DesignModel",
+  "type": "object"
+}

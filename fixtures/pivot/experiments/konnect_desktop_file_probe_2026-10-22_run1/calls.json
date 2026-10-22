@@ -1,0 +1,917 @@
+[
+  {
+    "request": {
+      "name": "load_toolset",
+      "arguments": {
+        "name": "sch_components"
+      }
+    },
+    "response": {
+      "jsonrpc": "2.0",
+      "id": 2,
+      "result": {
+        "content": [
+          {
+            "text": "{\"loaded\":\"sch_components\",\"tools\":[{\"description\":\"Add a symbol from a KiCAD library to the schematic. The symbol is snapped to the 1.27mm schematic grid. Preserves every saved hierarchy instance, reports committed-file readback, copies the library Value and Footprint unless explicitly overridden, and refuses stale instance metadata before writing. Specify position in schematic mm coordinates.\",\"name\":\"add_schematic_component\"},{\"description\":\"Remove a component by reference designator, including every placed unit of a multi-unit symbol.\",\"name\":\"delete_schematic_component\"},{\"description\":\"Update fields (Reference, Value, Footprint, custom properties) consistently across every placed unit of a component, and move or hide the text of any of them.\",\"name\":\"edit_schematic_component\"},{\"description\":\"Get a component's shared properties and every placed unit's position. Use get_schematic_pin_locations for pins.\",\"name\":\"get_schematic_component\"},{\"description\":\"List all symbol instances in a schematic with their positions, values, footprints, and properties.\",\"name\":\"list_schematic_components\"},{\"description\":\"Move a component's lowest-numbered unit to a new position and translate every other placed unit by the same delta. Does NOT adjust connected wires. Junction dots are re-judged where the pins moved: a dot the pins leave unjustified is removed and a pin landing mid-span on a wire gains one, reported as junctions_pruned_count and junctions_added_count. A no-connect flag travels with the pin it protects, reported as no_connects_moved; the move is refused before writing when that pin cannot be followed one-to-one.\",\"name\":\"move_schematic_component\"},{\"description\":\"Set the lowest-numbered unit's absolute rotation and rotate every other placed unit by the same delta. Does NOT adjust connected wires. Each unit's Reference and Value text turns with its body, keeping any offset the caller gave it; use reset_schematic_field_positions to put fields back on their library anchors instead. Junction dots are re-judged where the pins turned, reported as junctions_pruned_count and junctions_added_count. A no-connect flag travels with the pin it protects, reported as no_connects_moved; the turn is refused before writing when that pin cannot be followed one-to-one.\",\"name\":\"rotate_schematic_component\"},{\"description\":\"REFUSED until implemented: moving a symbol while stretching its connected              wires is not built yet. Calling this returns an error naming              move_schematic_component as the working alternative \u2014 it moves the symbol              only, leaving wires where they are.\",\"name\":\"move_connected\"},{\"description\":\"Move all symbol units whose origins are within a bounding box by a given offset. Does NOT adjust connected wires. Junction dots are re-judged once for the whole region where its pins moved, reported as junctions_pruned_count and junctions_added_count. No-connect flags travel with the pins they protect, reported as no_connects_moved; the move is refused before writing when a pin cannot be followed one-to-one.\",\"name\":\"move_region\"},{\"description\":\"Assign reference designators in the saved schematic the way eeschema's Tools \u2192 Annotate does with its defaults: every '?' designator gets the first free number for its prefix in the project, in ascending X per sheet instance, numbers used on any sheet instance in the file are reserved, and numbered designators are kept. The units of one multi-unit part (same embedded definition and value, distinct units) share one designator; when which units belong together is not proven they are reported in 'unresolved', never guessed. Two separate parts sharing a designator are reported in 'unresolved' with a 'partial' outcome; they are renumbered only when resolve_duplicates is true (the first in ascending X keeps the number). Annotates one project's instance records \u2014 the schematic's owner by default, or 'project' \u2014 and never touches another project's. Writes both the Reference property and the instances block, then reads the file back; every count in the response comes from that readback. Numbers used on the project's other sheets are reserved through its sheet tree ('other_sheets_consulted'); duplicates already spread across sheets are not detected here. Konnect's own implementation \u2014 kicad-cli has no annotate command. dry_run returns the plan without writing.\",\"name\":\"annotate_schematic\"},{\"description\":\"Get the exact schematic-space (X,Y) coordinates of every pin on every placed unit of a component, accounting for rotation and mirroring. Uses the canonical pin transform. Each pin also reports 'orientation_degrees', the direction leading away from the symbol body (0 = east) \u2014 a net label at the pin must read that way or its text runs back over the symbol's pin names \u2014 and 'length_mm'.\",\"name\":\"get_schematic_pin_locations\"},{\"description\":\"Get pin locations for multiple components in a single file read. Reports the same per-pin fields as get_schematic_pin_locations, including 'orientation_degrees' and 'length_mm'.\",\"name\":\"batch_get_schematic_pin_locations\"},{\"description\":\"Add or update a custom property consistently across every placed unit of a component.\",\"name\":\"add_component_annotation\"},{\"description\":\"Add or update a group property on every placed unit of multiple components.\",\"name\":\"group_components\"},{\"description\":\"Replace every placed unit of a component with a new library symbol while preserving unit numbers. A unit override is accepted only for a single placement. Junction dots are re-judged once for the whole replacement, reported as junctions_pruned_count and junctions_added_count. A no-connect flag follows the same symbol UUID, unit, and pin number when that mapping is one-to-one; removed, renumbered, or duplicated protected pins refuse before writing.\",\"name\":\"replace_component\"},{\"description\":\"Re-embed placed symbols' definitions from their libraries, like KiCad's 'Update Symbols from Library'. A schematic carries its own copy of every symbol, so editing one in its library leaves the sheet drawing the old shape \u2014 this refreshes it. A symbol whose pins moved or disappeared in the library is refused (reported in pins_moved) unless allow_pin_moves is set, because wires and labels attach at pin coordinates.\",\"name\":\"update_symbols_from_library\"},{\"description\":\"Move each placed symbol's Reference and Value text back to the position its library definition anchors them at, carried through the symbol's own rotation \u2014 KiCad's 'Reset field text positions'. Use it on a sheet whose fields sit at a uniform offset instead of where the library puts them (labels inside a connector body, a rail's name below an up-pointing arrow). Fields a symbol's definition gives no anchor for are left alone.\",\"name\":\"reset_schematic_field_positions\"},{\"description\":\"Render a schematic sheet with kicad-cli and return the path to the SVG it wrote.              There is no PNG: KiCad ships no schematic rasteriser \u2014 `sch export` offers no bitmap              format and there is no `sch render` \u2014 so this is a vector file, not an image that can              be shown inline. It lands in a temporary directory and is overwritten by the next view              of the same sheet; use export_schematic_svg (toolset sch_export) to choose where it              goes. The SVG doubles as a geometry source: kicad-cli writes every string a second              time as an invisible <text opacity=\\\"0\\\"> element carrying x, y, textLength, font-size              and text-anchor, so text content, position and width can be checked without rendering              a pixel.\",\"name\":\"get_schematic_view\"}],\"tools_added\":18}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      }
+    },
+    "elapsed_seconds": 0.0013701860007131472,
+    "workspace_hashes": {
+      "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+      "Reference555LedFlasher-drc.json": "8f23a6ec0ede9fa6decad9022dd009c295e7efc6c8d7d1b978eb94fc9c60df9b",
+      "Reference555LedFlasher-erc.json": "9ceb07c76066a1365e22ad99a864450686270f8e43038eb8dd4b4180c25576d5",
+      "Reference555LedFlasher.kicad_pcb": "6fed233438a617b14247cf6bc861cdfb4c0ee4849a29831ffd247b3f96cc671e",
+      "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+      "Reference555LedFlasher.kicad_sch": "7527430fc434f16e6dfda51fcf1191c157e393a669f2dda6f85379a69fafec31",
+      "Reference555LedFlasher_repair-drc.json": "0246850eff8216132a8428ebbe7bb8c24a2dceacb565e5436c7dc49d11f3a414",
+      "Reference555LedFlasher_repair.kicad_pcb": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+      "Reference555LedFlasher_routed-drc.json": "53e40fba23b314e86b93be47212baf43df21542be9357452fde796862cb0580a",
+      "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+    }
+  },
+  {
+    "request": {
+      "name": "load_toolset",
+      "arguments": {
+        "name": "sch_export"
+      }
+    },
+    "response": {
+      "jsonrpc": "2.0",
+      "id": 3,
+      "result": {
+        "content": [
+          {
+            "text": "{\"loaded\":\"sch_export\",\"tools\":[{\"description\":\"Export a schematic sheet to an SVG file using kicad-cli. The result doubles as a              machine-readable geometry source: kicad-cli writes every string twice \u2014 visibly as              stroke paths, and again as an invisible <text opacity=\\\"0\\\"> element carrying x, y,              textLength, font-size and text-anchor \u2014 so text content, position and width are              checkable without rendering a pixel.\",\"name\":\"export_schematic_svg\"},{\"description\":\"Render a schematic sheet to PNG: kicad-cli SVG export rasterized in-process (deterministic stroke-font rendering, no system fonts consulted). Returns the PNG path and its actual pixel dimensions; with 'inline' true the response also carries the image as base64 so the caller can inspect its own output. Width is capped at 4096 px.\",\"name\":\"render_schematic_png\"},{\"description\":\"Capture the current render of a schematic sheet as its visual baseline, stored under the project's .konnect/baselines/ keyed by sheet name, with the source file's hash and the renderer identity recorded so a later compare can tell design drift from a stale renderer.\",\"name\":\"set_visual_baseline\"},{\"description\":\"Re-render a sheet at its stored baseline's width and report pixel drift: changed-pixel percentage against a 2% threshold, the changed region's pixel bounding box, and whether the source file changed since the baseline. 'No baseline stored' is an explicit result, not an error; a baseline made by a different renderer version is flagged, never silently trusted.\",\"name\":\"compare_visual_baseline\"},{\"description\":\"Export a schematic sheet to a PDF file using kicad-cli.\",\"name\":\"export_schematic_pdf\"},{\"description\":\"Generate a KiCAD netlist file from the schematic using kicad-cli.\",\"name\":\"generate_netlist\"},{\"description\":\"Return a human-readable JSON summary of the schematic netlist: all components, their nets, pin counts. Nets come from labels and from power symbols. Does not require kicad-cli.\",\"name\":\"export_netlist_summary\"},{\"description\":\"Run the Electrical Rules Check (ERC) on the schematic via kicad-cli and return a list of violations filtered by severity. Violation positions are millimetres on the sheet; the response's `coordinates` object says whether they were corrected for the KiCad versions that report them 100x too small, passed through, or withheld because the KiCad version could not be classified. A report that is not in kicad-cli's ERC shape is an error, never zero violations.\",\"name\":\"run_erc\"},{\"description\":\"Scan the schematic for near-miss wire endpoints (within snap_tolerance of a pin or label but not exactly on it) and snap them into place. Use dry_run to preview fixes without writing.\",\"name\":\"fix_connectivity\"},{\"description\":\"Plan or atomically apply saved schematic hierarchy changes to the live KiCad PCB. Defaults to a non-mutating dry run; apply requires its exact plan revision. Preserves placement, routing, board-only footprints, and footprint artwork. A symbol with no footprint assigned is reported under `unassigned_footprints` and the sync proceeds for every other component. A library footprint that cannot be placed, or a connected pad its footprint does not have, makes the dry run a conflict whose diagnostics name the footprint and every part that needs it. Added footprints are staged beside the board as KiCad measured it; `staging` names the item classes KiCad would not list, so a partial or unmeasured board is never reported as complete or empty.\",\"name\":\"update_pcb_from_schematic\"}],\"tools_added\":10}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      }
+    },
+    "elapsed_seconds": 0.0010219179966952652,
+    "workspace_hashes": {
+      "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+      "Reference555LedFlasher-drc.json": "8f23a6ec0ede9fa6decad9022dd009c295e7efc6c8d7d1b978eb94fc9c60df9b",
+      "Reference555LedFlasher-erc.json": "9ceb07c76066a1365e22ad99a864450686270f8e43038eb8dd4b4180c25576d5",
+      "Reference555LedFlasher.kicad_pcb": "6fed233438a617b14247cf6bc861cdfb4c0ee4849a29831ffd247b3f96cc671e",
+      "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+      "Reference555LedFlasher.kicad_sch": "7527430fc434f16e6dfda51fcf1191c157e393a669f2dda6f85379a69fafec31",
+      "Reference555LedFlasher_repair-drc.json": "0246850eff8216132a8428ebbe7bb8c24a2dceacb565e5436c7dc49d11f3a414",
+      "Reference555LedFlasher_repair.kicad_pcb": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+      "Reference555LedFlasher_routed-drc.json": "53e40fba23b314e86b93be47212baf43df21542be9357452fde796862cb0580a",
+      "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+    }
+  },
+  {
+    "request": {
+      "name": "load_toolset",
+      "arguments": {
+        "name": "pcb_components"
+      }
+    },
+    "response": {
+      "jsonrpc": "2.0",
+      "id": 4,
+      "result": {
+        "content": [
+          {
+            "text": "{\"loaded\":\"pcb_components\",\"tools\":[{\"description\":\"Place a footprint on the PCB. Uses live KiCAD IPC when reachable; otherwise safely edits a closed board file with revision checks.\",\"name\":\"place_component\"},{\"description\":\"Move a placed footprint to a new X/Y position. Uses live KiCAD IPC when reachable; otherwise safely edits a closed board file with revision checks.\",\"name\":\"move_component\"},{\"description\":\"Set the rotation angle of a placed footprint. Uses live KiCAD IPC when reachable; otherwise safely edits a closed board file with revision checks.\",\"name\":\"rotate_component\"},{\"description\":\"Set X/Y positions and rotations for multiple existing footprints atomically. Uses one live KiCAD IPC update and one undo step when reachable; otherwise safely edits a closed board file once with revision checks.\",\"name\":\"set_component_placements\"},{\"description\":\"Set a placed footprint to F.Cu or B.Cu. When the board is open in KiCad 10.0.6 or newer, this uses KiCad's own native FlipItems IPC command \u2014 the same transform the GUI's F key performs, including 3D-model offset/rotation \u2014 inside one KiCad undo step. Older or unsupported KiCad reachable over IPC returns an explicit unsupported_capability error rather than falling back to the file. Only when no live KiCad holds this board does it fall back to a guarded closed-board file edit, which flips supported geometry with revision checks and refuses any footprint whose 3D model would need a transform the file path cannot perform.\",\"name\":\"flip_component\"},{\"description\":\"Remove a footprint from the board via KiCAD IPC.\",\"name\":\"delete_component\"},{\"description\":\"Update the value or other properties of a placed footprint via KiCAD IPC.\",\"name\":\"edit_component\"},{\"description\":\"Repair the exact legacy corruption from Konnect issue #244: footprint drawing shapes rewritten as anonymous pads with empty layer sets. Resolves each affected footprint from its library, restores its pads and drawing shapes while preserving placement, identity and pad nets, and applies every requested repair in one KiCad undo commit. Defaults to a non-mutating dry run; apply requires the exact returned plan revision. Requires KiCAD running with the requested board open.\",\"name\":\"repair_corrupted_footprints\"},{\"description\":\"Find a footprint on the board by reference designator and return its position.\",\"name\":\"find_component\"},{\"description\":\"Plan or atomically apply KiCad's Update Footprints from Library operation to placed footprints on the live board. Defaults to a non-mutating dry run; apply requires its exact plan revision. Preserves placed-instance state and pad nets while refreshing supported library-owned content.\",\"name\":\"update_footprints_from_library\"},{\"description\":\"List the graphic items inside a footprint placed on the board \u2014 silkscreen, fabrication, and courtyard artwork \u2014 with the UUID needed to edit one. Points are footprint-local millimetres, as the .kicad_mod shows them. Each item reports 'editable', plus 'outlines' and 'holes' for polygons: 'points' covers the first outline only, so an item with more than one outline or any holes is reported but cannot be edited here. Requires KiCAD running with the board open.\",\"name\":\"list_board_footprint_graphics\"},{\"description\":\"Replace the vertices of a polygon inside a footprint placed on the board, selected by UUID. Points are footprint-local millimetres, as the .kicad_mod shows them. Use this to bring one placed instance in line with a library change without re-placing the part. Only a single-outline polygon with no holes can be replaced; anything else is refused by name rather than flattened. Requires KiCAD running with the board open.\",\"name\":\"edit_board_footprint_graphic\"},{\"description\":\"Return live board-space pad positions, effective rotations, physical geometry, drills, copper-layer shapes, layers and net assignments for a footprint. Reads the board open in KiCad when it is reachable and falls back to the file only when no live KiCad holds this board \u2014 IPC unreachable, or that board not open \u2014 'source' says which, so unsaved placements are visible without a save. A pad's 'net' is its net name, \\\"\\\" if the pad carries no net (unconnected), or \u2014 reading the file \u2014 null if the net node is present but unreadable; treat null as an error, not as an unconnected pad.\",\"name\":\"get_component_pads\"},{\"description\":\"Return the live board-space position, effective rotation, physical geometry, drill, layers and net of a specific pad number on a footprint.\",\"name\":\"get_pad_position\"},{\"description\":\"List all footprints on the board with their positions, layers, and values.\",\"name\":\"get_component_list\"},{\"description\":\"Place multiple copies of a footprint in a grid or line array via KiCAD IPC.\",\"name\":\"place_component_array\"},{\"description\":\"Align multiple footprints along a common X or Y axis via KiCAD IPC.\",\"name\":\"align_components\"},{\"description\":\"Duplicate an existing footprint at a new position via KiCAD IPC.\",\"name\":\"duplicate_component\"},{\"description\":\"Render the board with kicad-cli and return it as a base64 PNG. Note this is              kicad-cli's 3-D board render viewed from the top, not a layer plot -- there is              no layer selection. Use export_svg for layer-aware 2-D output.\",\"name\":\"get_board_2d_view\"},{\"description\":\"Inspect, append, replace, or remove one exact 3D-model entry on a placed footprint. Requires the requested board open in KiCad and uses one native undo transaction; it never rewrites an open board file. Inspect first, then pass its exact models_revision for every mutation. Results come from a fresh live readback.\",\"name\":\"set_placed_footprint_models\"}],\"tools_added\":20}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      }
+    },
+    "elapsed_seconds": 0.0010114180040545762,
+    "workspace_hashes": {
+      "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+      "Reference555LedFlasher-drc.json": "8f23a6ec0ede9fa6decad9022dd009c295e7efc6c8d7d1b978eb94fc9c60df9b",
+      "Reference555LedFlasher-erc.json": "9ceb07c76066a1365e22ad99a864450686270f8e43038eb8dd4b4180c25576d5",
+      "Reference555LedFlasher.kicad_pcb": "6fed233438a617b14247cf6bc861cdfb4c0ee4849a29831ffd247b3f96cc671e",
+      "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+      "Reference555LedFlasher.kicad_sch": "7527430fc434f16e6dfda51fcf1191c157e393a669f2dda6f85379a69fafec31",
+      "Reference555LedFlasher_repair-drc.json": "0246850eff8216132a8428ebbe7bb8c24a2dceacb565e5436c7dc49d11f3a414",
+      "Reference555LedFlasher_repair.kicad_pcb": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+      "Reference555LedFlasher_routed-drc.json": "53e40fba23b314e86b93be47212baf43df21542be9357452fde796862cb0580a",
+      "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+    }
+  },
+  {
+    "request": {
+      "name": "load_toolset",
+      "arguments": {
+        "name": "pcb_export"
+      }
+    },
+    "response": {
+      "jsonrpc": "2.0",
+      "id": 5,
+      "result": {
+        "content": [
+          {
+            "text": "{\"loaded\":\"pcb_export\",\"tools\":[{\"description\":\"Export Gerber production files using kicad-cli. By default Konnect selects all enabled copper layers, masks, silkscreens, and Edge.Cuts while excluding documentation-only layers.\",\"name\":\"export_gerber\"},{\"description\":\"Export the PCB layout to a PDF file using kicad-cli.\",\"name\":\"export_pdf\"},{\"description\":\"Export the PCB layout to an SVG file using kicad-cli.\",\"name\":\"export_svg\"},{\"description\":\"Export the PCB as a 3D model (STEP or VRML) using kicad-cli.\",\"name\":\"export_3d\"},{\"description\":\"Generate a Bill of Materials (BOM) CSV from the schematic's component data.\",\"name\":\"export_bom\"},{\"description\":\"Export the PCB netlist to a file in KiCAD or IPC-D-356 format.\",\"name\":\"export_netlist\"},{\"description\":\"Export a deterministic Specctra DSN routing job from the exact live KiCad PCB editor revision. Requires the named board to be open with IPC enabled. On KiCad 10, an enabled authenticated ActionPlugin bridge supplies KiCad's native DSN while the IPC snapshot and reverse manifest remain authoritative; otherwise the Rust exporter is used. The first supported profile is deliberately narrow: two copper layers, front-side SMD or through-hole footprints, circle/rectangle pads, one straight-line closed outline, and no existing tracks, vias, or zones. Konnect refuses unsupported geometry or custom DRC rules, or incomplete effective routing rules instead of approximating them, and writes a revision-bound reverse manifest beside the DSN for later SES import.\",\"name\":\"export_specctra_dsn\"},{\"description\":\"Generate a component placement (pick-and-place) position file for SMT assembly. KiCad automatically omits footprints marked exclude_from_pos_files.\",\"name\":\"export_position_file\"},{\"description\":\"Export the PCB to DXF using kicad-cli, one file per requested layer. Useful for mechanical CAD interchange (enclosures, panelization, laser cutting).\",\"name\":\"export_dxf\"},{\"description\":\"Export the PCB in GenCAD format using kicad-cli. GenCAD is accepted by some CAM and test-fixture tooling as an alternative to a raw Gerber bundle.\",\"name\":\"export_gencad\"},{\"description\":\"Export the PCB in IPC-2581 format using kicad-cli. IPC-2581 is a unified fabrication/assembly/test data format accepted by many contract manufacturers as an alternative to a Gerber + drill + BOM + pick-and-place bundle.\",\"name\":\"export_ipc2581\"},{\"description\":\"Export the PCB in ODB++ format using kicad-cli. ODB++ is a unified fabrication data format accepted by many fab houses as an alternative to a Gerber + drill bundle.\",\"name\":\"export_odb\"},{\"description\":\"Refill all copper pour zones on the board. KiCad IPC refills the complete board; per-zone selection is not available. Requires a running KiCad instance with IPC enabled.\",\"name\":\"refill_zones\"},{\"description\":\"Run the Design Rule Check (DRC) on the PCB and return a list of violations. Provided in `pcb_export` because the output is handy to bundle alongside Gerbers when preparing a build package. For interactive / iterative DRC work, prefer `run_drc` (verification toolset) \u2014 same kicad-cli check, cleaner summary with error/warning counts.\",\"name\":\"get_drc_violations\"}],\"tools_added\":14}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      }
+    },
+    "elapsed_seconds": 0.0009342569974251091,
+    "workspace_hashes": {
+      "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+      "Reference555LedFlasher-drc.json": "8f23a6ec0ede9fa6decad9022dd009c295e7efc6c8d7d1b978eb94fc9c60df9b",
+      "Reference555LedFlasher-erc.json": "9ceb07c76066a1365e22ad99a864450686270f8e43038eb8dd4b4180c25576d5",
+      "Reference555LedFlasher.kicad_pcb": "6fed233438a617b14247cf6bc861cdfb4c0ee4849a29831ffd247b3f96cc671e",
+      "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+      "Reference555LedFlasher.kicad_sch": "7527430fc434f16e6dfda51fcf1191c157e393a669f2dda6f85379a69fafec31",
+      "Reference555LedFlasher_repair-drc.json": "0246850eff8216132a8428ebbe7bb8c24a2dceacb565e5436c7dc49d11f3a414",
+      "Reference555LedFlasher_repair.kicad_pcb": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+      "Reference555LedFlasher_routed-drc.json": "53e40fba23b314e86b93be47212baf43df21542be9357452fde796862cb0580a",
+      "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+    }
+  },
+  {
+    "request": {
+      "name": "load_toolset",
+      "arguments": {
+        "name": "verification"
+      }
+    },
+    "response": {
+      "jsonrpc": "2.0",
+      "id": 6,
+      "result": {
+        "content": [
+          {
+            "text": "{\"loaded\":\"verification\",\"tools\":[{\"description\":\"Run the Design Rule Check on the PCB and return structured violation results, with separate error and warning counts in the summary. Prefer this over `get_drc_violations` (pcb_export toolset) \u2014 they run the same underlying kicad-cli check, but `run_drc` returns a cleaner breakdown. KiCad runs the complete configured DRC ruleset; kicad-cli has no per-test selector.\",\"name\":\"run_drc\"},{\"description\":\"Set board-level design rules (clearance, trace width, via size) in the sibling KiCAD project file. Refuses while KiCad holds the board open, because KiCad's next save rewrites the project file from its own copy.\",\"name\":\"set_design_rules\"},{\"description\":\"Return the current design rule constraints defined in the sibling KiCAD project file.\",\"name\":\"get_design_rules\"},{\"description\":\"Write the PCB editor Pre-defined Sizes list (track widths and via pad/drill pairs) into the sibling .kicad_pro. These populate the Track/Via dropdowns and W/Shift+W while routing; they are not DRC limits and do not change netclasses. A leading 0 mm track and 0/0 via is always kept as the 'use netclass' sentinel. Pass only the lists you want to replace. KiCad reads the change on next project open. The board file is not modified.\",\"name\":\"set_predefined_sizes\"},{\"description\":\"Return the PCB editor Pre-defined Sizes list from the sibling .kicad_pro: track_widths (mm) and via_dimensions (diameter/drill mm), including the 0 / 0,0 netclass sentinel KiCad keeps at the front of each list.\",\"name\":\"get_predefined_sizes\"},{\"description\":\"Check whether the KiCad GUI application is running and whether IPC responds within a bounded timeout. When IPC does not answer, ipc_failure.kind says why: not_configured, no_listener, access_denied (the operating system refused this account; likely a different account or a restrictive ACL, as with a sandboxed client), handshake_failed (the listener did not complete NNG's handshake, so it is probably not KiCad; this takes NNG's 10 s limit, so pass timeout_seconds above 10 to see it), transport_error, or request_failed (the request did not complete and may have reached the endpoint; an explicit KiCad status such as AS_NOT_READY proves receipt, a timeout or malformed reply does not). ipc_failure is null when no kind was established: the Ping succeeded with AS_OK, or this check's own timeout expired first (timed_out: true).\",\"name\":\"check_kicad_ui\"},{\"description\":\"Launch the KiCAD GUI application and optionally open a project file.\",\"name\":\"launch_kicad_ui\"},{\"description\":\"Copy a routing pattern (traces and vias) from one region of the board to another.\",\"name\":\"copy_routing_pattern\"},{\"description\":\"Set per-layer design constraints (e.g. min trace width, clearance) in the sibling .kicad_dru custom rules file.\",\"name\":\"set_layer_constraints\"},{\"description\":\"Measure spacing between two footprints on the requested board. `mode: anchor` (the compatibility default) returns straight-line placement-anchor distance. `mode: courtyard` returns edge-to-edge distance between transformed, authored courtyard bounding boxes for same-side footprints. It refuses missing or malformed courtyard geometry and does not substitute pads or anchors. Neither mode measures pad, trace or copper clearance; use `run_drc` for electrical clearance and `get_component_pads` for pad geometry. Reads the live KiCad board when open, otherwise the saved file, and reports the source.\",\"name\":\"check_clearance\"}],\"tools_added\":10}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      }
+    },
+    "elapsed_seconds": 0.0009691450104583055,
+    "workspace_hashes": {
+      "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+      "Reference555LedFlasher-drc.json": "8f23a6ec0ede9fa6decad9022dd009c295e7efc6c8d7d1b978eb94fc9c60df9b",
+      "Reference555LedFlasher-erc.json": "9ceb07c76066a1365e22ad99a864450686270f8e43038eb8dd4b4180c25576d5",
+      "Reference555LedFlasher.kicad_pcb": "6fed233438a617b14247cf6bc861cdfb4c0ee4849a29831ffd247b3f96cc671e",
+      "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+      "Reference555LedFlasher.kicad_sch": "7527430fc434f16e6dfda51fcf1191c157e393a669f2dda6f85379a69fafec31",
+      "Reference555LedFlasher_repair-drc.json": "0246850eff8216132a8428ebbe7bb8c24a2dceacb565e5436c7dc49d11f3a414",
+      "Reference555LedFlasher_repair.kicad_pcb": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+      "Reference555LedFlasher_routed-drc.json": "53e40fba23b314e86b93be47212baf43df21542be9357452fde796862cb0580a",
+      "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+    }
+  },
+  {
+    "request": {
+      "name": "get_schematic_component",
+      "arguments": {
+        "schematic": "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch",
+        "reference": "U1"
+      }
+    },
+    "response": {
+      "jsonrpc": "2.0",
+      "id": 7,
+      "result": {
+        "content": [
+          {
+            "text": "{\"footprint\":\"Package_DIP:DIP-8_W7.62mm\",\"lib_id\":\"Timer:NE555D\",\"mirror_x\":false,\"mirror_y\":false,\"properties\":{\"Footprint\":\"Package_DIP:DIP-8_W7.62mm\",\"Reference\":\"U1\",\"Value\":\"NE555D\"},\"reference\":\"U1\",\"rotation\":0.0,\"unit_count\":1,\"units\":[{\"mirror_x\":false,\"mirror_y\":false,\"rotation\":0.0,\"unit\":1,\"uuid\":\"bd2f8156-5ec1-59e7-8828-bbf255ab3632\",\"x\":176.53,\"y\":107.95}],\"uuid\":\"bd2f8156-5ec1-59e7-8828-bbf255ab3632\",\"value\":\"NE555D\",\"x\":176.53,\"y\":107.95}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      }
+    },
+    "elapsed_seconds": 0.0014937160012777895,
+    "workspace_hashes": {
+      "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+      "Reference555LedFlasher-drc.json": "8f23a6ec0ede9fa6decad9022dd009c295e7efc6c8d7d1b978eb94fc9c60df9b",
+      "Reference555LedFlasher-erc.json": "9ceb07c76066a1365e22ad99a864450686270f8e43038eb8dd4b4180c25576d5",
+      "Reference555LedFlasher.kicad_pcb": "6fed233438a617b14247cf6bc861cdfb4c0ee4849a29831ffd247b3f96cc671e",
+      "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+      "Reference555LedFlasher.kicad_sch": "7527430fc434f16e6dfda51fcf1191c157e393a669f2dda6f85379a69fafec31",
+      "Reference555LedFlasher_repair-drc.json": "0246850eff8216132a8428ebbe7bb8c24a2dceacb565e5436c7dc49d11f3a414",
+      "Reference555LedFlasher_repair.kicad_pcb": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+      "Reference555LedFlasher_routed-drc.json": "53e40fba23b314e86b93be47212baf43df21542be9357452fde796862cb0580a",
+      "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+    }
+  },
+  {
+    "request": {
+      "name": "edit_schematic_component",
+      "arguments": {
+        "schematic": "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch",
+        "reference": "U1",
+        "footprint": "Package_DIP:DIP-8_W7.62mm"
+      }
+    },
+    "response": {
+      "jsonrpc": "2.0",
+      "id": 8,
+      "result": {
+        "content": [
+          {
+            "text": "{\"changes\":[\"Footprint \u2192 Package_DIP:DIP-8_W7.62mm (1 unit(s))\"],\"datasheet\":\"\",\"fields\":{\"Footprint\":\"Package_DIP:DIP-8_W7.62mm\",\"Reference\":\"U1\",\"Value\":\"NE555D\"},\"footprint\":\"Package_DIP:DIP-8_W7.62mm\",\"lib_id\":\"Timer:NE555D\",\"mirror_x\":false,\"mirror_y\":false,\"reference\":\"U1\",\"rotation\":0.0,\"schematic\":\"/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch\",\"unit_count\":1,\"units\":[{\"field_placements\":{\"Footprint\":{\"hide\":true,\"rotation\":0.0,\"x\":176.53,\"y\":107.95},\"Reference\":{\"hide\":false,\"rotation\":0.0,\"x\":171.45,\"y\":95.25},\"Value\":{\"hide\":false,\"rotation\":0.0,\"x\":171.45,\"y\":97.79}},\"fields\":{\"Footprint\":\"Package_DIP:DIP-8_W7.62mm\",\"Reference\":\"U1\",\"Value\":\"NE555D\"},\"instance_paths\":[[\"Reference555LedFlasher\",\"/67f9fc10-0a66-5669-bb17-4da3d7e288a2\"]],\"instance_references\":[\"U1\"],\"lib_id\":\"Timer:NE555D\",\"mirror_x\":false,\"mirror_y\":false,\"rotation\":0.0,\"unit\":1,\"uuid\":\"bd2f8156-5ec1-59e7-8828-bbf255ab3632\",\"x\":176.53,\"y\":107.95}],\"uuid\":\"bd2f8156-5ec1-59e7-8828-bbf255ab3632\",\"value\":\"NE555D\",\"x\":176.53,\"y\":107.95}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      }
+    },
+    "elapsed_seconds": 0.0091933850053465,
+    "workspace_hashes": {
+      "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+      "Reference555LedFlasher-drc.json": "8f23a6ec0ede9fa6decad9022dd009c295e7efc6c8d7d1b978eb94fc9c60df9b",
+      "Reference555LedFlasher-erc.json": "9ceb07c76066a1365e22ad99a864450686270f8e43038eb8dd4b4180c25576d5",
+      "Reference555LedFlasher.kicad_pcb": "6fed233438a617b14247cf6bc861cdfb4c0ee4849a29831ffd247b3f96cc671e",
+      "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+      "Reference555LedFlasher.kicad_sch": "7527430fc434f16e6dfda51fcf1191c157e393a669f2dda6f85379a69fafec31",
+      "Reference555LedFlasher_repair-drc.json": "0246850eff8216132a8428ebbe7bb8c24a2dceacb565e5436c7dc49d11f3a414",
+      "Reference555LedFlasher_repair.kicad_pcb": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+      "Reference555LedFlasher_routed-drc.json": "53e40fba23b314e86b93be47212baf43df21542be9357452fde796862cb0580a",
+      "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+    }
+  },
+  {
+    "request": {
+      "name": "edit_schematic_component",
+      "arguments": {
+        "schematic": "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch",
+        "reference": "R1",
+        "footprint": "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
+      }
+    },
+    "response": {
+      "jsonrpc": "2.0",
+      "id": 9,
+      "result": {
+        "content": [
+          {
+            "text": "{\"changes\":[\"Footprint \u2192 Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal (1 unit(s))\"],\"datasheet\":\"\",\"fields\":{\"Footprint\":\"Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal\",\"Reference\":\"R1\",\"Value\":\"10k\"},\"footprint\":\"Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal\",\"lib_id\":\"Device:R\",\"mirror_x\":false,\"mirror_y\":false,\"reference\":\"R1\",\"rotation\":0.0,\"schematic\":\"/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch\",\"unit_count\":1,\"units\":[{\"field_placements\":{\"Footprint\":{\"hide\":true,\"rotation\":0.0,\"x\":142.24,\"y\":90.17},\"Reference\":{\"hide\":false,\"rotation\":0.0,\"x\":142.24,\"y\":80.01},\"Value\":{\"hide\":false,\"rotation\":0.0,\"x\":142.24,\"y\":82.55}},\"fields\":{\"Footprint\":\"Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal\",\"Reference\":\"R1\",\"Value\":\"10k\"},\"instance_paths\":[[\"Reference555LedFlasher\",\"/67f9fc10-0a66-5669-bb17-4da3d7e288a2\"]],\"instance_references\":[\"R1\"],\"lib_id\":\"Device:R\",\"mirror_x\":false,\"mirror_y\":false,\"rotation\":0.0,\"unit\":1,\"uuid\":\"fe6696bb-cffc-542d-9c52-6133beb545aa\",\"x\":142.24,\"y\":90.17}],\"uuid\":\"fe6696bb-cffc-542d-9c52-6133beb545aa\",\"value\":\"10k\",\"x\":142.24,\"y\":90.17}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      }
+    },
+    "elapsed_seconds": 0.008147069995175116,
+    "workspace_hashes": {
+      "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+      "Reference555LedFlasher-drc.json": "8f23a6ec0ede9fa6decad9022dd009c295e7efc6c8d7d1b978eb94fc9c60df9b",
+      "Reference555LedFlasher-erc.json": "9ceb07c76066a1365e22ad99a864450686270f8e43038eb8dd4b4180c25576d5",
+      "Reference555LedFlasher.kicad_pcb": "6fed233438a617b14247cf6bc861cdfb4c0ee4849a29831ffd247b3f96cc671e",
+      "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+      "Reference555LedFlasher.kicad_sch": "7527430fc434f16e6dfda51fcf1191c157e393a669f2dda6f85379a69fafec31",
+      "Reference555LedFlasher_repair-drc.json": "0246850eff8216132a8428ebbe7bb8c24a2dceacb565e5436c7dc49d11f3a414",
+      "Reference555LedFlasher_repair.kicad_pcb": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+      "Reference555LedFlasher_routed-drc.json": "53e40fba23b314e86b93be47212baf43df21542be9357452fde796862cb0580a",
+      "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+    }
+  },
+  {
+    "request": {
+      "name": "edit_schematic_component",
+      "arguments": {
+        "schematic": "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch",
+        "reference": "R2",
+        "footprint": "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
+      }
+    },
+    "response": {
+      "jsonrpc": "2.0",
+      "id": 10,
+      "result": {
+        "content": [
+          {
+            "text": "{\"changes\":[\"Footprint \u2192 Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal (1 unit(s))\"],\"datasheet\":\"\",\"fields\":{\"Footprint\":\"Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal\",\"Reference\":\"R2\",\"Value\":\"47k\"},\"footprint\":\"Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal\",\"lib_id\":\"Device:R\",\"mirror_x\":false,\"mirror_y\":false,\"reference\":\"R2\",\"rotation\":0.0,\"schematic\":\"/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch\",\"unit_count\":1,\"units\":[{\"field_placements\":{\"Footprint\":{\"hide\":true,\"rotation\":0.0,\"x\":142.24,\"y\":107.95},\"Reference\":{\"hide\":false,\"rotation\":0.0,\"x\":152.4,\"y\":105.41},\"Value\":{\"hide\":false,\"rotation\":0.0,\"x\":152.4,\"y\":107.95}},\"fields\":{\"Footprint\":\"Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal\",\"Reference\":\"R2\",\"Value\":\"47k\"},\"instance_paths\":[[\"Reference555LedFlasher\",\"/67f9fc10-0a66-5669-bb17-4da3d7e288a2\"]],\"instance_references\":[\"R2\"],\"lib_id\":\"Device:R\",\"mirror_x\":false,\"mirror_y\":false,\"rotation\":0.0,\"unit\":1,\"uuid\":\"43b84d3a-5a53-5935-ad84-ef6110b8e2bd\",\"x\":142.24,\"y\":107.95}],\"uuid\":\"43b84d3a-5a53-5935-ad84-ef6110b8e2bd\",\"value\":\"47k\",\"x\":142.24,\"y\":107.95}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      }
+    },
+    "elapsed_seconds": 0.007984814001247287,
+    "workspace_hashes": {
+      "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+      "Reference555LedFlasher-drc.json": "8f23a6ec0ede9fa6decad9022dd009c295e7efc6c8d7d1b978eb94fc9c60df9b",
+      "Reference555LedFlasher-erc.json": "9ceb07c76066a1365e22ad99a864450686270f8e43038eb8dd4b4180c25576d5",
+      "Reference555LedFlasher.kicad_pcb": "6fed233438a617b14247cf6bc861cdfb4c0ee4849a29831ffd247b3f96cc671e",
+      "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+      "Reference555LedFlasher.kicad_sch": "7527430fc434f16e6dfda51fcf1191c157e393a669f2dda6f85379a69fafec31",
+      "Reference555LedFlasher_repair-drc.json": "0246850eff8216132a8428ebbe7bb8c24a2dceacb565e5436c7dc49d11f3a414",
+      "Reference555LedFlasher_repair.kicad_pcb": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+      "Reference555LedFlasher_routed-drc.json": "53e40fba23b314e86b93be47212baf43df21542be9357452fde796862cb0580a",
+      "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+    }
+  },
+  {
+    "request": {
+      "name": "edit_schematic_component",
+      "arguments": {
+        "schematic": "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch",
+        "reference": "R3",
+        "footprint": "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal"
+      }
+    },
+    "response": {
+      "jsonrpc": "2.0",
+      "id": 11,
+      "result": {
+        "content": [
+          {
+            "text": "{\"changes\":[\"Footprint \u2192 Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal (1 unit(s))\"],\"datasheet\":\"\",\"fields\":{\"Footprint\":\"Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal\",\"Reference\":\"R3\",\"Value\":\"1k\"},\"footprint\":\"Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal\",\"lib_id\":\"Device:R\",\"mirror_x\":false,\"mirror_y\":false,\"reference\":\"R3\",\"rotation\":0.0,\"schematic\":\"/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch\",\"unit_count\":1,\"units\":[{\"field_placements\":{\"Footprint\":{\"hide\":true,\"rotation\":0.0,\"x\":116.84,\"y\":93.98},\"Reference\":{\"hide\":false,\"rotation\":0.0,\"x\":127.0,\"y\":91.44},\"Value\":{\"hide\":false,\"rotation\":0.0,\"x\":127.0,\"y\":93.98}},\"fields\":{\"Footprint\":\"Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal\",\"Reference\":\"R3\",\"Value\":\"1k\"},\"instance_paths\":[[\"Reference555LedFlasher\",\"/67f9fc10-0a66-5669-bb17-4da3d7e288a2\"]],\"instance_references\":[\"R3\"],\"lib_id\":\"Device:R\",\"mirror_x\":false,\"mirror_y\":false,\"rotation\":0.0,\"unit\":1,\"uuid\":\"7c47f3f9-9cb0-5f28-be17-7fc328b38c25\",\"x\":116.84,\"y\":93.98}],\"uuid\":\"7c47f3f9-9cb0-5f28-be17-7fc328b38c25\",\"value\":\"1k\",\"x\":116.84,\"y\":93.98}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      }
+    },
+    "elapsed_seconds": 0.008453736008959822,
+    "workspace_hashes": {
+      "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+      "Reference555LedFlasher-drc.json": "8f23a6ec0ede9fa6decad9022dd009c295e7efc6c8d7d1b978eb94fc9c60df9b",
+      "Reference555LedFlasher-erc.json": "9ceb07c76066a1365e22ad99a864450686270f8e43038eb8dd4b4180c25576d5",
+      "Reference555LedFlasher.kicad_pcb": "6fed233438a617b14247cf6bc861cdfb4c0ee4849a29831ffd247b3f96cc671e",
+      "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+      "Reference555LedFlasher.kicad_sch": "7527430fc434f16e6dfda51fcf1191c157e393a669f2dda6f85379a69fafec31",
+      "Reference555LedFlasher_repair-drc.json": "0246850eff8216132a8428ebbe7bb8c24a2dceacb565e5436c7dc49d11f3a414",
+      "Reference555LedFlasher_repair.kicad_pcb": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+      "Reference555LedFlasher_routed-drc.json": "53e40fba23b314e86b93be47212baf43df21542be9357452fde796862cb0580a",
+      "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+    }
+  },
+  {
+    "request": {
+      "name": "edit_schematic_component",
+      "arguments": {
+        "schematic": "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch",
+        "reference": "C1",
+        "footprint": "Capacitor_THT:CP_Radial_D8.0mm_P5.00mm"
+      }
+    },
+    "response": {
+      "jsonrpc": "2.0",
+      "id": 12,
+      "result": {
+        "content": [
+          {
+            "text": "{\"changes\":[\"Footprint \u2192 Capacitor_THT:CP_Radial_D8.0mm_P5.00mm (1 unit(s))\"],\"datasheet\":\"\",\"fields\":{\"Footprint\":\"Capacitor_THT:CP_Radial_D8.0mm_P5.00mm\",\"Reference\":\"C1\",\"Value\":\"10u\"},\"footprint\":\"Capacitor_THT:CP_Radial_D8.0mm_P5.00mm\",\"lib_id\":\"Device:C\",\"mirror_x\":false,\"mirror_y\":false,\"reference\":\"C1\",\"rotation\":0.0,\"schematic\":\"/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch\",\"unit_count\":1,\"units\":[{\"field_placements\":{\"Footprint\":{\"hide\":true,\"rotation\":0.0,\"x\":142.24,\"y\":129.54},\"Reference\":{\"hide\":false,\"rotation\":0.0,\"x\":152.4,\"y\":127.0},\"Value\":{\"hide\":false,\"rotation\":0.0,\"x\":152.4,\"y\":129.54}},\"fields\":{\"Footprint\":\"Capacitor_THT:CP_Radial_D8.0mm_P5.00mm\",\"Reference\":\"C1\",\"Value\":\"10u\"},\"instance_paths\":[[\"Reference555LedFlasher\",\"/67f9fc10-0a66-5669-bb17-4da3d7e288a2\"]],\"instance_references\":[\"C1\"],\"lib_id\":\"Device:C\",\"mirror_x\":false,\"mirror_y\":false,\"rotation\":0.0,\"unit\":1,\"uuid\":\"32064f43-5bba-5d82-83f8-bcf893403920\",\"x\":142.24,\"y\":129.54}],\"uuid\":\"32064f43-5bba-5d82-83f8-bcf893403920\",\"value\":\"10u\",\"x\":142.24,\"y\":129.54}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      }
+    },
+    "elapsed_seconds": 0.008143161991029046,
+    "workspace_hashes": {
+      "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+      "Reference555LedFlasher-drc.json": "8f23a6ec0ede9fa6decad9022dd009c295e7efc6c8d7d1b978eb94fc9c60df9b",
+      "Reference555LedFlasher-erc.json": "9ceb07c76066a1365e22ad99a864450686270f8e43038eb8dd4b4180c25576d5",
+      "Reference555LedFlasher.kicad_pcb": "6fed233438a617b14247cf6bc861cdfb4c0ee4849a29831ffd247b3f96cc671e",
+      "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+      "Reference555LedFlasher.kicad_sch": "7527430fc434f16e6dfda51fcf1191c157e393a669f2dda6f85379a69fafec31",
+      "Reference555LedFlasher_repair-drc.json": "0246850eff8216132a8428ebbe7bb8c24a2dceacb565e5436c7dc49d11f3a414",
+      "Reference555LedFlasher_repair.kicad_pcb": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+      "Reference555LedFlasher_routed-drc.json": "53e40fba23b314e86b93be47212baf43df21542be9357452fde796862cb0580a",
+      "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+    }
+  },
+  {
+    "request": {
+      "name": "edit_schematic_component",
+      "arguments": {
+        "schematic": "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch",
+        "reference": "C2",
+        "footprint": "Capacitor_THT:C_Disc_D3.0mm_W1.6mm_P2.50mm"
+      }
+    },
+    "response": {
+      "jsonrpc": "2.0",
+      "id": 13,
+      "result": {
+        "content": [
+          {
+            "text": "{\"changes\":[\"Footprint \u2192 Capacitor_THT:C_Disc_D3.0mm_W1.6mm_P2.50mm (1 unit(s))\"],\"datasheet\":\"\",\"fields\":{\"Footprint\":\"Capacitor_THT:C_Disc_D3.0mm_W1.6mm_P2.50mm\",\"Reference\":\"C2\",\"Value\":\"10n\"},\"footprint\":\"Capacitor_THT:C_Disc_D3.0mm_W1.6mm_P2.50mm\",\"lib_id\":\"Device:C\",\"mirror_x\":false,\"mirror_y\":false,\"reference\":\"C2\",\"rotation\":0.0,\"schematic\":\"/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch\",\"unit_count\":1,\"units\":[{\"field_placements\":{\"Footprint\":{\"hide\":true,\"rotation\":0.0,\"x\":158.75,\"y\":90.17},\"Reference\":{\"hide\":false,\"rotation\":0.0,\"x\":168.91,\"y\":87.63},\"Value\":{\"hide\":false,\"rotation\":0.0,\"x\":168.91,\"y\":90.17}},\"fields\":{\"Footprint\":\"Capacitor_THT:C_Disc_D3.0mm_W1.6mm_P2.50mm\",\"Reference\":\"C2\",\"Value\":\"10n\"},\"instance_paths\":[[\"Reference555LedFlasher\",\"/67f9fc10-0a66-5669-bb17-4da3d7e288a2\"]],\"instance_references\":[\"C2\"],\"lib_id\":\"Device:C\",\"mirror_x\":false,\"mirror_y\":false,\"rotation\":0.0,\"unit\":1,\"uuid\":\"c9ce8375-6bcb-569d-8d17-d71bddbce12c\",\"x\":158.75,\"y\":90.17}],\"uuid\":\"c9ce8375-6bcb-569d-8d17-d71bddbce12c\",\"value\":\"10n\",\"x\":158.75,\"y\":90.17}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      }
+    },
+    "elapsed_seconds": 0.008142359991325065,
+    "workspace_hashes": {
+      "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+      "Reference555LedFlasher-drc.json": "8f23a6ec0ede9fa6decad9022dd009c295e7efc6c8d7d1b978eb94fc9c60df9b",
+      "Reference555LedFlasher-erc.json": "9ceb07c76066a1365e22ad99a864450686270f8e43038eb8dd4b4180c25576d5",
+      "Reference555LedFlasher.kicad_pcb": "6fed233438a617b14247cf6bc861cdfb4c0ee4849a29831ffd247b3f96cc671e",
+      "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+      "Reference555LedFlasher.kicad_sch": "7527430fc434f16e6dfda51fcf1191c157e393a669f2dda6f85379a69fafec31",
+      "Reference555LedFlasher_repair-drc.json": "0246850eff8216132a8428ebbe7bb8c24a2dceacb565e5436c7dc49d11f3a414",
+      "Reference555LedFlasher_repair.kicad_pcb": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+      "Reference555LedFlasher_routed-drc.json": "53e40fba23b314e86b93be47212baf43df21542be9357452fde796862cb0580a",
+      "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+    }
+  },
+  {
+    "request": {
+      "name": "edit_schematic_component",
+      "arguments": {
+        "schematic": "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch",
+        "reference": "D1",
+        "footprint": "LED_THT:LED_D5.0mm"
+      }
+    },
+    "response": {
+      "jsonrpc": "2.0",
+      "id": 14,
+      "result": {
+        "content": [
+          {
+            "text": "{\"changes\":[\"Footprint \u2192 LED_THT:LED_D5.0mm (1 unit(s))\"],\"datasheet\":\"\",\"fields\":{\"Footprint\":\"LED_THT:LED_D5.0mm\",\"Reference\":\"D1\",\"Value\":\"WP7113ID\"},\"footprint\":\"LED_THT:LED_D5.0mm\",\"lib_id\":\"Device:LED\",\"mirror_x\":false,\"mirror_y\":false,\"reference\":\"D1\",\"rotation\":90.0,\"schematic\":\"/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch\",\"unit_count\":1,\"units\":[{\"field_placements\":{\"Footprint\":{\"hide\":true,\"rotation\":0.0,\"x\":116.84,\"y\":105.41},\"Reference\":{\"hide\":false,\"rotation\":0.0,\"x\":132.08,\"y\":95.25},\"Value\":{\"hide\":false,\"rotation\":0.0,\"x\":132.08,\"y\":97.79}},\"fields\":{\"Footprint\":\"LED_THT:LED_D5.0mm\",\"Reference\":\"D1\",\"Value\":\"WP7113ID\"},\"instance_paths\":[[\"Reference555LedFlasher\",\"/67f9fc10-0a66-5669-bb17-4da3d7e288a2\"]],\"instance_references\":[\"D1\"],\"lib_id\":\"Device:LED\",\"mirror_x\":false,\"mirror_y\":false,\"rotation\":90.0,\"unit\":1,\"uuid\":\"445f8dce-1f8a-535e-b61a-e492d3fc42de\",\"x\":116.84,\"y\":105.41}],\"uuid\":\"445f8dce-1f8a-535e-b61a-e492d3fc42de\",\"value\":\"WP7113ID\",\"x\":116.84,\"y\":105.41}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      }
+    },
+    "elapsed_seconds": 0.008162969999830239,
+    "workspace_hashes": {
+      "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+      "Reference555LedFlasher-drc.json": "8f23a6ec0ede9fa6decad9022dd009c295e7efc6c8d7d1b978eb94fc9c60df9b",
+      "Reference555LedFlasher-erc.json": "9ceb07c76066a1365e22ad99a864450686270f8e43038eb8dd4b4180c25576d5",
+      "Reference555LedFlasher.kicad_pcb": "6fed233438a617b14247cf6bc861cdfb4c0ee4849a29831ffd247b3f96cc671e",
+      "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+      "Reference555LedFlasher.kicad_sch": "7527430fc434f16e6dfda51fcf1191c157e393a669f2dda6f85379a69fafec31",
+      "Reference555LedFlasher_repair-drc.json": "0246850eff8216132a8428ebbe7bb8c24a2dceacb565e5436c7dc49d11f3a414",
+      "Reference555LedFlasher_repair.kicad_pcb": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+      "Reference555LedFlasher_routed-drc.json": "53e40fba23b314e86b93be47212baf43df21542be9357452fde796862cb0580a",
+      "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+    }
+  },
+  {
+    "request": {
+      "name": "edit_schematic_component",
+      "arguments": {
+        "schematic": "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch",
+        "reference": "J1",
+        "footprint": "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical"
+      }
+    },
+    "response": {
+      "jsonrpc": "2.0",
+      "id": 15,
+      "result": {
+        "content": [
+          {
+            "text": "{\"changes\":[\"Footprint \u2192 Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical (1 unit(s))\"],\"datasheet\":\"\",\"fields\":{\"Footprint\":\"Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical\",\"Reference\":\"J1\",\"Value\":\"Supply\"},\"footprint\":\"Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical\",\"lib_id\":\"Connector_Generic:Conn_01x01\",\"mirror_x\":false,\"mirror_y\":false,\"reference\":\"J1\",\"rotation\":0.0,\"schematic\":\"/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch\",\"unit_count\":1,\"units\":[{\"field_placements\":{\"Footprint\":{\"hide\":true,\"rotation\":0.0,\"x\":95.25,\"y\":105.41},\"Reference\":{\"hide\":false,\"rotation\":0.0,\"x\":105.41,\"y\":102.87},\"Value\":{\"hide\":false,\"rotation\":0.0,\"x\":105.41,\"y\":105.41}},\"fields\":{\"Footprint\":\"Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical\",\"Reference\":\"J1\",\"Value\":\"Supply\"},\"instance_paths\":[[\"Reference555LedFlasher\",\"/67f9fc10-0a66-5669-bb17-4da3d7e288a2\"]],\"instance_references\":[\"J1\"],\"lib_id\":\"Connector_Generic:Conn_01x01\",\"mirror_x\":false,\"mirror_y\":false,\"rotation\":0.0,\"unit\":1,\"uuid\":\"6d3da5b9-27e5-5e84-a845-b32edf5580d9\",\"x\":95.25,\"y\":105.41}],\"uuid\":\"6d3da5b9-27e5-5e84-a845-b32edf5580d9\",\"value\":\"Supply\",\"x\":95.25,\"y\":105.41}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      }
+    },
+    "elapsed_seconds": 0.0079739420034457,
+    "workspace_hashes": {
+      "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+      "Reference555LedFlasher-drc.json": "8f23a6ec0ede9fa6decad9022dd009c295e7efc6c8d7d1b978eb94fc9c60df9b",
+      "Reference555LedFlasher-erc.json": "9ceb07c76066a1365e22ad99a864450686270f8e43038eb8dd4b4180c25576d5",
+      "Reference555LedFlasher.kicad_pcb": "6fed233438a617b14247cf6bc861cdfb4c0ee4849a29831ffd247b3f96cc671e",
+      "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+      "Reference555LedFlasher.kicad_sch": "7527430fc434f16e6dfda51fcf1191c157e393a669f2dda6f85379a69fafec31",
+      "Reference555LedFlasher_repair-drc.json": "0246850eff8216132a8428ebbe7bb8c24a2dceacb565e5436c7dc49d11f3a414",
+      "Reference555LedFlasher_repair.kicad_pcb": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+      "Reference555LedFlasher_routed-drc.json": "53e40fba23b314e86b93be47212baf43df21542be9357452fde796862cb0580a",
+      "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+    }
+  },
+  {
+    "request": {
+      "name": "edit_schematic_component",
+      "arguments": {
+        "schematic": "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch",
+        "reference": "J2",
+        "footprint": "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical"
+      }
+    },
+    "response": {
+      "jsonrpc": "2.0",
+      "id": 16,
+      "result": {
+        "content": [
+          {
+            "text": "{\"changes\":[\"Footprint \u2192 Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical (1 unit(s))\"],\"datasheet\":\"\",\"fields\":{\"Footprint\":\"Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical\",\"Reference\":\"J2\",\"Value\":\"Pulse output\"},\"footprint\":\"Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical\",\"lib_id\":\"Connector_Generic:Conn_01x01\",\"mirror_x\":false,\"mirror_y\":false,\"reference\":\"J2\",\"rotation\":0.0,\"schematic\":\"/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch\",\"unit_count\":1,\"units\":[{\"field_placements\":{\"Footprint\":{\"hide\":true,\"rotation\":0.0,\"x\":95.25,\"y\":90.17},\"Reference\":{\"hide\":false,\"rotation\":0.0,\"x\":95.25,\"y\":80.01},\"Value\":{\"hide\":false,\"rotation\":0.0,\"x\":95.25,\"y\":82.55}},\"fields\":{\"Footprint\":\"Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical\",\"Reference\":\"J2\",\"Value\":\"Pulse output\"},\"instance_paths\":[[\"Reference555LedFlasher\",\"/67f9fc10-0a66-5669-bb17-4da3d7e288a2\"]],\"instance_references\":[\"J2\"],\"lib_id\":\"Connector_Generic:Conn_01x01\",\"mirror_x\":false,\"mirror_y\":false,\"rotation\":0.0,\"unit\":1,\"uuid\":\"d1cfd518-f8f4-58f4-8785-a975f9a929e3\",\"x\":95.25,\"y\":90.17}],\"uuid\":\"d1cfd518-f8f4-58f4-8785-a975f9a929e3\",\"value\":\"Pulse output\",\"x\":95.25,\"y\":90.17}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      }
+    },
+    "elapsed_seconds": 0.008309634999022819,
+    "workspace_hashes": {
+      "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+      "Reference555LedFlasher-drc.json": "8f23a6ec0ede9fa6decad9022dd009c295e7efc6c8d7d1b978eb94fc9c60df9b",
+      "Reference555LedFlasher-erc.json": "9ceb07c76066a1365e22ad99a864450686270f8e43038eb8dd4b4180c25576d5",
+      "Reference555LedFlasher.kicad_pcb": "6fed233438a617b14247cf6bc861cdfb4c0ee4849a29831ffd247b3f96cc671e",
+      "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+      "Reference555LedFlasher.kicad_sch": "7527430fc434f16e6dfda51fcf1191c157e393a669f2dda6f85379a69fafec31",
+      "Reference555LedFlasher_repair-drc.json": "0246850eff8216132a8428ebbe7bb8c24a2dceacb565e5436c7dc49d11f3a414",
+      "Reference555LedFlasher_repair.kicad_pcb": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+      "Reference555LedFlasher_routed-drc.json": "53e40fba23b314e86b93be47212baf43df21542be9357452fde796862cb0580a",
+      "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+    }
+  },
+  {
+    "request": {
+      "name": "edit_schematic_component",
+      "arguments": {
+        "schematic": "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch",
+        "reference": "J3",
+        "footprint": "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical"
+      }
+    },
+    "response": {
+      "jsonrpc": "2.0",
+      "id": 17,
+      "result": {
+        "content": [
+          {
+            "text": "{\"changes\":[\"Footprint \u2192 Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical (1 unit(s))\"],\"datasheet\":\"\",\"fields\":{\"Footprint\":\"Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical\",\"Reference\":\"J3\",\"Value\":\"Return\"},\"footprint\":\"Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical\",\"lib_id\":\"Connector_Generic:Conn_01x01\",\"mirror_x\":false,\"mirror_y\":false,\"reference\":\"J3\",\"rotation\":0.0,\"schematic\":\"/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch\",\"unit_count\":1,\"units\":[{\"field_placements\":{\"Footprint\":{\"hide\":true,\"rotation\":0.0,\"x\":95.25,\"y\":97.79},\"Reference\":{\"hide\":false,\"rotation\":0.0,\"x\":105.41,\"y\":95.25},\"Value\":{\"hide\":false,\"rotation\":0.0,\"x\":105.41,\"y\":97.79}},\"fields\":{\"Footprint\":\"Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical\",\"Reference\":\"J3\",\"Value\":\"Return\"},\"instance_paths\":[[\"Reference555LedFlasher\",\"/67f9fc10-0a66-5669-bb17-4da3d7e288a2\"]],\"instance_references\":[\"J3\"],\"lib_id\":\"Connector_Generic:Conn_01x01\",\"mirror_x\":false,\"mirror_y\":false,\"rotation\":0.0,\"unit\":1,\"uuid\":\"4b5026d2-04ee-57d9-aea6-c11b8f073dbb\",\"x\":95.25,\"y\":97.79}],\"uuid\":\"4b5026d2-04ee-57d9-aea6-c11b8f073dbb\",\"value\":\"Return\",\"x\":95.25,\"y\":97.79}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      }
+    },
+    "elapsed_seconds": 0.008177748997695744,
+    "workspace_hashes": {
+      "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+      "Reference555LedFlasher-drc.json": "8f23a6ec0ede9fa6decad9022dd009c295e7efc6c8d7d1b978eb94fc9c60df9b",
+      "Reference555LedFlasher-erc.json": "9ceb07c76066a1365e22ad99a864450686270f8e43038eb8dd4b4180c25576d5",
+      "Reference555LedFlasher.kicad_pcb": "6fed233438a617b14247cf6bc861cdfb4c0ee4849a29831ffd247b3f96cc671e",
+      "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+      "Reference555LedFlasher.kicad_sch": "7527430fc434f16e6dfda51fcf1191c157e393a669f2dda6f85379a69fafec31",
+      "Reference555LedFlasher_repair-drc.json": "0246850eff8216132a8428ebbe7bb8c24a2dceacb565e5436c7dc49d11f3a414",
+      "Reference555LedFlasher_repair.kicad_pcb": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+      "Reference555LedFlasher_routed-drc.json": "53e40fba23b314e86b93be47212baf43df21542be9357452fde796862cb0580a",
+      "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+    }
+  },
+  {
+    "request": {
+      "name": "run_erc",
+      "arguments": {
+        "schematic": "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch",
+        "output": "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/erc-response.json"
+      }
+    },
+    "response": {
+      "jsonrpc": "2.0",
+      "id": 18,
+      "result": {
+        "content": [
+          {
+            "text": "{\"coordinates\":{\"kicad_version\":\"10.0.6\",\"reason\":\"KiCad 10.0.6 writes every ERC JSON coordinate at 1/100 of its true value (kicad#25582, fixed in 10.0.7); Konnect multiplied it back. A length quoted inside KiCad's own violation text is scaled the same way and is left as KiCad wrote it.\",\"scale_applied\":100.0,\"status\":\"corrected\"},\"errors\":0,\"total\":10,\"violations\":[{\"description\":\"The current configuration does not include the footprint library 'Connector_PinHeader_2.54mm': Symbol J2 [Conn_01x01]\",\"items\":[{\"description\":\"Symbol J2 [Conn_01x01]\",\"uuid\":\"d1cfd518-f8f4-58f4-8785-a975f9a929e3\",\"x\":95.25,\"y\":90.17}],\"rule\":\"footprint_link_issues\",\"severity\":\"warning\",\"sheet\":\"/\",\"x\":95.25,\"y\":90.17},{\"description\":\"The current configuration does not include the footprint library 'Connector_PinHeader_2.54mm': Symbol J3 [Conn_01x01]\",\"items\":[{\"description\":\"Symbol J3 [Conn_01x01]\",\"uuid\":\"4b5026d2-04ee-57d9-aea6-c11b8f073dbb\",\"x\":95.25,\"y\":97.79}],\"rule\":\"footprint_link_issues\",\"severity\":\"warning\",\"sheet\":\"/\",\"x\":95.25,\"y\":97.79},{\"description\":\"The current configuration does not include the footprint library 'Connector_PinHeader_2.54mm': Symbol J1 [Conn_01x01]\",\"items\":[{\"description\":\"Symbol J1 [Conn_01x01]\",\"uuid\":\"6d3da5b9-27e5-5e84-a845-b32edf5580d9\",\"x\":95.25,\"y\":105.41}],\"rule\":\"footprint_link_issues\",\"severity\":\"warning\",\"sheet\":\"/\",\"x\":95.25,\"y\":105.41},{\"description\":\"The current configuration does not include the footprint library 'Resistor_THT': Symbol R3 [R]\",\"items\":[{\"description\":\"Symbol R3 [R]\",\"uuid\":\"7c47f3f9-9cb0-5f28-be17-7fc328b38c25\",\"x\":116.84,\"y\":93.98}],\"rule\":\"footprint_link_issues\",\"severity\":\"warning\",\"sheet\":\"/\",\"x\":116.84,\"y\":93.98},{\"description\":\"The current configuration does not include the footprint library 'LED_THT': Symbol D1 [LED]\",\"items\":[{\"description\":\"Symbol D1 [LED]\",\"uuid\":\"445f8dce-1f8a-535e-b61a-e492d3fc42de\",\"x\":116.84,\"y\":105.41}],\"rule\":\"footprint_link_issues\",\"severity\":\"warning\",\"sheet\":\"/\",\"x\":116.84,\"y\":105.41},{\"description\":\"The current configuration does not include the footprint library 'Resistor_THT': Symbol R1 [R]\",\"items\":[{\"description\":\"Symbol R1 [R]\",\"uuid\":\"fe6696bb-cffc-542d-9c52-6133beb545aa\",\"x\":142.24,\"y\":90.17}],\"rule\":\"footprint_link_issues\",\"severity\":\"warning\",\"sheet\":\"/\",\"x\":142.24,\"y\":90.17},{\"description\":\"The current configuration does not include the footprint library 'Resistor_THT': Symbol R2 [R]\",\"items\":[{\"description\":\"Symbol R2 [R]\",\"uuid\":\"43b84d3a-5a53-5935-ad84-ef6110b8e2bd\",\"x\":142.24,\"y\":107.95}],\"rule\":\"footprint_link_issues\",\"severity\":\"warning\",\"sheet\":\"/\",\"x\":142.24,\"y\":107.95},{\"description\":\"The current configuration does not include the footprint library 'Capacitor_THT': Symbol C1 [C]\",\"items\":[{\"description\":\"Symbol C1 [C]\",\"uuid\":\"32064f43-5bba-5d82-83f8-bcf893403920\",\"x\":142.24,\"y\":129.54}],\"rule\":\"footprint_link_issues\",\"severity\":\"warning\",\"sheet\":\"/\",\"x\":142.24,\"y\":129.54},{\"description\":\"The current configuration does not include the footprint library 'Capacitor_THT': Symbol C2 [C]\",\"items\":[{\"description\":\"Symbol C2 [C]\",\"uuid\":\"c9ce8375-6bcb-569d-8d17-d71bddbce12c\",\"x\":158.75,\"y\":90.17}],\"rule\":\"footprint_link_issues\",\"severity\":\"warning\",\"sheet\":\"/\",\"x\":158.75,\"y\":90.17},{\"description\":\"The current configuration does not include the footprint library 'Package_DIP': Symbol U1 [NE555D]\",\"items\":[{\"description\":\"Symbol U1 [NE555D]\",\"uuid\":\"bd2f8156-5ec1-59e7-8828-bbf255ab3632\",\"x\":176.53,\"y\":107.95}],\"rule\":\"footprint_link_issues\",\"severity\":\"warning\",\"sheet\":\"/\",\"x\":176.53,\"y\":107.95}],\"warnings\":10}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      }
+    },
+    "elapsed_seconds": 1.04134394400171,
+    "workspace_hashes": {
+      "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+      "Reference555LedFlasher-drc.json": "8f23a6ec0ede9fa6decad9022dd009c295e7efc6c8d7d1b978eb94fc9c60df9b",
+      "Reference555LedFlasher-erc.json": "9ceb07c76066a1365e22ad99a864450686270f8e43038eb8dd4b4180c25576d5",
+      "Reference555LedFlasher.kicad_pcb": "6fed233438a617b14247cf6bc861cdfb4c0ee4849a29831ffd247b3f96cc671e",
+      "Reference555LedFlasher.kicad_prl": "a61f9786f0934d13bc3efa5ef75250845c08a8c4ee1bfc2a4b9b25e7f5fbdd80",
+      "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+      "Reference555LedFlasher.kicad_sch": "7527430fc434f16e6dfda51fcf1191c157e393a669f2dda6f85379a69fafec31",
+      "Reference555LedFlasher_repair-drc.json": "0246850eff8216132a8428ebbe7bb8c24a2dceacb565e5436c7dc49d11f3a414",
+      "Reference555LedFlasher_repair.kicad_pcb": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+      "Reference555LedFlasher_routed-drc.json": "53e40fba23b314e86b93be47212baf43df21542be9357452fde796862cb0580a",
+      "erc-response.json": "500d8b995919c7b6d7b80823d9be2c7f47a73413d99b8281e52837301287d5d0",
+      "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+    }
+  },
+  {
+    "request": {
+      "name": "get_board_info",
+      "arguments": {
+        "board": "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher_repair.kicad_pcb"
+      }
+    },
+    "response": {
+      "jsonrpc": "2.0",
+      "id": 19,
+      "result": {
+        "content": [
+          {
+            "text": "{\"error\":{\"kind\":\"toolset_not_loaded\",\"tool\":\"get_board_info\",\"toolset\":\"pcb_board\"},\"message\":\"Tool 'get_board_info' is in toolset 'pcb_board' which is not currently loaded. Call load_toolset('pcb_board') first, then retry.\"}",
+            "type": "text"
+          }
+        ],
+        "isError": true
+      }
+    },
+    "elapsed_seconds": 0.001871792002930306,
+    "workspace_hashes": {
+      "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+      "Reference555LedFlasher-drc.json": "8f23a6ec0ede9fa6decad9022dd009c295e7efc6c8d7d1b978eb94fc9c60df9b",
+      "Reference555LedFlasher-erc.json": "9ceb07c76066a1365e22ad99a864450686270f8e43038eb8dd4b4180c25576d5",
+      "Reference555LedFlasher.kicad_pcb": "6fed233438a617b14247cf6bc861cdfb4c0ee4849a29831ffd247b3f96cc671e",
+      "Reference555LedFlasher.kicad_prl": "a61f9786f0934d13bc3efa5ef75250845c08a8c4ee1bfc2a4b9b25e7f5fbdd80",
+      "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+      "Reference555LedFlasher.kicad_sch": "7527430fc434f16e6dfda51fcf1191c157e393a669f2dda6f85379a69fafec31",
+      "Reference555LedFlasher_repair-drc.json": "0246850eff8216132a8428ebbe7bb8c24a2dceacb565e5436c7dc49d11f3a414",
+      "Reference555LedFlasher_repair.kicad_pcb": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+      "Reference555LedFlasher_routed-drc.json": "53e40fba23b314e86b93be47212baf43df21542be9357452fde796862cb0580a",
+      "erc-response.json": "500d8b995919c7b6d7b80823d9be2c7f47a73413d99b8281e52837301287d5d0",
+      "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+    }
+  },
+  {
+    "request": {
+      "name": "get_component_pads",
+      "arguments": {
+        "board": "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher_repair.kicad_pcb",
+        "reference": "U1"
+      }
+    },
+    "response": {
+      "jsonrpc": "2.0",
+      "id": 20,
+      "result": {
+        "content": [
+          {
+            "text": "{\"pad_count\":8,\"pads\":[{\"copper_layers\":[{\"chamfer_ratio\":null,\"corner_rounding_ratio\":0.15625,\"layer\":\"*.Cu\",\"offset\":null,\"shape\":\"roundrect\",\"size\":{\"x\":1.6,\"y\":1.6}}],\"drill\":{\"end_layer\":null,\"shape\":\"circle\",\"size\":{\"x\":0.8,\"y\":0.8},\"start_layer\":null},\"layers\":[\"*.Cu\",\"*.Mask\"],\"net\":\"/REF\",\"number\":\"1\",\"pad_type\":\"thru_hole\",\"rotation_deg\":0.0,\"shape\":\"roundrect\",\"size\":{\"x\":1.6,\"y\":1.6},\"uuid\":\"760bb823-212c-4ca9-b27b-d5ab66246cfd\",\"x\":18.0,\"y\":8.0},{\"copper_layers\":[{\"chamfer_ratio\":null,\"corner_rounding_ratio\":null,\"layer\":\"*.Cu\",\"offset\":null,\"shape\":\"circle\",\"size\":{\"x\":1.6,\"y\":1.6}}],\"drill\":{\"end_layer\":null,\"shape\":\"circle\",\"size\":{\"x\":0.8,\"y\":0.8},\"start_layer\":null},\"layers\":[\"*.Cu\",\"*.Mask\"],\"net\":\"Net-(U1-THRES)\",\"number\":\"2\",\"pad_type\":\"thru_hole\",\"rotation_deg\":0.0,\"shape\":\"circle\",\"size\":{\"x\":1.6,\"y\":1.6},\"uuid\":\"09496b82-5472-4b02-9a7e-f3835b39518c\",\"x\":18.0,\"y\":10.54},{\"copper_layers\":[{\"chamfer_ratio\":null,\"corner_rounding_ratio\":null,\"layer\":\"*.Cu\",\"offset\":null,\"shape\":\"circle\",\"size\":{\"x\":1.6,\"y\":1.6}}],\"drill\":{\"end_layer\":null,\"shape\":\"circle\",\"size\":{\"x\":0.8,\"y\":0.8},\"start_layer\":null},\"layers\":[\"*.Cu\",\"*.Mask\"],\"net\":\"/OUT\",\"number\":\"3\",\"pad_type\":\"thru_hole\",\"rotation_deg\":0.0,\"shape\":\"circle\",\"size\":{\"x\":1.6,\"y\":1.6},\"uuid\":\"1b1cecef-ce8c-43c6-9bbd-7ee00acbb62e\",\"x\":18.0,\"y\":13.08},{\"copper_layers\":[{\"chamfer_ratio\":null,\"corner_rounding_ratio\":null,\"layer\":\"*.Cu\",\"offset\":null,\"shape\":\"circle\",\"size\":{\"x\":1.6,\"y\":1.6}}],\"drill\":{\"end_layer\":null,\"shape\":\"circle\",\"size\":{\"x\":0.8,\"y\":0.8},\"start_layer\":null},\"layers\":[\"*.Cu\",\"*.Mask\"],\"net\":\"/VCC\",\"number\":\"4\",\"pad_type\":\"thru_hole\",\"rotation_deg\":0.0,\"shape\":\"circle\",\"size\":{\"x\":1.6,\"y\":1.6},\"uuid\":\"4653c64a-aba4-4d46-9c9f-2b3289ad6d1a\",\"x\":18.0,\"y\":15.620000000000001},{\"copper_layers\":[{\"chamfer_ratio\":null,\"corner_rounding_ratio\":null,\"layer\":\"*.Cu\",\"offset\":null,\"shape\":\"circle\",\"size\":{\"x\":1.6,\"y\":1.6}}],\"drill\":{\"end_layer\":null,\"shape\":\"circle\",\"size\":{\"x\":0.8,\"y\":0.8},\"start_layer\":null},\"layers\":[\"*.Cu\",\"*.Mask\"],\"net\":\"Net-(U1-CONT)\",\"number\":\"5\",\"pad_type\":\"thru_hole\",\"rotation_deg\":0.0,\"shape\":\"circle\",\"size\":{\"x\":1.6,\"y\":1.6},\"uuid\":\"dbf1a2a8-4f90-4ec9-8802-afcb9f4a215f\",\"x\":25.62,\"y\":15.620000000000001},{\"copper_layers\":[{\"chamfer_ratio\":null,\"corner_rounding_ratio\":null,\"layer\":\"*.Cu\",\"offset\":null,\"shape\":\"circle\",\"size\":{\"x\":1.6,\"y\":1.6}}],\"drill\":{\"end_layer\":null,\"shape\":\"circle\",\"size\":{\"x\":0.8,\"y\":0.8},\"start_layer\":null},\"layers\":[\"*.Cu\",\"*.Mask\"],\"net\":\"Net-(U1-THRES)\",\"number\":\"6\",\"pad_type\":\"thru_hole\",\"rotation_deg\":0.0,\"shape\":\"circle\",\"size\":{\"x\":1.6,\"y\":1.6},\"uuid\":\"929a09bc-59af-4a48-94d5-b742429dcfae\",\"x\":25.62,\"y\":13.08},{\"copper_layers\":[{\"chamfer_ratio\":null,\"corner_rounding_ratio\":null,\"layer\":\"*.Cu\",\"offset\":null,\"shape\":\"circle\",\"size\":{\"x\":1.6,\"y\":1.6}}],\"drill\":{\"end_layer\":null,\"shape\":\"circle\",\"size\":{\"x\":0.8,\"y\":0.8},\"start_layer\":null},\"layers\":[\"*.Cu\",\"*.Mask\"],\"net\":\"Net-(U1-DISCH)\",\"number\":\"7\",\"pad_type\":\"thru_hole\",\"rotation_deg\":0.0,\"shape\":\"circle\",\"size\":{\"x\":1.6,\"y\":1.6},\"uuid\":\"3b796e86-fc6d-4dee-af63-832824deb623\",\"x\":25.62,\"y\":10.54},{\"copper_layers\":[{\"chamfer_ratio\":null,\"corner_rounding_ratio\":null,\"layer\":\"*.Cu\",\"offset\":null,\"shape\":\"circle\",\"size\":{\"x\":1.6,\"y\":1.6}}],\"drill\":{\"end_layer\":null,\"shape\":\"circle\",\"size\":{\"x\":0.8,\"y\":0.8},\"start_layer\":null},\"layers\":[\"*.Cu\",\"*.Mask\"],\"net\":\"/VCC\",\"number\":\"8\",\"pad_type\":\"thru_hole\",\"rotation_deg\":0.0,\"shape\":\"circle\",\"size\":{\"x\":1.6,\"y\":1.6},\"uuid\":\"d6739f6b-db56-4f41-8ba2-479ff7bb4d4c\",\"x\":25.62,\"y\":8.0}],\"reference\":\"U1\",\"source\":\"file\"}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      }
+    },
+    "elapsed_seconds": 0.007862255995860323,
+    "workspace_hashes": {
+      "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+      "Reference555LedFlasher-drc.json": "8f23a6ec0ede9fa6decad9022dd009c295e7efc6c8d7d1b978eb94fc9c60df9b",
+      "Reference555LedFlasher-erc.json": "9ceb07c76066a1365e22ad99a864450686270f8e43038eb8dd4b4180c25576d5",
+      "Reference555LedFlasher.kicad_pcb": "6fed233438a617b14247cf6bc861cdfb4c0ee4849a29831ffd247b3f96cc671e",
+      "Reference555LedFlasher.kicad_prl": "a61f9786f0934d13bc3efa5ef75250845c08a8c4ee1bfc2a4b9b25e7f5fbdd80",
+      "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+      "Reference555LedFlasher.kicad_sch": "7527430fc434f16e6dfda51fcf1191c157e393a669f2dda6f85379a69fafec31",
+      "Reference555LedFlasher_repair-drc.json": "0246850eff8216132a8428ebbe7bb8c24a2dceacb565e5436c7dc49d11f3a414",
+      "Reference555LedFlasher_repair.kicad_pcb": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+      "Reference555LedFlasher_routed-drc.json": "53e40fba23b314e86b93be47212baf43df21542be9357452fde796862cb0580a",
+      "erc-response.json": "500d8b995919c7b6d7b80823d9be2c7f47a73413d99b8281e52837301287d5d0",
+      "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+    }
+  },
+  {
+    "request": {
+      "name": "run_drc",
+      "arguments": {
+        "board": "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher_repair.kicad_pcb",
+        "output": "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/drc-response.json"
+      }
+    },
+    "response": {
+      "jsonrpc": "2.0",
+      "id": 21,
+      "result": {
+        "content": [
+          {
+            "text": "{\"categories_not_reported\":[\"schematic_parity\"],\"design_rule_violations\":10,\"errors\":0,\"filtered_count\":10,\"live_board_synced\":false,\"schematic_parity\":null,\"schematic_parity_diagnostic\":\"kicad-cli reported \\\"Failed to fetch schematic netlist for parity tests\\\" for /home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher_repair.kicad_pcb: the parity test reads the project's root schematic /home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher_repair.kicad_sch (which does not exist), so the empty parity result it wrote is not a checked zero\",\"severity_filter\":\"warning\",\"shown\":10,\"source\":\"saved_file\",\"total_violations\":10,\"truncated\":false,\"unconnected_items\":0,\"violations\":[{\"description\":\"The current configuration does not include the footprint library 'Resistor_THT'\",\"items\":[{\"description\":\"Footprint R1\",\"item_kind\":\"footprint\",\"layer\":\"F.Cu\",\"owner\":{\"kind\":\"board\"},\"ownership_status\":\"resolved\",\"pos\":{\"x\":10.0,\"y\":29.0},\"uuid\":\"0061a7e1-abd6-4383-873c-0444fc6da6bc\"}],\"pos\":{\"x\":10.0,\"y\":29.0},\"rule\":\"lib_footprint_issues\",\"severity\":\"warning\"},{\"description\":\"The current configuration does not include the footprint library 'Capacitor_THT'\",\"items\":[{\"description\":\"Footprint C2\",\"item_kind\":\"footprint\",\"layer\":\"F.Cu\",\"owner\":{\"kind\":\"board\"},\"ownership_status\":\"resolved\",\"pos\":{\"x\":8.0,\"y\":17.0},\"uuid\":\"2dc0e189-7098-425e-b29d-afadbc467ab3\"}],\"pos\":{\"x\":8.0,\"y\":17.0},\"rule\":\"lib_footprint_issues\",\"severity\":\"warning\"},{\"description\":\"The current configuration does not include the footprint library 'LED_THT'\",\"items\":[{\"description\":\"Footprint D1\",\"item_kind\":\"footprint\",\"layer\":\"F.Cu\",\"owner\":{\"kind\":\"board\"},\"ownership_status\":\"resolved\",\"pos\":{\"x\":41.0,\"y\":8.0},\"uuid\":\"3113224e-3ae7-4e41-ba0d-90382bb513f2\"}],\"pos\":{\"x\":41.0,\"y\":8.0},\"rule\":\"lib_footprint_issues\",\"severity\":\"warning\"},{\"description\":\"The current configuration does not include the footprint library 'Connector_PinHeader_2.54mm'\",\"items\":[{\"description\":\"Footprint J3\",\"item_kind\":\"footprint\",\"layer\":\"F.Cu\",\"owner\":{\"kind\":\"board\"},\"ownership_status\":\"resolved\",\"pos\":{\"x\":44.0,\"y\":32.0},\"uuid\":\"3e70bc26-01f6-422e-a864-915d0931df4d\"}],\"pos\":{\"x\":44.0,\"y\":32.0},\"rule\":\"lib_footprint_issues\",\"severity\":\"warning\"},{\"description\":\"The current configuration does not include the footprint library 'Connector_PinHeader_2.54mm'\",\"items\":[{\"description\":\"Footprint J1\",\"item_kind\":\"footprint\",\"layer\":\"F.Cu\",\"owner\":{\"kind\":\"board\"},\"ownership_status\":\"resolved\",\"pos\":{\"x\":4.0,\"y\":32.0},\"uuid\":\"4d18c428-cb9f-43b6-8c28-abe655b02858\"}],\"pos\":{\"x\":4.0,\"y\":32.0},\"rule\":\"lib_footprint_issues\",\"severity\":\"warning\"},{\"description\":\"The current configuration does not include the footprint library 'Resistor_THT'\",\"items\":[{\"description\":\"Footprint R3\",\"item_kind\":\"footprint\",\"layer\":\"F.Cu\",\"owner\":{\"kind\":\"board\"},\"ownership_status\":\"resolved\",\"pos\":{\"x\":36.0,\"y\":18.0},\"uuid\":\"54a9e78a-2267-46ca-9fb0-aefa130a5906\"}],\"pos\":{\"x\":36.0,\"y\":18.0},\"rule\":\"lib_footprint_issues\",\"severity\":\"warning\"},{\"description\":\"The current configuration does not include the footprint library 'Capacitor_THT'\",\"items\":[{\"description\":\"Footprint C1\",\"item_kind\":\"footprint\",\"layer\":\"F.Cu\",\"owner\":{\"kind\":\"board\"},\"ownership_status\":\"resolved\",\"pos\":{\"x\":5.0,\"y\":7.5},\"uuid\":\"587ad641-cf41-4967-b7ca-4f50c9f9b170\"}],\"pos\":{\"x\":5.0,\"y\":7.5},\"rule\":\"lib_footprint_issues\",\"severity\":\"warning\"},{\"description\":\"The current configuration does not include the footprint library 'Package_DIP'\",\"items\":[{\"description\":\"Footprint U1\",\"item_kind\":\"footprint\",\"layer\":\"F.Cu\",\"owner\":{\"kind\":\"board\"},\"ownership_status\":\"resolved\",\"pos\":{\"x\":18.0,\"y\":8.0},\"uuid\":\"5c3affc1-124f-4c39-aeed-db4719095768\"}],\"pos\":{\"x\":18.0,\"y\":8.0},\"rule\":\"lib_footprint_issues\",\"severity\":\"warning\"},{\"description\":\"The current configuration does not include the footprint library 'Connector_PinHeader_2.54mm'\",\"items\":[{\"description\":\"Footprint J2\",\"item_kind\":\"footprint\",\"layer\":\"F.Cu\",\"owner\":{\"kind\":\"board\"},\"ownership_status\":\"resolved\",\"pos\":{\"x\":24.0,\"y\":32.0},\"uuid\":\"88eaf2e8-635e-47de-a68c-1d0f3517fa6c\"}],\"pos\":{\"x\":24.0,\"y\":32.0},\"rule\":\"lib_footprint_issues\",\"severity\":\"warning\"},{\"description\":\"The current configuration does not include the footprint library 'Resistor_THT'\",\"items\":[{\"description\":\"Footprint R2\",\"item_kind\":\"footprint\",\"layer\":\"F.Cu\",\"owner\":{\"kind\":\"board\"},\"ownership_status\":\"resolved\",\"pos\":{\"x\":27.0,\"y\":29.0},\"uuid\":\"e93c3816-f88c-4e86-aeae-1294f20045d4\"}],\"pos\":{\"x\":27.0,\"y\":29.0},\"rule\":\"lib_footprint_issues\",\"severity\":\"warning\"}],\"warnings\":10,\"zone_refill_source\":null,\"zones_refilled\":false}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      }
+    },
+    "elapsed_seconds": 0.7030898170050932,
+    "workspace_hashes": {
+      "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+      "Reference555LedFlasher-drc.json": "8f23a6ec0ede9fa6decad9022dd009c295e7efc6c8d7d1b978eb94fc9c60df9b",
+      "Reference555LedFlasher-erc.json": "9ceb07c76066a1365e22ad99a864450686270f8e43038eb8dd4b4180c25576d5",
+      "Reference555LedFlasher.kicad_pcb": "6fed233438a617b14247cf6bc861cdfb4c0ee4849a29831ffd247b3f96cc671e",
+      "Reference555LedFlasher.kicad_prl": "a61f9786f0934d13bc3efa5ef75250845c08a8c4ee1bfc2a4b9b25e7f5fbdd80",
+      "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+      "Reference555LedFlasher.kicad_sch": "7527430fc434f16e6dfda51fcf1191c157e393a669f2dda6f85379a69fafec31",
+      "Reference555LedFlasher_repair-drc.json": "0246850eff8216132a8428ebbe7bb8c24a2dceacb565e5436c7dc49d11f3a414",
+      "Reference555LedFlasher_repair.kicad_pcb": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+      "Reference555LedFlasher_repair.kicad_prl": "762beae81f366a961b7a3090e70f995207962d9da74c8d424baa7733b0df7863",
+      "Reference555LedFlasher_routed-drc.json": "53e40fba23b314e86b93be47212baf43df21542be9357452fde796862cb0580a",
+      "drc-response.json": "1c14367d872d0d2dffda415eda3036e9005de6d0e14ec1cc30f90413a72ee3cf",
+      "erc-response.json": "500d8b995919c7b6d7b80823d9be2c7f47a73413d99b8281e52837301287d5d0",
+      "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+    }
+  },
+  {
+    "request": {
+      "name": "export_gerber",
+      "arguments": {
+        "board": "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher_repair.kicad_pcb",
+        "output_dir": "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/fabrication",
+        "drill_file": true
+      }
+    },
+    "response": {
+      "jsonrpc": "2.0",
+      "id": 22,
+      "result": {
+        "content": [
+          {
+            "text": "{\"files\":[\"Reference555LedFlasher_repair-B_Cu.gbl\",\"Reference555LedFlasher_repair-B_Mask.gbs\",\"Reference555LedFlasher_repair-B_Silkscreen.gbo\",\"Reference555LedFlasher_repair-Edge_Cuts.gm1\",\"Reference555LedFlasher_repair-F_Cu.gtl\",\"Reference555LedFlasher_repair-F_Mask.gts\",\"Reference555LedFlasher_repair-F_Silkscreen.gto\",\"Reference555LedFlasher_repair-NPTH.drl\",\"Reference555LedFlasher_repair-PTH.drl\",\"Reference555LedFlasher_repair-job.gbrjob\"],\"layers\":[\"F.Cu\",\"B.Cu\",\"F.SilkS\",\"B.SilkS\",\"F.Mask\",\"B.Mask\",\"Edge.Cuts\"],\"output_dir\":\"/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/fabrication\",\"success\":true}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      }
+    },
+    "elapsed_seconds": 0.5847410290007247,
+    "workspace_hashes": {
+      "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+      "Reference555LedFlasher-drc.json": "8f23a6ec0ede9fa6decad9022dd009c295e7efc6c8d7d1b978eb94fc9c60df9b",
+      "Reference555LedFlasher-erc.json": "9ceb07c76066a1365e22ad99a864450686270f8e43038eb8dd4b4180c25576d5",
+      "Reference555LedFlasher.kicad_pcb": "6fed233438a617b14247cf6bc861cdfb4c0ee4849a29831ffd247b3f96cc671e",
+      "Reference555LedFlasher.kicad_prl": "a61f9786f0934d13bc3efa5ef75250845c08a8c4ee1bfc2a4b9b25e7f5fbdd80",
+      "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+      "Reference555LedFlasher.kicad_sch": "7527430fc434f16e6dfda51fcf1191c157e393a669f2dda6f85379a69fafec31",
+      "Reference555LedFlasher_repair-drc.json": "0246850eff8216132a8428ebbe7bb8c24a2dceacb565e5436c7dc49d11f3a414",
+      "Reference555LedFlasher_repair.kicad_pcb": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+      "Reference555LedFlasher_repair.kicad_prl": "762beae81f366a961b7a3090e70f995207962d9da74c8d424baa7733b0df7863",
+      "Reference555LedFlasher_routed-drc.json": "53e40fba23b314e86b93be47212baf43df21542be9357452fde796862cb0580a",
+      "drc-response.json": "1c14367d872d0d2dffda415eda3036e9005de6d0e14ec1cc30f90413a72ee3cf",
+      "erc-response.json": "500d8b995919c7b6d7b80823d9be2c7f47a73413d99b8281e52837301287d5d0",
+      "fabrication/Reference555LedFlasher_repair-B_Cu.gbl": "284dc3743c0025daea27383854eef42bf38a93a7b5346ba6b7b4e9585b185a8a",
+      "fabrication/Reference555LedFlasher_repair-B_Mask.gbs": "80143fefed4baebec4dd09351be5b4063f414745ca6c085b666ba0b34e32ea0d",
+      "fabrication/Reference555LedFlasher_repair-B_Silkscreen.gbo": "ef43782666cba4e78f978ed6c00b6ea64e08f07a666397f155c7979c1fe2c49a",
+      "fabrication/Reference555LedFlasher_repair-Edge_Cuts.gm1": "83678853fa8b6e3e46c8b944709ea00ddc17865d7b2b0e5c940abbce7638d2e1",
+      "fabrication/Reference555LedFlasher_repair-F_Cu.gtl": "3e15f17e2f3019141881c4fb800a2b7fde2548ab45178765a0b3e72b9475cbcf",
+      "fabrication/Reference555LedFlasher_repair-F_Mask.gts": "f2b731ed2040a14a86bd22d9b1e87e5f6e470c98d9f6f1354fd6f0f22e913bde",
+      "fabrication/Reference555LedFlasher_repair-F_Silkscreen.gto": "11a462db688ea2897ea3e29c3e0c9e61c8ad0967d53478279e36d41a7e2dfad3",
+      "fabrication/Reference555LedFlasher_repair-NPTH.drl": "be053d1178e5d51a960c511c3e377313cfe7c11ff6ff70fdf8d5076c8468af35",
+      "fabrication/Reference555LedFlasher_repair-PTH.drl": "224910863b556f375de4f9e7fb4a0253dfaf86109799884ac285cc5bc3c151fa",
+      "fabrication/Reference555LedFlasher_repair-job.gbrjob": "c480e2584fbcd421566613b0b6cc0dcd1e6ffeed3702429116afffbe28fb9c7d",
+      "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+    }
+  },
+  {
+    "request": {
+      "name": "edit_schematic_component",
+      "arguments": {
+        "schematic": "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch",
+        "reference": "DOES_NOT_EXIST",
+        "value": "invalid"
+      }
+    },
+    "response": {
+      "jsonrpc": "2.0",
+      "id": 23,
+      "result": {
+        "content": [
+          {
+            "text": "{\"error\":{\"kind\":\"stale_target\",\"reason\":\"component DOES_NOT_EXIST is not present\",\"target\":\"/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch\"},\"message\":\"cannot safely resolve /home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch: component DOES_NOT_EXIST is not present\"}",
+            "type": "text"
+          }
+        ],
+        "isError": true
+      }
+    },
+    "elapsed_seconds": 0.0014316259912448004,
+    "workspace_hashes": {
+      "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+      "Reference555LedFlasher-drc.json": "8f23a6ec0ede9fa6decad9022dd009c295e7efc6c8d7d1b978eb94fc9c60df9b",
+      "Reference555LedFlasher-erc.json": "9ceb07c76066a1365e22ad99a864450686270f8e43038eb8dd4b4180c25576d5",
+      "Reference555LedFlasher.kicad_pcb": "6fed233438a617b14247cf6bc861cdfb4c0ee4849a29831ffd247b3f96cc671e",
+      "Reference555LedFlasher.kicad_prl": "a61f9786f0934d13bc3efa5ef75250845c08a8c4ee1bfc2a4b9b25e7f5fbdd80",
+      "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+      "Reference555LedFlasher.kicad_sch": "7527430fc434f16e6dfda51fcf1191c157e393a669f2dda6f85379a69fafec31",
+      "Reference555LedFlasher_repair-drc.json": "0246850eff8216132a8428ebbe7bb8c24a2dceacb565e5436c7dc49d11f3a414",
+      "Reference555LedFlasher_repair.kicad_pcb": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+      "Reference555LedFlasher_repair.kicad_prl": "762beae81f366a961b7a3090e70f995207962d9da74c8d424baa7733b0df7863",
+      "Reference555LedFlasher_routed-drc.json": "53e40fba23b314e86b93be47212baf43df21542be9357452fde796862cb0580a",
+      "drc-response.json": "1c14367d872d0d2dffda415eda3036e9005de6d0e14ec1cc30f90413a72ee3cf",
+      "erc-response.json": "500d8b995919c7b6d7b80823d9be2c7f47a73413d99b8281e52837301287d5d0",
+      "fabrication/Reference555LedFlasher_repair-B_Cu.gbl": "284dc3743c0025daea27383854eef42bf38a93a7b5346ba6b7b4e9585b185a8a",
+      "fabrication/Reference555LedFlasher_repair-B_Mask.gbs": "80143fefed4baebec4dd09351be5b4063f414745ca6c085b666ba0b34e32ea0d",
+      "fabrication/Reference555LedFlasher_repair-B_Silkscreen.gbo": "ef43782666cba4e78f978ed6c00b6ea64e08f07a666397f155c7979c1fe2c49a",
+      "fabrication/Reference555LedFlasher_repair-Edge_Cuts.gm1": "83678853fa8b6e3e46c8b944709ea00ddc17865d7b2b0e5c940abbce7638d2e1",
+      "fabrication/Reference555LedFlasher_repair-F_Cu.gtl": "3e15f17e2f3019141881c4fb800a2b7fde2548ab45178765a0b3e72b9475cbcf",
+      "fabrication/Reference555LedFlasher_repair-F_Mask.gts": "f2b731ed2040a14a86bd22d9b1e87e5f6e470c98d9f6f1354fd6f0f22e913bde",
+      "fabrication/Reference555LedFlasher_repair-F_Silkscreen.gto": "11a462db688ea2897ea3e29c3e0c9e61c8ad0967d53478279e36d41a7e2dfad3",
+      "fabrication/Reference555LedFlasher_repair-NPTH.drl": "be053d1178e5d51a960c511c3e377313cfe7c11ff6ff70fdf8d5076c8468af35",
+      "fabrication/Reference555LedFlasher_repair-PTH.drl": "224910863b556f375de4f9e7fb4a0253dfaf86109799884ac285cc5bc3c151fa",
+      "fabrication/Reference555LedFlasher_repair-job.gbrjob": "c480e2584fbcd421566613b0b6cc0dcd1e6ffeed3702429116afffbe28fb9c7d",
+      "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+    }
+  },
+  {
+    "request": {
+      "name": "move_component",
+      "arguments": {
+        "board": "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher_repair.kicad_pcb",
+        "reference": "DOES_NOT_EXIST",
+        "x": 10,
+        "y": 10
+      }
+    },
+    "response": {
+      "jsonrpc": "2.0",
+      "id": 24,
+      "result": {
+        "content": [
+          {
+            "text": "{\"error\":{\"field\":\"reference\",\"kind\":\"invalid_argument\",\"reason\":\"no footprint 'DOES_NOT_EXIST' on this board\"},\"message\":\"Footprint 'DOES_NOT_EXIST' is not on this board, so there was nothing to update. The board file was not modified.\"}",
+            "type": "text"
+          }
+        ],
+        "isError": true
+      }
+    },
+    "elapsed_seconds": 0.0019896710000466555,
+    "workspace_hashes": {
+      "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+      "Reference555LedFlasher-drc.json": "8f23a6ec0ede9fa6decad9022dd009c295e7efc6c8d7d1b978eb94fc9c60df9b",
+      "Reference555LedFlasher-erc.json": "9ceb07c76066a1365e22ad99a864450686270f8e43038eb8dd4b4180c25576d5",
+      "Reference555LedFlasher.kicad_pcb": "6fed233438a617b14247cf6bc861cdfb4c0ee4849a29831ffd247b3f96cc671e",
+      "Reference555LedFlasher.kicad_prl": "a61f9786f0934d13bc3efa5ef75250845c08a8c4ee1bfc2a4b9b25e7f5fbdd80",
+      "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+      "Reference555LedFlasher.kicad_sch": "7527430fc434f16e6dfda51fcf1191c157e393a669f2dda6f85379a69fafec31",
+      "Reference555LedFlasher_repair-drc.json": "0246850eff8216132a8428ebbe7bb8c24a2dceacb565e5436c7dc49d11f3a414",
+      "Reference555LedFlasher_repair.kicad_pcb": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+      "Reference555LedFlasher_repair.kicad_prl": "762beae81f366a961b7a3090e70f995207962d9da74c8d424baa7733b0df7863",
+      "Reference555LedFlasher_routed-drc.json": "53e40fba23b314e86b93be47212baf43df21542be9357452fde796862cb0580a",
+      "drc-response.json": "1c14367d872d0d2dffda415eda3036e9005de6d0e14ec1cc30f90413a72ee3cf",
+      "erc-response.json": "500d8b995919c7b6d7b80823d9be2c7f47a73413d99b8281e52837301287d5d0",
+      "fabrication/Reference555LedFlasher_repair-B_Cu.gbl": "284dc3743c0025daea27383854eef42bf38a93a7b5346ba6b7b4e9585b185a8a",
+      "fabrication/Reference555LedFlasher_repair-B_Mask.gbs": "80143fefed4baebec4dd09351be5b4063f414745ca6c085b666ba0b34e32ea0d",
+      "fabrication/Reference555LedFlasher_repair-B_Silkscreen.gbo": "ef43782666cba4e78f978ed6c00b6ea64e08f07a666397f155c7979c1fe2c49a",
+      "fabrication/Reference555LedFlasher_repair-Edge_Cuts.gm1": "83678853fa8b6e3e46c8b944709ea00ddc17865d7b2b0e5c940abbce7638d2e1",
+      "fabrication/Reference555LedFlasher_repair-F_Cu.gtl": "3e15f17e2f3019141881c4fb800a2b7fde2548ab45178765a0b3e72b9475cbcf",
+      "fabrication/Reference555LedFlasher_repair-F_Mask.gts": "f2b731ed2040a14a86bd22d9b1e87e5f6e470c98d9f6f1354fd6f0f22e913bde",
+      "fabrication/Reference555LedFlasher_repair-F_Silkscreen.gto": "11a462db688ea2897ea3e29c3e0c9e61c8ad0967d53478279e36d41a7e2dfad3",
+      "fabrication/Reference555LedFlasher_repair-NPTH.drl": "be053d1178e5d51a960c511c3e377313cfe7c11ff6ff70fdf8d5076c8468af35",
+      "fabrication/Reference555LedFlasher_repair-PTH.drl": "224910863b556f375de4f9e7fb4a0253dfaf86109799884ac285cc5bc3c151fa",
+      "fabrication/Reference555LedFlasher_repair-job.gbrjob": "c480e2584fbcd421566613b0b6cc0dcd1e6ffeed3702429116afffbe28fb9c7d",
+      "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+    }
+  },
+  {
+    "request": {
+      "name": "run_erc",
+      "arguments": {
+        "schematic": "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch",
+        "output": "/home/phil/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_desktop_file_probe_2026-10-22_run1/workspace/erc-after-invalid.json"
+      }
+    },
+    "response": {
+      "jsonrpc": "2.0",
+      "id": 25,
+      "result": {
+        "content": [
+          {
+            "text": "{\"coordinates\":{\"kicad_version\":\"10.0.6\",\"reason\":\"KiCad 10.0.6 writes every ERC JSON coordinate at 1/100 of its true value (kicad#25582, fixed in 10.0.7); Konnect multiplied it back. A length quoted inside KiCad's own violation text is scaled the same way and is left as KiCad wrote it.\",\"scale_applied\":100.0,\"status\":\"corrected\"},\"errors\":0,\"total\":10,\"violations\":[{\"description\":\"The current configuration does not include the footprint library 'Connector_PinHeader_2.54mm': Symbol J2 [Conn_01x01]\",\"items\":[{\"description\":\"Symbol J2 [Conn_01x01]\",\"uuid\":\"d1cfd518-f8f4-58f4-8785-a975f9a929e3\",\"x\":95.25,\"y\":90.17}],\"rule\":\"footprint_link_issues\",\"severity\":\"warning\",\"sheet\":\"/\",\"x\":95.25,\"y\":90.17},{\"description\":\"The current configuration does not include the footprint library 'Connector_PinHeader_2.54mm': Symbol J3 [Conn_01x01]\",\"items\":[{\"description\":\"Symbol J3 [Conn_01x01]\",\"uuid\":\"4b5026d2-04ee-57d9-aea6-c11b8f073dbb\",\"x\":95.25,\"y\":97.79}],\"rule\":\"footprint_link_issues\",\"severity\":\"warning\",\"sheet\":\"/\",\"x\":95.25,\"y\":97.79},{\"description\":\"The current configuration does not include the footprint library 'Connector_PinHeader_2.54mm': Symbol J1 [Conn_01x01]\",\"items\":[{\"description\":\"Symbol J1 [Conn_01x01]\",\"uuid\":\"6d3da5b9-27e5-5e84-a845-b32edf5580d9\",\"x\":95.25,\"y\":105.41}],\"rule\":\"footprint_link_issues\",\"severity\":\"warning\",\"sheet\":\"/\",\"x\":95.25,\"y\":105.41},{\"description\":\"The current configuration does not include the footprint library 'Resistor_THT': Symbol R3 [R]\",\"items\":[{\"description\":\"Symbol R3 [R]\",\"uuid\":\"7c47f3f9-9cb0-5f28-be17-7fc328b38c25\",\"x\":116.84,\"y\":93.98}],\"rule\":\"footprint_link_issues\",\"severity\":\"warning\",\"sheet\":\"/\",\"x\":116.84,\"y\":93.98},{\"description\":\"The current configuration does not include the footprint library 'LED_THT': Symbol D1 [LED]\",\"items\":[{\"description\":\"Symbol D1 [LED]\",\"uuid\":\"445f8dce-1f8a-535e-b61a-e492d3fc42de\",\"x\":116.84,\"y\":105.41}],\"rule\":\"footprint_link_issues\",\"severity\":\"warning\",\"sheet\":\"/\",\"x\":116.84,\"y\":105.41},{\"description\":\"The current configuration does not include the footprint library 'Resistor_THT': Symbol R1 [R]\",\"items\":[{\"description\":\"Symbol R1 [R]\",\"uuid\":\"fe6696bb-cffc-542d-9c52-6133beb545aa\",\"x\":142.24,\"y\":90.17}],\"rule\":\"footprint_link_issues\",\"severity\":\"warning\",\"sheet\":\"/\",\"x\":142.24,\"y\":90.17},{\"description\":\"The current configuration does not include the footprint library 'Resistor_THT': Symbol R2 [R]\",\"items\":[{\"description\":\"Symbol R2 [R]\",\"uuid\":\"43b84d3a-5a53-5935-ad84-ef6110b8e2bd\",\"x\":142.24,\"y\":107.95}],\"rule\":\"footprint_link_issues\",\"severity\":\"warning\",\"sheet\":\"/\",\"x\":142.24,\"y\":107.95},{\"description\":\"The current configuration does not include the footprint library 'Capacitor_THT': Symbol C1 [C]\",\"items\":[{\"description\":\"Symbol C1 [C]\",\"uuid\":\"32064f43-5bba-5d82-83f8-bcf893403920\",\"x\":142.24,\"y\":129.54}],\"rule\":\"footprint_link_issues\",\"severity\":\"warning\",\"sheet\":\"/\",\"x\":142.24,\"y\":129.54},{\"description\":\"The current configuration does not include the footprint library 'Capacitor_THT': Symbol C2 [C]\",\"items\":[{\"description\":\"Symbol C2 [C]\",\"uuid\":\"c9ce8375-6bcb-569d-8d17-d71bddbce12c\",\"x\":158.75,\"y\":90.17}],\"rule\":\"footprint_link_issues\",\"severity\":\"warning\",\"sheet\":\"/\",\"x\":158.75,\"y\":90.17},{\"description\":\"The current configuration does not include the footprint library 'Package_DIP': Symbol U1 [NE555D]\",\"items\":[{\"description\":\"Symbol U1 [NE555D]\",\"uuid\":\"bd2f8156-5ec1-59e7-8828-bbf255ab3632\",\"x\":176.53,\"y\":107.95}],\"rule\":\"footprint_link_issues\",\"severity\":\"warning\",\"sheet\":\"/\",\"x\":176.53,\"y\":107.95}],\"warnings\":10}",
+            "type": "text"
+          }
+        ],
+        "isError": false
+      }
+    },
+    "elapsed_seconds": 0.5117937549948692,
+    "workspace_hashes": {
+      "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+      "Reference555LedFlasher-drc.json": "8f23a6ec0ede9fa6decad9022dd009c295e7efc6c8d7d1b978eb94fc9c60df9b",
+      "Reference555LedFlasher-erc.json": "9ceb07c76066a1365e22ad99a864450686270f8e43038eb8dd4b4180c25576d5",
+      "Reference555LedFlasher.kicad_pcb": "6fed233438a617b14247cf6bc861cdfb4c0ee4849a29831ffd247b3f96cc671e",
+      "Reference555LedFlasher.kicad_prl": "a61f9786f0934d13bc3efa5ef75250845c08a8c4ee1bfc2a4b9b25e7f5fbdd80",
+      "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+      "Reference555LedFlasher.kicad_sch": "7527430fc434f16e6dfda51fcf1191c157e393a669f2dda6f85379a69fafec31",
+      "Reference555LedFlasher_repair-drc.json": "0246850eff8216132a8428ebbe7bb8c24a2dceacb565e5436c7dc49d11f3a414",
+      "Reference555LedFlasher_repair.kicad_pcb": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+      "Reference555LedFlasher_repair.kicad_prl": "762beae81f366a961b7a3090e70f995207962d9da74c8d424baa7733b0df7863",
+      "Reference555LedFlasher_routed-drc.json": "53e40fba23b314e86b93be47212baf43df21542be9357452fde796862cb0580a",
+      "drc-response.json": "1c14367d872d0d2dffda415eda3036e9005de6d0e14ec1cc30f90413a72ee3cf",
+      "erc-after-invalid.json": "500d8b995919c7b6d7b80823d9be2c7f47a73413d99b8281e52837301287d5d0",
+      "erc-response.json": "500d8b995919c7b6d7b80823d9be2c7f47a73413d99b8281e52837301287d5d0",
+      "fabrication/Reference555LedFlasher_repair-B_Cu.gbl": "284dc3743c0025daea27383854eef42bf38a93a7b5346ba6b7b4e9585b185a8a",
+      "fabrication/Reference555LedFlasher_repair-B_Mask.gbs": "80143fefed4baebec4dd09351be5b4063f414745ca6c085b666ba0b34e32ea0d",
+      "fabrication/Reference555LedFlasher_repair-B_Silkscreen.gbo": "ef43782666cba4e78f978ed6c00b6ea64e08f07a666397f155c7979c1fe2c49a",
+      "fabrication/Reference555LedFlasher_repair-Edge_Cuts.gm1": "83678853fa8b6e3e46c8b944709ea00ddc17865d7b2b0e5c940abbce7638d2e1",
+      "fabrication/Reference555LedFlasher_repair-F_Cu.gtl": "3e15f17e2f3019141881c4fb800a2b7fde2548ab45178765a0b3e72b9475cbcf",
+      "fabrication/Reference555LedFlasher_repair-F_Mask.gts": "f2b731ed2040a14a86bd22d9b1e87e5f6e470c98d9f6f1354fd6f0f22e913bde",
+      "fabrication/Reference555LedFlasher_repair-F_Silkscreen.gto": "11a462db688ea2897ea3e29c3e0c9e61c8ad0967d53478279e36d41a7e2dfad3",
+      "fabrication/Reference555LedFlasher_repair-NPTH.drl": "be053d1178e5d51a960c511c3e377313cfe7c11ff6ff70fdf8d5076c8468af35",
+      "fabrication/Reference555LedFlasher_repair-PTH.drl": "224910863b556f375de4f9e7fb4a0253dfaf86109799884ac285cc5bc3c151fa",
+      "fabrication/Reference555LedFlasher_repair-job.gbrjob": "c480e2584fbcd421566613b0b6cc0dcd1e6ffeed3702429116afffbe28fb9c7d",
+      "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+    }
+  }
+]

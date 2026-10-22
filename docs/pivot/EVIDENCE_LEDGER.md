@@ -1,0 +1,22 @@
+# MCP architecture pivot evidence ledger
+
+The task checklist is `docs/MCP_ARCHITECTURE_TODO.md`. This ledger points to
+the retained primary evidence and separates tool validation from human or
+physical acceptance.
+
+| Area | Primary evidence | Scope and limit |
+|---|---|---|
+| Baseline and protected-tree audit | `fixtures/pivot/mcp_branch_baseline_2026-10-21.json`; `fixtures/pivot/m2h2_protection_inventory_2026-10-21.json`; `fixtures/pivot/experiments/mcp_protected_tree_audit_2026-10-22_run1.json` | Pins original sources and records that protected M2h2 source remains outside pivot edits. |
+| Backend comparison | `fixtures/pivot/mcp_backend_capability_inventory_2026-10-21.json`; `fixtures/pivot/experiments/tool_visibility_comparison_2026-10-22.json` | Advertised/implemented capabilities are distinguished from measured results; all model configurations retain accuracy failures. |
+| Live KiCad adapters | `fixtures/pivot/experiments/konnect_desktop_live_probe_2026-10-22_run1/independent_assessment.json`; `fixtures/pivot/experiments/productofamerica_drc_repair_2026-10-22_run1/independent_assessment.json`; `fixtures/pivot/experiments/seeed_edit_probe_2026-10-22_run1/independent_assessment.json` | Real IPC, backend edits and independent observer results; no backend is represented as universally capable. |
+| Canonical model and controller | `fixtures/pivot/schemas/`; `fixtures/pivot/reference_555_led_flasher_v1/design-model.v1.json`; `tests/pivot/` | Typed model, revision store, capability manifest, MCP protocol, dispatch gates, workspace confinement and failure tests. |
+| KiCad 11 development probe | `fixtures/pivot/experiments/kicad_development_headless_2026-10-22_run3/capability_inventory.json`; `fixtures/pivot/evidence/P0-011.json` | KiCad 10.99.0.5843 development snapshot only; it is not evidence for a released KiCad 11. |
+| Placement and bounded repair | `fixtures/pivot/experiments/deterministic_placement_2026-10-22_run1/placement-assessment.json`; `fixtures/pivot/experiments/native_drc_repair_2026-10-22_run1/` | Exact revision-bound coordinate apply and real KiCad placement DRC; bounded track-width DRC repair preserves the good source. |
+| Three clean reference POC runs | `fixtures/pivot/experiments/reference_poc_2026-10-22_run19/`, `run20/`, `run21/`; `fixtures/pivot/experiments/reference_poc_repeatability_2026-10-22_run19-21.json` | Same design revision, all recorded gates passing, equivalent renders/metrics, each ZIP independently checksummed and clean-extracted. |
+| Human-readable review package | `fixtures/pivot/experiments/reference_poc_review_2026-10-22_run2/`; `reports/clean-extract-validation.json` records fresh KiCad ERC/netlist/DRC plus independent schematic, PCB and fabrication parsing from ZIP extraction. | Contains editable native KiCad files, Gerbers, drills, reports, manifest, previews and a limited visual-review note. Human owner review is still required. |
+| Engineering additions | `fixtures/pivot/experiments/post_poc_engineering_2026-10-22_run1/`; `fixtures/pivot/catalog/reference_parts.v1.json`; `fixtures/pivot/profiles/jlcpcb_2layer_reference_v1.json` | Supported 555/LED calculations, ngspice RC demo and THT assembly data. Catalog and PCBA coverage remain deliberately narrow. |
+| Regression tests | `fixtures/pivot/evidence/P0-001-m2b-tests.xml`; `fixtures/pivot/evidence/G-003-contract-tests.xml`; local test and lint output recorded in the handoff | Historical locked tests are retained; see task status for the current full-suite and CI results. |
+
+`PACKAGE_READY_FOR_REVIEW` is the strongest state established by this evidence.
+There is no claim of fabrication order, physical assembly, measured operation,
+manufacturer acceptance, or M2h2 visual qualification.

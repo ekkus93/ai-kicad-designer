@@ -1,0 +1,37 @@
+{
+  "schema_version": "pivot-evidence.v1",
+  "evidence_id": "P0-009-direct-automation-2026-10-22",
+  "task_id": "P0-009",
+  "recorded_at_utc": "2026-10-22T08:10:00Z",
+  "source_commit": "92734ff7e3a8575fda8c5fb418a9b968fb50e042",
+  "revision_kind": "other",
+  "revision_id": "direct-automation-baseline-run5",
+  "action": {
+    "summary": "Run existing compiler/native structured edit/KiCad CLI baseline with identical reference graph and native gates",
+    "command": "python -m tools.pivot.direct_baseline --experiment-id direct_automation_baseline_2026-10-22_run5 ...",
+    "backend": "direct ai_kicad compiler + native files + KiCad CLI",
+    "backend_version": "source 92734ff7; KiCad 10.0.6",
+    "toolchain": "Python 3.12 and byte-matched KiCad AppImage 10.0.6"
+  },
+  "status": "PASS",
+  "artifacts": [
+    {
+      "path": "fixtures/pivot/experiments/direct_automation_baseline_2026-10-22_run5/assessment.json",
+      "sha256": "0d885b2101e4e2e3b40ddffc60b14804eefae8acf5050876c6d269b85e133752",
+      "media_type": "application/json",
+      "role": "common metrics and independent native gates"
+    }
+  ],
+  "checks": [
+    {
+      "check_id": "direct-native-equivalence",
+      "status": "PASS",
+      "summary": "Exact net partitions, ERC, DRC, fabrication inventory, bounded parse and byte-identical rollback pass with five valid calls.",
+      "evidence_paths": ["fixtures/pivot/experiments/direct_automation_baseline_2026-10-22_run5/assessment.json"],
+      "independent": true
+    }
+  ],
+  "ci_links": [],
+  "blockers": [],
+  "notes": ["The direct baseline used zero model tokens and does not assume an MCP advantage."]
+}

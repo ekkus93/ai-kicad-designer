@@ -1,6 +1,6 @@
-# ADR-001: Defer MCP backend selection
+# ADR-001: Select the direct KiCad adapter as the pilot backend
 
-**Status:** Accepted as a temporary decision; selection remains open
+**Status:** Accepted; supersedes the temporary deferral recorded on 2026-10-22
 **Date:** 2026-10-22
 **Scope:** `mcp` pivot only
 **Related:** [ADR-000](ADR-000_BRANCH_BASELINE.md), [`MCP_ARCHITECTURE_TODO.md`](../MCP_ARCHITECTURE_TODO.md)
@@ -29,24 +29,40 @@ candidate yet satisfies the complete required contract:
 
 ## Decision
 
-Do not select one MCP backend as the production or canonical implementation
-yet. Continue evaluating the candidates behind the same adapter boundary and
-keep the direct KiCad baseline available. Use task-gated tool visibility for
-further model trials because it had the fewest invalid calls; this is not an
-approval to trust its engineering output.
+Use the existing `ai_kicad` compiler, independently parsed native files,
+KiCad CLI 10.0.6, and official KiCad IPC as the pilot backend. The outward MCP
+server will call this adapter through typed domain operations. Konnect remains
+an optional external experimental adapter for operations where its observed
+postconditions can be independently verified; it is not the canonical design
+model or an engineering judge.
 
-The backend license posture is also undecided. ProductOfAmerica's GPL-3.0-or-
-later terms need an owner decision on whether an external optional runtime is
-acceptable for the intended distribution. No third-party backend source or
-binary is added to the repository by this decision.
+The direct baseline completed the fixed schematic, exact pin/net comparison,
+bounded native-file edit and byte-identical rollback, native DRC, and
+Gerber/drill export in 1.95 seconds with five valid calls and no model tokens.
+The live Konnect probe under Xvfb successfully performed schematic and PCB
+read/write/readback, dry-run PCB synchronization, zero-result ERC/DRC,
+Gerber/drill export, invalid-write rejection, and explicit restoration. Its
+unnamed-net query limitation remains, and the larger model-facing tool surface
+did not produce correct engineering answers in the benchmark.
+
+Konnect is AGPL-3.0-only at the tested commit; ProductOfAmerica is
+GPL-3.0-or-later and is in maintenance mode. Neither source nor binary is
+vendored. Distribution or hosted use of either optional external runtime needs
+separate legal review. Seeed remains a separately executed experimental
+adapter. The direct adapter avoids making the v0 product depend on those
+license decisions.
 
 ## Consequences
 
-- P0-006, P0-009, P0-011 and P0-012 remain open pending their stated evidence.
+- P1 implements one logical MCP namespace over the direct adapter boundary.
+- Task-gated visibility remains the model-facing default, with independent
+  dispatch authorization and native postcondition checks.
 - The benchmark results establish capability measurements, not fabrication
   qualification or autonomous engineering correctness.
-- KiCad 10.0.6 remains the locked baseline; the extracted 10.99 nightly probe is
-  isolated under `/tmp` and is not a supported toolchain decision.
+- KiCad 10.0.6 remains the locked production baseline. The isolated official
+  10.99 development AppImage successfully exposed headless schematic IPC,
+  commit/drop/readback semantics, and exact restoration. It is experimental
+  evidence, not a released KiCad 11 production selection.
 - The existing M2H2 acceptance track remains **INCOMPLETE**. This pivot does not
   change its source, fixtures, thresholds, historical evidence or status.
 
@@ -57,3 +73,6 @@ binary is added to the repository by this decision.
 - `fixtures/pivot/experiments/productofamerica_drc_repair_2026-10-22_run1/independent_assessment.json`
 - `fixtures/pivot/experiments/seeed_edit_probe_2026-10-22_run1/independent_assessment.json`
 - `fixtures/pivot/experiments/mcp_protected_tree_audit_2026-10-22_run1.json`
+- `fixtures/pivot/experiments/konnect_desktop_live_probe_2026-10-22_run1/independent_assessment.json`
+- `fixtures/pivot/experiments/direct_automation_baseline_2026-10-22_run5/assessment.json`
+- `fixtures/pivot/experiments/kicad_development_headless_2026-10-22_run3/capability_inventory.json`

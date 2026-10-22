@@ -245,6 +245,9 @@ def build(args: argparse.Namespace) -> int:
 def main() -> None:
     parser = argparse.ArgumentParser(prog="ai_kicad")
     sub = parser.add_subparsers(dest="command", required=True)
+    from .pivot.cli import add_parser as add_pivot_parser
+
+    add_pivot_parser(sub)
     command = sub.add_parser("build")
     command.add_argument("design", type=Path)
     command.add_argument("--target", required=True)
@@ -253,6 +256,8 @@ def main() -> None:
     command.add_argument("--policy-lock", type=Path, required=True)
     command.add_argument("--out", type=Path, required=True)
     args = parser.parse_args()
+    if hasattr(args, "pivot_handler"):
+        raise SystemExit(args.pivot_handler(args))
     if load_json(args.design).get("profile") == "m2b.1":
         from .m2b_build import build as build_m2b
 

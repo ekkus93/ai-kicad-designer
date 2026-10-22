@@ -1,0 +1,88 @@
+{
+  "schema_version": "post-poc-engineering.v1",
+  "status": "PASS",
+  "requirements": {
+    "function": "NE555 astable LED flasher with pulse output",
+    "supply_nominal_v": 5.0,
+    "supply_min_v": 4.75,
+    "supply_max_v": 5.25,
+    "output_load_ma": 3.25,
+    "environment": "indoor bench demonstration",
+    "safety_class": "benign-low-voltage",
+    "assumptions": [
+      "No inductive load",
+      "No external voltage on pulse output"
+    ],
+    "unresolved": []
+  },
+  "selected_timer": {
+    "mpn": "NE555P",
+    "category": "timer",
+    "package": "PDIP-8",
+    "footprint": "Package_DIP:DIP-8_W7.62mm",
+    "pin_map": {
+      "1": "1",
+      "2": "2",
+      "3": "3",
+      "4": "4",
+      "5": "5",
+      "6": "6",
+      "7": "7",
+      "8": "8"
+    },
+    "voltage_min_v": 4.5,
+    "voltage_max_v": 16.0,
+    "power_rating_w": 0.6,
+    "approved": true,
+    "datasheet_url": "https://www.ti.com/lit/ds/symlink/ne555.pdf",
+    "datasheet_sha256": "a3756e59fd06d0ba736edf9ffe71d99d2aae33fb7e49fedc86165a241179f4a6"
+  },
+  "calculations": {
+    "astable": {
+      "high_s": 0.3950938929191688,
+      "low_s": 0.3257791748631743,
+      "period_s": 0.7208730677823432,
+      "frequency_hz": 1.3872067700855417,
+      "duty_cycle": 0.548076923076923
+    },
+    "worst_case_led": {
+      "current_a": 0.00325,
+      "resistor_power_w": 0.010562499999999999,
+      "rating_w": 0.25,
+      "margin_ratio": 23.66863905325444,
+      "status": "PASS"
+    }
+  },
+  "spice": {
+    "schema_version": "spice-transient.v1",
+    "status": "PASS",
+    "ngspice_sha256": "820658317b0b54035208da41936fd6871ce924036e5ea4113a4168b821b7fc45",
+    "netlist_sha256": "99514b4bbdd1196e11569f683f53eb3277e74f14eed7d4537cd76346c84cc887",
+    "sample_count": 2011,
+    "two_thirds_crossing_s": 0.626376,
+    "analytical_crossing_s": 0.6262090045408226,
+    "limitations": [
+      "This verifies the passive timing-node charge fragment, not the complete NE555 macro-model.",
+      "Parasitics, temperature, component distributions and physical behavior are not modeled."
+    ]
+  },
+  "assembly": {
+    "status": "PARTIAL",
+    "bom": "bom.csv",
+    "centroid": "UNSUPPORTED",
+    "paste": "UNSUPPORTED",
+    "assembly_drawing": "previews/board-top.png",
+    "reason": "Reference design is entirely through-hole; SMT PnP and paste outputs do not apply."
+  },
+  "supported_domains": {
+    "low_voltage_through_hole_analog": "verified-reference-only",
+    "higher_current": "unsupported",
+    "mains_or_high_voltage": "unsupported",
+    "rf": "unsupported",
+    "switching_power": "unsupported",
+    "high_speed_digital": "unsupported",
+    "multilayer": "unsupported",
+    "thermal_design": "unsupported"
+  },
+  "remaining_human_gate": "Diverse AI-generated topologies require independent human electrical review."
+}

@@ -1,0 +1,47 @@
+{
+  "schema_version": "pivot-regression-validation.v1",
+  "recorded_at_utc": "2026-10-22T14:55:22.204104+00:00",
+  "pivot_pytest": {
+    "command": "uv run pytest -q tests/pivot",
+    "status": "PASS",
+    "tests": 68
+  },
+  "ruff": {
+    "command": "uv run ruff check src/ai_kicad/pivot tools/pivot tests/pivot",
+    "status": "PASS"
+  },
+  "diff_check": {
+    "command": "git diff --check",
+    "status": "PASS"
+  },
+  "native_project_fixture": {
+    "command": "uv run python -m tools.pivot.verify_native_project",
+    "status": "PASS"
+  },
+  "repeatability": {
+    "runs": [
+      19,
+      20,
+      21
+    ],
+    "status": "PASS",
+    "summary": "fixtures/pivot/experiments/reference_poc_repeatability_2026-10-22_run19-21.json"
+  },
+  "full_repository_pytest": {
+    "command": "uv run pytest -q",
+    "status": "INCOMPLETE_AND_ENVIRONMENT_BLOCKED",
+    "observed_legacy_blocker": "M1 locked host profile expects 12th Gen Intel Core i7-12700K and Linux 6.8.0-87-generic/glibc 2.35; runner reports AMD Ryzen 7 5825U and Linux 7.0.0-38-generic/glibc 2.39.",
+    "additional_observation": "The run remained CPU-bound in tests/test_m2_compose_production_semantic_rank.py after roughly two minutes and was interrupted; no whole-suite pass is claimed.",
+    "prior_exact_source_evidence": "fixtures/pivot/evidence/P0-001-m2b-tests.xml records the original locked M2b test selection as 22/22 passing on its matching environment."
+  },
+  "remote_ci": {
+    "branch": "mcp",
+    "head_sha": "92734ff7e3a8575fda8c5fb418a9b968fb50e042",
+    "status": "NO_RUNS_FOR_EXACT_HEAD",
+    "source_changes_pending_commit": true
+  },
+  "clean_extract_validation": {
+    "status": "PASS",
+    "path": "fixtures/pivot/experiments/reference_poc_review_2026-10-22_run2/reports/clean-extract-validation.json"
+  }
+}

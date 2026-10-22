@@ -6,6 +6,7 @@ from pathlib import Path
 
 from tools.pivot.verify_fixture import verify_manifest
 from tools.pivot.experiment_paths import create_experiment_dir
+from tools.pivot.verify_native_project import verify_native_project
 
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "fixtures/pivot/reference_555_led_flasher_v1/manifest.json"
@@ -75,3 +76,14 @@ def test_experiment_directory_is_new_and_outside_protected_fixture_tree(tmp_path
     else:
         raise AssertionError("existing experiment output was overwritten")
     assert not first.is_relative_to(tmp_path / "fixtures/m2h2")
+
+
+def test_native_project_reference_files_are_locked_and_tamper_evident(tmp_path: Path) -> None:
+    native = ROOT / "fixtures/pivot/reference_555_led_flasher_v1/native_project"
+    assert verify_native_project(native) == []
+    target = tmp_path / "native"
+    import shutil
+
+    shutil.copytree(native, target)
+    (target / "Reference555LedFlasher.kicad_pcb").write_bytes(b"tampered")
+    assert any("hash mismatch" in error for error in verify_native_project(target))

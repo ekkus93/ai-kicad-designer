@@ -1,0 +1,99 @@
+{
+  "schema_version": "capability-gap.v1",
+  "recorded_at_utc": "2026-10-22T10:00:00Z",
+  "v0_revision_id": "sha256:6e0f4e5a87272be1a9f3ae78ac23a5739a2227d3d1853185895b98c0c75a77f2",
+  "essential_unresolved_operations": [],
+  "tested_interfaces": [
+    {
+      "interface": "KiCad 10.0.6 CLI and GUI IPC",
+      "operations": [
+        "ERC",
+        "DRC",
+        "Gerber",
+        "drill",
+        "3D render",
+        "PCB edit/readback",
+        "schematic edit/readback"
+      ],
+      "result": "sufficient_for_v0",
+      "evidence": "fixtures/pivot/experiments/konnect_desktop_live_probe_2026-10-22_run1/independent_assessment.json"
+    },
+    {
+      "interface": "KiCad 10.99.0.5843 development headless API",
+      "operations": [
+        "schematic read",
+        "batch commit/drop",
+        "readback",
+        "save"
+      ],
+      "result": "experimental_schematic_pass_board_without_loaded_document_unsupported"
+    },
+    {
+      "interface": "structured native file candidate transaction",
+      "operations": [
+        "bounded edit",
+        "parse",
+        "independent readback",
+        "byte rollback"
+      ],
+      "result": "sufficient_for_v0",
+      "evidence": "fixtures/pivot/experiments/direct_automation_baseline_2026-10-22_run5/assessment.json"
+    }
+  ],
+  "fork_gate": {
+    "triggered": false,
+    "reason": "No observable essential v0 operation remains unavailable after supported CLI, IPC and structured-file approaches.",
+    "owner_approval_requested": false
+  },
+  "external_adapters_attempted": [
+    {
+      "interface": "Konnect",
+      "version": "0.13.0",
+      "commit": "9488e5f09717cb508cb25779dc16586d1f06f758",
+      "operations_tested": [
+        "live KiCad 10 IPC read/write/readback/restore",
+        "schematic edits",
+        "PCB edits",
+        "sync dry-run",
+        "ERC",
+        "DRC",
+        "Gerber and Excellon export"
+      ],
+      "observed_gaps": [
+        "unnamed-net identity collapses in exposed API",
+        "live PCB editor required for board edits"
+      ],
+      "evidence": "fixtures/pivot/experiments/konnect_desktop_live_probe_2026-10-22_run1/independent_assessment.json"
+    },
+    {
+      "interface": "ProductOfAmerica MCP server",
+      "version": "0.21.1",
+      "commit": "f5f82e02ffe17bbcba806fec35f3302ee332fefc",
+      "operations_tested": [
+        "pin-pad-net sync",
+        "routing attempt",
+        "native save",
+        "ERC",
+        "DRC",
+        "Gerber and Excellon export"
+      ],
+      "observed_gaps": [
+        "router attempts required repair and repeated convergence work"
+      ],
+      "evidence": "fixtures/pivot/experiments/productofamerica_drc_repair_2026-10-22_run1/independent_assessment.json"
+    },
+    {
+      "interface": "Seeed KiCad MCP server",
+      "version": "0.1.0",
+      "commit": "4085d3f98c97b23872cb05605afa8714bb26004a",
+      "operations_tested": [
+        "independent net equivalence",
+        "experimental schematic edit and rollback by discard"
+      ],
+      "observed_gaps": [
+        "unnamed-net/transaction rollback limits remain documented"
+      ],
+      "evidence": "fixtures/pivot/experiments/seeed_edit_probe_2026-10-22_run1/independent_assessment.json"
+    }
+  ]
+}

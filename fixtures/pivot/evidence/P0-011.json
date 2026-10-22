@@ -1,0 +1,53 @@
+{
+  "schema_version": "pivot-evidence.v1",
+  "evidence_id": "P0-011-development-headless-ipc-2026-10-22",
+  "task_id": "P0-011",
+  "recorded_at_utc": "2026-10-22T08:10:00Z",
+  "source_commit": "92734ff7e3a8575fda8c5fb418a9b968fb50e042",
+  "revision_kind": "other",
+  "revision_id": "kicad-development-headless-run3",
+  "action": {
+    "summary": "Probe official isolated development AppImage headless schematic IPC, version compatibility, batch push/drop/readback, save and unsupported board access",
+    "command": "python -m pivot.kicad_development_probe --experiment-id kicad_development_headless_2026-10-22_run3 ...",
+    "backend": "official KiCad development AppImage api-server + kicad-python",
+    "backend_version": "KiCad 10.99.0-5843-g0249a06ce2; API 10.99.0-4383-gdcadf9baa3",
+    "toolchain": "isolated AppImage and kicad-python 0.9.0.dev0"
+  },
+  "status": "PASS",
+  "artifacts": [
+    {
+      "path": "fixtures/pivot/experiments/kicad_development_headless_2026-10-22_run3/capability_inventory.json",
+      "sha256": "995d16b4f062efb35e1e918c312ffc01e5a04e7645e3e43da7b35409037558d0",
+      "media_type": "application/json",
+      "role": "reproducible capability and failure inventory"
+    },
+    {
+      "path": "fixtures/pivot/experiments/kicad_development_headless_2026-10-22_run3/locked_kicad_integrity.json",
+      "sha256": "78693be7d1ada71a8e67d85b1c3a00d5c59bffe6eb7d4f166c54748581e710e3",
+      "media_type": "application/json",
+      "role": "locked KiCad 10 before/after identity"
+    }
+  ],
+  "checks": [
+    {
+      "check_id": "headless-schematic-transaction",
+      "status": "PASS",
+      "summary": "Schematic read, netlist read, dropped batch, pushed batch, readback, restoration and connectivity preservation passed.",
+      "evidence_paths": ["fixtures/pivot/experiments/kicad_development_headless_2026-10-22_run3/capability_inventory.json"],
+      "independent": true
+    },
+    {
+      "check_id": "production-lock-integrity",
+      "status": "PASS",
+      "summary": "All six locked KiCad 10.0.6 file hashes were unchanged by the isolated development probe.",
+      "evidence_paths": ["fixtures/pivot/experiments/kicad_development_headless_2026-10-22_run3/locked_kicad_integrity.json"],
+      "independent": true
+    }
+  ],
+  "ci_links": [],
+  "blockers": [],
+  "notes": [
+    "The observed binary identifies as KiCad 10.99.0; this is not represented as a released KiCad 11 build.",
+    "Board access without a loaded board returned an explicit API error and is recorded as unsupported in that context."
+  ]
+}

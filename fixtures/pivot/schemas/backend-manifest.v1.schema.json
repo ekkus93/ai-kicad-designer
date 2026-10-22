@@ -1,0 +1,103 @@
+{
+  "$defs": {
+    "Capability": {
+      "additionalProperties": false,
+      "properties": {
+        "kicad_versions": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Kicad Versions",
+          "type": "array"
+        },
+        "notes": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Notes",
+          "type": "array"
+        },
+        "operation": {
+          "minLength": 1,
+          "title": "Operation",
+          "type": "string"
+        },
+        "rollback": {
+          "title": "Rollback",
+          "type": "boolean"
+        },
+        "runtime": {
+          "$ref": "#/$defs/RuntimeMode"
+        },
+        "schema_version": {
+          "minLength": 1,
+          "title": "Schema Version",
+          "type": "string"
+        },
+        "support": {
+          "$ref": "#/$defs/SupportLevel"
+        },
+        "transactional": {
+          "title": "Transactional",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "operation",
+        "schema_version",
+        "support",
+        "runtime",
+        "kicad_versions",
+        "transactional",
+        "rollback"
+      ],
+      "title": "Capability",
+      "type": "object"
+    },
+    "RuntimeMode": {
+      "enum": [
+        "headless",
+        "gui",
+        "either"
+      ],
+      "title": "RuntimeMode",
+      "type": "string"
+    },
+    "SupportLevel": {
+      "enum": [
+        "verified",
+        "experimental",
+        "unsupported"
+      ],
+      "title": "SupportLevel",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "backend_id": {
+      "minLength": 1,
+      "title": "Backend Id",
+      "type": "string"
+    },
+    "backend_version": {
+      "minLength": 1,
+      "title": "Backend Version",
+      "type": "string"
+    },
+    "capabilities": {
+      "items": {
+        "$ref": "#/$defs/Capability"
+      },
+      "title": "Capabilities",
+      "type": "array"
+    }
+  },
+  "required": [
+    "backend_id",
+    "backend_version",
+    "capabilities"
+  ],
+  "title": "BackendManifest",
+  "type": "object"
+}

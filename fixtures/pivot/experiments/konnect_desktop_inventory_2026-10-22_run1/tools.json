@@ -1,0 +1,4428 @@
+{
+  "jsonrpc": "2.0",
+  "id": 10,
+  "result": {
+    "tools": [
+      {
+        "description": "List all available KiCAD toolsets with descriptions, categories, tool counts, and whether each is currently loaded. Only the starter kit (project, config) is loaded at startup \u2014 call load_toolset(name) to expose additional tools in subsequent tools/list responses. Always call this first to discover what tools are available for the task.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {},
+          "required": [],
+          "type": "object"
+        },
+        "name": "list_toolboxes"
+      },
+      {
+        "description": "Load a toolset by name so its tools appear in tools/list and can be called. Returns the list of tools that were added. Use list_toolboxes() first to see valid names. Pass an array to load several toolsets in one call -- cheaper, one tools/list refresh.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "items": {
+                    "type": "string"
+                  },
+                  "type": "array"
+                }
+              ],
+              "description": "Toolset name (e.g. 'sch_components', 'pcb_routing'), or an array of names"
+            }
+          },
+          "required": [
+            "name"
+          ],
+          "type": "object"
+        },
+        "name": "load_toolset"
+      },
+      {
+        "description": "Unload a toolset to remove its tools from the active session. Use this to keep the tool list manageable when switching tasks. With auto_load_toolsets enabled, tools reload on use.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "description": "Toolset name to unload",
+              "type": "string"
+            }
+          },
+          "required": [
+            "name"
+          ],
+          "type": "object"
+        },
+        "name": "unload_toolset"
+      },
+      {
+        "description": "Return the list of currently loaded toolsets and how many tools each provides.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {},
+          "required": [],
+          "type": "object"
+        },
+        "name": "get_active_toolsets"
+      },
+      {
+        "description": "Return the most recent tool calls this session (newest first) with call_id, tool name, toolset, duration, status (ok/error/not_found), and error_kind when failed. Use this to self-diagnose \u2014 e.g. 'why did the last call fail?' or 'what tools have I been running?'",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "limit": {
+              "default": 20,
+              "description": "Max number of calls to return (default 20, max 100). Pass 0 for all buffered calls.",
+              "type": "integer"
+            }
+          },
+          "required": [],
+          "type": "object"
+        },
+        "name": "get_recent_calls"
+      },
+      {
+        "description": "Return server uptime, total/error call counts, per-tool statistics, and the path to the JSONL call log. Good for 'what's my error rate today?' and 'which tool has been slowest?'.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {},
+          "required": [],
+          "type": "object"
+        },
+        "name": "server_stats"
+      },
+      {
+        "description": "Report read-only provenance for the Konnect process serving this call: build version and commit when available, executable path, conservatively detected install source, on-disk binary version, KiCad CLI version, redacted IPC endpoint, proven newer-binary state, platform-specific restart guidance, and whether installed skills, agents, and hooks match this build's bundle.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {},
+          "required": [],
+          "type": "object"
+        },
+        "name": "get_installation_info"
+      },
+      {
+        "description": "Replace this standalone Unix stdio server with the verified Konnect binary now on disk while preserving the client-owned pipes and original command-line arguments. The transport stops accepting requests and flushes this response, process bookkeeping is released, and then the validated executable identity is rechecked at the one-way exec handoff. Linux executes the open file directly. Loaded toolsets reset to startup state. Same-version development builds require allow_same_version=true.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "allow_same_version": {
+              "default": false,
+              "description": "Explicitly permit a same-version development rebuild. Downgrades are always refused.",
+              "type": "boolean"
+            },
+            "confirm": {
+              "description": "Must be true. Guards against an accidental reload mid-task.",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "confirm"
+          ],
+          "type": "object"
+        },
+        "name": "reload_server"
+      },
+      {
+        "description": "Import an SVG file as filled silkscreen or copper artwork (a logo, icon, or other graphic). Curved paths are flattened into polygon outlines since KiCAD's board format doesn't support Bezier curves in filled shapes. Tries KiCAD IPC first, falls back to a direct file edit if KiCAD isn't running.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file",
+              "type": "string"
+            },
+            "layer": {
+              "default": "F.SilkS",
+              "description": "Target layer",
+              "type": "string"
+            },
+            "svg": {
+              "description": "Path to the .svg file to import",
+              "type": "string"
+            },
+            "width_mm": {
+              "description": "Target width in mm (aspect ratio preserved)",
+              "type": "number"
+            },
+            "x": {
+              "default": 0,
+              "description": "X position of the artwork's top-left corner in mm",
+              "type": "number"
+            },
+            "y": {
+              "default": 0,
+              "description": "Y position of the artwork's top-left corner in mm",
+              "type": "number"
+            }
+          },
+          "required": [
+            "board",
+            "svg",
+            "width_mm"
+          ],
+          "type": "object"
+        },
+        "name": "import_svg_logo"
+      },
+      {
+        "description": "Add a junction dot at a point where wires cross or T-intersect, or where a pin lands mid-wire. A junction alone connects a mid-wire pin; splitting the wire is not required.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "schematic": {
+              "type": "string"
+            },
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "schematic",
+            "x",
+            "y"
+          ],
+          "type": "object"
+        },
+        "name": "add_junction"
+      },
+      {
+        "description": "Alias of pcb_board's add_zone, kept for compatibility: identical arguments, defaults and behaviour. Adds a copper fill zone polygon on a layer/net, trying KiCAD IPC first and falling back to an S-expression file insert (with a warning) only when no live KiCAD answers.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to the .kicad_pcb file",
+              "type": "string"
+            },
+            "clearance": {
+              "default": 0.2,
+              "description": "Zone clearance in mm",
+              "type": "number"
+            },
+            "layer": {
+              "description": "Copper layer (e.g. 'F.Cu')",
+              "type": "string"
+            },
+            "min_width": {
+              "default": 0.2,
+              "description": "Minimum fill width in mm",
+              "type": "number"
+            },
+            "name": {
+              "description": "Optional zone name, as shown in pcbnew's zone properties",
+              "type": "string"
+            },
+            "net_name": {
+              "description": "Net name (e.g. 'GND')",
+              "type": "string"
+            },
+            "pad_connection": {
+              "default": "thermal",
+              "description": "How the pour attaches to pads on its net",
+              "enum": [
+                "solid",
+                "thermal",
+                "none"
+              ],
+              "type": "string"
+            },
+            "points": {
+              "description": "Polygon vertices as [{x, y}], in mm",
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  }
+                },
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "priority": {
+              "default": 0,
+              "description": "Higher priority wins where zones overlap",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "board",
+            "net_name",
+            "layer",
+            "points"
+          ],
+          "type": "object"
+        },
+        "name": "add_copper_pour"
+      },
+      {
+        "description": "Route a direct trace between two pads of named components (L-bend routing) via KiCAD IPC.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "layer": {
+              "default": "F.Cu",
+              "type": "string"
+            },
+            "net_name": {
+              "type": "string"
+            },
+            "pad1": {
+              "description": "First pad number",
+              "type": "string"
+            },
+            "pad2": {
+              "description": "Second pad number",
+              "type": "string"
+            },
+            "ref1": {
+              "description": "First component reference",
+              "type": "string"
+            },
+            "ref2": {
+              "description": "Second component reference",
+              "type": "string"
+            },
+            "width": {
+              "default": 0.25,
+              "type": "number"
+            }
+          },
+          "required": [
+            "board",
+            "net_name",
+            "ref1",
+            "pad1",
+            "ref2",
+            "pad2"
+          ],
+          "type": "object"
+        },
+        "name": "route_pad_to_pad"
+      },
+      {
+        "description": "List PCB documents open in the running KiCad UI and optionally check whether one specific KiCad project or board is open over IPC.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "description": "Optional path to a .kicad_pro project or .kicad_pcb board to check",
+              "type": "string"
+            }
+          },
+          "required": [],
+          "type": "object"
+        },
+        "name": "open_project"
+      },
+      {
+        "description": "Rotate multiple labels by net name in a single file read/write cycle.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "labels": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "net": {
+                    "type": "string"
+                  },
+                  "rotation": {
+                    "type": "number"
+                  },
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  }
+                },
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "schematic": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic",
+            "labels"
+          ],
+          "type": "object"
+        },
+        "name": "batch_rotate_labels"
+      },
+      {
+        "description": "Generate a component placement (pick-and-place) position file for SMT assembly. KiCad automatically omits footprints marked exclude_from_pos_files.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file",
+              "type": "string"
+            },
+            "format": {
+              "default": "csv",
+              "description": "File format: 'csv' (default) or 'gerber'",
+              "enum": [
+                "csv",
+                "gerber"
+              ],
+              "type": "string"
+            },
+            "output": {
+              "description": "Output position file path",
+              "type": "string"
+            },
+            "side": {
+              "default": "both",
+              "description": "Board side: 'front', 'back', or 'both'",
+              "enum": [
+                "front",
+                "back",
+                "both"
+              ],
+              "type": "string"
+            },
+            "units": {
+              "default": "mm",
+              "description": "Coordinate units for CSV: 'mm' (default) or 'in'. Gerber position output has format-defined units.",
+              "enum": [
+                "mm",
+                "in"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "output"
+          ],
+          "type": "object"
+        },
+        "name": "export_position_file"
+      },
+      {
+        "description": "Launch the KiCAD GUI application and optionally open a project file.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "project": {
+              "description": "Path to .kicad_pro file to open (optional)",
+              "type": "string"
+            },
+            "timeout_seconds": {
+              "default": 30,
+              "description": "Maximum wait time in seconds",
+              "type": "integer"
+            },
+            "wait_ready": {
+              "default": true,
+              "description": "Wait until KiCAD IPC is responsive before returning",
+              "type": "boolean"
+            }
+          },
+          "required": [],
+          "type": "object"
+        },
+        "name": "launch_kicad_ui"
+      },
+      {
+        "description": "Export the PCB in GenCAD format using kicad-cli. GenCAD is accepted by some CAM and test-fixture tooling as an alternative to a raw Gerber bundle.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file",
+              "type": "string"
+            },
+            "output": {
+              "description": "Output .cad file path",
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "output"
+          ],
+          "type": "object"
+        },
+        "name": "export_gencad"
+      },
+      {
+        "description": "Return metadata about the PCB: title, revision, company, layer count, paper size, and the number of distinct nets (excluding the unconnected pseudo-net). Reads the board open in KiCad when it is reachable, else the file \u2014 'source' says which. Paper size always comes from the file, and is null when the file cannot be read. A custom (User) size also reports its dimensions in millimetres under 'paper_size_mm' on both paths.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file",
+              "type": "string"
+            }
+          },
+          "required": [
+            "board"
+          ],
+          "type": "object"
+        },
+        "name": "get_board_info"
+      },
+      {
+        "description": "Route a trace segment between two points on a copper layer via KiCAD IPC.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "layer": {
+              "description": "Copper layer (e.g. 'F.Cu')",
+              "type": "string"
+            },
+            "net_name": {
+              "type": "string"
+            },
+            "width": {
+              "default": 0.25,
+              "type": "number"
+            },
+            "x1": {
+              "type": "number"
+            },
+            "x2": {
+              "type": "number"
+            },
+            "y1": {
+              "type": "number"
+            },
+            "y2": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "board",
+            "net_name",
+            "layer",
+            "x1",
+            "y1",
+            "x2",
+            "y2"
+          ],
+          "type": "object"
+        },
+        "name": "route_trace"
+      },
+      {
+        "description": "Run the Electrical Rules Check (ERC) on the schematic via kicad-cli and return a list of violations filtered by severity. Violation positions are millimetres on the sheet; the response's `coordinates` object says whether they were corrected for the KiCad versions that report them 100x too small, passed through, or withheld because the KiCad version could not be classified. A report that is not in kicad-cli's ERC shape is an error, never zero violations.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "output": {
+              "description": "Optional path to write this tool's response as JSON, violations and coordinate provenance together (not KiCad's own ERC report)",
+              "type": "string"
+            },
+            "schematic": {
+              "description": "Path to .kicad_sch file",
+              "type": "string"
+            },
+            "severity": {
+              "default": "warning",
+              "description": "Minimum severity to report: 'error', 'warning', 'info'",
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic"
+          ],
+          "type": "object"
+        },
+        "name": "run_erc"
+      },
+      {
+        "description": "Replace every placed unit of a component with a new library symbol while preserving unit numbers. A unit override is accepted only for a single placement. Junction dots are re-judged once for the whole replacement, reported as junctions_pruned_count and junctions_added_count. A no-connect flag follows the same symbol UUID, unit, and pin number when that mapping is one-to-one; removed, renumbered, or duplicated protected pins refuse before writing.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "new_lib_id": {
+              "description": "New Library:Symbol identifier (e.g. 'Device:C')",
+              "type": "string"
+            },
+            "reference": {
+              "description": "Component reference designator (e.g. 'U1')",
+              "type": "string"
+            },
+            "schematic": {
+              "description": "Path to .kicad_sch file",
+              "type": "string"
+            },
+            "unit": {
+              "description": "Optional unit number for a single placed unit; rejected as ambiguous when the reference has multiple placements. When omitted, every existing unit number is preserved and validated against the new symbol.",
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "schematic",
+            "reference",
+            "new_lib_id"
+          ],
+          "type": "object"
+        },
+        "name": "replace_component"
+      },
+      {
+        "description": "Add a silkscreen or fabrication text string to the board.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "layer": {
+              "default": "F.SilkS",
+              "description": "Layer name",
+              "type": "string"
+            },
+            "rotation": {
+              "default": 0,
+              "description": "Rotation in degrees",
+              "type": "number"
+            },
+            "size": {
+              "default": 1.0,
+              "description": "Font size in mm",
+              "type": "number"
+            },
+            "text": {
+              "type": "string"
+            },
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "board",
+            "text",
+            "x",
+            "y"
+          ],
+          "type": "object"
+        },
+        "name": "add_board_text"
+      },
+      {
+        "description": "Assign reference designators in the saved schematic the way eeschema's Tools \u2192 Annotate does with its defaults: every '?' designator gets the first free number for its prefix in the project, in ascending X per sheet instance, numbers used on any sheet instance in the file are reserved, and numbered designators are kept. The units of one multi-unit part (same embedded definition and value, distinct units) share one designator; when which units belong together is not proven they are reported in 'unresolved', never guessed. Two separate parts sharing a designator are reported in 'unresolved' with a 'partial' outcome; they are renumbered only when resolve_duplicates is true (the first in ascending X keeps the number). Annotates one project's instance records \u2014 the schematic's owner by default, or 'project' \u2014 and never touches another project's. Writes both the Reference property and the instances block, then reads the file back; every count in the response comes from that readback. Numbers used on the project's other sheets are reserved through its sheet tree ('other_sheets_consulted'); duplicates already spread across sheets are not detected here. Konnect's own implementation \u2014 kicad-cli has no annotate command. dry_run returns the plan without writing.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "dry_run": {
+              "default": false,
+              "description": "Report what would be assigned without writing. Default false.",
+              "type": "boolean"
+            },
+            "project": {
+              "description": "Project whose instance records to annotate, as named in the symbols' (instances (project \u2026)) blocks. Default: the project that owns the schematic (its .kicad_pro), else the only project the file names; refused with the candidates when that is ambiguous. Other projects' records are never edited.",
+              "type": "string"
+            },
+            "resolve_duplicates": {
+              "default": false,
+              "description": "Renumber separate single-unit parts that share a designator in the project: the first in ascending X keeps it, the rest get the first free number. Default false: duplicates are reported, not changed. A shared designator that could be the units of one multi-unit package is never renumbered either way.",
+              "type": "boolean"
+            },
+            "schematic": {
+              "description": "Path to the .kicad_sch file",
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic"
+          ],
+          "type": "object"
+        },
+        "name": "annotate_schematic"
+      },
+      {
+        "description": "Assign a net to an existing netclass, as a netclass_patterns entry in the sibling .kicad_pro. The class must already exist (create_netclass). Reassigning moves the net's entry to the new class. Refuses while KiCad holds the board open, because KiCad's next save rewrites the project file from its own copy.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file; the sibling .kicad_pro is edited",
+              "type": "string"
+            },
+            "net_name": {
+              "description": "Net name to assign",
+              "type": "string"
+            },
+            "netclass": {
+              "description": "Netclass name to assign the net to",
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "net_name",
+            "netclass"
+          ],
+          "type": "object"
+        },
+        "name": "assign_net_to_class"
+      },
+      {
+        "description": "Delete multiple wire segments in a single file read/write cycle. Junction dots the wires leave unjustified are removed with them, reported as junctions_pruned_count.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "schematic": {
+              "type": "string"
+            },
+            "uuids": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "schematic",
+            "uuids"
+          ],
+          "type": "object"
+        },
+        "name": "batch_delete_schematic_wire"
+      },
+      {
+        "description": "Return the live board-space position, effective rotation, physical geometry, drill, layers and net of a specific pad number on a footprint.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "pad_number": {
+              "type": "string"
+            },
+            "reference": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "reference",
+            "pad_number"
+          ],
+          "type": "object"
+        },
+        "name": "get_pad_position"
+      },
+      {
+        "description": "Add or update a custom property consistently across every placed unit of a component.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "key": {
+              "description": "Property name",
+              "type": "string"
+            },
+            "reference": {
+              "description": "Component reference designator (e.g. 'R1')",
+              "type": "string"
+            },
+            "schematic": {
+              "description": "Path to .kicad_sch file",
+              "type": "string"
+            },
+            "value": {
+              "description": "Property value",
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic",
+            "reference",
+            "key",
+            "value"
+          ],
+          "type": "object"
+        },
+        "name": "add_component_annotation"
+      },
+      {
+        "description": "Add a net label to the schematic. Type can be 'net_label', 'global_label', or 'hierarchical_label'.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "label_type": {
+              "default": "net_label",
+              "enum": [
+                "net_label",
+                "global_label",
+                "hierarchical_label"
+              ],
+              "type": "string"
+            },
+            "net": {
+              "description": "Net name",
+              "type": "string"
+            },
+            "rotation": {
+              "default": 0,
+              "type": "number"
+            },
+            "schematic": {
+              "type": "string"
+            },
+            "shape": {
+              "default": "input",
+              "description": "Shape for global/hierarchical labels (input/output/bidirectional/etc.)",
+              "type": "string"
+            },
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "schematic",
+            "net",
+            "x",
+            "y"
+          ],
+          "type": "object"
+        },
+        "name": "add_schematic_net_label"
+      },
+      {
+        "description": "Load the user's global Konnect preferences. Call this at the start of every session to get preferred manufacturers, fab constraints, default passives, and design rules. 'source' says whether the answer is the user's file or Konnect's defaults (no file existed; the defaults are then written for the user to edit and 'persisted' says whether that worked). A file that exists but cannot be parsed or read is refused with invalid_configuration and is never replaced by defaults.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {},
+          "required": [],
+          "type": "object"
+        },
+        "name": "load_user_config"
+      },
+      {
+        "description": "Add a no-connect flag (X marker) to an unconnected pin endpoint.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "schematic": {
+              "type": "string"
+            },
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "schematic",
+            "x",
+            "y"
+          ],
+          "type": "object"
+        },
+        "name": "add_no_connect"
+      },
+      {
+        "description": "Plan or atomically apply KiCad's Update Footprints from Library operation to placed footprints on the live board. Defaults to a non-mutating dry run; apply requires its exact plan revision. Preserves placed-instance state and pad nets while refreshing supported library-owned content.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Open .kicad_pcb path whose placed footprints will be refreshed",
+              "type": "string"
+            },
+            "dry_run": {
+              "default": true,
+              "description": "Plan and report changes without mutating the board",
+              "type": "boolean"
+            },
+            "expected_plan_revision": {
+              "description": "Required for apply; exact revision returned by the reviewed dry run",
+              "type": "string"
+            },
+            "library_ids": {
+              "description": "Optional exact Library:Footprint allowlist",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "references": {
+              "description": "Optional exact reference allowlist; omitted means all eligible footprints",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "board"
+          ],
+          "type": "object"
+        },
+        "name": "update_footprints_from_library"
+      },
+      {
+        "description": "Export the PCB as a 3D model (STEP or VRML) using kicad-cli.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file",
+              "type": "string"
+            },
+            "format": {
+              "default": "step",
+              "description": "Export format: 'step' (default) or 'vrml'",
+              "type": "string"
+            },
+            "include_unspecified": {
+              "default": false,
+              "description": "Include footprints with unspecified 3D models",
+              "type": "boolean"
+            },
+            "output": {
+              "description": "Output file path (.step or .wrl)",
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "output"
+          ],
+          "type": "object"
+        },
+        "name": "export_3d"
+      },
+      {
+        "description": "Validate a Freerouting Specctra SES against its revision-bound Konnect manifest and the exact live KiCad board. Returns every track and via that would be created; never mutates or saves the board.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Open source .kicad_pcb used for the DSN export",
+              "type": "string"
+            },
+            "manifest_path": {
+              "description": "Konnect reverse manifest written with the DSN",
+              "type": "string"
+            },
+            "ses_path": {
+              "description": "Freerouting .ses result",
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "ses_path",
+            "manifest_path"
+          ],
+          "type": "object"
+        },
+        "name": "plan_specctra_ses_import"
+      },
+      {
+        "description": "Repair the exact legacy corruption from Konnect issue #244: footprint drawing shapes rewritten as anonymous pads with empty layer sets. Resolves each affected footprint from its library, restores its pads and drawing shapes while preserving placement, identity and pad nets, and applies every requested repair in one KiCad undo commit. Defaults to a non-mutating dry run; apply requires the exact returned plan revision. Requires KiCAD running with the requested board open.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "dry_run": {
+              "default": true,
+              "description": "Report the repair plan without changing the board.",
+              "type": "boolean"
+            },
+            "expected_plan_revision": {
+              "description": "Exact plan_revision returned by a current dry run; required for apply.",
+              "type": "string"
+            },
+            "references": {
+              "description": "Optional reference-designator allowlist. Omit to scan every footprint.",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "board"
+          ],
+          "type": "object"
+        },
+        "name": "repair_corrupted_footprints"
+      },
+      {
+        "description": "Add a wire segment between two points. The wire must be horizontal or vertical. T-junctions are automatically detected and junction dots inserted.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "schematic": {
+              "type": "string"
+            },
+            "x1": {
+              "type": "number"
+            },
+            "x2": {
+              "type": "number"
+            },
+            "y1": {
+              "type": "number"
+            },
+            "y2": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "schematic",
+            "x1",
+            "y1",
+            "x2",
+            "y2"
+          ],
+          "type": "object"
+        },
+        "name": "add_wire"
+      },
+      {
+        "description": "List all active design rules (user-level + project-level).",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "project_dir": {
+              "description": "Project directory (optional)",
+              "type": "string"
+            }
+          },
+          "required": [],
+          "type": "object"
+        },
+        "name": "list_design_rules"
+      },
+      {
+        "description": "Add a through-hole via at a given position and assign it to a net via KiCAD IPC.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "drill": {
+              "default": 0.4,
+              "description": "Drill diameter in mm",
+              "type": "number"
+            },
+            "net_name": {
+              "type": "string"
+            },
+            "pad_size": {
+              "default": 0.8,
+              "description": "Via pad diameter in mm",
+              "type": "number"
+            },
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "board",
+            "net_name",
+            "x",
+            "y"
+          ],
+          "type": "object"
+        },
+        "name": "add_via"
+      },
+      {
+        "description": "Export the PCB layout to an SVG file using kicad-cli.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "black_and_white": {
+              "default": false,
+              "description": "Render in black and white",
+              "type": "boolean"
+            },
+            "board": {
+              "description": "Path to .kicad_pcb file",
+              "type": "string"
+            },
+            "layers": {
+              "description": "Layer names to include (empty = all visible layers)",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "output": {
+              "description": "Output SVG file path",
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "output"
+          ],
+          "type": "object"
+        },
+        "name": "export_svg"
+      },
+      {
+        "description": "Connect two schematic points directly with a wire (auto-routes H+V segments). Use connect_pins if you have component references instead of coordinates.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "schematic": {
+              "type": "string"
+            },
+            "x1": {
+              "type": "number"
+            },
+            "x2": {
+              "type": "number"
+            },
+            "y1": {
+              "type": "number"
+            },
+            "y2": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "schematic",
+            "x1",
+            "y1",
+            "x2",
+            "y2"
+          ],
+          "type": "object"
+        },
+        "name": "add_schematic_connection"
+      },
+      {
+        "description": "Render a schematic sheet to PNG: kicad-cli SVG export rasterized in-process (deterministic stroke-font rendering, no system fonts consulted). Returns the PNG path and its actual pixel dimensions; with 'inline' true the response also carries the image as base64 so the caller can inspect its own output. Width is capped at 4096 px.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "inline": {
+              "default": false,
+              "description": "Also return the PNG as base64 content",
+              "type": "boolean"
+            },
+            "monochrome": {
+              "default": false,
+              "description": "Render in black and white",
+              "type": "boolean"
+            },
+            "output": {
+              "description": "Output PNG path (default: alongside the schematic)",
+              "type": "string"
+            },
+            "schematic": {
+              "description": "Path to .kicad_sch file",
+              "type": "string"
+            },
+            "width_px": {
+              "default": 1600,
+              "description": "Output width in pixels",
+              "maximum": 4096,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "schematic"
+          ],
+          "type": "object"
+        },
+        "name": "render_schematic_png"
+      },
+      {
+        "description": "Update the value or other properties of a placed footprint via KiCAD IPC.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "reference": {
+              "type": "string"
+            },
+            "value": {
+              "description": "New value string (optional)",
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "reference"
+          ],
+          "type": "object"
+        },
+        "name": "edit_component"
+      },
+      {
+        "description": "Align multiple footprints along a common X or Y axis via KiCAD IPC.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "axis": {
+              "default": "x",
+              "description": "'x' or 'y'",
+              "type": "string"
+            },
+            "board": {
+              "type": "string"
+            },
+            "references": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "value": {
+              "description": "Target coordinate to align to",
+              "type": "number"
+            }
+          },
+          "required": [
+            "board",
+            "references",
+            "value"
+          ],
+          "type": "object"
+        },
+        "name": "align_components"
+      },
+      {
+        "description": "Delete board graphics \u2014 lines, rectangles, arcs, circles, polygons, curves, text, text boxes, and dimensions \u2014 that match every filter given. At least one of 'uuids', 'layer', or 'types' is required; 'dry_run' lists what would go without deleting anything, and the UUIDs it reports can be passed straight back as 'uuids'. Footprints, zones, tracks, vias, and graphics belonging to a footprint are never touched, and neither are reference images (KiCad's API cannot identify one). This is how a board outline is resized: add_board_outline and set_board_size append, so calling one twice without deleting the old Edge.Cuts graphics first leaves two overlapping outlines. Acts on the board open in KiCad when it is reachable, else on the file \u2014 'source' says which.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file",
+              "type": "string"
+            },
+            "dry_run": {
+              "default": false,
+              "description": "List the matches without deleting them",
+              "type": "boolean"
+            },
+            "layer": {
+              "description": "Only graphics on this layer (e.g. 'Edge.Cuts')",
+              "type": "string"
+            },
+            "types": {
+              "description": "Only graphics of these kinds",
+              "items": {
+                "enum": [
+                  "line",
+                  "rect",
+                  "arc",
+                  "circle",
+                  "poly",
+                  "curve",
+                  "shape",
+                  "text",
+                  "textbox",
+                  "dimension"
+                ],
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "uuids": {
+              "description": "Only graphics with these UUIDs",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "board"
+          ],
+          "type": "object"
+        },
+        "name": "delete_graphics"
+      },
+      {
+        "description": "Idempotently add a net to the top-level net table of a pre-KiCad-10 board (S-expression insert, no KiCAD IPC required). An existing name returns its observed ID without writing. Fails on a KiCad 10 board, which has no net table \u2014 there, name the net on copper (route_trace, add_via, add_copper_pour) instead.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "net_name": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "net_name"
+          ],
+          "type": "object"
+        },
+        "name": "add_net"
+      },
+      {
+        "description": "Add an NPTH mounting hole footprint at the specified position, under the MountingHole library name stock KiCad 10 ships for that drill (3.2 \u2192 MountingHole_3.2mm_M3, 3 \u2192 MountingHole_3mm). A drill KiCad ships no footprint for is refused. Places KiCad's own library footprint when the library resolves; otherwise an equivalent unplated hole under the same name.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "drill_diameter": {
+              "default": 3.2,
+              "description": "Drill diameter in mm. Must be one KiCad 10 ships a MountingHole footprint for: 2, 2.1, 2.2, 2.5, 2.7, 3, 3.2, 3.5, 3.7, 4, 4.3, 4.5, 5, 5.3, 5.5, 6, 6.4, 6.5 or 8.4.",
+              "type": "number"
+            },
+            "reference": {
+              "default": "H1",
+              "description": "Designator for the hole (e.g. 'H1')",
+              "type": "string"
+            },
+            "x": {
+              "description": "X position in mm",
+              "type": "number"
+            },
+            "y": {
+              "description": "Y position in mm",
+              "type": "number"
+            }
+          },
+          "required": [
+            "board",
+            "x",
+            "y"
+          ],
+          "type": "object"
+        },
+        "name": "add_mounting_hole"
+      },
+      {
+        "description": "Route a differential pair (two parallel traces with a specified gap).",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "gap": {
+              "default": 0.1,
+              "description": "Gap between pair traces in mm",
+              "type": "number"
+            },
+            "layer": {
+              "default": "F.Cu",
+              "type": "string"
+            },
+            "net_neg": {
+              "description": "Negative net name",
+              "type": "string"
+            },
+            "net_pos": {
+              "description": "Positive net name",
+              "type": "string"
+            },
+            "width": {
+              "default": 0.1,
+              "type": "number"
+            },
+            "x1": {
+              "type": "number"
+            },
+            "x2": {
+              "type": "number"
+            },
+            "y1": {
+              "type": "number"
+            },
+            "y2": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "board",
+            "net_pos",
+            "net_neg",
+            "x1",
+            "y1",
+            "x2",
+            "y2"
+          ],
+          "type": "object"
+        },
+        "name": "route_differential_pair"
+      },
+      {
+        "description": "Return a human-readable JSON summary of the schematic netlist: all components, their nets, pin counts. Nets come from labels and from power symbols. Does not require kicad-cli.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "schematic": {
+              "description": "Path to .kicad_sch file",
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic"
+          ],
+          "type": "object"
+        },
+        "name": "export_netlist_summary"
+      },
+      {
+        "description": "Remove a footprint from the board via KiCAD IPC.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "reference": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "reference"
+          ],
+          "type": "object"
+        },
+        "name": "delete_component"
+      },
+      {
+        "description": "Add multiple wire segments in a single file read/write cycle.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "schematic": {
+              "type": "string"
+            },
+            "wires": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "x1": {
+                    "type": "number"
+                  },
+                  "x2": {
+                    "type": "number"
+                  },
+                  "y1": {
+                    "type": "number"
+                  },
+                  "y2": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "x1",
+                  "y1",
+                  "x2",
+                  "y2"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "schematic",
+            "wires"
+          ],
+          "type": "object"
+        },
+        "name": "batch_add_wire"
+      },
+      {
+        "description": "Connect a pin to a named net by adding a short wire stub and a net label. Name the pin with reference + pin_number, or give its coordinates directly. The label is sheet-local: a sheet instanced N times gets N independent nets. A rail shared by every instance needs add_power_symbol or a global_label, which are one net across all sheets and instances.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "direction": {
+              "default": "auto",
+              "description": "Direction to route the wire stub. 'auto' (default) points it away from the symbol body so the label text does not run back across the pin names; it falls back to 'right' on a bare point.",
+              "enum": [
+                "auto",
+                "right",
+                "left",
+                "up",
+                "down"
+              ],
+              "type": "string"
+            },
+            "label_type": {
+              "default": "net_label",
+              "enum": [
+                "net_label",
+                "global_label"
+              ],
+              "type": "string"
+            },
+            "net": {
+              "type": "string"
+            },
+            "pin_number": {
+              "description": "Pin number, e.g. '3'",
+              "type": "string"
+            },
+            "pin_x": {
+              "description": "Pin X in mm; alternative to reference + pin_number",
+              "type": "number"
+            },
+            "pin_y": {
+              "description": "Pin Y in mm",
+              "type": "number"
+            },
+            "reference": {
+              "description": "Component reference, e.g. 'U1'. Use with pin_number instead of pin_x/pin_y.",
+              "type": "string"
+            },
+            "schematic": {
+              "type": "string"
+            },
+            "stub_length": {
+              "default": 2.54,
+              "description": "Length of the wire stub in mm",
+              "type": "number"
+            }
+          },
+          "required": [
+            "schematic",
+            "net"
+          ],
+          "type": "object"
+        },
+        "name": "connect_to_net"
+      },
+      {
+        "description": "List the graphic items inside a footprint placed on the board \u2014 silkscreen, fabrication, and courtyard artwork \u2014 with the UUID needed to edit one. Points are footprint-local millimetres, as the .kicad_mod shows them. Each item reports 'editable', plus 'outlines' and 'holes' for polygons: 'points' covers the first outline only, so an item with more than one outline or any holes is reported but cannot be edited here. Requires KiCAD running with the board open.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "layer": {
+              "description": "Only list items on this layer, e.g. 'F.SilkS' (optional)",
+              "type": "string"
+            },
+            "reference": {
+              "description": "Reference designator, e.g. 'J2'",
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "reference"
+          ],
+          "type": "object"
+        },
+        "name": "list_board_footprint_graphics"
+      },
+      {
+        "description": "Update fields (Reference, Value, Footprint, custom properties) consistently across every placed unit of a component, and move or hide the text of any of them.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "datasheet": {
+              "description": "New datasheet URL (optional)",
+              "type": "string"
+            },
+            "field_placements": {
+              "additionalProperties": {
+                "additionalProperties": false,
+                "properties": {
+                  "hide": {
+                    "description": "true hides the field's text on the sheet; false shows it.",
+                    "type": "boolean"
+                  },
+                  "rotation": {
+                    "type": "number"
+                  },
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  }
+                },
+                "type": "object"
+              },
+              "description": "Move or hide a field's text, keyed by field name (Reference, Value, Footprint, or a custom property). Each entry may set x, y, rotation and hide; an omitted part is left as the file has it. Coordinates are absolute schematic millimetres, as KiCad stores them \u2014 not offsets from the body.",
+              "type": "object"
+            },
+            "fields": {
+              "additionalProperties": true,
+              "description": "Additional property fields to set as key:value pairs",
+              "type": "object"
+            },
+            "footprint": {
+              "description": "New footprint (optional)",
+              "type": "string"
+            },
+            "new_reference": {
+              "description": "New reference designator (optional)",
+              "type": "string"
+            },
+            "reference": {
+              "description": "Current reference designator",
+              "type": "string"
+            },
+            "schematic": {
+              "type": "string"
+            },
+            "unit": {
+              "description": "Which placed unit field_placements applies to. Required when x or y is given and the component has more than one placed unit, because a field position is absolute and one coordinate cannot be right for several placements.",
+              "type": "integer"
+            },
+            "value": {
+              "description": "New value (optional)",
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic",
+            "reference"
+          ],
+          "type": "object"
+        },
+        "name": "edit_schematic_component"
+      },
+      {
+        "description": "Place a footprint on the PCB. Uses live KiCAD IPC when reachable; otherwise safely edits a closed board file with revision checks.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "footprint": {
+              "description": "Library:Footprint (e.g. 'Resistor_SMD:R_0402')",
+              "type": "string"
+            },
+            "layer": {
+              "default": "F.Cu",
+              "type": "string"
+            },
+            "reference": {
+              "description": "Reference designator",
+              "type": "string"
+            },
+            "rotation": {
+              "default": 0,
+              "type": "number"
+            },
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "board",
+            "footprint",
+            "reference",
+            "x",
+            "y"
+          ],
+          "type": "object"
+        },
+        "name": "place_component"
+      },
+      {
+        "description": "Write the PCB editor Pre-defined Sizes list (track widths and via pad/drill pairs) into the sibling .kicad_pro. These populate the Track/Via dropdowns and W/Shift+W while routing; they are not DRC limits and do not change netclasses. A leading 0 mm track and 0/0 via is always kept as the 'use netclass' sentinel. Pass only the lists you want to replace. KiCad reads the change on next project open. The board file is not modified.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file; the sibling .kicad_pro is edited",
+              "type": "string"
+            },
+            "track_widths": {
+              "description": "Track widths in mm for the router dropdown, excluding the 0 mm netclass sentinel (that row is always prepended). An empty array leaves only the sentinel.",
+              "items": {
+                "type": "number"
+              },
+              "type": "array"
+            },
+            "via_dimensions": {
+              "description": "Via pad/drill pairs in mm for the router dropdown, excluding the 0/0 netclass sentinel (that row is always prepended). An empty array leaves only the sentinel.",
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "diameter": {
+                    "description": "Via pad diameter in mm",
+                    "type": "number"
+                  },
+                  "drill": {
+                    "description": "Via drill diameter in mm",
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "diameter",
+                  "drill"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "board"
+          ],
+          "type": "object"
+        },
+        "name": "set_predefined_sizes"
+      },
+      {
+        "description": "Rotate a net label to a new angle and update its justify direction accordingly.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "net": {
+              "type": "string"
+            },
+            "rotation": {
+              "type": "number"
+            },
+            "schematic": {
+              "type": "string"
+            },
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "schematic",
+            "net",
+            "x",
+            "y",
+            "rotation"
+          ],
+          "type": "object"
+        },
+        "name": "rotate_schematic_label"
+      },
+      {
+        "description": "Move a component's lowest-numbered unit to a new position and translate every other placed unit by the same delta. Does NOT adjust connected wires. Junction dots are re-judged where the pins moved: a dot the pins leave unjustified is removed and a pin landing mid-span on a wire gains one, reported as junctions_pruned_count and junctions_added_count. A no-connect flag travels with the pin it protects, reported as no_connects_moved; the move is refused before writing when that pin cannot be followed one-to-one.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "reference": {
+              "type": "string"
+            },
+            "schematic": {
+              "type": "string"
+            },
+            "x": {
+              "description": "New X position in mm",
+              "type": "number"
+            },
+            "y": {
+              "description": "New Y position in mm",
+              "type": "number"
+            }
+          },
+          "required": [
+            "schematic",
+            "reference",
+            "x",
+            "y"
+          ],
+          "type": "object"
+        },
+        "name": "move_schematic_component"
+      },
+      {
+        "description": "Return the PCB editor Pre-defined Sizes list from the sibling .kicad_pro: track_widths (mm) and via_dimensions (diameter/drill mm), including the 0 / 0,0 netclass sentinel KiCad keeps at the front of each list.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file; the sibling .kicad_pro is read",
+              "type": "string"
+            }
+          },
+          "required": [
+            "board"
+          ],
+          "type": "object"
+        },
+        "name": "get_predefined_sizes"
+      },
+      {
+        "description": "Move a placed footprint to a new X/Y position. Uses live KiCAD IPC when reachable; otherwise safely edits a closed board file with revision checks.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "reference": {
+              "type": "string"
+            },
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "board",
+            "reference",
+            "x",
+            "y"
+          ],
+          "type": "object"
+        },
+        "name": "move_component"
+      },
+      {
+        "description": "Set a placed footprint to F.Cu or B.Cu. When the board is open in KiCad 10.0.6 or newer, this uses KiCad's own native FlipItems IPC command \u2014 the same transform the GUI's F key performs, including 3D-model offset/rotation \u2014 inside one KiCad undo step. Older or unsupported KiCad reachable over IPC returns an explicit unsupported_capability error rather than falling back to the file. Only when no live KiCad holds this board does it fall back to a guarded closed-board file edit, which flips supported geometry with revision checks and refuses any footprint whose 3D model would need a transform the file path cannot perform.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "layer": {
+              "enum": [
+                "F.Cu",
+                "B.Cu"
+              ],
+              "type": "string"
+            },
+            "reference": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "reference",
+            "layer"
+          ],
+          "type": "object"
+        },
+        "name": "flip_component"
+      },
+      {
+        "description": "Plan or atomically apply saved schematic hierarchy changes to the live KiCad PCB. Defaults to a non-mutating dry run; apply requires its exact plan revision. Preserves placement, routing, board-only footprints, and footprint artwork. A symbol with no footprint assigned is reported under `unassigned_footprints` and the sync proceeds for every other component. A library footprint that cannot be placed, or a connected pad its footprint does not have, makes the dry run a conflict whose diagnostics name the footprint and every part that needs it. Added footprints are staged beside the board as KiCad measured it; `staging` names the item classes KiCad would not list, so a partial or unmeasured board is never reported as complete or empty.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Matching .kicad_pcb path currently open in KiCad",
+              "type": "string"
+            },
+            "dry_run": {
+              "default": true,
+              "description": "Plan without changing the board",
+              "type": "boolean"
+            },
+            "expected_plan_revision": {
+              "description": "Required for apply; exact revision returned by the latest dry run",
+              "type": "string"
+            },
+            "schematic": {
+              "description": "Saved root .kicad_sch path",
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic",
+            "board"
+          ],
+          "type": "object"
+        },
+        "name": "update_pcb_from_schematic"
+      },
+      {
+        "description": "Replace the vertices of a polygon inside a footprint placed on the board, selected by UUID. Points are footprint-local millimetres, as the .kicad_mod shows them. Use this to bring one placed instance in line with a library change without re-placing the part. Only a single-outline polygon with no holes can be replaced; anything else is refused by name rather than flattened. Requires KiCAD running with the board open.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "points": {
+              "description": "Replacement vertices in footprint-local millimetres; at least 3.",
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "x",
+                  "y"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "reference": {
+              "description": "Reference designator, e.g. 'J2'",
+              "type": "string"
+            },
+            "uuid": {
+              "description": "UUID of the graphic item, from list_board_footprint_graphics",
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "reference",
+            "uuid",
+            "points"
+          ],
+          "type": "object"
+        },
+        "name": "edit_board_footprint_graphic"
+      },
+      {
+        "description": "Delete a trace segment identified by its UUID via KiCAD IPC. Refuses UUIDs that are not observed trace segments on the requested board, then verifies the segment is absent before reporting success. Returns the observed preimage and postcondition.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "uuid": {
+              "description": "UUID of the track segment to delete",
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "uuid"
+          ],
+          "type": "object"
+        },
+        "name": "delete_trace"
+      },
+      {
+        "description": "Export a deterministic Specctra DSN routing job from the exact live KiCad PCB editor revision. Requires the named board to be open with IPC enabled. On KiCad 10, an enabled authenticated ActionPlugin bridge supplies KiCad's native DSN while the IPC snapshot and reverse manifest remain authoritative; otherwise the Rust exporter is used. The first supported profile is deliberately narrow: two copper layers, front-side SMD or through-hole footprints, circle/rectangle pads, one straight-line closed outline, and no existing tracks, vias, or zones. Konnect refuses unsupported geometry or custom DRC rules, or incomplete effective routing rules instead of approximating them, and writes a revision-bound reverse manifest beside the DSN for later SES import.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to the .kicad_pcb file currently open in KiCad PCB Editor",
+              "type": "string"
+            },
+            "manifest_output_path": {
+              "description": "Optional new reverse-manifest JSON path. Defaults to <output>.konnect.json. Existing files are never replaced.",
+              "type": "string"
+            },
+            "native_bridge_mode": {
+              "default": "disable",
+              "description": "KiCad 10 native-export policy. Rust-only 'disable' is the default; 'prefer' explicitly opts into the enabled authenticated ActionPlugin bridge with the Rust exporter as fallback; 'require' refuses fallback.",
+              "enum": [
+                "prefer",
+                "require",
+                "disable"
+              ],
+              "type": "string"
+            },
+            "output": {
+              "description": "New .dsn file path. Existing files are never replaced.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "output"
+          ],
+          "type": "object"
+        },
+        "name": "export_specctra_dsn"
+      },
+      {
+        "description": "Modify a trace segment by deleting and re-adding it with new parameters.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "layer": {
+              "type": "string"
+            },
+            "net_name": {
+              "type": "string"
+            },
+            "uuid": {
+              "type": "string"
+            },
+            "width": {
+              "default": 0.25,
+              "type": "number"
+            },
+            "x1": {
+              "type": "number"
+            },
+            "x2": {
+              "type": "number"
+            },
+            "y1": {
+              "type": "number"
+            },
+            "y2": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "board",
+            "uuid",
+            "net_name",
+            "layer",
+            "x1",
+            "y1",
+            "x2",
+            "y2"
+          ],
+          "type": "object"
+        },
+        "name": "modify_trace"
+      },
+      {
+        "description": "Read every netclass in the project's design rules, with its settings, its netclass_patterns and the board nets those patterns match. The answer is mixed-source and says so in 'sources': definitions and patterns always come from the sibling .kicad_pro, while the board nets come from the board KiCad holds open where it can and from the saved board file otherwise ('board_source' selects that); KiCad need not be running. Call before create_netclass to see what a class holds \u2014 an update changes only the values you name, and this is the only way to see the rest. A net can match several classes: KiCad takes each property from the highest-priority class that sets it (lower number = higher priority) and falls back to Default. Settings are reported resolved, with 'inherits' naming the ones a class takes from the Default rather than setting itself; 'missing_fields' on the Default names settings nothing can resolve. 'orphan_patterns' lists patterns naming a class that does not exist; 'unmatched_patterns' lists patterns whose class exists but which fit no net on the board read (null when its nets are unavailable).",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file; the sibling .kicad_pro is read",
+              "type": "string"
+            },
+            "board_source": {
+              "default": "auto",
+              "description": "Which board state to answer about. 'auto' (default) uses the exact board open in KiCad and falls back to the saved file only when it can say why; 'live' fails unless that board is open in a reachable KiCad; 'saved' inspects the last saved file and reports that unsaved editor changes are excluded.",
+              "enum": [
+                "auto",
+                "live",
+                "saved"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "board"
+          ],
+          "type": "object"
+        },
+        "name": "get_netclasses"
+      },
+      {
+        "description": "Get pin locations for multiple components in a single file read. Reports the same per-pin fields as get_schematic_pin_locations, including 'orientation_degrees' and 'length_mm'.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "references": {
+              "description": "List of reference designators",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "schematic": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic",
+            "references"
+          ],
+          "type": "object"
+        },
+        "name": "batch_get_schematic_pin_locations"
+      },
+      {
+        "description": "Add multiple no-connect flags in a single file read/write cycle. Marking the unused pins of one MCU is routinely 15-20 flags, which is 15-20 round trips through add_no_connect.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "positions": {
+              "description": "Pin endpoints to flag, as {x, y}",
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "x",
+                  "y"
+                ],
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "schematic": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic",
+            "positions"
+          ],
+          "type": "object"
+        },
+        "name": "batch_add_no_connect"
+      },
+      {
+        "description": "Refill all copper pour zones on the board. KiCad IPC refills the complete board; per-zone selection is not available. Requires a running KiCad instance with IPC enabled.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file",
+              "type": "string"
+            }
+          },
+          "required": [
+            "board"
+          ],
+          "type": "object"
+        },
+        "name": "refill_zones"
+      },
+      {
+        "description": "List trace segments on the board, optionally filtered by net and/or layer. Each result includes the track's UUID, which delete_trace takes.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "layer": {
+              "description": "Filter by layer (optional)",
+              "type": "string"
+            },
+            "net_name": {
+              "description": "Filter by net (optional)",
+              "type": "string"
+            }
+          },
+          "required": [
+            "board"
+          ],
+          "type": "object"
+        },
+        "name": "query_traces"
+      },
+      {
+        "description": "Add a copper fill zone polygon on a specified layer and net. Tries KiCAD IPC first \u2014 with KiCAD live on this board the zone is created through the API and refilled, so it shows up at once and is undoable there. Only when no live KiCAD answers does it fall back to inserting the (zone \u2026) S-expression into the file, and that result carries a warning, because a file-only edit is invisible to an open pcbnew and is lost on its next save. Refuses a net the board does not declare rather than binding copper to net 0.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to the .kicad_pcb file",
+              "type": "string"
+            },
+            "clearance": {
+              "default": 0.2,
+              "description": "Zone clearance in mm",
+              "type": "number"
+            },
+            "layer": {
+              "description": "Copper layer (e.g. 'F.Cu')",
+              "type": "string"
+            },
+            "min_width": {
+              "default": 0.2,
+              "description": "Minimum fill width in mm",
+              "type": "number"
+            },
+            "name": {
+              "description": "Optional zone name, as shown in pcbnew's zone properties",
+              "type": "string"
+            },
+            "net_name": {
+              "description": "Net name (e.g. 'GND')",
+              "type": "string"
+            },
+            "pad_connection": {
+              "default": "thermal",
+              "description": "How the pour attaches to pads on its net",
+              "enum": [
+                "solid",
+                "thermal",
+                "none"
+              ],
+              "type": "string"
+            },
+            "points": {
+              "description": "Polygon vertices as [{x, y}], in mm",
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  }
+                },
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "priority": {
+              "default": 0,
+              "description": "Higher priority wins where zones overlap",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "board",
+            "net_name",
+            "layer",
+            "points"
+          ],
+          "type": "object"
+        },
+        "name": "add_zone"
+      },
+      {
+        "description": "Read the physical stackup of the board KiCad holds open: each layer's type, thickness and material, dielectric \u03b5r and loss tangent, the copper finish, impedance control, edge settings, and the board thickness KiCad computes from the stack. 'findings' lists unspecified fabrication values and, given 'expected', every value that differs from it. Live only, with no file fallback; read-only, so changes are made in Board Setup.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file",
+              "type": "string"
+            },
+            "expected": {
+              "additionalProperties": false,
+              "description": "The stackup the fabricator will build, to compare against. Only the fields given are compared.",
+              "properties": {
+                "board_thickness_mm": {
+                  "exclusiveMinimum": 0,
+                  "type": "number"
+                },
+                "copper_layer_count": {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                "finish": {
+                  "description": "KiCad's finish name, e.g. 'ENIG' or 'HAL lead-free'; compared ignoring case",
+                  "type": "string"
+                },
+                "impedance_controlled": {
+                  "type": "boolean"
+                },
+                "layers": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "epsilon_r": {
+                        "exclusiveMinimum": 0,
+                        "type": "number"
+                      },
+                      "loss_tangent": {
+                        "minimum": 0,
+                        "type": "number"
+                      },
+                      "material": {
+                        "description": "Compared ignoring case; for a dielectric, against every sub-layer",
+                        "type": "string"
+                      },
+                      "name": {
+                        "description": "A layer name as this tool reports it: 'F.Cu', 'F.Mask', 'dielectric 1'",
+                        "type": "string"
+                      },
+                      "thickness_mm": {
+                        "description": "A dielectric's is the slot's total over its sub-layers",
+                        "exclusiveMinimum": 0,
+                        "type": "number"
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ],
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              },
+              "type": "object"
+            }
+          },
+          "required": [
+            "board"
+          ],
+          "type": "object"
+        },
+        "name": "get_board_stackup"
+      },
+      {
+        "description": "List all symbol instances in a schematic with their positions, values, footprints, and properties.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "schematic": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic"
+          ],
+          "type": "object"
+        },
+        "name": "list_schematic_components"
+      },
+      {
+        "description": "Return the board's enabled layers with their names and types. Reads the board KiCad holds open where it can, so an unsaved stackup change is visible; 'board_source' selects that. A layer's id and its signal/power/user type have no KiCad IPC equivalent and stay file-backed, so 'sources' reports where each part of the answer came from.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file",
+              "type": "string"
+            },
+            "board_source": {
+              "default": "auto",
+              "description": "Which board state to answer about. 'auto' (default) uses the exact board open in KiCad and falls back to the saved file only when it can say why; 'live' fails unless that board is open in a reachable KiCad; 'saved' inspects the last saved file and reports that unsaved editor changes are excluded.",
+              "enum": [
+                "auto",
+                "live",
+                "saved"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "board"
+          ],
+          "type": "object"
+        },
+        "name": "get_layer_list"
+      },
+      {
+        "description": "Add a power symbol (VCC, GND, etc.) to the schematic. Snaps the position to the 1.27mm grid like the other placers, and reports the placed coordinates. Auto-numbers the internal #PWR reference to the lowest number free on the sheet. Preserves every saved hierarchy instance and reports committed-file readback; refuses stale instance metadata before writing.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "power_net": {
+              "description": "Net name (e.g. 'VCC', 'GND')",
+              "type": "string"
+            },
+            "rotation": {
+              "default": 0,
+              "type": "number"
+            },
+            "schematic": {
+              "type": "string"
+            },
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "schematic",
+            "power_net",
+            "x",
+            "y"
+          ],
+          "type": "object"
+        },
+        "name": "add_power_symbol"
+      },
+      {
+        "description": "Add a rectangular board outline of the given dimensions on the Edge.Cuts layer. This appends: on a board that already has an outline it leaves two overlapping rectangles and a DRC failure, so resizing means calling delete_graphics(layer='Edge.Cuts') first.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file",
+              "type": "string"
+            },
+            "height": {
+              "description": "Board height in mm",
+              "type": "number"
+            },
+            "origin_x": {
+              "default": 0,
+              "description": "Left edge X coordinate",
+              "type": "number"
+            },
+            "origin_y": {
+              "default": 0,
+              "description": "Top edge Y coordinate",
+              "type": "number"
+            },
+            "width": {
+              "description": "Board width in mm",
+              "type": "number"
+            }
+          },
+          "required": [
+            "board",
+            "width",
+            "height"
+          ],
+          "type": "object"
+        },
+        "name": "set_board_size"
+      },
+      {
+        "description": "Remove a component by reference designator, including every placed unit of a multi-unit symbol.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "reference": {
+              "description": "Reference designator (e.g. 'R1')",
+              "type": "string"
+            },
+            "schematic": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic",
+            "reference"
+          ],
+          "type": "object"
+        },
+        "name": "delete_schematic_component"
+      },
+      {
+        "description": "Move all labels matching a net name by a given X/Y offset.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "dx": {
+              "type": "number"
+            },
+            "dy": {
+              "type": "number"
+            },
+            "net": {
+              "type": "string"
+            },
+            "schematic": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic",
+            "net",
+            "dx",
+            "dy"
+          ],
+          "type": "object"
+        },
+        "name": "move_labels_by_offset"
+      },
+      {
+        "description": "Delete a wire segment by its UUID, or by matching BOTH endpoints (all four of x1/y1/x2/y2, either direction). Fails without deleting anything when no wire matches. Junction dots the wire leaves unjustified are removed with it.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "schematic": {
+              "type": "string"
+            },
+            "uuid": {
+              "description": "Wire UUID (preferred)",
+              "type": "string"
+            },
+            "x1": {
+              "description": "Endpoint 1 X in mm (required with y1/x2/y2 when no uuid)",
+              "type": "number"
+            },
+            "x2": {
+              "type": "number"
+            },
+            "y1": {
+              "type": "number"
+            },
+            "y2": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "schematic"
+          ],
+          "type": "object"
+        },
+        "name": "delete_schematic_wire"
+      },
+      {
+        "description": "Set per-layer design constraints (e.g. min trace width, clearance) in the sibling .kicad_dru custom rules file.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file",
+              "type": "string"
+            },
+            "layer": {
+              "description": "Layer name (e.g. 'F.Cu', 'B.Cu')",
+              "type": "string"
+            },
+            "min_clearance": {
+              "description": "Minimum clearance for this layer in mm",
+              "type": "number"
+            },
+            "min_trace_width": {
+              "description": "Minimum trace width for this layer in mm",
+              "type": "number"
+            }
+          },
+          "required": [
+            "board",
+            "layer"
+          ],
+          "type": "object"
+        },
+        "name": "set_layer_constraints"
+      },
+      {
+        "description": "Generate a KiCAD netlist file from the schematic using kicad-cli.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "format": {
+              "default": "kicad",
+              "description": "Netlist format: 'kicad', 'orcadpcb2', 'cadstar', 'spice'",
+              "type": "string"
+            },
+            "output": {
+              "description": "Output .net file path",
+              "type": "string"
+            },
+            "schematic": {
+              "description": "Path to .kicad_sch file",
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic",
+            "output"
+          ],
+          "type": "object"
+        },
+        "name": "generate_netlist"
+      },
+      {
+        "description": "Return the box enclosing the board's items: footprints (without their text), graphics, tracks, vias and zones, plus board text and dimensions when KiCad measures them. Reads the board KiCad holds open where it can, so unsaved edits count; 'board_source' selects that. An answer from the saved file names, in 'unmeasured_item_counts', what it could not measure. A live answer names, in 'unavailable_item_classes', each item class KiCad would not list, with KiCad's answer: KiCad 10 lists neither tables nor generators.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file",
+              "type": "string"
+            },
+            "board_source": {
+              "default": "auto",
+              "description": "Which board state to answer about. 'auto' (default) uses the exact board open in KiCad and falls back to the saved file only when it can say why; 'live' fails unless that board is open in a reachable KiCad; 'saved' inspects the last saved file and reports that unsaved editor changes are excluded.",
+              "enum": [
+                "auto",
+                "live",
+                "saved"
+              ],
+              "type": "string"
+            }
+          },
+          "required": [
+            "board"
+          ],
+          "type": "object"
+        },
+        "name": "get_board_extents"
+      },
+      {
+        "description": "Create or update a netclass in the project's design rules. Writes net_settings in the sibling .kicad_pro (where KiCad keeps netclasses since v7); the board file is never touched. Requires the project file to exist. Refuses while KiCad holds the board open, because KiCad's next save rewrites the project file from its own copy. An update changes only the settings you name. To see what a class holds, call get_netclasses rather than this tool: naming a class that does not exist here creates it with the defaults, so a call meant as a look writes one instead \u2014 and its result is nearly indistinguishable from a read of an existing class. The class named 'Default' is special: it is written complete, because KiCad replaces its own default with it and backfills every other class from it. Calling this on an existing, incomplete 'Default' repairs it in place without touching values already set.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file; the sibling .kicad_pro is edited",
+              "type": "string"
+            },
+            "clearance": {
+              "default": 0.2,
+              "description": "Clearance in mm",
+              "type": "number"
+            },
+            "name": {
+              "description": "Netclass name (e.g. 'Power')",
+              "type": "string"
+            },
+            "trace_width": {
+              "default": 0.25,
+              "description": "Default trace width in mm",
+              "type": "number"
+            },
+            "via_diameter": {
+              "default": 0.8,
+              "description": "Via pad diameter in mm",
+              "type": "number"
+            },
+            "via_drill": {
+              "default": 0.4,
+              "description": "Via drill diameter in mm",
+              "type": "number"
+            }
+          },
+          "required": [
+            "board",
+            "name"
+          ],
+          "type": "object"
+        },
+        "name": "create_netclass"
+      },
+      {
+        "description": "Apply a fully validated Freerouting SES to the exact live KiCad board as one undo transaction, without saving over the source. Creates a new candidate .kicad_pcb, proves IPC read-back counts, and runs KiCad DRC before committing.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Open source .kicad_pcb used for the DSN export",
+              "type": "string"
+            },
+            "candidate_output_path": {
+              "description": "New .kicad_pcb path. Existing files are never replaced.",
+              "type": "string"
+            },
+            "manifest_path": {
+              "description": "Konnect reverse manifest written with the DSN",
+              "type": "string"
+            },
+            "ses_path": {
+              "description": "Freerouting .ses result",
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "ses_path",
+            "manifest_path",
+            "candidate_output_path"
+          ],
+          "type": "object"
+        },
+        "name": "apply_specctra_ses"
+      },
+      {
+        "description": "Read project metadata from a .kicad_pro file. Returns the project name, schematic and PCB paths, last modified time, project-file format version, and the generator versions recorded by the sibling design files. The compatibility kicad_version is null when those siblings disagree.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "description": "Path to the .kicad_pro project file",
+              "type": "string"
+            }
+          },
+          "required": [
+            "path"
+          ],
+          "type": "object"
+        },
+        "name": "get_project_info"
+      },
+      {
+        "description": "Set the lowest-numbered unit's absolute rotation and rotate every other placed unit by the same delta. Does NOT adjust connected wires. Each unit's Reference and Value text turns with its body, keeping any offset the caller gave it; use reset_schematic_field_positions to put fields back on their library anchors instead. Junction dots are re-judged where the pins turned, reported as junctions_pruned_count and junctions_added_count. A no-connect flag travels with the pin it protects, reported as no_connects_moved; the turn is refused before writing when that pin cannot be followed one-to-one.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "reference": {
+              "type": "string"
+            },
+            "rotation": {
+              "description": "Absolute rotation in degrees",
+              "type": "number"
+            },
+            "schematic": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic",
+            "reference",
+            "rotation"
+          ],
+          "type": "object"
+        },
+        "name": "rotate_schematic_component"
+      },
+      {
+        "description": "Create a new KiCAD project at the given path. Creates the directory, a blank .kicad_pro file, an empty .kicad_sch schematic, and a blank .kicad_pcb board file. Refuses to replace any existing project file.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "description": "Project name (used as filename stem)",
+              "type": "string"
+            },
+            "path": {
+              "description": "Directory path where the project will be created",
+              "type": "string"
+            }
+          },
+          "required": [
+            "path",
+            "name"
+          ],
+          "type": "object"
+        },
+        "name": "create_project"
+      },
+      {
+        "description": "Delete multiple no-connect flags in a single file read/write cycle.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "positions": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  }
+                },
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "schematic": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic",
+            "positions"
+          ],
+          "type": "object"
+        },
+        "name": "batch_delete_no_connect"
+      },
+      {
+        "description": "Add a symbol from a KiCAD library to the schematic. The symbol is snapped to the 1.27mm schematic grid. Preserves every saved hierarchy instance, reports committed-file readback, copies the library Value and Footprint unless explicitly overridden, and refuses stale instance metadata before writing. Specify position in schematic mm coordinates.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "footprint": {
+              "description": "Optional override for the library symbol's Footprint",
+              "type": "string"
+            },
+            "lib_id": {
+              "description": "Library:Symbol (e.g. 'Device:R')",
+              "type": "string"
+            },
+            "mirror": {
+              "description": "Reflect the placed symbol about an axis, using eeschema's own vocabulary: 'x' negates screen-Y, 'y' negates screen-X. Omit (or 'none') for an unmirrored symbol. Mirroring is applied after rotation, and is not interchangeable with rotation 180 for a symbol whose pins are not symmetric.",
+              "enum": [
+                "x",
+                "y",
+                "none"
+              ],
+              "type": "string"
+            },
+            "reference": {
+              "description": "Optional reference designator. Default: the library prefix plus '?' (e.g. 'R?', '#FLG?'), which annotate_schematic numbers",
+              "type": "string"
+            },
+            "rotation": {
+              "default": 0,
+              "description": "Rotation in degrees (0/90/180/270)",
+              "type": "number"
+            },
+            "schematic": {
+              "description": "Path to .kicad_sch file",
+              "type": "string"
+            },
+            "unit": {
+              "default": 1,
+              "description": "Unit number for multi-unit symbols (gate/part selection). Default 1.",
+              "minimum": 1,
+              "type": "integer"
+            },
+            "value": {
+              "description": "Optional override for the library symbol's Value",
+              "type": "string"
+            },
+            "x": {
+              "description": "X position in mm",
+              "type": "number"
+            },
+            "y": {
+              "description": "Y position in mm",
+              "type": "number"
+            }
+          },
+          "required": [
+            "schematic",
+            "lib_id",
+            "x",
+            "y"
+          ],
+          "type": "object"
+        },
+        "name": "add_schematic_component"
+      },
+      {
+        "description": "Set board-level design rules (clearance, trace width, via size) in the sibling KiCAD project file. Refuses while KiCad holds the board open, because KiCad's next save rewrites the project file from its own copy.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file",
+              "type": "string"
+            },
+            "min_clearance": {
+              "description": "Minimum clearance in mm",
+              "type": "number"
+            },
+            "min_hole_to_hole": {
+              "description": "Minimum hole-to-hole clearance in mm",
+              "type": "number"
+            },
+            "min_trace_width": {
+              "description": "Minimum trace width in mm",
+              "type": "number"
+            },
+            "min_via_drill": {
+              "description": "Minimum via drill diameter in mm",
+              "type": "number"
+            },
+            "min_via_size": {
+              "description": "Minimum via pad diameter in mm",
+              "type": "number"
+            }
+          },
+          "required": [
+            "board"
+          ],
+          "type": "object"
+        },
+        "name": "set_design_rules"
+      },
+      {
+        "description": "Load project-specific configuration from <project_dir>/.konnect/project.json. Project config overrides user config where both exist. 'source' is 'file' or 'defaults' (no file; nothing is written). A file that cannot be parsed or read is refused with invalid_configuration.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "project_dir": {
+              "description": "Path to the KiCAD project directory. If omitted, uses the configured project_dir.",
+              "type": "string"
+            }
+          },
+          "required": [],
+          "type": "object"
+        },
+        "name": "load_project_config"
+      },
+      {
+        "description": "Set X/Y positions and rotations for multiple existing footprints atomically. Uses one live KiCAD IPC update and one undo step when reachable; otherwise safely edits a closed board file once with revision checks.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "placements": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "reference": {
+                    "type": "string"
+                  },
+                  "rotation": {
+                    "description": "Target absolute rotation in degrees",
+                    "type": "number"
+                  },
+                  "x": {
+                    "description": "Target X coordinate in millimetres",
+                    "type": "number"
+                  },
+                  "y": {
+                    "description": "Target Y coordinate in millimetres",
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "reference",
+                  "x",
+                  "y",
+                  "rotation"
+                ],
+                "type": "object"
+              },
+              "minItems": 1,
+              "type": "array"
+            }
+          },
+          "required": [
+            "board",
+            "placements"
+          ],
+          "type": "object"
+        },
+        "name": "set_component_placements"
+      },
+      {
+        "description": "Add a new inner copper or technical layer to the board layer stack.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "layer_name": {
+              "description": "KiCAD layer name (e.g. 'In1.Cu')",
+              "type": "string"
+            },
+            "layer_type": {
+              "default": "signal",
+              "description": "Type: 'signal', 'power', 'mixed', 'jumper'",
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "layer_name"
+          ],
+          "type": "object"
+        },
+        "name": "add_layer"
+      },
+      {
+        "description": "Export a schematic sheet to an SVG file using kicad-cli. The result doubles as a              machine-readable geometry source: kicad-cli writes every string twice \u2014 visibly as              stroke paths, and again as an invisible <text opacity=\"0\"> element carrying x, y,              textLength, font-size and text-anchor \u2014 so text content, position and width are              checkable without rendering a pixel.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "black_and_white": {
+              "default": false,
+              "description": "Render in black and white",
+              "type": "boolean"
+            },
+            "output": {
+              "description": "Output SVG file path (directory used as output dir)",
+              "type": "string"
+            },
+            "schematic": {
+              "description": "Path to .kicad_sch file",
+              "type": "string"
+            },
+            "theme": {
+              "description": "KiCad colour theme name (optional)",
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic",
+            "output"
+          ],
+          "type": "object"
+        },
+        "name": "export_schematic_svg"
+      },
+      {
+        "description": "Set the rotation angle of a placed footprint. Uses live KiCAD IPC when reachable; otherwise safely edits a closed board file with revision checks.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "reference": {
+              "type": "string"
+            },
+            "rotation": {
+              "description": "Rotation angle in degrees",
+              "type": "number"
+            }
+          },
+          "required": [
+            "board",
+            "reference",
+            "rotation"
+          ],
+          "type": "object"
+        },
+        "name": "rotate_component"
+      },
+      {
+        "description": "List all footprints on the board with their positions, layers, and values.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "board"
+          ],
+          "type": "object"
+        },
+        "name": "get_component_list"
+      },
+      {
+        "description": "Update a user preference. Use dot-notation for nested keys, e.g. 'fab_constraints.fab_house'. Call this when the user says things like 'always use JLCPCB' or 'I prefer 0402 passives'. Every other key is kept, and the response is the file as read back. Refuses with invalid_configuration, writing nothing, when the existing file cannot be parsed or read; a persistence failure is mutation_outcome_uncertain, so read the file before retrying.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "key_path": {
+              "description": "Dot-notation path to the config key, e.g. 'fab_constraints.fab_house' or 'default_passives.decoupling_cap'",
+              "type": "string"
+            },
+            "value": {
+              "description": "New value to set (string, number, array, or object)"
+            }
+          },
+          "required": [
+            "key_path",
+            "value"
+          ],
+          "type": "object"
+        },
+        "name": "save_user_config"
+      },
+      {
+        "description": "Move all symbol units whose origins are within a bounding box by a given offset. Does NOT adjust connected wires. Junction dots are re-judged once for the whole region where its pins moved, reported as junctions_pruned_count and junctions_added_count. No-connect flags travel with the pins they protect, reported as no_connects_moved; the move is refused before writing when a pin cannot be followed one-to-one.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "dx": {
+              "description": "X offset to move by",
+              "type": "number"
+            },
+            "dy": {
+              "description": "Y offset to move by",
+              "type": "number"
+            },
+            "schematic": {
+              "type": "string"
+            },
+            "x1": {
+              "description": "Region bounding box min X",
+              "type": "number"
+            },
+            "x2": {
+              "description": "Region bounding box max X",
+              "type": "number"
+            },
+            "y1": {
+              "description": "Region bounding box min Y",
+              "type": "number"
+            },
+            "y2": {
+              "description": "Region bounding box max Y",
+              "type": "number"
+            }
+          },
+          "required": [
+            "schematic",
+            "x1",
+            "y1",
+            "x2",
+            "y2",
+            "dx",
+            "dy"
+          ],
+          "type": "object"
+        },
+        "name": "move_region"
+      },
+      {
+        "description": "Place multiple copies of a footprint in a grid or line array via KiCAD IPC.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "count_x": {
+              "description": "Number of columns",
+              "type": "integer"
+            },
+            "count_y": {
+              "default": 1,
+              "description": "Number of rows",
+              "type": "integer"
+            },
+            "footprint": {
+              "type": "string"
+            },
+            "ref_prefix": {
+              "default": "U",
+              "description": "Reference prefix (e.g. 'R')",
+              "type": "string"
+            },
+            "ref_start": {
+              "default": 1,
+              "description": "Starting reference number",
+              "type": "integer"
+            },
+            "spacing_x": {
+              "description": "Column spacing in mm",
+              "type": "number"
+            },
+            "spacing_y": {
+              "default": 0,
+              "description": "Row spacing in mm",
+              "type": "number"
+            },
+            "start_x": {
+              "type": "number"
+            },
+            "start_y": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "board",
+            "footprint",
+            "start_x",
+            "start_y",
+            "count_x",
+            "spacing_x"
+          ],
+          "type": "object"
+        },
+        "name": "place_component_array"
+      },
+      {
+        "description": "Move each placed symbol's Reference and Value text back to the position its library definition anchors them at, carried through the symbol's own rotation \u2014 KiCad's 'Reset field text positions'. Use it on a sheet whose fields sit at a uniform offset instead of where the library puts them (labels inside a connector body, a rail's name below an up-pointing arrow). Fields a symbol's definition gives no anchor for are left alone.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "dry_run": {
+              "default": false,
+              "description": "Report what would move without writing.",
+              "type": "boolean"
+            },
+            "references": {
+              "description": "Component references to reset (e.g. ['U1']). Omit to reset every symbol in the schematic.",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "schematic": {
+              "description": "Path to .kicad_sch file",
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic"
+          ],
+          "type": "object"
+        },
+        "name": "reset_schematic_field_positions"
+      },
+      {
+        "description": "Run the Design Rule Check (DRC) on the PCB and return a list of violations. Provided in `pcb_export` because the output is handy to bundle alongside Gerbers when preparing a build package. For interactive / iterative DRC work, prefer `run_drc` (verification toolset) \u2014 same kicad-cli check, cleaner summary with error/warning counts.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file",
+              "type": "string"
+            },
+            "output": {
+              "description": "Optional path to write DRC report JSON",
+              "type": "string"
+            },
+            "refill_zones": {
+              "default": false,
+              "description": "Refill before checking: persisted IPC fill with sync_live_board, analysis-only CLI fill otherwise.",
+              "type": "boolean"
+            },
+            "severity": {
+              "default": "warning",
+              "description": "Minimum severity to include: 'error', 'warning' (default), 'info'",
+              "type": "string"
+            },
+            "sync_live_board": {
+              "default": false,
+              "description": "Bind the requested open board, optionally refill, save and verify its persisted snapshot before CLI DRC. Finish other mutations first.",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "board"
+          ],
+          "type": "object"
+        },
+        "name": "get_drc_violations"
+      },
+      {
+        "description": "Generate a Bill of Materials (BOM) CSV from the schematic's component data.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "exclude_dnp": {
+              "default": true,
+              "description": "Exclude 'Do Not Place' components",
+              "type": "boolean"
+            },
+            "fields": {
+              "description": "Ordered, comma-separated columns to export, e.g. 'Reference,Value,Footprint,MPN,${QUANTITY}'. Any schematic field name works \u2014 this is how MPN/LCSC columns reach the fab. Omit for KiCAD's default Reference,Value,Footprint,QUANTITY,DNP.",
+              "type": "string"
+            },
+            "format": {
+              "default": "csv",
+              "description": "BOM format. KiCad 10's schematic BOM export is CSV.",
+              "enum": [
+                "csv"
+              ],
+              "type": "string"
+            },
+            "group_by": {
+              "description": "Comma-separated fields whose matching references collapse into one row, e.g. 'Value,Footprint'. Omit for one row per symbol.",
+              "type": "string"
+            },
+            "labels": {
+              "description": "Ordered, comma-separated column headings matching 'fields'. Omit to label each column with its field name.",
+              "type": "string"
+            },
+            "output": {
+              "description": "Output CSV file path",
+              "type": "string"
+            },
+            "schematic": {
+              "description": "Path to .kicad_sch file (BOM uses schematic data)",
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic",
+            "output"
+          ],
+          "type": "object"
+        },
+        "name": "export_bom"
+      },
+      {
+        "description": "Re-embed placed symbols' definitions from their libraries, like KiCad's 'Update Symbols from Library'. A schematic carries its own copy of every symbol, so editing one in its library leaves the sheet drawing the old shape \u2014 this refreshes it. A symbol whose pins moved or disappeared in the library is refused (reported in pins_moved) unless allow_pin_moves is set, because wires and labels attach at pin coordinates.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "allow_pin_moves": {
+              "default": false,
+              "description": "Update symbols even when the library moved or removed pins. Wires and labels attached at the old pin positions are NOT moved with them \u2014 reconnect them afterwards.",
+              "type": "boolean"
+            },
+            "dry_run": {
+              "default": false,
+              "description": "Report what would change without writing.",
+              "type": "boolean"
+            },
+            "references": {
+              "description": "Component references to update (e.g. ['U1']). Omit to update every symbol in the schematic.",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "schematic": {
+              "description": "Path to .kicad_sch file",
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic"
+          ],
+          "type": "object"
+        },
+        "name": "update_symbols_from_library"
+      },
+      {
+        "description": "Check whether the KiCad GUI application is running and whether IPC responds within a bounded timeout. When IPC does not answer, ipc_failure.kind says why: not_configured, no_listener, access_denied (the operating system refused this account; likely a different account or a restrictive ACL, as with a sandboxed client), handshake_failed (the listener did not complete NNG's handshake, so it is probably not KiCad; this takes NNG's 10 s limit, so pass timeout_seconds above 10 to see it), transport_error, or request_failed (the request did not complete and may have reached the endpoint; an explicit KiCad status such as AS_NOT_READY proves receipt, a timeout or malformed reply does not). ipc_failure is null when no kind was established: the Ping succeeded with AS_OK, or this check's own timeout expired first (timed_out: true).",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "timeout_seconds": {
+              "default": 5,
+              "description": "Timeout for the health check in seconds",
+              "maximum": 300,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          "required": [],
+          "type": "object"
+        },
+        "name": "check_kicad_ui"
+      },
+      {
+        "description": "Inspect, append, replace, or remove one exact 3D-model entry on a placed footprint. Requires the requested board open in KiCad and uses one native undo transaction; it never rewrites an open board file. Inspect first, then pass its exact models_revision for every mutation. Results come from a fresh live readback.",
+        "inputSchema": {
+          "$defs": {
+            "vector3One": {
+              "additionalProperties": false,
+              "properties": {
+                "x": {
+                  "default": 1.0,
+                  "type": "number"
+                },
+                "y": {
+                  "default": 1.0,
+                  "type": "number"
+                },
+                "z": {
+                  "default": 1.0,
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "vector3Zero": {
+              "additionalProperties": false,
+              "properties": {
+                "x": {
+                  "default": 0.0,
+                  "type": "number"
+                },
+                "y": {
+                  "default": 0.0,
+                  "type": "number"
+                },
+                "z": {
+                  "default": 0.0,
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            }
+          },
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "expected_models_revision": {
+              "description": "Exact revision from inspect; required for append/replace/remove",
+              "type": "string"
+            },
+            "mode": {
+              "enum": [
+                "inspect",
+                "append",
+                "replace",
+                "remove"
+              ],
+              "type": "string"
+            },
+            "model": {
+              "additionalProperties": false,
+              "description": "Complete replacement model; required for append/replace",
+              "properties": {
+                "offset_mm": {
+                  "$ref": "#/$defs/vector3Zero"
+                },
+                "opacity": {
+                  "default": 1.0,
+                  "maximum": 1.0,
+                  "minimum": 0.0,
+                  "type": "number"
+                },
+                "path": {
+                  "type": "string"
+                },
+                "rotation_degrees": {
+                  "$ref": "#/$defs/vector3Zero"
+                },
+                "scale": {
+                  "$ref": "#/$defs/vector3One"
+                },
+                "visible": {
+                  "default": true,
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "path"
+              ],
+              "type": "object"
+            },
+            "model_index": {
+              "description": "Exact zero-based entry index; required for replace/remove",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "reference": {
+              "description": "Exact reference designator, e.g. U1",
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "reference",
+            "mode"
+          ],
+          "type": "object"
+        },
+        "name": "set_placed_footprint_models"
+      },
+      {
+        "description": "Render the board with kicad-cli and return it as a base64 PNG. Note this is              kicad-cli's 3-D board render viewed from the top, not a layer plot -- there is              no layer selection. Use export_svg for layer-aware 2-D output.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "height": {
+              "default": 600,
+              "description": "Render height in pixels, clamped to 100-4000",
+              "type": "integer"
+            },
+            "width": {
+              "default": 800,
+              "description": "Render width in pixels, clamped to 100-4000 (kept small since the image lands in LLM context, raise it when detail matters)",
+              "type": "integer"
+            }
+          },
+          "required": [
+            "board"
+          ],
+          "type": "object"
+        },
+        "name": "get_board_2d_view"
+      },
+      {
+        "description": "Get the exact schematic-space (X,Y) coordinates of every pin on every placed unit of a component, accounting for rotation and mirroring. Uses the canonical pin transform. Each pin also reports 'orientation_degrees', the direction leading away from the symbol body (0 = east) \u2014 a net label at the pin must read that way or its text runs back over the symbol's pin names \u2014 and 'length_mm'.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "reference": {
+              "type": "string"
+            },
+            "schematic": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic",
+            "reference"
+          ],
+          "type": "object"
+        },
+        "name": "get_schematic_pin_locations"
+      },
+      {
+        "description": "Get a component's shared properties and every placed unit's position. Use get_schematic_pin_locations for pins.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "reference": {
+              "type": "string"
+            },
+            "schematic": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic",
+            "reference"
+          ],
+          "type": "object"
+        },
+        "name": "get_schematic_component"
+      },
+      {
+        "description": "Delete a net label by net name and position.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "net": {
+              "type": "string"
+            },
+            "schematic": {
+              "type": "string"
+            },
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "schematic",
+            "net",
+            "x",
+            "y"
+          ],
+          "type": "object"
+        },
+        "name": "delete_schematic_net_label"
+      },
+      {
+        "description": "Return all nets defined on the PCB via KiCAD IPC.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "board"
+          ],
+          "type": "object"
+        },
+        "name": "get_nets_list"
+      },
+      {
+        "description": "Find a footprint on the board by reference designator and return its position.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "reference": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "reference"
+          ],
+          "type": "object"
+        },
+        "name": "find_component"
+      },
+      {
+        "description": "Add a rectangular board outline on Edge.Cuts, optionally using circular rounded corners. This appends: on a board that already has an outline it leaves two overlapping rectangles and a DRC failure, so replacing one means calling delete_graphics(layer='Edge.Cuts') first.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "corner_radius": {
+              "default": 0,
+              "description": "Circular corner radius in mm; must not exceed half the shorter side (0 = sharp)",
+              "minimum": 0,
+              "type": "number"
+            },
+            "x1": {
+              "description": "Top-left X in mm",
+              "type": "number"
+            },
+            "x2": {
+              "description": "Bottom-right X in mm",
+              "type": "number"
+            },
+            "y1": {
+              "description": "Top-left Y in mm",
+              "type": "number"
+            },
+            "y2": {
+              "description": "Bottom-right Y in mm",
+              "type": "number"
+            }
+          },
+          "required": [
+            "board",
+            "x1",
+            "y1",
+            "x2",
+            "y2"
+          ],
+          "type": "object"
+        },
+        "name": "add_board_outline"
+      },
+      {
+        "description": "Export the PCB netlist to a file in KiCAD or IPC-D-356 format.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file (or .kicad_sch for schematic netlist)",
+              "type": "string"
+            },
+            "format": {
+              "default": "kicad",
+              "description": "Netlist format: 'kicad' or 'ipc' (IPC-D-356)",
+              "type": "string"
+            },
+            "output": {
+              "description": "Output netlist file path",
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "output"
+          ],
+          "type": "object"
+        },
+        "name": "export_netlist"
+      },
+      {
+        "description": "Save a project-specific rule or override. Same dot-notation as save_user_config but writes to the project's .konnect/project.json, with the same refusals: an unusable existing file is never overwritten.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "key_path": {
+              "description": "Dot-notation config key",
+              "type": "string"
+            },
+            "project_dir": {
+              "description": "Project directory (optional, uses configured default)",
+              "type": "string"
+            },
+            "value": {
+              "description": "New value to set"
+            }
+          },
+          "required": [
+            "key_path",
+            "value"
+          ],
+          "type": "object"
+        },
+        "name": "save_project_config"
+      },
+      {
+        "description": "Export the PCB to DXF using kicad-cli, one file per requested layer. Useful for mechanical CAD interchange (enclosures, panelization, laser cutting).",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file",
+              "type": "string"
+            },
+            "layers": {
+              "description": "Layer names to export, e.g. ['Edge.Cuts', 'F.Cu']",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "output_dir": {
+              "description": "Directory to write DXF files into (one per layer)",
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "output_dir",
+            "layers"
+          ],
+          "type": "object"
+        },
+        "name": "export_dxf"
+      },
+      {
+        "description": "Return the current design rule constraints defined in the sibling KiCAD project file.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file",
+              "type": "string"
+            }
+          },
+          "required": [
+            "board"
+          ],
+          "type": "object"
+        },
+        "name": "get_design_rules"
+      },
+      {
+        "description": "Capture the current render of a schematic sheet as its visual baseline, stored under the project's .konnect/baselines/ keyed by sheet name, with the source file's hash and the renderer identity recorded so a later compare can tell design drift from a stale renderer.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "schematic": {
+              "description": "Path to .kicad_sch file",
+              "type": "string"
+            },
+            "width_px": {
+              "default": 1600,
+              "description": "Baseline render width in pixels",
+              "maximum": 4096,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "schematic"
+          ],
+          "type": "object"
+        },
+        "name": "set_visual_baseline"
+      },
+      {
+        "description": "Export the PCB in IPC-2581 format using kicad-cli. IPC-2581 is a unified fabrication/assembly/test data format accepted by many contract manufacturers as an alternative to a Gerber + drill + BOM + pick-and-place bundle.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file",
+              "type": "string"
+            },
+            "compress": {
+              "default": false,
+              "description": "Compress the output into a zip archive",
+              "type": "boolean"
+            },
+            "output": {
+              "description": "Output file path (.xml)",
+              "type": "string"
+            },
+            "units": {
+              "default": "mm",
+              "description": "Output units: 'mm' (default) or 'in'",
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "output"
+          ],
+          "type": "object"
+        },
+        "name": "export_ipc2581"
+      },
+      {
+        "description": "Export the PCB in ODB++ format using kicad-cli. ODB++ is a unified fabrication data format accepted by many fab houses as an alternative to a Gerber + drill bundle.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file",
+              "type": "string"
+            },
+            "compression": {
+              "default": "zip",
+              "description": "Compression mode: 'zip' (default), 'none', or 'tgz'",
+              "type": "string"
+            },
+            "output": {
+              "description": "Output file path",
+              "type": "string"
+            },
+            "units": {
+              "default": "mm",
+              "description": "Output units: 'mm' (default) or 'in'",
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "output"
+          ],
+          "type": "object"
+        },
+        "name": "export_odb"
+      },
+      {
+        "description": "Add or update a group property on every placed unit of multiple components.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "group_name": {
+              "description": "Group name to assign",
+              "type": "string"
+            },
+            "references": {
+              "description": "List of reference designators to group",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "schematic": {
+              "description": "Path to .kicad_sch file",
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic",
+            "references",
+            "group_name"
+          ],
+          "type": "object"
+        },
+        "name": "group_components"
+      },
+      {
+        "description": "Split a wire at a given point, creating two wire segments and a junction. Note: a pin landing mid-wire only needs a junction dot to connect (see add_junction) \u2014 splitting the wire is not required.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "schematic": {
+              "type": "string"
+            },
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "schematic",
+            "x",
+            "y"
+          ],
+          "type": "object"
+        },
+        "name": "split_wire_at_point"
+      },
+      {
+        "description": "Export the PCB layout to a PDF file using kicad-cli.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "black_and_white": {
+              "default": false,
+              "description": "Render in black and white",
+              "type": "boolean"
+            },
+            "board": {
+              "description": "Path to .kicad_pcb file",
+              "type": "string"
+            },
+            "layers": {
+              "description": "Layer names to include (empty = all visible layers)",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "output": {
+              "description": "Output PDF file path",
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "output"
+          ],
+          "type": "object"
+        },
+        "name": "export_pdf"
+      },
+      {
+        "description": "Copy a routing pattern (traces and vias) from one region of the board to another.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file",
+              "type": "string"
+            },
+            "dest_x": {
+              "description": "Destination anchor X (maps to src_x1)",
+              "type": "number"
+            },
+            "dest_y": {
+              "description": "Destination anchor Y (maps to src_y1)",
+              "type": "number"
+            },
+            "net_map": {
+              "additionalProperties": true,
+              "description": "Optional mapping from source net names to destination net names",
+              "type": "object"
+            },
+            "src_x1": {
+              "description": "Source region bounding box min X",
+              "type": "number"
+            },
+            "src_x2": {
+              "description": "Source region bounding box max X",
+              "type": "number"
+            },
+            "src_y1": {
+              "description": "Source region bounding box min Y",
+              "type": "number"
+            },
+            "src_y2": {
+              "description": "Source region bounding box max Y",
+              "type": "number"
+            }
+          },
+          "required": [
+            "board",
+            "src_x1",
+            "src_y1",
+            "src_x2",
+            "src_y2",
+            "dest_x",
+            "dest_y"
+          ],
+          "type": "object"
+        },
+        "name": "copy_routing_pattern"
+      },
+      {
+        "description": "Measure spacing between two footprints on the requested board. `mode: anchor` (the compatibility default) returns straight-line placement-anchor distance. `mode: courtyard` returns edge-to-edge distance between transformed, authored courtyard bounding boxes for same-side footprints. It refuses missing or malformed courtyard geometry and does not substitute pads or anchors. Neither mode measures pad, trace or copper clearance; use `run_drc` for electrical clearance and `get_component_pads` for pad geometry. Reads the live KiCad board when open, otherwise the saved file, and reports the source.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file",
+              "type": "string"
+            },
+            "mode": {
+              "default": "anchor",
+              "description": "anchor: placement-origin distance; courtyard: authored courtyard bbox edge distance",
+              "enum": [
+                "anchor",
+                "courtyard"
+              ],
+              "type": "string"
+            },
+            "ref1": {
+              "description": "First component reference (e.g. 'U1')",
+              "type": "string"
+            },
+            "ref2": {
+              "description": "Second component reference (e.g. 'C1')",
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "ref1",
+            "ref2"
+          ],
+          "type": "object"
+        },
+        "name": "check_clearance"
+      },
+      {
+        "description": "Re-render a sheet at its stored baseline's width and report pixel drift: changed-pixel percentage against a 2% threshold, the changed region's pixel bounding box, and whether the source file changed since the baseline. 'No baseline stored' is an explicit result, not an error; a baseline made by a different renderer version is flagged, never silently trusted.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "inline_diff": {
+              "default": false,
+              "description": "Also return the current render as base64 for inspection",
+              "type": "boolean"
+            },
+            "schematic": {
+              "description": "Path to .kicad_sch file",
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic"
+          ],
+          "type": "object"
+        },
+        "name": "compare_visual_baseline"
+      },
+      {
+        "description": "Add a natural-language design rule that Claude should follow in this project. Examples: 'Always use 100nF X7R for MCU decoupling within 3mm of power pin', 'Route USB D+/D- as 90-ohm differential pair'.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "project_dir": {
+              "description": "Project directory (for project-scoped rules)",
+              "type": "string"
+            },
+            "rule": {
+              "description": "The design rule in plain English",
+              "type": "string"
+            },
+            "scope": {
+              "default": "project",
+              "description": "'user' (applies to all projects) or 'project' (this project only)",
+              "type": "string"
+            }
+          },
+          "required": [
+            "rule"
+          ],
+          "type": "object"
+        },
+        "name": "add_design_rule"
+      },
+      {
+        "description": "Duplicate an existing footprint at a new position via KiCAD IPC.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "new_reference": {
+              "description": "New reference designator",
+              "type": "string"
+            },
+            "reference": {
+              "description": "Reference to duplicate",
+              "type": "string"
+            },
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "board",
+            "reference",
+            "new_reference",
+            "x",
+            "y"
+          ],
+          "type": "object"
+        },
+        "name": "duplicate_component"
+      },
+      {
+        "description": "Run the Design Rule Check on the PCB and return structured violation results, with separate error and warning counts in the summary. Prefer this over `get_drc_violations` (pcb_export toolset) \u2014 they run the same underlying kicad-cli check, but `run_drc` returns a cleaner breakdown. KiCad runs the complete configured DRC ruleset; kicad-cli has no per-test selector.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file",
+              "type": "string"
+            },
+            "limit": {
+              "default": 50,
+              "description": "Maximum number of violations to return",
+              "type": "integer"
+            },
+            "output": {
+              "description": "Optional path to write DRC report JSON",
+              "type": "string"
+            },
+            "refill_zones": {
+              "default": false,
+              "description": "Refill before checking: persisted IPC fill with sync_live_board, analysis-only CLI fill otherwise.",
+              "type": "boolean"
+            },
+            "severity": {
+              "default": "warning",
+              "description": "Minimum violation severity to include: 'error', 'warning' (default), 'info'",
+              "type": "string"
+            },
+            "sync_live_board": {
+              "default": false,
+              "description": "Bind the requested open board, optionally refill, save and verify its persisted snapshot before CLI DRC. Finish other mutations first.",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "board"
+          ],
+          "type": "object"
+        },
+        "name": "run_drc"
+      },
+      {
+        "description": "Add multiple junction dots in a single file read/write cycle.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "positions": {
+              "items": {
+                "additionalProperties": false,
+                "properties": {
+                  "x": {
+                    "type": "number"
+                  },
+                  "y": {
+                    "type": "number"
+                  }
+                },
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "schematic": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic",
+            "positions"
+          ],
+          "type": "object"
+        },
+        "name": "batch_add_junction"
+      },
+      {
+        "description": "Return live board-space pad positions, effective rotations, physical geometry, drills, copper-layer shapes, layers and net assignments for a footprint. Reads the board open in KiCad when it is reachable and falls back to the file only when no live KiCad holds this board \u2014 IPC unreachable, or that board not open \u2014 'source' says which, so unsaved placements are visible without a save. A pad's 'net' is its net name, \"\" if the pad carries no net (unconnected), or \u2014 reading the file \u2014 null if the net node is present but unreadable; treat null as an error, not as an unconnected pad.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "reference": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "reference"
+          ],
+          "type": "object"
+        },
+        "name": "get_component_pads"
+      },
+      {
+        "description": "Save the currently open PCB board file via KiCAD IPC. Requires KiCAD to be running with IPC enabled.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {},
+          "required": [],
+          "type": "object"
+        },
+        "name": "save_project"
+      },
+      {
+        "description": "Return the merged configuration (user defaults + project overrides). This is the config Claude should use for all design decisions. 'sources' says where each half came from ('file', 'defaults', or 'not_configured' when there is no project directory). Refuses with invalid_configuration, naming which file, rather than merging defaults in place of a file that cannot be used.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "project_dir": {
+              "description": "Project directory (optional)",
+              "type": "string"
+            }
+          },
+          "required": [],
+          "type": "object"
+        },
+        "name": "get_effective_config"
+      },
+      {
+        "description": "Render a schematic sheet with kicad-cli and return the path to the SVG it wrote.              There is no PNG: KiCad ships no schematic rasteriser \u2014 `sch export` offers no bitmap              format and there is no `sch render` \u2014 so this is a vector file, not an image that can              be shown inline. It lands in a temporary directory and is overwritten by the next view              of the same sheet; use export_schematic_svg (toolset sch_export) to choose where it              goes. The SVG doubles as a geometry source: kicad-cli writes every string a second              time as an invisible <text opacity=\"0\"> element carrying x, y, textLength, font-size              and text-anchor, so text content, position and width can be checked without rendering              a pixel.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "schematic": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic"
+          ],
+          "type": "object"
+        },
+        "name": "get_schematic_view"
+      },
+      {
+        "description": "Export a schematic sheet to a PDF file using kicad-cli.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "all_sheets": {
+              "default": true,
+              "description": "Include all hierarchical sheets; false exports page 1 only",
+              "type": "boolean"
+            },
+            "black_and_white": {
+              "default": false,
+              "description": "Render in black and white",
+              "type": "boolean"
+            },
+            "output": {
+              "description": "Output PDF file path",
+              "type": "string"
+            },
+            "schematic": {
+              "description": "Path to .kicad_sch file",
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic",
+            "output"
+          ],
+          "type": "object"
+        },
+        "name": "export_schematic_pdf"
+      },
+      {
+        "description": "Remove a no-connect flag at a given position.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "schematic": {
+              "type": "string"
+            },
+            "x": {
+              "type": "number"
+            },
+            "y": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "schematic",
+            "x",
+            "y"
+          ],
+          "type": "object"
+        },
+        "name": "delete_no_connect"
+      },
+      {
+        "description": "REFUSED until implemented: moving a symbol while stretching its connected              wires is not built yet. Calling this returns an error naming              move_schematic_component as the working alternative \u2014 it moves the symbol              only, leaving wires where they are.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {},
+          "required": [],
+          "type": "object"
+        },
+        "name": "move_connected"
+      },
+      {
+        "description": "Launch the live schematic viewer. The viewer shows the schematic as SVG and auto-refreshes when the file changes. Use this after placing components so the user can see the schematic in real-time as you edit it. For hierarchical designs, pass the root schematic \u2014 the viewer discovers every sheet reachable from it and shows a sheet selector.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "schematic": {
+              "description": "Path to the root .kicad_sch file to view",
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic"
+          ],
+          "type": "object"
+        },
+        "name": "open_schematic_viewer"
+      },
+      {
+        "description": "Export Gerber production files using kicad-cli. By default Konnect selects all enabled copper layers, masks, silkscreens, and Edge.Cuts while excluding documentation-only layers.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "description": "Path to .kicad_pcb file",
+              "type": "string"
+            },
+            "drill_file": {
+              "default": true,
+              "description": "Also generate Excellon drill file",
+              "type": "boolean"
+            },
+            "layers": {
+              "description": "Exact layer names to export. Omit or pass an empty array to auto-select enabled copper, F/B.Mask, F/B.SilkS, and Edge.Cuts.",
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "output_dir": {
+              "description": "Directory to write Gerber files into",
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "output_dir"
+          ],
+          "type": "object"
+        },
+        "name": "export_gerber"
+      },
+      {
+        "description": "Export the schematic and PCB to PDF as a timestamped snapshot/checkpoint. Useful for saving progress before major edits.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "description": "Optional label to include in the filename",
+              "type": "string"
+            },
+            "output_dir": {
+              "description": "Directory to write snapshot PDFs",
+              "type": "string"
+            },
+            "pcb": {
+              "description": "Optional: path to .kicad_pcb file",
+              "type": "string"
+            },
+            "schematic": {
+              "description": "Path to .kicad_sch file",
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic",
+            "output_dir"
+          ],
+          "type": "object"
+        },
+        "name": "snapshot_project"
+      },
+      {
+        "description": "Rename a KiCAD project: renames the .kicad_pro/.kicad_sch/.kicad_pcb/.kicad_prl files and rewrites the internal references that carry the old name. Renaming the files alone is NOT enough \u2014 every symbol instance stores (project \"name\"), and a mismatch there makes KiCAD treat the design as unannotated, losing every reference designator. Equivalent to eeschema's File > Save As. Use dry_run first.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "dry_run": {
+              "default": false,
+              "description": "Report the planned changes without touching anything. Default false.",
+              "type": "boolean"
+            },
+            "new_name": {
+              "description": "New project name, without extension",
+              "type": "string"
+            },
+            "project": {
+              "description": "Path to the existing .kicad_pro file",
+              "type": "string"
+            },
+            "rename_directory": {
+              "default": false,
+              "description": "Also rename the containing folder when it matches the old project name. Default false.",
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "project",
+            "new_name"
+          ],
+          "type": "object"
+        },
+        "name": "rename_project"
+      },
+      {
+        "description": "Connect two component pins by reference and pin number. Looks up pin coordinates automatically and routes a wire between them.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "pin1": {
+              "description": "First pin number (e.g. '1')",
+              "type": "string"
+            },
+            "pin2": {
+              "description": "Second pin number (e.g. '3')",
+              "type": "string"
+            },
+            "ref1": {
+              "description": "First component reference (e.g. 'R1')",
+              "type": "string"
+            },
+            "ref2": {
+              "description": "Second component reference (e.g. 'U1')",
+              "type": "string"
+            },
+            "schematic": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "schematic",
+            "ref1",
+            "pin1",
+            "ref2",
+            "pin2"
+          ],
+          "type": "object"
+        },
+        "name": "connect_pins"
+      },
+      {
+        "description": "Scan the schematic for near-miss wire endpoints (within snap_tolerance of a pin or label but not exactly on it) and snap them into place. Use dry_run to preview fixes without writing.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "dry_run": {
+              "default": false,
+              "description": "Report fixes without applying them",
+              "type": "boolean"
+            },
+            "schematic": {
+              "description": "Path to .kicad_sch file",
+              "type": "string"
+            },
+            "snap_tolerance": {
+              "default": 0.05,
+              "description": "Snap distance in mm",
+              "type": "number"
+            }
+          },
+          "required": [
+            "schematic"
+          ],
+          "type": "object"
+        },
+        "name": "fix_connectivity"
+      },
+      {
+        "description": "Request an editor active-layer change. The bundled stable KiCad IPC protocol does not expose this editor-session operation, so this tool currently returns unsupported_capability without modifying the board file. It never writes an (active_layer ...) token because KiCad 10 board files do not support one.",
+        "inputSchema": {
+          "additionalProperties": false,
+          "properties": {
+            "board": {
+              "type": "string"
+            },
+            "layer": {
+              "description": "KiCAD layer name (e.g. 'F.Cu')",
+              "type": "string"
+            }
+          },
+          "required": [
+            "board",
+            "layer"
+          ],
+          "type": "object"
+        },
+        "name": "set_active_layer"
+      }
+    ]
+  }
+}
