@@ -1,0 +1,53 @@
+{
+  "schema_version": "pivot-evidence.v1",
+  "evidence_id": "G-005-host-preflight-2026-10-21",
+  "task_id": "G-005",
+  "recorded_at_utc": "2026-10-21T23:49:43.685534Z",
+  "source_commit": "f14a02c3140fd455ded8391ea65b8416b5d6e170",
+  "revision_kind": "other",
+  "revision_id": "working-tree-snapshot:a9606f965f816ad2527008c551bfec0f76164f2fd5c2068809df9f98d75ca93e",
+  "action": {
+    "summary": "Bootstrap the repository with uv and validate the self-hosted runner toolchain",
+    "command": "tools/pivot/bootstrap.sh --require-ollama-model qwen3.5:9b",
+    "backend": "uv and pivot preflight",
+    "backend_version": "uv 0.12.5; KiCad 10.0.6; Ollama 0.40.6",
+    "toolchain": "Python 3.12.12; locked KiCad 10.0.6; GPU GeForce RTX 4070"
+  },
+  "status": "PASS",
+  "artifacts": [
+    {
+      "path": "tools/pivot/bootstrap.sh",
+      "sha256": "08211eff3cc0db018670b4a608403a8f460172499c4fd94a54527c39ee241836",
+      "media_type": "text/x-shellscript",
+      "role": "repeatable uv bootstrap"
+    },
+    {
+      "path": "tools/pivot/preflight.py",
+      "sha256": "73ebcf3749f8a20f09ff85bb93ad6312d8e14419715b83ce6767370706f56666",
+      "media_type": "text/x-python",
+      "role": "host and toolchain preflight"
+    },
+    {
+      "path": "fixtures/pivot/host_environment_manifest.json",
+      "sha256": "31a8eb18a47fd5f7314fe5954a413328bd33e9ac125c2d0ed7790f7950d48bc0",
+      "media_type": "application/json",
+      "role": "observed runner facts"
+    }
+  ],
+  "checks": [
+    {
+      "check_id": "host-preflight",
+      "status": "PASS",
+      "summary": "Preflight verified Python 3.12, locked KiCad hashes/version, Ollama model availability, GPU, and host environment.",
+      "evidence_paths": [
+        "fixtures/pivot/host_environment_manifest.json"
+      ],
+      "independent": true
+    }
+  ],
+  "ci_links": [],
+  "blockers": [],
+  "notes": [
+    "No container was used; setup follows repository uv guidance and user supplied runner context."
+  ]
+}

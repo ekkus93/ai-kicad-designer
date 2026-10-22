@@ -1,0 +1,276 @@
+{
+  "$defs": {
+    "EvidenceAction": {
+      "additionalProperties": false,
+      "description": "The operation and exact implementation that produced the evidence.",
+      "properties": {
+        "backend": {
+          "minLength": 1,
+          "title": "Backend",
+          "type": "string"
+        },
+        "backend_version": {
+          "minLength": 1,
+          "title": "Backend Version",
+          "type": "string"
+        },
+        "command": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Command"
+        },
+        "summary": {
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        },
+        "toolchain": {
+          "minLength": 1,
+          "title": "Toolchain",
+          "type": "string"
+        }
+      },
+      "required": [
+        "summary",
+        "backend",
+        "backend_version",
+        "toolchain"
+      ],
+      "title": "EvidenceAction",
+      "type": "object"
+    },
+    "EvidenceArtifact": {
+      "additionalProperties": false,
+      "description": "A content-hashed output used as evidence.",
+      "properties": {
+        "media_type": {
+          "minLength": 1,
+          "title": "Media Type",
+          "type": "string"
+        },
+        "path": {
+          "minLength": 1,
+          "title": "Path",
+          "type": "string"
+        },
+        "role": {
+          "minLength": 1,
+          "title": "Role",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "path",
+        "sha256",
+        "media_type",
+        "role"
+      ],
+      "title": "EvidenceArtifact",
+      "type": "object"
+    },
+    "EvidenceBlocker": {
+      "additionalProperties": false,
+      "description": "A specific unresolved condition and its next owner or engineering action.",
+      "properties": {
+        "code": {
+          "minLength": 1,
+          "title": "Code",
+          "type": "string"
+        },
+        "next_action": {
+          "minLength": 1,
+          "title": "Next Action",
+          "type": "string"
+        },
+        "requires_owner_input": {
+          "title": "Requires Owner Input",
+          "type": "boolean"
+        },
+        "summary": {
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "summary",
+        "next_action",
+        "requires_owner_input"
+      ],
+      "title": "EvidenceBlocker",
+      "type": "object"
+    },
+    "EvidenceCheck": {
+      "additionalProperties": false,
+      "description": "A named verification result tied to one or more artifacts.",
+      "properties": {
+        "check_id": {
+          "minLength": 1,
+          "title": "Check Id",
+          "type": "string"
+        },
+        "evidence_paths": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Evidence Paths",
+          "type": "array"
+        },
+        "independent": {
+          "title": "Independent",
+          "type": "boolean"
+        },
+        "status": {
+          "$ref": "#/$defs/EvidenceStatus"
+        },
+        "summary": {
+          "minLength": 1,
+          "title": "Summary",
+          "type": "string"
+        }
+      },
+      "required": [
+        "check_id",
+        "status",
+        "summary",
+        "evidence_paths",
+        "independent"
+      ],
+      "title": "EvidenceCheck",
+      "type": "object"
+    },
+    "EvidenceStatus": {
+      "description": "Possible outcomes for one task or one verification check.",
+      "enum": [
+        "NOT_RUN",
+        "RUNNING",
+        "PASS",
+        "FAIL",
+        "BLOCKED",
+        "UNSUPPORTED",
+        "WAIVED_WITH_APPROVAL",
+        "INCONCLUSIVE"
+      ],
+      "title": "EvidenceStatus",
+      "type": "string"
+    }
+  },
+  "$id": "https://ai-kicad-designer.local/schemas/pivot-evidence.v1.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Single source of truth for a TODO task's implementation evidence.",
+  "properties": {
+    "action": {
+      "$ref": "#/$defs/EvidenceAction"
+    },
+    "artifacts": {
+      "items": {
+        "$ref": "#/$defs/EvidenceArtifact"
+      },
+      "title": "Artifacts",
+      "type": "array"
+    },
+    "blockers": {
+      "items": {
+        "$ref": "#/$defs/EvidenceBlocker"
+      },
+      "title": "Blockers",
+      "type": "array"
+    },
+    "checks": {
+      "items": {
+        "$ref": "#/$defs/EvidenceCheck"
+      },
+      "title": "Checks",
+      "type": "array"
+    },
+    "ci_links": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Ci Links",
+      "type": "array"
+    },
+    "evidence_id": {
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{2,127}$",
+      "title": "Evidence Id",
+      "type": "string"
+    },
+    "notes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Notes",
+      "type": "array"
+    },
+    "recorded_at_utc": {
+      "format": "date-time",
+      "title": "Recorded At Utc",
+      "type": "string"
+    },
+    "revision_id": {
+      "minLength": 1,
+      "title": "Revision Id",
+      "type": "string"
+    },
+    "revision_kind": {
+      "enum": [
+        "git_commit",
+        "design_revision",
+        "other"
+      ],
+      "title": "Revision Kind",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "pivot-evidence.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_commit": {
+      "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$",
+      "title": "Source Commit",
+      "type": "string"
+    },
+    "status": {
+      "$ref": "#/$defs/EvidenceStatus"
+    },
+    "task_id": {
+      "pattern": "^(?:G|P[0-7]|X)-[0-9]{3}$",
+      "title": "Task Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "evidence_id",
+    "task_id",
+    "recorded_at_utc",
+    "source_commit",
+    "revision_kind",
+    "revision_id",
+    "action",
+    "status",
+    "artifacts",
+    "checks",
+    "ci_links",
+    "blockers",
+    "notes"
+  ],
+  "title": "EvidenceRecord",
+  "type": "object"
+}

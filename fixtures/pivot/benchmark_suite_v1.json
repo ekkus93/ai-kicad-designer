@@ -1,0 +1,149 @@
+{
+  "schema_version": "pivot-benchmark-suite.v1",
+  "suite_id": "reference_555_led_flasher_backend_v1",
+  "fixture_id": "reference_555_led_flasher_v1",
+  "fixture_manifest": "fixtures/pivot/reference_555_led_flasher_v1/manifest.json",
+  "fixture_manifest_sha256": "4aabc82324d4d723d0b98382c8cf82fff9a925fb9ebbf73220af90cfb51a6cbd",
+  "model_profile": {
+    "provider": "ollama",
+    "model": "qwen3.5:9b",
+    "model_digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "temperature": 0,
+    "num_ctx": 8192,
+    "num_predict": 1800
+  },
+  "default_budgets": {
+    "time_limit_seconds": 240,
+    "token_limit": 32768,
+    "tool_call_limit": 24
+  },
+  "error_taxonomy": [
+    "INVALID_TOOL_CALL",
+    "TOOL_TIMEOUT",
+    "BACKEND_UNAVAILABLE",
+    "UNSUPPORTED_CAPABILITY",
+    "INVALID_INPUT",
+    "STALE_REVISION",
+    "NATIVE_PARSE_FAILURE",
+    "ERC_FAILURE",
+    "CONNECTIVITY_MISMATCH",
+    "FOOTPRINT_PAD_MISMATCH",
+    "DRC_FAILURE",
+    "EXPORT_FAILURE",
+    "ROLLBACK_FAILURE",
+    "TOKEN_BUDGET_EXCEEDED",
+    "WALL_CLOCK_BUDGET_EXCEEDED",
+    "UNKNOWN_TOOL_ERROR",
+    "INVALID_TOOL_ARGUMENTS",
+    "TOOL_CALL_BUDGET_EXCEEDED"
+  ],
+  "tasks": [
+    {
+      "task_id": "inspect_reference_circuit",
+      "phase": "SCHEMATIC",
+      "prompt": "Inspect the pinned reference project. Return the NE555 DIP-8 pin-to-net map, astable high/low timing and frequency, and the LED on-state and conservative current upper bound. Use project inspection and authoritative calculation tools available to you. Do not edit the project.",
+      "tool_call_limit": 8,
+      "success_checks": [
+        "native_pin_net_equivalence",
+        "timing_calculation_tolerance",
+        "led_current_upper_bound",
+        "no_project_mutation"
+      ],
+      "unsupported_policy": "Mark an unavailable operation UNSUPPORTED. Wrong returned values are FAIL."
+    },
+    {
+      "task_id": "native_project_readback",
+      "phase": "SCHEMATIC",
+      "prompt": "Open the supplied native KiCad project, read the schematic and exported netlist, then save a candidate copy without semantic edits. Report the resulting paths and validation status.",
+      "tool_call_limit": 12,
+      "success_checks": [
+        "native_project_opens",
+        "native_round_trip_parses",
+        "pin_net_equivalence",
+        "source_fixture_unchanged"
+      ],
+      "unsupported_policy": "A backend without project read/write capability is UNSUPPORTED; malformed or changed connectivity is FAIL."
+    },
+    {
+      "task_id": "footprint_and_pad_mapping",
+      "phase": "FOOTPRINTS",
+      "prompt": "Assign the fixture's approved footprints to every reference designator and verify every symbol pin maps to the intended physical pad, including the NE555 pin numbers and LED anode/cathode polarity. Save an isolated candidate.",
+      "tool_call_limit": 16,
+      "success_checks": [
+        "all_components_assigned",
+        "pin_pad_map_complete",
+        "led_polarity_correct",
+        "candidate_readback_matches"
+      ],
+      "unsupported_policy": "Missing footprint assignment support is UNSUPPORTED; any incorrect pin/pad mapping is FAIL."
+    },
+    {
+      "task_id": "two_layer_board_shell",
+      "phase": "PCB_PLACEMENT",
+      "prompt": "Create or synchronize a native two-layer PCB for the reference schematic, apply the pinned 50 mm by 35 mm board profile, place every footprint within the outline, and preserve schematic component and net identities. Leave routing for a later task.",
+      "tool_call_limit": 24,
+      "success_checks": [
+        "pcb_native_parse",
+        "board_outline_matches",
+        "all_footprints_inside_outline",
+        "pad_net_equivalence"
+      ],
+      "unsupported_policy": "Report absent PCB synchronization or placement operations as UNSUPPORTED."
+    },
+    {
+      "task_id": "drc_and_fabrication_export",
+      "phase": "MANUFACTURING_REVIEW",
+      "prompt": "On an isolated board candidate, run native DRC and attempt the required Gerber and plated/non-plated drill exports. Do not claim a fabrication-ready result if nets remain unrouted or any required output is absent.",
+      "tool_call_limit": 24,
+      "success_checks": [
+        "native_drc_report",
+        "all_required_nets_connected",
+        "required_gerber_layers_present",
+        "drill_files_parse",
+        "source_revision_bound"
+      ],
+      "unsupported_policy": "An unimplemented export is UNSUPPORTED; incomplete or corrupt output is FAIL."
+    },
+    {
+      "task_id": "rollback_after_invalid_edit",
+      "phase": "SCHEMATIC",
+      "prompt": "On a disposable copy, attempt a deliberate invalid mutation that shorts the timing net to the reference net. Detect and reject it, roll back, and prove the accepted source connectivity and revision are unchanged.",
+      "tool_call_limit": 16,
+      "success_checks": [
+        "invalid_short_rejected",
+        "rollback_succeeds",
+        "accepted_revision_unchanged",
+        "rollback_evidence_recorded"
+      ],
+      "unsupported_policy": "No transactional rollback capability is UNSUPPORTED; accepting the short or corrupting the accepted source is FAIL."
+    }
+  ],
+  "scoring": {
+    "gate_statuses": [
+      "PASS",
+      "FAIL",
+      "UNSUPPORTED",
+      "INCONCLUSIVE"
+    ],
+    "unsupported_is_failure": false,
+    "report_metrics": [
+      "per_gate_outcome",
+      "valid_tool_call_rate",
+      "invalid_tool_calls",
+      "median_latency",
+      "p95_latency",
+      "token_count",
+      "repair_count",
+      "artifact_hashes",
+      "source_mutation",
+      "human_edit_minutes"
+    ],
+    "independent_judges": [
+      "locked_kicad_cli",
+      "native_sexpr_parser",
+      "netlist_pin_net_observer",
+      "footprint_pad_auditor",
+      "gerber_drill_auditor"
+    ]
+  }
+}

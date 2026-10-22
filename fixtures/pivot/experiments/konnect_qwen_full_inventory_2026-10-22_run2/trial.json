@@ -1,0 +1,173 @@
+{
+  "trial": {
+    "schema_version": "pivot-benchmark.v1",
+    "trial_id": "konnect_qwen_full_inventory_2026-10-22_run2",
+    "task_id": "inspect_reference_circuit",
+    "fixture_sha256": "4aabc82324d4d723d0b98382c8cf82fff9a925fb9ebbf73220af90cfb51a6cbd",
+    "recorded_at_utc": "2026-10-22T01:59:15.480137Z",
+    "model": {
+      "provider": "ollama",
+      "model": "qwen3.5:9b",
+      "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+      "settings": {
+        "temperature": 0,
+        "num_ctx": 8192,
+        "num_predict": 1800
+      }
+    },
+    "backend": {
+      "name": "Konnect",
+      "version": "0.13.0",
+      "build_id": "9488e5f09717cb508cb25779dc16586d1f06f758",
+      "mode": "full_inventory"
+    },
+    "time_limit_seconds": 240,
+    "token_limit": 32768,
+    "tool_call_limit": 8,
+    "elapsed_seconds": 6.947091767098755,
+    "token_count": 8553,
+    "tool_calls": [
+      {
+        "tool_name": "export_netlist_summary",
+        "duration_ms": 1,
+        "error_class": null,
+        "valid": true
+      },
+      {
+        "tool_name": "get_project_info",
+        "duration_ms": 0,
+        "error_class": "INVALID_INPUT",
+        "valid": false
+      },
+      {
+        "tool_name": "list_schematic_nets",
+        "duration_ms": 0,
+        "error_class": null,
+        "valid": true
+      },
+      {
+        "tool_name": "run_erc",
+        "duration_ms": 443,
+        "error_class": null,
+        "valid": true
+      }
+    ],
+    "gates": [
+      {
+        "gate_id": "structured_final_response",
+        "status": "FAIL",
+        "summary": "Model did not return valid structured JSON.",
+        "independent": true,
+        "evidence_paths": [
+          "model_output.json"
+        ]
+      },
+      {
+        "gate_id": "required_mcp_tool_use",
+        "status": "FAIL",
+        "summary": "Required MCP tools not successfully used: ['get_project_info'].",
+        "independent": false,
+        "evidence_paths": [
+          "mcp_tool_calls.json"
+        ]
+      },
+      {
+        "gate_id": "workspace_inputs_unchanged",
+        "status": "PASS",
+        "summary": "All files present before backend execution are unchanged.",
+        "independent": true,
+        "evidence_paths": [
+          "workspace_integrity.json"
+        ]
+      },
+      {
+        "gate_id": "tool_call_budget",
+        "status": "PASS",
+        "summary": "Observed usage is within its configured budget.",
+        "independent": true,
+        "evidence_paths": [
+          "usage_report.json"
+        ]
+      },
+      {
+        "gate_id": "token_budget",
+        "status": "PASS",
+        "summary": "Observed usage is within its configured budget.",
+        "independent": true,
+        "evidence_paths": [
+          "usage_report.json"
+        ]
+      },
+      {
+        "gate_id": "wall_clock_budget",
+        "status": "PASS",
+        "summary": "Observed usage is within its configured budget.",
+        "independent": true,
+        "evidence_paths": [
+          "usage_report.json"
+        ]
+      },
+      {
+        "gate_id": "source_schematic_unchanged",
+        "status": "PASS",
+        "summary": "The protected source schematic is unchanged.",
+        "independent": true,
+        "evidence_paths": [
+          "mcp_tool_calls.json"
+        ]
+      }
+    ],
+    "artifacts": [
+      {
+        "path": "model_output.json",
+        "sha256": "0a3e36d5030fc6d58164d77a90bb2b8ff7dc64f32aecb96353ca8e0d0a146e7d",
+        "media_type": "application/json",
+        "role": "model_final_response"
+      },
+      {
+        "path": "mcp_tool_calls.json",
+        "sha256": "302cdb981193aae4e25865fd5916bb663e94e199c444835a874a2b5da4a0263a",
+        "media_type": "application/json",
+        "role": "backend_call_trace"
+      },
+      {
+        "path": "workspace_integrity.json",
+        "sha256": "bf076fed1aa2413847677fac42e0dc8756d4af7e93ae9807100ea7be2765e59c",
+        "media_type": "application/json",
+        "role": "workspace_input_integrity"
+      },
+      {
+        "path": "usage_report.json",
+        "sha256": "4afed5e48465625334444c26eefeea786742fa3e6776eaf56d29bd3df42ad410",
+        "media_type": "application/json",
+        "role": "budget_usage_report"
+      }
+    ],
+    "status": "FAIL"
+  },
+  "server_info": {
+    "name": "konnect",
+    "version": "0.13.0"
+  },
+  "tool_errors": [
+    "INVALID_INPUT"
+  ],
+  "process_exit_code": 0,
+  "source_schematic_sha256": "9d819329416ae990c9ba1b9feddc5eca91c6220650259ea740b8fdc38f31903f",
+  "source_schematic_unchanged": true,
+  "workspace_hashes": {
+    "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+    "Reference555LedFlasher.kicad_prl": "a61f9786f0934d13bc3efa5ef75250845c08a8c4ee1bfc2a4b9b25e7f5fbdd80",
+    "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+    "Reference555LedFlasher.kicad_sch": "9d819329416ae990c9ba1b9feddc5eca91c6220650259ea740b8fdc38f31903f",
+    "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+  },
+  "scores": {
+    "pass": 5,
+    "fail": 2,
+    "unsupported": 0,
+    "inconclusive": 0,
+    "accuracy": 0.7142857142857143,
+    "eligible": 7
+  }
+}

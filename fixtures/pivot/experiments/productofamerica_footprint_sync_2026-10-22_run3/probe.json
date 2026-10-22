@@ -1,0 +1,916 @@
+{
+  "initialize": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+      "capabilities": {
+        "prompts": {
+          "listChanged": false
+        },
+        "resources": {
+          "listChanged": false,
+          "subscribe": false
+        },
+        "tools": {
+          "listChanged": false
+        }
+      },
+      "instructions": "KiCad EDA tools for schematic capture, PCB layout, symbol/footprint libraries, and project management.\n\nCRITICAL RULES:\n- NEVER read, edit, or write KiCad files (.kicad_sch, .kicad_pcb, .kicad_sym, .kicad_mod, .kicad_pro) directly. All manipulation MUST go through these MCP tools.\n- NEVER run kicad-cli commands directly. Use the export, ERC, and DRC tools provided by this server.\n- When a tool returns an error, try different parameters or a different tool. Do NOT fall back to manual file editing.\n\nSTART HERE (fetch one of these by name; do not search blind):\n- See what is in a schematic: list_schematic_components\n- Add a part (resistor, capacitor, IC, ...): place_component\n- Connect pins to a net: wire_pins_to_net\n- Check the schematic: run_erc\n- See what is on the board: list_pcb_footprints\n- Place or move a footprint: place_footprint, move_footprint\n- Route: add_trace, add_via, autoroute_pcb\n- Check the board: run_drc\n- Push the schematic to the board: update_pcb_from_schematic\n- Manufacturing output: export_gerbers\n- Start a new project: create_project\n- Anything else: search by what you want to do. There are 109 tools; these are the entry points, not the whole surface.\n\nFILE ACCESS:\n- These tools reach the filesystem through this server's own process, which already runs with the user's permissions. You do NOT need filesystem access, a connected folder, or any other permission from the host application to use them.\n- NEVER ask the user to connect, add, or grant access to a folder. If you need a file, call the tool.\n- Every path parameter takes an absolute path.\n\nCONFIGURED DEFAULTS:\n- schematic: /home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_sch\n- export directory: /home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run3/workspace\n- These are already filled in as the tools' default parameter values. Call the tool with no path argument at all. Do NOT ask the user for a path listed here, and do NOT guess one.",
+      "protocolVersion": "2025-03-26",
+      "serverInfo": {
+        "name": "kicad",
+        "version": "0.21.1"
+      }
+    }
+  },
+  "calls": [
+    {
+      "tool": "set_component_property",
+      "arguments": {
+        "reference": "U1",
+        "key": "Footprint",
+        "value": "Package_DIP:DIP-8_W7.62mm",
+        "schematic_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_sch"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 2,
+        "result": {
+          "content": [
+            {
+              "text": "Set U1.Footprint = Package_DIP:DIP-8_W7.62mm (new property)",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "result": "Set U1.Footprint = Package_DIP:DIP-8_W7.62mm (new property)"
+          }
+        }
+      }
+    },
+    {
+      "tool": "set_component_property",
+      "arguments": {
+        "reference": "R1",
+        "key": "Footprint",
+        "value": "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal",
+        "schematic_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_sch"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 3,
+        "result": {
+          "content": [
+            {
+              "text": "Set R1.Footprint = Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal (new property)",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "result": "Set R1.Footprint = Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal (new property)"
+          }
+        }
+      }
+    },
+    {
+      "tool": "set_component_property",
+      "arguments": {
+        "reference": "R2",
+        "key": "Footprint",
+        "value": "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal",
+        "schematic_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_sch"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 4,
+        "result": {
+          "content": [
+            {
+              "text": "Set R2.Footprint = Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal (new property)",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "result": "Set R2.Footprint = Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal (new property)"
+          }
+        }
+      }
+    },
+    {
+      "tool": "set_component_property",
+      "arguments": {
+        "reference": "R3",
+        "key": "Footprint",
+        "value": "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal",
+        "schematic_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_sch"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 5,
+        "result": {
+          "content": [
+            {
+              "text": "Set R3.Footprint = Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal (new property)",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "result": "Set R3.Footprint = Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal (new property)"
+          }
+        }
+      }
+    },
+    {
+      "tool": "set_component_property",
+      "arguments": {
+        "reference": "C1",
+        "key": "Footprint",
+        "value": "Capacitor_THT:CP_Radial_D8.0mm_P5.00mm",
+        "schematic_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_sch"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 6,
+        "result": {
+          "content": [
+            {
+              "text": "Set C1.Footprint = Capacitor_THT:CP_Radial_D8.0mm_P5.00mm (new property)",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "result": "Set C1.Footprint = Capacitor_THT:CP_Radial_D8.0mm_P5.00mm (new property)"
+          }
+        }
+      }
+    },
+    {
+      "tool": "set_component_property",
+      "arguments": {
+        "reference": "C2",
+        "key": "Footprint",
+        "value": "Capacitor_THT:C_Disc_D3.0mm_W1.6mm_P2.50mm",
+        "schematic_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_sch"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 7,
+        "result": {
+          "content": [
+            {
+              "text": "Set C2.Footprint = Capacitor_THT:C_Disc_D3.0mm_W1.6mm_P2.50mm (new property)",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "result": "Set C2.Footprint = Capacitor_THT:C_Disc_D3.0mm_W1.6mm_P2.50mm (new property)"
+          }
+        }
+      }
+    },
+    {
+      "tool": "set_component_property",
+      "arguments": {
+        "reference": "D1",
+        "key": "Footprint",
+        "value": "LED_THT:LED_D5.0mm",
+        "schematic_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_sch"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 8,
+        "result": {
+          "content": [
+            {
+              "text": "Set D1.Footprint = LED_THT:LED_D5.0mm (new property)",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "result": "Set D1.Footprint = LED_THT:LED_D5.0mm (new property)"
+          }
+        }
+      }
+    },
+    {
+      "tool": "set_component_property",
+      "arguments": {
+        "reference": "J1",
+        "key": "Footprint",
+        "value": "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical",
+        "schematic_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_sch"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 9,
+        "result": {
+          "content": [
+            {
+              "text": "Set J1.Footprint = Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical (new property)",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "result": "Set J1.Footprint = Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical (new property)"
+          }
+        }
+      }
+    },
+    {
+      "tool": "set_component_property",
+      "arguments": {
+        "reference": "J2",
+        "key": "Footprint",
+        "value": "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical",
+        "schematic_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_sch"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 10,
+        "result": {
+          "content": [
+            {
+              "text": "Set J2.Footprint = Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical (new property)",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "result": "Set J2.Footprint = Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical (new property)"
+          }
+        }
+      }
+    },
+    {
+      "tool": "set_component_property",
+      "arguments": {
+        "reference": "J3",
+        "key": "Footprint",
+        "value": "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical",
+        "schematic_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_sch"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 11,
+        "result": {
+          "content": [
+            {
+              "text": "Set J3.Footprint = Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical (new property)",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "result": "Set J3.Footprint = Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical (new property)"
+          }
+        }
+      }
+    },
+    {
+      "tool": "update_pcb_from_schematic",
+      "arguments": {
+        "schematic_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_sch",
+        "pcb_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_pcb",
+        "project_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_pro"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 12,
+        "result": {
+          "content": [
+            {
+              "text": "{\n  \"status\": \"ok\",\n  \"added\": [\n    \"C1\",\n    \"C2\",\n    \"D1\",\n    \"J1\",\n    \"J2\",\n    \"J3\",\n    \"R1\",\n    \"R2\",\n    \"R3\",\n    \"U1\"\n  ],\n  \"value_updated\": [],\n  \"fpid_changed\": [],\n  \"fields_updated\": [],\n  \"excluded_from_board\": [],\n  \"stale_footprints\": [],\n  \"stale_removed\": [],\n  \"nets_added\": 7,\n  \"nets_removed\": 0,\n  \"pads_bound\": 23,\n  \"orphaned_tracks\": 0,\n  \"orphaned_zones\": 0,\n  \"skipped\": [],\n  \"warnings\": []\n}",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "status": "ok",
+            "added": [
+              "C1",
+              "C2",
+              "D1",
+              "J1",
+              "J2",
+              "J3",
+              "R1",
+              "R2",
+              "R3",
+              "U1"
+            ],
+            "value_updated": [],
+            "fpid_changed": [],
+            "fields_updated": [],
+            "excluded_from_board": [],
+            "stale_footprints": [],
+            "stale_removed": [],
+            "nets_added": 7,
+            "nets_removed": 0,
+            "pads_bound": 23,
+            "orphaned_tracks": 0,
+            "orphaned_zones": 0,
+            "skipped": [],
+            "warnings": []
+          }
+        }
+      }
+    },
+    {
+      "tool": "list_pcb_footprints",
+      "arguments": {
+        "pcb_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_pcb"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 13,
+        "result": {
+          "content": [
+            {
+              "text": "{\n  \"reference\": \"C1\",\n  \"value\": \"10u\",\n  \"lib_id\": \"Capacitor_THT:CP_Radial_D8.0mm_P5.00mm\",\n  \"x\": 25.4,\n  \"y\": 25.4,\n  \"rotation\": 0.0,\n  \"layer\": \"F.Cu\"\n}",
+              "type": "text"
+            },
+            {
+              "text": "{\n  \"reference\": \"C2\",\n  \"value\": \"10n\",\n  \"lib_id\": \"Capacitor_THT:C_Disc_D3.0mm_W1.6mm_P2.50mm\",\n  \"x\": 35.4,\n  \"y\": 25.4,\n  \"rotation\": 0.0,\n  \"layer\": \"F.Cu\"\n}",
+              "type": "text"
+            },
+            {
+              "text": "{\n  \"reference\": \"D1\",\n  \"value\": \"WP7113ID\",\n  \"lib_id\": \"LED_THT:LED_D5.0mm\",\n  \"x\": 45.4,\n  \"y\": 25.4,\n  \"rotation\": 0.0,\n  \"layer\": \"F.Cu\"\n}",
+              "type": "text"
+            },
+            {
+              "text": "{\n  \"reference\": \"J1\",\n  \"value\": \"Supply\",\n  \"lib_id\": \"Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical\",\n  \"x\": 55.4,\n  \"y\": 25.4,\n  \"rotation\": 0.0,\n  \"layer\": \"F.Cu\"\n}",
+              "type": "text"
+            },
+            {
+              "text": "{\n  \"reference\": \"J2\",\n  \"value\": \"Pulse output\",\n  \"lib_id\": \"Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical\",\n  \"x\": 65.4,\n  \"y\": 25.4,\n  \"rotation\": 0.0,\n  \"layer\": \"F.Cu\"\n}",
+              "type": "text"
+            },
+            {
+              "text": "{\n  \"reference\": \"J3\",\n  \"value\": \"Return\",\n  \"lib_id\": \"Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical\",\n  \"x\": 75.4,\n  \"y\": 25.4,\n  \"rotation\": 0.0,\n  \"layer\": \"F.Cu\"\n}",
+              "type": "text"
+            },
+            {
+              "text": "{\n  \"reference\": \"R1\",\n  \"value\": \"10k\",\n  \"lib_id\": \"Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal\",\n  \"x\": 85.4,\n  \"y\": 25.4,\n  \"rotation\": 0.0,\n  \"layer\": \"F.Cu\"\n}",
+              "type": "text"
+            },
+            {
+              "text": "{\n  \"reference\": \"R2\",\n  \"value\": \"47k\",\n  \"lib_id\": \"Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal\",\n  \"x\": 95.4,\n  \"y\": 25.4,\n  \"rotation\": 0.0,\n  \"layer\": \"F.Cu\"\n}",
+              "type": "text"
+            },
+            {
+              "text": "{\n  \"reference\": \"R3\",\n  \"value\": \"1k\",\n  \"lib_id\": \"Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal\",\n  \"x\": 105.4,\n  \"y\": 25.4,\n  \"rotation\": 0.0,\n  \"layer\": \"F.Cu\"\n}",
+              "type": "text"
+            },
+            {
+              "text": "{\n  \"reference\": \"U1\",\n  \"value\": \"NE555D\",\n  \"lib_id\": \"Package_DIP:DIP-8_W7.62mm\",\n  \"x\": 115.4,\n  \"y\": 25.4,\n  \"rotation\": 0.0,\n  \"layer\": \"F.Cu\"\n}",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "result": [
+              {
+                "reference": "C1",
+                "value": "10u",
+                "lib_id": "Capacitor_THT:CP_Radial_D8.0mm_P5.00mm",
+                "x": 25.4,
+                "y": 25.4,
+                "rotation": 0.0,
+                "layer": "F.Cu"
+              },
+              {
+                "reference": "C2",
+                "value": "10n",
+                "lib_id": "Capacitor_THT:C_Disc_D3.0mm_W1.6mm_P2.50mm",
+                "x": 35.4,
+                "y": 25.4,
+                "rotation": 0.0,
+                "layer": "F.Cu"
+              },
+              {
+                "reference": "D1",
+                "value": "WP7113ID",
+                "lib_id": "LED_THT:LED_D5.0mm",
+                "x": 45.4,
+                "y": 25.4,
+                "rotation": 0.0,
+                "layer": "F.Cu"
+              },
+              {
+                "reference": "J1",
+                "value": "Supply",
+                "lib_id": "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical",
+                "x": 55.4,
+                "y": 25.4,
+                "rotation": 0.0,
+                "layer": "F.Cu"
+              },
+              {
+                "reference": "J2",
+                "value": "Pulse output",
+                "lib_id": "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical",
+                "x": 65.4,
+                "y": 25.4,
+                "rotation": 0.0,
+                "layer": "F.Cu"
+              },
+              {
+                "reference": "J3",
+                "value": "Return",
+                "lib_id": "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical",
+                "x": 75.4,
+                "y": 25.4,
+                "rotation": 0.0,
+                "layer": "F.Cu"
+              },
+              {
+                "reference": "R1",
+                "value": "10k",
+                "lib_id": "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal",
+                "x": 85.4,
+                "y": 25.4,
+                "rotation": 0.0,
+                "layer": "F.Cu"
+              },
+              {
+                "reference": "R2",
+                "value": "47k",
+                "lib_id": "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal",
+                "x": 95.4,
+                "y": 25.4,
+                "rotation": 0.0,
+                "layer": "F.Cu"
+              },
+              {
+                "reference": "R3",
+                "value": "1k",
+                "lib_id": "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal",
+                "x": 105.4,
+                "y": 25.4,
+                "rotation": 0.0,
+                "layer": "F.Cu"
+              },
+              {
+                "reference": "U1",
+                "value": "NE555D",
+                "lib_id": "Package_DIP:DIP-8_W7.62mm",
+                "x": 115.4,
+                "y": 25.4,
+                "rotation": 0.0,
+                "layer": "F.Cu"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "tool": "run_drc",
+      "arguments": {
+        "pcb_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_pcb"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 14,
+        "result": {
+          "content": [
+            {
+              "text": "{\n  \"source\": \"Reference555LedFlasher.kicad_pcb\",\n  \"kicad_version\": \"10.0.6\",\n  \"violation_count\": 1,\n  \"violations\": [\n    {\n      \"description\": \"Board has malformed outline (no edges found on Edge.Cuts layer)\",\n      \"items\": [\n        {\n          \"description\": \"PCB\",\n          \"pos\": {\n            \"x\": 0.0,\n            \"y\": 0.0\n          },\n          \"uuid\": \"5c987d6f-dc98-4ed4-a7d6-a6524bdb7385\"\n        }\n      ],\n      \"severity\": \"error\",\n      \"type\": \"invalid_outline\"\n    }\n  ],\n  \"unconnected_count\": 16,\n  \"unconnected_items\": [\n    {\n      \"description\": \"Missing connection between items\",\n      \"items\": [\n        {\n          \"description\": \"PTH pad 1 [/OUT] of J2\",\n          \"pos\": {\n            \"x\": 65.4,\n            \"y\": 25.4\n          },\n          \"uuid\": \"9d825308-b070-47ca-9350-a6a43f580127\"\n        },\n        {\n          \"description\": \"PTH pad 1 [/OUT] of D1\",\n          \"pos\": {\n            \"x\": 45.4,\n            \"y\": 25.4\n          },\n          \"uuid\": \"ad13c744-0210-4669-8168-64bc89c0d47f\"\n        }\n      ],\n      \"severity\": \"error\",\n      \"type\": \"unconnected_items\"\n    },\n    {\n      \"description\": \"Missing connection between items\",\n      \"items\": [\n        {\n          \"description\": \"PTH pad 3 [/OUT] of U1\",\n          \"pos\": {\n            \"x\": 115.4,\n            \"y\": 30.48\n          },\n          \"uuid\": \"27b0ccc1-fd99-4e8a-bd80-6e5d30a66f57\"\n        },\n        {\n          \"description\": \"PTH pad 1 [/OUT] of J2\",\n          \"pos\": {\n            \"x\": 65.4,\n            \"y\": 25.4\n          },\n          \"uuid\": \"9d825308-b070-47ca-9350-a6a43f580127\"\n        }\n      ],\n      \"severity\": \"error\",\n      \"type\": \"unconnected_items\"\n    },\n    {\n      \"description\": \"Missing connection between items\",\n      \"items\": [\n        {\n          \"description\": \"PTH pad 2 [/REF] of C1\",\n          \"pos\": {\n            \"x\": 30.4,\n            \"y\": 25.4\n          },\n          \"uuid\": \"1b415328-e836-4365-8c5f-a7e633648162\"\n        },\n        {\n          \"description\": \"PTH pad 2 [/REF] of C2\",\n          \"pos\": {\n            \"x\": 37.9,\n            \"y\": 25.4\n          },\n          \"uuid\": \"9b6de82b-4791-47ca-8851-dc1827019be4\"\n        }\n      ],\n      \"severity\": \"error\",\n      \"type\": \"unconnected_items\"\n    },\n    {\n      \"description\": \"Missing connection between items\",\n      \"items\": [\n        {\n          \"description\": \"PTH pad 2 [/REF] of C2\",\n          \"pos\": {\n            \"x\": 37.9,\n            \"y\": 25.4\n          },\n          \"uuid\": \"9b6de82b-4791-47ca-8851-dc1827019be4\"\n        },\n        {\n          \"description\": \"PTH pad 1 [/REF] of J3\",\n          \"pos\": {\n            \"x\": 75.4,\n            \"y\": 25.4\n          },\n          \"uuid\": \"3f09c2b5-b749-4261-aecf-f4723b0584b7\"\n        }\n      ],\n      \"severity\": \"error\",\n      \"type\": \"unconnected_items\"\n    },\n    {\n      \"description\": \"Missing connection between items\",\n      \"items\": [\n        {\n          \"description\": \"PTH pad 1 [/REF] of J3\",\n          \"pos\": {\n            \"x\": 75.4,\n            \"y\": 25.4\n          },\n          \"uuid\": \"3f09c2b5-b749-4261-aecf-f4723b0584b7\"\n        },\n        {\n          \"description\": \"PTH pad 1 [/REF] of U1\",\n          \"pos\": {\n            \"x\": 115.4,\n            \"y\": 25.4\n          },\n          \"uuid\": \"eb74f8b2-0d65-40ed-a5b4-a39e9b051705\"\n        }\n      ],\n      \"severity\": \"error\",\n      \"type\": \"unconnected_items\"\n    },\n    {\n      \"description\": \"Missing connection between items\",\n      \"items\": [\n        {\n          \"description\": \"PTH pad 1 [/VCC] of R1\",\n          \"pos\": {\n            \"x\": 85.4,\n            \"y\": 25.4\n          },\n          \"uuid\": \"9811c504-7ee3-47c8-bea3-7f696bb02afe\"\n        },\n        {\n          \"description\": \"PTH pad 1 [/VCC] of J1\",\n          \"pos\": {\n            \"x\": 55.4,\n            \"y\": 25.4\n          },\n          \"uuid\": \"6b535971-5def-4ed9-9535-e2ae55758c24\"\n        }\n      ],\n      \"severity\": \"error\",\n      \"type\": \"unconnected_items\"\n    },\n    {\n      \"description\": \"Missing connection between items\",\n      \"items\": [\n        {\n          \"description\": \"PTH pad 1 [/VCC] of R3\",\n          \"pos\": {\n            \"x\": 105.4,\n            \"y\": 25.4\n          },\n          \"uuid\": \"c61c375a-ca9e-4eeb-8b02-377971fd8f5e\"\n        },\n        {\n          \"description\": \"PTH pad 1 [/VCC] of R1\",\n          \"pos\": {\n            \"x\": 85.4,\n            \"y\": 25.4\n          },\n          \"uuid\": \"9811c504-7ee3-47c8-bea3-7f696bb02afe\"\n        }\n      ],\n      \"severity\": \"error\",\n      \"type\": \"unconnected_items\"\n    },\n    {\n      \"description\": \"Missing connection between items\",\n      \"items\": [\n        {\n          \"description\": \"PTH pad 4 [/VCC] of U1\",\n          \"pos\": {\n            \"x\": 115.4,\n            \"y\": 33.02\n          },\n          \"uuid\": \"46e9cf36-aafd-490b-849c-472389f769fa\"\n        },\n        {\n          \"description\": \"PTH pad 8 [/VCC] of U1\",\n          \"pos\": {\n            \"x\": 123.02,\n            \"y\": 25.4\n          },\n          \"uuid\": \"be7da66c-bb4d-4cd1-a31a-f76ebdacd978\"\n        }\n      ],\n      \"severity\": \"error\",\n      \"type\": \"unconnected_items\"\n    },\n    {\n      \"description\": \"Missing connection between items\",\n      \"items\": [\n        {\n          \"description\": \"PTH pad 4 [/VCC] of U1\",\n          \"pos\": {\n            \"x\": 115.4,\n            \"y\": 33.02\n          },\n          \"uuid\": \"46e9cf36-aafd-490b-849c-472389f769fa\"\n        },\n        {\n          \"description\": \"PTH pad 1 [/VCC] of R3\",\n          \"pos\": {\n            \"x\": 105.4,\n            \"y\": 25.4\n          },\n          \"uuid\": \"c61c375a-ca9e-4eeb-8b02-377971fd8f5e\"\n        }\n      ],\n      \"severity\": \"error\",\n      \"type\": \"unconnected_items\"\n    },\n    {\n      \"description\": \"Missing connection between items\",\n      \"items\": [\n        {\n          \"description\": \"PTH pad 2 [Net-(D1-A)] of D1\",\n          \"pos\": {\n            \"x\": 47.94,\n            \"y\": 25.4\n          },\n          \"uuid\": \"b0d41acf-7219-447b-9e43-a5721734e67a\"\n        },\n        {\n          \"description\": \"PTH pad 2 [Net-(D1-A)] of R3\",\n          \"pos\": {\n            \"x\": 113.02,\n            \"y\": 25.4\n          },\n          \"uuid\": \"286dbbdd-b0e9-4b94-a9cd-7ff1a50187e3\"\n        }\n      ],\n      \"severity\": \"error\",\n      \"type\": \"unconnected_items\"\n    },\n    {\n      \"description\": \"Missing connection between items\",\n      \"items\": [\n        {\n          \"description\": \"PTH pad 1 [Net-(U1-CONT)] of C2\",\n          \"pos\": {\n            \"x\": 35.4,\n            \"y\": 25.4\n          },\n          \"uuid\": \"fbf4e20f-56f7-48ee-a405-f87ce299a47d\"\n        },\n        {\n          \"description\": \"PTH pad 5 [Net-(U1-CONT)] of U1\",\n          \"pos\": {\n            \"x\": 123.02,\n            \"y\": 33.02\n          },\n          \"uuid\": \"8ee88fd9-af20-4f7c-ba5f-0314710092d8\"\n        }\n      ],\n      \"severity\": \"error\",\n      \"type\": \"unconnected_items\"\n    },\n    {\n      \"description\": \"Missing connection between items\",\n      \"items\": [\n        {\n          \"description\": \"PTH pad 1 [Net-(U1-DISCH)] of R2\",\n          \"pos\": {\n            \"x\": 95.4,\n            \"y\": 25.4\n          },\n          \"uuid\": \"aacd55e0-3bb2-4769-ad4c-f1bed1532551\"\n        },\n        {\n          \"description\": \"PTH pad 2 [Net-(U1-DISCH)] of R1\",\n          \"pos\": {\n            \"x\": 93.02,\n            \"y\": 25.4\n          },\n          \"uuid\": \"0710e0a2-22ca-4e4e-b07e-3d584b09dbfa\"\n        }\n      ],\n      \"severity\": \"error\",\n      \"type\": \"unconnected_items\"\n    },\n    {\n      \"description\": \"Missing connection between items\",\n      \"items\": [\n        {\n          \"description\": \"PTH pad 7 [Net-(U1-DISCH)] of U1\",\n          \"pos\": {\n            \"x\": 123.02,\n            \"y\": 27.94\n          },\n          \"uuid\": \"8482f90d-5cdb-4a0c-b62d-7b130b63b074\"\n        },\n        {\n          \"description\": \"PTH pad 1 [Net-(U1-DISCH)] of R2\",\n          \"pos\": {\n            \"x\": 95.4,\n            \"y\": 25.4\n          },\n          \"uuid\": \"aacd55e0-3bb2-4769-ad4c-f1bed1532551\"\n        }\n      ],\n      \"severity\": \"error\",\n      \"type\": \"unconnected_items\"\n    },\n    {\n      \"description\": \"Missing connection between items\",\n      \"items\": [\n        {\n          \"description\": \"PTH pad 2 [Net-(U1-THRES)] of R2\",\n          \"pos\": {\n            \"x\": 103.02,\n            \"y\": 25.4\n          },\n          \"uuid\": \"51ba398d-68c5-4ecd-afbe-154eeaba1d3b\"\n        },\n        {\n          \"description\": \"PTH pad 1 [Net-(U1-THRES)] of C1\",\n          \"pos\": {\n            \"x\": 25.4,\n            \"y\": 25.4\n          },\n          \"uuid\": \"22e092b0-ee18-4b03-99b1-c5a06975a2ff\"\n        }\n      ],\n      \"severity\": \"error\",\n      \"type\": \"unconnected_items\"\n    },\n    {\n      \"description\": \"Missing connection between items\",\n      \"items\": [\n        {\n          \"description\": \"PTH pad 2 [Net-(U1-THRES)] of U1\",\n          \"pos\": {\n            \"x\": 115.4,\n            \"y\": 27.94\n          },\n          \"uuid\": \"c0a28108-6848-41e4-ac1d-544f0bb5f681\"\n        },\n        {\n          \"description\": \"PTH pad 2 [Net-(U1-THRES)] of R2\",\n          \"pos\": {\n            \"x\": 103.02,\n            \"y\": 25.4\n          },\n          \"uuid\": \"51ba398d-68c5-4ecd-afbe-154eeaba1d3b\"\n        }\n      ],\n      \"severity\": \"error\",\n      \"type\": \"unconnected_items\"\n    },\n    {\n      \"description\": \"Missing connection between items\",\n      \"items\": [\n        {\n          \"description\": \"PTH pad 6 [Net-(U1-THRES)] of U1\",\n          \"pos\": {\n            \"x\": 123.02,\n            \"y\": 30.48\n          },\n          \"uuid\": \"8628f12d-a004-423a-8b0a-be0c137f87cc\"\n        },\n        {\n          \"description\": \"PTH pad 2 [Net-(U1-THRES)] of U1\",\n          \"pos\": {\n            \"x\": 115.4,\n            \"y\": 27.94\n          },\n          \"uuid\": \"c0a28108-6848-41e4-ac1d-544f0bb5f681\"\n        }\n      ],\n      \"severity\": \"error\",\n      \"type\": \"unconnected_items\"\n    }\n  ],\n  \"note\": null\n}",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "source": "Reference555LedFlasher.kicad_pcb",
+            "kicad_version": "10.0.6",
+            "violation_count": 1,
+            "violations": [
+              {
+                "description": "Board has malformed outline (no edges found on Edge.Cuts layer)",
+                "items": [
+                  {
+                    "description": "PCB",
+                    "pos": {
+                      "x": 0.0,
+                      "y": 0.0
+                    },
+                    "uuid": "5c987d6f-dc98-4ed4-a7d6-a6524bdb7385"
+                  }
+                ],
+                "severity": "error",
+                "type": "invalid_outline"
+              }
+            ],
+            "unconnected_count": 16,
+            "unconnected_items": [
+              {
+                "description": "Missing connection between items",
+                "items": [
+                  {
+                    "description": "PTH pad 1 [/OUT] of J2",
+                    "pos": {
+                      "x": 65.4,
+                      "y": 25.4
+                    },
+                    "uuid": "9d825308-b070-47ca-9350-a6a43f580127"
+                  },
+                  {
+                    "description": "PTH pad 1 [/OUT] of D1",
+                    "pos": {
+                      "x": 45.4,
+                      "y": 25.4
+                    },
+                    "uuid": "ad13c744-0210-4669-8168-64bc89c0d47f"
+                  }
+                ],
+                "severity": "error",
+                "type": "unconnected_items"
+              },
+              {
+                "description": "Missing connection between items",
+                "items": [
+                  {
+                    "description": "PTH pad 3 [/OUT] of U1",
+                    "pos": {
+                      "x": 115.4,
+                      "y": 30.48
+                    },
+                    "uuid": "27b0ccc1-fd99-4e8a-bd80-6e5d30a66f57"
+                  },
+                  {
+                    "description": "PTH pad 1 [/OUT] of J2",
+                    "pos": {
+                      "x": 65.4,
+                      "y": 25.4
+                    },
+                    "uuid": "9d825308-b070-47ca-9350-a6a43f580127"
+                  }
+                ],
+                "severity": "error",
+                "type": "unconnected_items"
+              },
+              {
+                "description": "Missing connection between items",
+                "items": [
+                  {
+                    "description": "PTH pad 2 [/REF] of C1",
+                    "pos": {
+                      "x": 30.4,
+                      "y": 25.4
+                    },
+                    "uuid": "1b415328-e836-4365-8c5f-a7e633648162"
+                  },
+                  {
+                    "description": "PTH pad 2 [/REF] of C2",
+                    "pos": {
+                      "x": 37.9,
+                      "y": 25.4
+                    },
+                    "uuid": "9b6de82b-4791-47ca-8851-dc1827019be4"
+                  }
+                ],
+                "severity": "error",
+                "type": "unconnected_items"
+              },
+              {
+                "description": "Missing connection between items",
+                "items": [
+                  {
+                    "description": "PTH pad 2 [/REF] of C2",
+                    "pos": {
+                      "x": 37.9,
+                      "y": 25.4
+                    },
+                    "uuid": "9b6de82b-4791-47ca-8851-dc1827019be4"
+                  },
+                  {
+                    "description": "PTH pad 1 [/REF] of J3",
+                    "pos": {
+                      "x": 75.4,
+                      "y": 25.4
+                    },
+                    "uuid": "3f09c2b5-b749-4261-aecf-f4723b0584b7"
+                  }
+                ],
+                "severity": "error",
+                "type": "unconnected_items"
+              },
+              {
+                "description": "Missing connection between items",
+                "items": [
+                  {
+                    "description": "PTH pad 1 [/REF] of J3",
+                    "pos": {
+                      "x": 75.4,
+                      "y": 25.4
+                    },
+                    "uuid": "3f09c2b5-b749-4261-aecf-f4723b0584b7"
+                  },
+                  {
+                    "description": "PTH pad 1 [/REF] of U1",
+                    "pos": {
+                      "x": 115.4,
+                      "y": 25.4
+                    },
+                    "uuid": "eb74f8b2-0d65-40ed-a5b4-a39e9b051705"
+                  }
+                ],
+                "severity": "error",
+                "type": "unconnected_items"
+              },
+              {
+                "description": "Missing connection between items",
+                "items": [
+                  {
+                    "description": "PTH pad 1 [/VCC] of R1",
+                    "pos": {
+                      "x": 85.4,
+                      "y": 25.4
+                    },
+                    "uuid": "9811c504-7ee3-47c8-bea3-7f696bb02afe"
+                  },
+                  {
+                    "description": "PTH pad 1 [/VCC] of J1",
+                    "pos": {
+                      "x": 55.4,
+                      "y": 25.4
+                    },
+                    "uuid": "6b535971-5def-4ed9-9535-e2ae55758c24"
+                  }
+                ],
+                "severity": "error",
+                "type": "unconnected_items"
+              },
+              {
+                "description": "Missing connection between items",
+                "items": [
+                  {
+                    "description": "PTH pad 1 [/VCC] of R3",
+                    "pos": {
+                      "x": 105.4,
+                      "y": 25.4
+                    },
+                    "uuid": "c61c375a-ca9e-4eeb-8b02-377971fd8f5e"
+                  },
+                  {
+                    "description": "PTH pad 1 [/VCC] of R1",
+                    "pos": {
+                      "x": 85.4,
+                      "y": 25.4
+                    },
+                    "uuid": "9811c504-7ee3-47c8-bea3-7f696bb02afe"
+                  }
+                ],
+                "severity": "error",
+                "type": "unconnected_items"
+              },
+              {
+                "description": "Missing connection between items",
+                "items": [
+                  {
+                    "description": "PTH pad 4 [/VCC] of U1",
+                    "pos": {
+                      "x": 115.4,
+                      "y": 33.02
+                    },
+                    "uuid": "46e9cf36-aafd-490b-849c-472389f769fa"
+                  },
+                  {
+                    "description": "PTH pad 8 [/VCC] of U1",
+                    "pos": {
+                      "x": 123.02,
+                      "y": 25.4
+                    },
+                    "uuid": "be7da66c-bb4d-4cd1-a31a-f76ebdacd978"
+                  }
+                ],
+                "severity": "error",
+                "type": "unconnected_items"
+              },
+              {
+                "description": "Missing connection between items",
+                "items": [
+                  {
+                    "description": "PTH pad 4 [/VCC] of U1",
+                    "pos": {
+                      "x": 115.4,
+                      "y": 33.02
+                    },
+                    "uuid": "46e9cf36-aafd-490b-849c-472389f769fa"
+                  },
+                  {
+                    "description": "PTH pad 1 [/VCC] of R3",
+                    "pos": {
+                      "x": 105.4,
+                      "y": 25.4
+                    },
+                    "uuid": "c61c375a-ca9e-4eeb-8b02-377971fd8f5e"
+                  }
+                ],
+                "severity": "error",
+                "type": "unconnected_items"
+              },
+              {
+                "description": "Missing connection between items",
+                "items": [
+                  {
+                    "description": "PTH pad 2 [Net-(D1-A)] of D1",
+                    "pos": {
+                      "x": 47.94,
+                      "y": 25.4
+                    },
+                    "uuid": "b0d41acf-7219-447b-9e43-a5721734e67a"
+                  },
+                  {
+                    "description": "PTH pad 2 [Net-(D1-A)] of R3",
+                    "pos": {
+                      "x": 113.02,
+                      "y": 25.4
+                    },
+                    "uuid": "286dbbdd-b0e9-4b94-a9cd-7ff1a50187e3"
+                  }
+                ],
+                "severity": "error",
+                "type": "unconnected_items"
+              },
+              {
+                "description": "Missing connection between items",
+                "items": [
+                  {
+                    "description": "PTH pad 1 [Net-(U1-CONT)] of C2",
+                    "pos": {
+                      "x": 35.4,
+                      "y": 25.4
+                    },
+                    "uuid": "fbf4e20f-56f7-48ee-a405-f87ce299a47d"
+                  },
+                  {
+                    "description": "PTH pad 5 [Net-(U1-CONT)] of U1",
+                    "pos": {
+                      "x": 123.02,
+                      "y": 33.02
+                    },
+                    "uuid": "8ee88fd9-af20-4f7c-ba5f-0314710092d8"
+                  }
+                ],
+                "severity": "error",
+                "type": "unconnected_items"
+              },
+              {
+                "description": "Missing connection between items",
+                "items": [
+                  {
+                    "description": "PTH pad 1 [Net-(U1-DISCH)] of R2",
+                    "pos": {
+                      "x": 95.4,
+                      "y": 25.4
+                    },
+                    "uuid": "aacd55e0-3bb2-4769-ad4c-f1bed1532551"
+                  },
+                  {
+                    "description": "PTH pad 2 [Net-(U1-DISCH)] of R1",
+                    "pos": {
+                      "x": 93.02,
+                      "y": 25.4
+                    },
+                    "uuid": "0710e0a2-22ca-4e4e-b07e-3d584b09dbfa"
+                  }
+                ],
+                "severity": "error",
+                "type": "unconnected_items"
+              },
+              {
+                "description": "Missing connection between items",
+                "items": [
+                  {
+                    "description": "PTH pad 7 [Net-(U1-DISCH)] of U1",
+                    "pos": {
+                      "x": 123.02,
+                      "y": 27.94
+                    },
+                    "uuid": "8482f90d-5cdb-4a0c-b62d-7b130b63b074"
+                  },
+                  {
+                    "description": "PTH pad 1 [Net-(U1-DISCH)] of R2",
+                    "pos": {
+                      "x": 95.4,
+                      "y": 25.4
+                    },
+                    "uuid": "aacd55e0-3bb2-4769-ad4c-f1bed1532551"
+                  }
+                ],
+                "severity": "error",
+                "type": "unconnected_items"
+              },
+              {
+                "description": "Missing connection between items",
+                "items": [
+                  {
+                    "description": "PTH pad 2 [Net-(U1-THRES)] of R2",
+                    "pos": {
+                      "x": 103.02,
+                      "y": 25.4
+                    },
+                    "uuid": "51ba398d-68c5-4ecd-afbe-154eeaba1d3b"
+                  },
+                  {
+                    "description": "PTH pad 1 [Net-(U1-THRES)] of C1",
+                    "pos": {
+                      "x": 25.4,
+                      "y": 25.4
+                    },
+                    "uuid": "22e092b0-ee18-4b03-99b1-c5a06975a2ff"
+                  }
+                ],
+                "severity": "error",
+                "type": "unconnected_items"
+              },
+              {
+                "description": "Missing connection between items",
+                "items": [
+                  {
+                    "description": "PTH pad 2 [Net-(U1-THRES)] of U1",
+                    "pos": {
+                      "x": 115.4,
+                      "y": 27.94
+                    },
+                    "uuid": "c0a28108-6848-41e4-ac1d-544f0bb5f681"
+                  },
+                  {
+                    "description": "PTH pad 2 [Net-(U1-THRES)] of R2",
+                    "pos": {
+                      "x": 103.02,
+                      "y": 25.4
+                    },
+                    "uuid": "51ba398d-68c5-4ecd-afbe-154eeaba1d3b"
+                  }
+                ],
+                "severity": "error",
+                "type": "unconnected_items"
+              },
+              {
+                "description": "Missing connection between items",
+                "items": [
+                  {
+                    "description": "PTH pad 6 [Net-(U1-THRES)] of U1",
+                    "pos": {
+                      "x": 123.02,
+                      "y": 30.48
+                    },
+                    "uuid": "8628f12d-a004-423a-8b0a-be0c137f87cc"
+                  },
+                  {
+                    "description": "PTH pad 2 [Net-(U1-THRES)] of U1",
+                    "pos": {
+                      "x": 115.4,
+                      "y": 27.94
+                    },
+                    "uuid": "c0a28108-6848-41e4-ac1d-544f0bb5f681"
+                  }
+                ],
+                "severity": "error",
+                "type": "unconnected_items"
+              }
+            ],
+            "note": null
+          }
+        }
+      }
+    },
+    {
+      "tool": "run_erc",
+      "arguments": {
+        "schematic_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_sch"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 15,
+        "result": {
+          "content": [
+            {
+              "text": "{\n  \"source\": \"Reference555LedFlasher.kicad_sch\",\n  \"kicad_version\": \"10.0.6\",\n  \"violation_count\": 0,\n  \"violations\": [],\n  \"note\": \"KiCad 10.0.6 writes item positions in its ERC report 100 times too small; they are corrected here to millimetres in sheet coordinates. A length quoted inside an item description is KiCad's own text and carries the same error.\"\n}",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "source": "Reference555LedFlasher.kicad_sch",
+            "kicad_version": "10.0.6",
+            "violation_count": 0,
+            "violations": [],
+            "note": "KiCad 10.0.6 writes item positions in its ERC report 100 times too small; they are corrected here to millimetres in sheet coordinates. A length quoted inside an item description is KiCad's own text and carries the same error."
+          }
+        }
+      }
+    }
+  ],
+  "server_exit_code": 0
+}

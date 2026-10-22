@@ -1,0 +1,45 @@
+{
+  "initialize": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+      "capabilities": {
+        "tools": {
+          "listChanged": true
+        }
+      },
+      "protocolVersion": "2025-06-18",
+      "serverInfo": {
+        "name": "konnect",
+        "version": "0.13.0"
+      }
+    }
+  },
+  "load_toolset": {
+    "jsonrpc": "2.0",
+    "id": 2,
+    "result": {
+      "content": [
+        {
+          "text": "{\"loaded\":\"sch_analysis\",\"tools\":[{\"description\":\"List all wire segments in a schematic with start/end coordinates and UUIDs.\",\"name\":\"list_schematic_wires\"},{\"description\":\"List all distinct net names derived from net labels, global labels, and power symbols.\",\"name\":\"list_schematic_nets\"},{\"description\":\"List all label instances (net_label, global_label, hierarchical_label) with their positions, net names, and types.\",\"name\":\"list_schematic_labels\"},{\"description\":\"Get all pins and labels connected to a named net.\",\"name\":\"get_net_connections\"},{\"description\":\"Build the full connectivity graph for a net using union-find. Returns all wire segments, labels, and T-junction locations.\",\"name\":\"get_net_connectivity\"},{\"description\":\"Get the net connected to a specific pin on a component by tracing wires from the pin endpoint.\",\"name\":\"get_pin_connections\"},{\"description\":\"Return just the net name for a specific pin on a component.\",\"name\":\"get_pin_net_name\"},{\"description\":\"Get all nets connected to every pin of a component.\",\"name\":\"get_component_nets\"},{\"description\":\"Get all components (and their pins) connected to a named net.\",\"name\":\"get_net_components\"},{\"description\":\"Trace connectivity from any (X,Y) point \u2014 returns the wires, labels, component pins and junction dots at that point, and the net it belongs to. Hierarchical sheet pins and no-connect flags are not reported, so an empty pins_here does not prove a wire dangles.\",\"name\":\"trace_from_point\"},{\"description\":\"Find dangling wire ends, floating labels, and unconnected pin endpoints. Pins, sheet pins, junctions, and no-connect flags all count as connections.\",\"name\":\"find_orphan_items\"},{\"description\":\"Detect accidentally merged nets \u2014 distinct net names that KiCad nets together, through a wire path they share or through a name that joins their segments.\",\"name\":\"find_shorted_nets\"},{\"description\":\"Find nets that reach at most one pin \u2014 often a missing counterpart, an orphan label, or a stub left by a deleted component. Component pins and hierarchical sheet pins count; a power symbol's own pin names the rail rather than consuming it and does not. Reports the pin and label counts, and every label kind that named the net. Read per sheet: a net a global, hierarchical or power label can carry off this one is flagged cross_sheet_unverified.\",\"name\":\"find_single_pin_nets\"},{\"description\":\"Get all wires, labels, and components connected to a given component reference by tracing net connectivity from each of its pins.\",\"name\":\"get_connected_items\"},{\"description\":\"Find overlapping symbols from their transformed drawing/pin bounds (excluding free text), plus conflicting labels at the same location. Reports any symbol whose embedded geometry could not be resolved and used the origin fallback instead.\",\"name\":\"check_schematic_overlaps\"}],\"tools_added\":15}",
+          "type": "text"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "component_nets": {
+    "jsonrpc": "2.0",
+    "id": 3,
+    "result": {
+      "content": [
+        {
+          "text": "{\"pins\":[{\"name\":\"GND\",\"net\":\"REF\",\"pin\":\"1\",\"x\":176.53,\"y\":118.11},{\"name\":\"VCC\",\"net\":\"VCC\",\"pin\":\"8\",\"x\":179.07,\"y\":97.79},{\"name\":\"TRIG\",\"net\":null,\"pin\":\"2\",\"x\":166.37,\"y\":113.03},{\"name\":\"OUT\",\"net\":\"OUT\",\"pin\":\"3\",\"x\":186.69,\"y\":107.95},{\"name\":\"~{RST}\",\"net\":\"VCC\",\"pin\":\"4\",\"x\":166.37,\"y\":102.87},{\"name\":\"CONT\",\"net\":null,\"pin\":\"5\",\"x\":176.53,\"y\":97.79},{\"name\":\"THRES\",\"net\":null,\"pin\":\"6\",\"x\":166.37,\"y\":110.49000000000001},{\"name\":\"DISCH\",\"net\":null,\"pin\":\"7\",\"x\":166.37,\"y\":105.41}],\"reference\":\"U1\"}",
+          "type": "text"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "process_exit_code": 0
+}

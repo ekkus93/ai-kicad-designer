@@ -1,0 +1,55 @@
+{
+  "schema_version": "pivot-evidence.v1",
+  "evidence_id": "G-003-contract-2026-10-21",
+  "task_id": "G-003",
+  "recorded_at_utc": "2026-10-21T23:44:21.855501Z",
+  "source_commit": "f14a02c3140fd455ded8391ea65b8416b5d6e170",
+  "revision_kind": "other",
+  "revision_id": "working-tree-snapshot:3578a2975ee8dca092e4f14814d6f5e7b064ad2ce8aab20b5bfc9a83ac7ec687",
+  "action": {
+    "summary": "Validate strict revision-bound evidence schema and focused contract tests",
+    "command": "uv run --python 3.12 python -m pytest -q tests/pivot/test_evidence.py --junitxml fixtures/pivot/evidence/G-003-contract-tests.xml",
+    "backend": "Pydantic and pytest",
+    "backend_version": "Pydantic version pinned by uv.lock; pytest 9.0.2",
+    "toolchain": "Python 3.12.12"
+  },
+  "status": "PASS",
+  "artifacts": [
+    {
+      "path": "fixtures/pivot/evidence_record.schema.json",
+      "sha256": "3001bd1bbebde1241902d113a5612e9db31f2eb08ee57d5593669a239c04dc3f",
+      "media_type": "application/schema+json",
+      "role": "typed JSON schema"
+    },
+    {
+      "path": "tests/pivot/test_evidence.py",
+      "sha256": "e3f34a55b238ed44bd57fdfa07ab63751d3c228f993d2a812d32aa9bb21ea3f2",
+      "media_type": "text/x-python",
+      "role": "evidence contract tests"
+    },
+    {
+      "path": "fixtures/pivot/evidence/G-003-contract-tests.xml",
+      "sha256": "1692f634356a399f3ccaae15138e42926e1cbaf5a1c43a818e639d729101f49c",
+      "media_type": "application/xml",
+      "role": "focused pytest results"
+    }
+  ],
+  "checks": [
+    {
+      "check_id": "G-003-contract",
+      "status": "PASS",
+      "summary": "Seven focused tests pass; schema equality, round trip, pass evidence requirements, path integrity, blocker requirements, and UTC are covered.",
+      "evidence_paths": [
+        "fixtures/pivot/evidence_record.schema.json",
+        "tests/pivot/test_evidence.py",
+        "fixtures/pivot/evidence/G-003-contract-tests.xml"
+      ],
+      "independent": true
+    }
+  ],
+  "ci_links": [],
+  "blockers": [],
+  "notes": [
+    "Working-tree snapshot is explicitly distinguished from source commit f14a02c3140fd455ded8391ea65b8416b5d6e170."
+  ]
+}

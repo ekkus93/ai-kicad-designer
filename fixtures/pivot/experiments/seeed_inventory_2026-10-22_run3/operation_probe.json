@@ -1,0 +1,127 @@
+{
+  "initialize": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+      "protocolVersion": "2025-03-26",
+      "capabilities": {
+        "experimental": {},
+        "logging": {},
+        "prompts": {
+          "listChanged": false
+        },
+        "resources": {
+          "subscribe": false,
+          "listChanged": false
+        },
+        "tools": {
+          "listChanged": true
+        },
+        "extensions": {
+          "io.modelcontextprotocol/ui": {}
+        }
+      },
+      "serverInfo": {
+        "name": "kicad-mcp-server",
+        "version": "3.4.11"
+      },
+      "instructions": "KiCad MCP Server - A server for analyzing KiCad schematics and PCBs,\n    and performing design rule checks.\n\n    Available capabilities:\n    - Schematic analysis (components, nets, symbols)\n    - PCB analysis (footprints, tracks, statistics)\n    - Design rule checking (ERC/DRC)\n    - Schematic summarization\n    - Hierarchical sheet and net tracing\n    - Pin/power/bus extraction and device tree generation\n    "
+    }
+  },
+  "results": [
+    {
+      "jsonrpc": "2.0",
+      "id": 2,
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "Unknown tool: 'load_toolset'"
+          }
+        ],
+        "isError": true
+      }
+    },
+    {
+      "tool": "list_schematic_components",
+      "arguments": {
+        "file_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/seeed_inventory_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_sch"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 3,
+        "result": {
+          "_meta": {
+            "fastmcp": {
+              "wrap_result": true
+            }
+          },
+          "content": [
+            {
+              "type": "text",
+              "text": "# Components in /home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/seeed_inventory_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_sch\nTotal: 10 component(s)\n\n| Reference | Value | Footprint | Library |\n|-----------|-------|-----------|---------|\n| R1 | 10k | - | R |\n| C2 | 10n | - | C |\n| R2 | 47k | - | R |\n| D1 | WP7113ID | - | LED |\n| R3 | 1k | - | R |\n| J2 | Pulse output | - | Conn_01x01 |\n| J3 | Return | - | Conn_01x01 |\n| J1 | Supply | - | Conn_01x01 |\n| U1 | NE555D | - | NE555D |\n| C1 | 10u | - | C |"
+            }
+          ],
+          "structuredContent": {
+            "result": "# Components in /home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/seeed_inventory_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_sch\nTotal: 10 component(s)\n\n| Reference | Value | Footprint | Library |\n|-----------|-------|-----------|---------|\n| R1 | 10k | - | R |\n| C2 | 10n | - | C |\n| R2 | 47k | - | R |\n| D1 | WP7113ID | - | LED |\n| R3 | 1k | - | R |\n| J2 | Pulse output | - | Conn_01x01 |\n| J3 | Return | - | Conn_01x01 |\n| J1 | Supply | - | Conn_01x01 |\n| U1 | NE555D | - | NE555D |\n| C1 | 10u | - | C |"
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "tool": "generate_netlist",
+      "arguments": {
+        "schematic_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/seeed_inventory_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_sch"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 4,
+        "result": {
+          "_meta": {
+            "fastmcp": {
+              "wrap_result": true
+            }
+          },
+          "content": [
+            {
+              "type": "text",
+              "text": "\u2705 Netlist generated successfully\n\n**Output:** /tmp/Reference555LedFlasher_4daa3e76.xml\n\nYou can now use netlist-based tools:\n- `trace_netlist_connection()` - Trace component connections via netlist\n- `get_netlist_nets()` - List all nets\n- `get_netlist_components()` - List all components with their nets\n"
+            }
+          ],
+          "structuredContent": {
+            "result": "\u2705 Netlist generated successfully\n\n**Output:** /tmp/Reference555LedFlasher_4daa3e76.xml\n\nYou can now use netlist-based tools:\n- `trace_netlist_connection()` - Trace component connections via netlist\n- `get_netlist_nets()` - List all nets\n- `get_netlist_components()` - List all components with their nets\n"
+          },
+          "isError": false
+        }
+      }
+    },
+    {
+      "tool": "run_erc",
+      "arguments": {
+        "schematic_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/seeed_inventory_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_sch"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 5,
+        "result": {
+          "_meta": {
+            "fastmcp": {
+              "wrap_result": true
+            }
+          },
+          "content": [
+            {
+              "type": "text",
+              "text": "\u2705 **ERC Check Passed**\n\n**Schematic:** /home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/seeed_inventory_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_sch\n\nNo electrical violations detected!"
+            }
+          ],
+          "structuredContent": {
+            "result": "\u2705 **ERC Check Passed**\n\n**Schematic:** /home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/seeed_inventory_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_sch\n\nNo electrical violations detected!"
+          },
+          "isError": false
+        }
+      }
+    }
+  ]
+}

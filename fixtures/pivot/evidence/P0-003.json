@@ -1,0 +1,126 @@
+{
+  "schema_version": "pivot-evidence.v1",
+  "evidence_id": "P0-003-reference-fixture-2026-10-21",
+  "task_id": "P0-003",
+  "recorded_at_utc": "2026-10-21T23:49:43.685016Z",
+  "source_commit": "f14a02c3140fd455ded8391ea65b8416b5d6e170",
+  "revision_kind": "other",
+  "revision_id": "working-tree-snapshot:4aabc82324d4d723d0b98382c8cf82fff9a925fb9ebbf73220af90cfb51a6cbd",
+  "action": {
+    "summary": "Build fixed 555 LED flasher fixture and validate with locked compiler/KiCad, independent netlist observer, and source-linked BOM",
+    "command": "uv run --python 3.12 python -m ai_kicad build ... --out fixtures/pivot/runs/reference_555_led_flasher_v1_run3",
+    "backend": "ai_kicad M2b compiler + KiCad CLI 10.0.6",
+    "backend_version": "source baseline f14a02c; KiCad 10.0.6",
+    "toolchain": "Python 3.12.12 and repository locked assets/toolchain"
+  },
+  "status": "PASS",
+  "artifacts": [
+    {
+      "path": "fixtures/pivot/reference_555_led_flasher_v1/manifest.json",
+      "sha256": "4aabc82324d4d723d0b98382c8cf82fff9a925fb9ebbf73220af90cfb51a6cbd",
+      "media_type": "application/json",
+      "role": "fixture input/output hashes"
+    },
+    {
+      "path": "fixtures/pivot/reference_555_led_flasher_v1/design.json",
+      "sha256": "64877f0089159f66c7b6d8b892a313165c78492d9ad24ab76cca11aed9694ab0",
+      "media_type": "application/json",
+      "role": "electrical circuit input"
+    },
+    {
+      "path": "fixtures/pivot/reference_555_led_flasher_v1/bom.json",
+      "sha256": "7a9d4896ea7d6bbe75e57e0d4edbd92a69a20f16f0cb6cf509b0d18cbccf7577",
+      "media_type": "application/json",
+      "role": "exact MPN, footprint, pin-pad map"
+    },
+    {
+      "path": "fixtures/pivot/reference_555_led_flasher_v1/board_profile.json",
+      "sha256": "2262f181796f77fd4a6f01a5e15b5d32ad9b971f878c2f98e456babdc5056b1e",
+      "media_type": "application/json",
+      "role": "conservative board constraints"
+    },
+    {
+      "path": "fixtures/pivot/reference_555_led_flasher_v1/expected_behavior.json",
+      "sha256": "ae81f4df21c49e86c71656e78e90a2537dfce2c9d1d4d6f6eb2adb127dbf5558",
+      "media_type": "application/json",
+      "role": "behavior and tolerance bounds"
+    },
+    {
+      "path": "fixtures/pivot/reference_555_led_flasher_v1/footprint_assets.lock.json",
+      "sha256": "2b7cdf86aee279622db3cdcd626653db829a2856ee8ba3ebcd52ee519e6e3bb5",
+      "media_type": "application/json",
+      "role": "official KiCad footprint hashes"
+    },
+    {
+      "path": "fixtures/pivot/runs/reference_555_led_flasher_v1_run3/project/Reference555LedFlasher.kicad_sch",
+      "sha256": "9d819329416ae990c9ba1b9feddc5eca91c6220650259ea740b8fdc38f31903f",
+      "media_type": "application/vnd.kicad.schematic",
+      "role": "native KiCad schematic"
+    },
+    {
+      "path": "fixtures/pivot/runs/reference_555_led_flasher_v1_run3/reports/netlist.xml",
+      "sha256": "bc8042ef2f903c6921d55b3fcfc27700fe9ee51df03495eb1d93e4c2a888b464",
+      "media_type": "application/xml",
+      "role": "KiCad exported netlist"
+    },
+    {
+      "path": "fixtures/pivot/runs/reference_555_led_flasher_v1_run3/reports/erc.json",
+      "sha256": "7331bed07dc9224b10d1db5afb3b8caedd6ed3d6597b08217e6f2271a05bddc5",
+      "media_type": "application/json",
+      "role": "KiCad ERC report"
+    },
+    {
+      "path": "fixtures/pivot/runs/reference_555_led_flasher_v1_run3/reports/electrical.json",
+      "sha256": "ba94626f9e2c363d9adc5b9a5eaf1177b18625a41fb0a5628d1ddc9de555d6e1",
+      "media_type": "application/json",
+      "role": "independent pin-net equivalence"
+    },
+    {
+      "path": "fixtures/pivot/runs/reference_555_led_flasher_v1_run3/reports/manifest.json",
+      "sha256": "9637faeca34be43a47efac3c823380edc5965304daf78edadbe055a9d3e49c6d",
+      "media_type": "application/json",
+      "role": "KiCad build output manifest"
+    }
+  ],
+  "checks": [
+    {
+      "check_id": "schematic-erc",
+      "status": "PASS",
+      "summary": "Locked KiCad ERC output has no diagnostics.",
+      "evidence_paths": [
+        "fixtures/pivot/runs/reference_555_led_flasher_v1_run3/reports/erc.json"
+      ],
+      "independent": true
+    },
+    {
+      "check_id": "connectivity-equivalence",
+      "status": "PASS",
+      "summary": "Independent observer matched all emitted pin/net partitions to expected circuit IR.",
+      "evidence_paths": [
+        "fixtures/pivot/runs/reference_555_led_flasher_v1_run3/reports/netlist.xml",
+        "fixtures/pivot/runs/reference_555_led_flasher_v1_run3/reports/electrical.json"
+      ],
+      "independent": true
+    },
+    {
+      "check_id": "fixture-parts-behavior",
+      "status": "PASS",
+      "summary": "All BOM items have sourced MPNs and symbol-pin to footprint-pad mapping; timing and LED upper bounds are reproducibly calculated.",
+      "evidence_paths": [
+        "fixtures/pivot/reference_555_led_flasher_v1/bom.json",
+        "fixtures/pivot/reference_555_led_flasher_v1/board_profile.json",
+        "fixtures/pivot/reference_555_led_flasher_v1/expected_behavior.json",
+        "fixtures/pivot/reference_555_led_flasher_v1/footprint_assets.lock.json"
+      ],
+      "independent": true
+    }
+  ],
+  "ci_links": [],
+  "blockers": [],
+  "notes": [
+    "No routed PCB, fabrication package, SPICE run, or physical test is claimed.",
+    "Ollama review outputs are advisory only and failed independent timing/pin checks; see fixtures/pivot/experiments/ollama_reference_review_2026-10-21_run1.json and ollama_reference_correction_2026-10-21_run1.json.",
+    "Adding a supply bypass component failed in the current semantic layout compiler and that output is retained as run2.failed.",
+    "The fixture-level sym-lib-table is included in the manifest for isolated backend runs."
+  ]
+}

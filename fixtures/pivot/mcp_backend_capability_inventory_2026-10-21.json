@@ -1,0 +1,127 @@
+{
+  "candidates": [
+    {
+      "advertised_operations": [
+        "schematic capture and edit",
+        "PCB board/footprint editing",
+        "routing DSN/SES with Freerouting",
+        "ERC/DRC",
+        "manufacturing exports",
+        "toolset loading/unloading"
+      ],
+      "commit": "9488e5f09717cb508cb25779dc16586d1f06f758",
+      "id": "konnect",
+      "implementation_notes": [
+        "DEV.md states schematic-editor IPC is export-only; schematic CRUD is file based.",
+        "Readme labels product beta.",
+        "Version/update counts must be treated as claims until actual POC invocations."
+      ],
+      "license": {
+        "commercial_option": true,
+        "distribution_posture": "Would initially evaluate as an external optional process; do not copy/bundle without separate license review.",
+        "spdx": "AGPL-3.0-only"
+      },
+      "poc_execution_status": "not_run",
+      "repository": "https://github.com/mixelpixx/Konnect",
+      "runtime": {
+        "kicad": "KiCad 10; board edits use official IPC and require a live PCB editor; schematic edits use an offline S-expression engine; kicad-cli handles ERC/DRC/export.",
+        "language": "Rust",
+        "rust_toolchain": "1.96.0 per DEV.md"
+      },
+      "source_urls": [
+        "https://github.com/mixelpixx/Konnect/tree/9488e5f09717cb508cb25779dc16586d1f06f758",
+        "https://github.com/mixelpixx/Konnect/blob/9488e5f09717cb508cb25779dc16586d1f06f758/README.md",
+        "https://github.com/mixelpixx/Konnect/blob/9488e5f09717cb508cb25779dc16586d1f06f758/tool-directory.md",
+        "https://github.com/mixelpixx/Konnect/blob/9488e5f09717cb508cb25779dc16586d1f06f758/DEV.md",
+        "https://github.com/mixelpixx/Konnect/blob/9488e5f09717cb508cb25779dc16586d1f06f758/COMMERCIAL.md"
+      ],
+      "tool_inventory": {
+        "always_visible_meta_tools": 7,
+        "basis": "README.md and tool-directory.md at pinned commit",
+        "domain_tools_advertised": 228,
+        "on_demand_toolsets": 21
+      },
+      "version": "0.13.0 as reported in latest release notes; repository describes current main as beta"
+    },
+    {
+      "advertised_operations": [
+        "schematic and PCB editing",
+        "ERC/DRC",
+        "schematic-to-board sync",
+        "Freerouting autoroute",
+        "Gerber/drill/BOM/placement exports"
+      ],
+      "commit": "f5f82e02ffe17bbcba806fec35f3302ee332fefc",
+      "id": "productofamerica-mcp-server-kicad",
+      "implementation_notes": [
+        "README publishes a self-run comparison in which plain Claude Code outperformed the plugin on small edit tasks; input corpus is not public, so treat results as maintainer-reported and not independently repeatable.",
+        "Byte-preserving file editing is the implementation premise; selected KiCad operations use CLI/pcbnew."
+      ],
+      "license": {
+        "history": "Releases through 0.20.1 were MIT; current 0.21.1 is GPL-3.0-or-later.",
+        "spdx": "GPL-3.0-or-later"
+      },
+      "poc_execution_status": "not_run",
+      "repository": "https://github.com/ProductOfAmerica/mcp-server-kicad",
+      "runtime": {
+        "kicad": "KiCad 9.x or 10.x; kicad-cli for checks/exports; pcbnew and Java for selected fill/routing operations.",
+        "language": "Python",
+        "python_requires": ">=3.11"
+      },
+      "source_urls": [
+        "https://github.com/ProductOfAmerica/mcp-server-kicad/tree/f5f82e02ffe17bbcba806fec35f3302ee332fefc",
+        "https://github.com/ProductOfAmerica/mcp-server-kicad/blob/f5f82e02ffe17bbcba806fec35f3302ee332fefc/README.md",
+        "https://github.com/ProductOfAmerica/mcp-server-kicad/blob/f5f82e02ffe17bbcba806fec35f3302ee332fefc/pyproject.toml",
+        "https://github.com/ProductOfAmerica/mcp-server-kicad/blob/f5f82e02ffe17bbcba806fec35f3302ee332fefc/LICENSE"
+      ],
+      "status": "maintenance mode as stated in README (security/KiCad compatibility fixes; no feature work planned)",
+      "tool_inventory": {
+        "advertised_tools": 109,
+        "tool_registration": "unified stdio MCP server; can split into five server processes"
+      },
+      "version": "0.21.1 from pyproject.toml"
+    },
+    {
+      "advertised_operations": [
+        "schematic and PCB analysis",
+        "pin-level net tracing",
+        "ERC/DRC",
+        "basic project/edit/export",
+        "parts registry and embedded-code helpers"
+      ],
+      "commit": "4085d3f98c97b23872cb05605afa8714bb26004a",
+      "id": "seeed-studio-kicad-mcp-server",
+      "implementation_notes": [
+        "README labels schematic editing experimental and reports manual S-expression editing.",
+        "README recommends KiCad GUI for design work and MCP for analysis/validation/code generation.",
+        "README notes PCB analysis is limited without KiCad pcbnew bindings."
+      ],
+      "license": {
+        "spdx": "MIT per pyproject.toml"
+      },
+      "poc_execution_status": "not_run",
+      "repository": "https://github.com/Seeed-Studio/kicad-mcp-server",
+      "runtime": {
+        "kicad": "README describes KiCad 9.0+; kicad-cli for ERC/DRC/netlists; pcbnew-backed PCB features need KiCad Python.",
+        "language": "Python",
+        "python_requires": ">=3.10"
+      },
+      "source_urls": [
+        "https://github.com/Seeed-Studio/kicad-mcp-server/tree/4085d3f98c97b23872cb05605afa8714bb26004a",
+        "https://github.com/Seeed-Studio/kicad-mcp-server/blob/4085d3f98c97b23872cb05605afa8714bb26004a/README.md",
+        "https://github.com/Seeed-Studio/kicad-mcp-server/blob/4085d3f98c97b23872cb05605afa8714bb26004a/pyproject.toml"
+      ],
+      "status": "Alpha per pyproject classifiers",
+      "tool_inventory": {
+        "basis": "count of @mcp.tool() registrations under src/kicad_mcp_server/tools at pinned commit; not an externally claimed aggregate",
+        "registered_tool_decorators_at_snapshot": 47
+      },
+      "version": "0.1.0 from pyproject.toml"
+    }
+  ],
+  "legal_status": "no external project source or binary copied into this repository; no redistribution decision made",
+  "schema_version": "mcp-backend-capability-inventory.v1",
+  "scope": "Published/source inventory only. These backends have not yet been invoked on the POC fixture; advertised features are not acceptance evidence.",
+  "selection_status": "no backend selected; P0-006 through P0-009 actual fixture comparisons remain open",
+  "snapshot_date": "2026-10-21"
+}

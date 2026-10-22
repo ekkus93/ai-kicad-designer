@@ -1,0 +1,141 @@
+{
+  "trial": {
+    "schema_version": "pivot-benchmark.v1",
+    "trial_id": "konnect_qwen_inspect_2026-10-22_run5",
+    "task_id": "inspect_reference_circuit",
+    "fixture_sha256": "4aabc82324d4d723d0b98382c8cf82fff9a925fb9ebbf73220af90cfb51a6cbd",
+    "recorded_at_utc": "2026-10-22T00:06:47.250827Z",
+    "model": {
+      "provider": "ollama",
+      "model": "qwen3.5:9b",
+      "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+      "settings": {
+        "temperature": 0,
+        "num_ctx": 8192,
+        "num_predict": 1800
+      }
+    },
+    "backend": {
+      "name": "Konnect",
+      "version": "0.13.0",
+      "build_id": "9488e5f09717cb508cb25779dc16586d1f06f758",
+      "mode": "task_gated"
+    },
+    "time_limit_seconds": 240,
+    "token_limit": 32768,
+    "tool_call_limit": 8,
+    "elapsed_seconds": 20.865356988972053,
+    "token_count": 4146,
+    "tool_calls": [
+      {
+        "tool_name": "get_project_info",
+        "duration_ms": 1,
+        "error_class": null,
+        "valid": true
+      },
+      {
+        "tool_name": "list_schematic_nets",
+        "duration_ms": 1,
+        "error_class": null,
+        "valid": true
+      },
+      {
+        "tool_name": "export_netlist_summary",
+        "duration_ms": 1,
+        "error_class": null,
+        "valid": true
+      },
+      {
+        "tool_name": "run_erc",
+        "duration_ms": 435,
+        "error_class": null,
+        "valid": true
+      }
+    ],
+    "gates": [
+      {
+        "gate_id": "native_pin_net_map",
+        "status": "FAIL",
+        "summary": "One or more timer pins are missing or assigned to the wrong net.",
+        "independent": true,
+        "evidence_paths": [
+          "model_output.json"
+        ]
+      },
+      {
+        "gate_id": "timing_calculation",
+        "status": "FAIL",
+        "summary": "At least one timing value is missing or outside 1% of the independent result.",
+        "independent": true,
+        "evidence_paths": [
+          "model_output.json"
+        ]
+      },
+      {
+        "gate_id": "led_current_bounds",
+        "status": "FAIL",
+        "summary": "Nominal current or the requested conservative upper bound is missing or incorrect.",
+        "independent": true,
+        "evidence_paths": [
+          "model_output.json"
+        ]
+      },
+      {
+        "gate_id": "required_mcp_tool_use",
+        "status": "PASS",
+        "summary": "The model used every task-required MCP tool.",
+        "independent": false,
+        "evidence_paths": [
+          "mcp_tool_calls.json"
+        ]
+      },
+      {
+        "gate_id": "source_schematic_unchanged",
+        "status": "PASS",
+        "summary": "The protected source schematic is unchanged.",
+        "independent": true,
+        "evidence_paths": [
+          "mcp_tool_calls.json"
+        ]
+      }
+    ],
+    "artifacts": [
+      {
+        "path": "model_output.json",
+        "sha256": "298ff90261b96c5b23e99fa4eb67d9dcba593924f2cb145f1c8ac6e04b8441dc",
+        "media_type": "application/json",
+        "role": "model_final_response"
+      },
+      {
+        "path": "mcp_tool_calls.json",
+        "sha256": "5c3595594c1512d4afb2374b4f6bb6ec3c759c024609a4c2e83ca0da12c56e97",
+        "media_type": "application/json",
+        "role": "backend_call_trace"
+      }
+    ],
+    "status": "FAIL"
+  },
+  "server_info": {
+    "name": "konnect",
+    "version": "0.13.0"
+  },
+  "tool_errors": [],
+  "process_exit_code": 0,
+  "source_schematic_sha256": "9d819329416ae990c9ba1b9feddc5eca91c6220650259ea740b8fdc38f31903f",
+  "source_schematic_unchanged": true,
+  "workspace_hashes": {
+    "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+    "Reference555LedFlasher.kicad_prl": "a61f9786f0934d13bc3efa5ef75250845c08a8c4ee1bfc2a4b9b25e7f5fbdd80",
+    "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+    "Reference555LedFlasher.kicad_sch": "9d819329416ae990c9ba1b9feddc5eca91c6220650259ea740b8fdc38f31903f",
+    "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+  },
+  "scores": {
+    "pass": 2,
+    "fail": 3,
+    "unsupported": 0,
+    "inconclusive": 0,
+    "accuracy": 0.4,
+    "eligible": 5
+  }
+}

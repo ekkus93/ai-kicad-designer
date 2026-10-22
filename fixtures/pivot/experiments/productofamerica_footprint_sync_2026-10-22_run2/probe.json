@@ -1,0 +1,620 @@
+{
+  "initialize": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+      "capabilities": {
+        "prompts": {
+          "listChanged": false
+        },
+        "resources": {
+          "listChanged": false,
+          "subscribe": false
+        },
+        "tools": {
+          "listChanged": false
+        }
+      },
+      "instructions": "KiCad EDA tools for schematic capture, PCB layout, symbol/footprint libraries, and project management.\n\nCRITICAL RULES:\n- NEVER read, edit, or write KiCad files (.kicad_sch, .kicad_pcb, .kicad_sym, .kicad_mod, .kicad_pro) directly. All manipulation MUST go through these MCP tools.\n- NEVER run kicad-cli commands directly. Use the export, ERC, and DRC tools provided by this server.\n- When a tool returns an error, try different parameters or a different tool. Do NOT fall back to manual file editing.\n\nSTART HERE (fetch one of these by name; do not search blind):\n- See what is in a schematic: list_schematic_components\n- Add a part (resistor, capacitor, IC, ...): place_component\n- Connect pins to a net: wire_pins_to_net\n- Check the schematic: run_erc\n- See what is on the board: list_pcb_footprints\n- Place or move a footprint: place_footprint, move_footprint\n- Route: add_trace, add_via, autoroute_pcb\n- Check the board: run_drc\n- Push the schematic to the board: update_pcb_from_schematic\n- Manufacturing output: export_gerbers\n- Start a new project: create_project\n- Anything else: search by what you want to do. There are 109 tools; these are the entry points, not the whole surface.\n\nFILE ACCESS:\n- These tools reach the filesystem through this server's own process, which already runs with the user's permissions. You do NOT need filesystem access, a connected folder, or any other permission from the host application to use them.\n- NEVER ask the user to connect, add, or grant access to a folder. If you need a file, call the tool.\n- Every path parameter takes an absolute path.\n\nCONFIGURED DEFAULTS:\n- schematic: /home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run2/workspace/Reference555LedFlasher.kicad_sch\n- export directory: /home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run2/workspace\n- These are already filled in as the tools' default parameter values. Call the tool with no path argument at all. Do NOT ask the user for a path listed here, and do NOT guess one.",
+      "protocolVersion": "2025-03-26",
+      "serverInfo": {
+        "name": "kicad",
+        "version": "0.21.1"
+      }
+    }
+  },
+  "calls": [
+    {
+      "tool": "set_component_property",
+      "arguments": {
+        "reference": "U1",
+        "key": "Footprint",
+        "value": "Package_DIP:DIP-8_W7.62mm",
+        "schematic_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run2/workspace/Reference555LedFlasher.kicad_sch"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 2,
+        "result": {
+          "content": [
+            {
+              "text": "Set U1.Footprint = Package_DIP:DIP-8_W7.62mm (new property)",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "result": "Set U1.Footprint = Package_DIP:DIP-8_W7.62mm (new property)"
+          }
+        }
+      }
+    },
+    {
+      "tool": "set_component_property",
+      "arguments": {
+        "reference": "R1",
+        "key": "Footprint",
+        "value": "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal",
+        "schematic_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run2/workspace/Reference555LedFlasher.kicad_sch"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 3,
+        "result": {
+          "content": [
+            {
+              "text": "Set R1.Footprint = Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal (new property)",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "result": "Set R1.Footprint = Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal (new property)"
+          }
+        }
+      }
+    },
+    {
+      "tool": "set_component_property",
+      "arguments": {
+        "reference": "R2",
+        "key": "Footprint",
+        "value": "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal",
+        "schematic_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run2/workspace/Reference555LedFlasher.kicad_sch"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 4,
+        "result": {
+          "content": [
+            {
+              "text": "Set R2.Footprint = Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal (new property)",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "result": "Set R2.Footprint = Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal (new property)"
+          }
+        }
+      }
+    },
+    {
+      "tool": "set_component_property",
+      "arguments": {
+        "reference": "R3",
+        "key": "Footprint",
+        "value": "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal",
+        "schematic_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run2/workspace/Reference555LedFlasher.kicad_sch"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 5,
+        "result": {
+          "content": [
+            {
+              "text": "Set R3.Footprint = Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal (new property)",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "result": "Set R3.Footprint = Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal (new property)"
+          }
+        }
+      }
+    },
+    {
+      "tool": "set_component_property",
+      "arguments": {
+        "reference": "C1",
+        "key": "Footprint",
+        "value": "Capacitor_THT:CP_Radial_D8.0mm_P5.00mm",
+        "schematic_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run2/workspace/Reference555LedFlasher.kicad_sch"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 6,
+        "result": {
+          "content": [
+            {
+              "text": "Set C1.Footprint = Capacitor_THT:CP_Radial_D8.0mm_P5.00mm (new property)",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "result": "Set C1.Footprint = Capacitor_THT:CP_Radial_D8.0mm_P5.00mm (new property)"
+          }
+        }
+      }
+    },
+    {
+      "tool": "set_component_property",
+      "arguments": {
+        "reference": "C2",
+        "key": "Footprint",
+        "value": "Capacitor_THT:C_Disc_D3.0mm_W1.6mm_P2.50mm",
+        "schematic_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run2/workspace/Reference555LedFlasher.kicad_sch"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 7,
+        "result": {
+          "content": [
+            {
+              "text": "Set C2.Footprint = Capacitor_THT:C_Disc_D3.0mm_W1.6mm_P2.50mm (new property)",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "result": "Set C2.Footprint = Capacitor_THT:C_Disc_D3.0mm_W1.6mm_P2.50mm (new property)"
+          }
+        }
+      }
+    },
+    {
+      "tool": "set_component_property",
+      "arguments": {
+        "reference": "D1",
+        "key": "Footprint",
+        "value": "LED_THT:LED_D5.0mm",
+        "schematic_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run2/workspace/Reference555LedFlasher.kicad_sch"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 8,
+        "result": {
+          "content": [
+            {
+              "text": "Set D1.Footprint = LED_THT:LED_D5.0mm (new property)",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "result": "Set D1.Footprint = LED_THT:LED_D5.0mm (new property)"
+          }
+        }
+      }
+    },
+    {
+      "tool": "set_component_property",
+      "arguments": {
+        "reference": "J1",
+        "key": "Footprint",
+        "value": "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical",
+        "schematic_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run2/workspace/Reference555LedFlasher.kicad_sch"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 9,
+        "result": {
+          "content": [
+            {
+              "text": "Set J1.Footprint = Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical (new property)",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "result": "Set J1.Footprint = Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical (new property)"
+          }
+        }
+      }
+    },
+    {
+      "tool": "set_component_property",
+      "arguments": {
+        "reference": "J2",
+        "key": "Footprint",
+        "value": "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical",
+        "schematic_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run2/workspace/Reference555LedFlasher.kicad_sch"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 10,
+        "result": {
+          "content": [
+            {
+              "text": "Set J2.Footprint = Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical (new property)",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "result": "Set J2.Footprint = Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical (new property)"
+          }
+        }
+      }
+    },
+    {
+      "tool": "set_component_property",
+      "arguments": {
+        "reference": "J3",
+        "key": "Footprint",
+        "value": "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical",
+        "schematic_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run2/workspace/Reference555LedFlasher.kicad_sch"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 11,
+        "result": {
+          "content": [
+            {
+              "text": "Set J3.Footprint = Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical (new property)",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "result": "Set J3.Footprint = Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical (new property)"
+          }
+        }
+      }
+    },
+    {
+      "tool": "update_pcb_from_schematic",
+      "arguments": {
+        "schematic_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run2/workspace/Reference555LedFlasher.kicad_sch",
+        "pcb_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run2/workspace/Reference555LedFlasher.kicad_pcb",
+        "project_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run2/workspace/Reference555LedFlasher.kicad_pro"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 12,
+        "result": {
+          "content": [
+            {
+              "text": "{\n  \"status\": \"incomplete\",\n  \"added\": [],\n  \"value_updated\": [],\n  \"fpid_changed\": [],\n  \"fields_updated\": [],\n  \"excluded_from_board\": [],\n  \"stale_footprints\": [],\n  \"stale_removed\": [],\n  \"nets_added\": 7,\n  \"nets_removed\": 0,\n  \"pads_bound\": 0,\n  \"orphaned_tracks\": 0,\n  \"orphaned_zones\": 0,\n  \"skipped\": [\n    {\n      \"ref\": \"C1\",\n      \"reason\": \"footprint_lib_not_found:Capacitor_THT\"\n    },\n    {\n      \"ref\": \"C2\",\n      \"reason\": \"footprint_lib_not_found:Capacitor_THT\"\n    },\n    {\n      \"ref\": \"D1\",\n      \"reason\": \"footprint_lib_not_found:LED_THT\"\n    },\n    {\n      \"ref\": \"J1\",\n      \"reason\": \"footprint_lib_not_found:Connector_PinHeader_2.54mm\"\n    },\n    {\n      \"ref\": \"J2\",\n      \"reason\": \"footprint_lib_not_found:Connector_PinHeader_2.54mm\"\n    },\n    {\n      \"ref\": \"J3\",\n      \"reason\": \"footprint_lib_not_found:Connector_PinHeader_2.54mm\"\n    },\n    {\n      \"ref\": \"R1\",\n      \"reason\": \"footprint_lib_not_found:Resistor_THT\"\n    },\n    {\n      \"ref\": \"R2\",\n      \"reason\": \"footprint_lib_not_found:Resistor_THT\"\n    },\n    {\n      \"ref\": \"R3\",\n      \"reason\": \"footprint_lib_not_found:Resistor_THT\"\n    },\n    {\n      \"ref\": \"U1\",\n      \"reason\": \"footprint_lib_not_found:Package_DIP\"\n    }\n  ],\n  \"warnings\": [\n    \"net /OUT: D1.1 not on board\",\n    \"net /OUT: J2.1 not on board\",\n    \"net /OUT: U1.3 not on board\",\n    \"net /REF: C1.2 not on board\",\n    \"net /REF: C2.2 not on board\",\n    \"net /REF: J3.1 not on board\",\n    \"net /REF: U1.1 not on board\",\n    \"net /VCC: J1.1 not on board\",\n    \"net /VCC: R1.1 not on board\",\n    \"net /VCC: R3.1 not on board\",\n    \"net /VCC: U1.4 not on board\",\n    \"net /VCC: U1.8 not on board\",\n    \"net Net-(D1-A): D1.2 not on board\",\n    \"net Net-(D1-A): R3.2 not on board\",\n    \"net Net-(U1-CONT): C2.1 not on board\",\n    \"net Net-(U1-CONT): U1.5 not on board\",\n    \"net Net-(U1-DISCH): R1.2 not on board\",\n    \"net Net-(U1-DISCH): R2.1 not on board\",\n    \"net Net-(U1-DISCH): U1.7 not on board\",\n    \"net Net-(U1-THRES): C1.1 not on board\",\n    \"net Net-(U1-THRES): R2.2 not on board\",\n    \"net Net-(U1-THRES): U1.2 not on board\",\n    \"net Net-(U1-THRES): U1.6 not on board\"\n  ]\n}",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "status": "incomplete",
+            "added": [],
+            "value_updated": [],
+            "fpid_changed": [],
+            "fields_updated": [],
+            "excluded_from_board": [],
+            "stale_footprints": [],
+            "stale_removed": [],
+            "nets_added": 7,
+            "nets_removed": 0,
+            "pads_bound": 0,
+            "orphaned_tracks": 0,
+            "orphaned_zones": 0,
+            "skipped": [
+              {
+                "ref": "C1",
+                "reason": "footprint_lib_not_found:Capacitor_THT"
+              },
+              {
+                "ref": "C2",
+                "reason": "footprint_lib_not_found:Capacitor_THT"
+              },
+              {
+                "ref": "D1",
+                "reason": "footprint_lib_not_found:LED_THT"
+              },
+              {
+                "ref": "J1",
+                "reason": "footprint_lib_not_found:Connector_PinHeader_2.54mm"
+              },
+              {
+                "ref": "J2",
+                "reason": "footprint_lib_not_found:Connector_PinHeader_2.54mm"
+              },
+              {
+                "ref": "J3",
+                "reason": "footprint_lib_not_found:Connector_PinHeader_2.54mm"
+              },
+              {
+                "ref": "R1",
+                "reason": "footprint_lib_not_found:Resistor_THT"
+              },
+              {
+                "ref": "R2",
+                "reason": "footprint_lib_not_found:Resistor_THT"
+              },
+              {
+                "ref": "R3",
+                "reason": "footprint_lib_not_found:Resistor_THT"
+              },
+              {
+                "ref": "U1",
+                "reason": "footprint_lib_not_found:Package_DIP"
+              }
+            ],
+            "warnings": [
+              "net /OUT: D1.1 not on board",
+              "net /OUT: J2.1 not on board",
+              "net /OUT: U1.3 not on board",
+              "net /REF: C1.2 not on board",
+              "net /REF: C2.2 not on board",
+              "net /REF: J3.1 not on board",
+              "net /REF: U1.1 not on board",
+              "net /VCC: J1.1 not on board",
+              "net /VCC: R1.1 not on board",
+              "net /VCC: R3.1 not on board",
+              "net /VCC: U1.4 not on board",
+              "net /VCC: U1.8 not on board",
+              "net Net-(D1-A): D1.2 not on board",
+              "net Net-(D1-A): R3.2 not on board",
+              "net Net-(U1-CONT): C2.1 not on board",
+              "net Net-(U1-CONT): U1.5 not on board",
+              "net Net-(U1-DISCH): R1.2 not on board",
+              "net Net-(U1-DISCH): R2.1 not on board",
+              "net Net-(U1-DISCH): U1.7 not on board",
+              "net Net-(U1-THRES): C1.1 not on board",
+              "net Net-(U1-THRES): R2.2 not on board",
+              "net Net-(U1-THRES): U1.2 not on board",
+              "net Net-(U1-THRES): U1.6 not on board"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "tool": "list_pcb_footprints",
+      "arguments": {
+        "pcb_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run2/workspace/Reference555LedFlasher.kicad_pcb"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 13,
+        "result": {
+          "content": [],
+          "isError": false,
+          "structuredContent": {
+            "result": []
+          }
+        }
+      }
+    },
+    {
+      "tool": "run_drc",
+      "arguments": {
+        "pcb_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run2/workspace/Reference555LedFlasher.kicad_pcb"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 14,
+        "result": {
+          "content": [
+            {
+              "text": "{\n  \"source\": \"Reference555LedFlasher.kicad_pcb\",\n  \"kicad_version\": \"10.0.6\",\n  \"violation_count\": 1,\n  \"violations\": [\n    {\n      \"description\": \"Board has malformed outline (no edges found on Edge.Cuts layer)\",\n      \"items\": [\n        {\n          \"description\": \"PCB\",\n          \"pos\": {\n            \"x\": 0.0,\n            \"y\": 0.0\n          },\n          \"uuid\": \"c0f9b9c8-1f96-4acc-99d7-c74b32b13112\"\n        }\n      ],\n      \"severity\": \"error\",\n      \"type\": \"invalid_outline\"\n    }\n  ],\n  \"unconnected_count\": 0,\n  \"unconnected_items\": [],\n  \"note\": null\n}",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "source": "Reference555LedFlasher.kicad_pcb",
+            "kicad_version": "10.0.6",
+            "violation_count": 1,
+            "violations": [
+              {
+                "description": "Board has malformed outline (no edges found on Edge.Cuts layer)",
+                "items": [
+                  {
+                    "description": "PCB",
+                    "pos": {
+                      "x": 0.0,
+                      "y": 0.0
+                    },
+                    "uuid": "c0f9b9c8-1f96-4acc-99d7-c74b32b13112"
+                  }
+                ],
+                "severity": "error",
+                "type": "invalid_outline"
+              }
+            ],
+            "unconnected_count": 0,
+            "unconnected_items": [],
+            "note": null
+          }
+        }
+      }
+    },
+    {
+      "tool": "run_erc",
+      "arguments": {
+        "schematic_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run2/workspace/Reference555LedFlasher.kicad_sch"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 15,
+        "result": {
+          "content": [
+            {
+              "text": "{\n  \"source\": \"Reference555LedFlasher.kicad_sch\",\n  \"kicad_version\": \"10.0.6\",\n  \"violation_count\": 10,\n  \"violations\": [\n    {\n      \"description\": \"The current configuration does not include the footprint library 'Connector_PinHeader_2.54mm'\",\n      \"items\": [\n        {\n          \"description\": \"Symbol J2 [Conn_01x01]\",\n          \"pos\": {\n            \"x\": 95.25,\n            \"y\": 90.17\n          },\n          \"uuid\": \"d1cfd518-f8f4-58f4-8785-a975f9a929e3\"\n        }\n      ],\n      \"severity\": \"warning\",\n      \"type\": \"footprint_link_issues\"\n    },\n    {\n      \"description\": \"The current configuration does not include the footprint library 'Connector_PinHeader_2.54mm'\",\n      \"items\": [\n        {\n          \"description\": \"Symbol J3 [Conn_01x01]\",\n          \"pos\": {\n            \"x\": 95.25,\n            \"y\": 97.79\n          },\n          \"uuid\": \"4b5026d2-04ee-57d9-aea6-c11b8f073dbb\"\n        }\n      ],\n      \"severity\": \"warning\",\n      \"type\": \"footprint_link_issues\"\n    },\n    {\n      \"description\": \"The current configuration does not include the footprint library 'Connector_PinHeader_2.54mm'\",\n      \"items\": [\n        {\n          \"description\": \"Symbol J1 [Conn_01x01]\",\n          \"pos\": {\n            \"x\": 95.25,\n            \"y\": 105.41\n          },\n          \"uuid\": \"6d3da5b9-27e5-5e84-a845-b32edf5580d9\"\n        }\n      ],\n      \"severity\": \"warning\",\n      \"type\": \"footprint_link_issues\"\n    },\n    {\n      \"description\": \"The current configuration does not include the footprint library 'Resistor_THT'\",\n      \"items\": [\n        {\n          \"description\": \"Symbol R3 [R]\",\n          \"pos\": {\n            \"x\": 116.84,\n            \"y\": 93.98\n          },\n          \"uuid\": \"7c47f3f9-9cb0-5f28-be17-7fc328b38c25\"\n        }\n      ],\n      \"severity\": \"warning\",\n      \"type\": \"footprint_link_issues\"\n    },\n    {\n      \"description\": \"The current configuration does not include the footprint library 'LED_THT'\",\n      \"items\": [\n        {\n          \"description\": \"Symbol D1 [LED]\",\n          \"pos\": {\n            \"x\": 116.84,\n            \"y\": 105.41\n          },\n          \"uuid\": \"445f8dce-1f8a-535e-b61a-e492d3fc42de\"\n        }\n      ],\n      \"severity\": \"warning\",\n      \"type\": \"footprint_link_issues\"\n    },\n    {\n      \"description\": \"The current configuration does not include the footprint library 'Resistor_THT'\",\n      \"items\": [\n        {\n          \"description\": \"Symbol R1 [R]\",\n          \"pos\": {\n            \"x\": 142.24,\n            \"y\": 90.17\n          },\n          \"uuid\": \"fe6696bb-cffc-542d-9c52-6133beb545aa\"\n        }\n      ],\n      \"severity\": \"warning\",\n      \"type\": \"footprint_link_issues\"\n    },\n    {\n      \"description\": \"The current configuration does not include the footprint library 'Resistor_THT'\",\n      \"items\": [\n        {\n          \"description\": \"Symbol R2 [R]\",\n          \"pos\": {\n            \"x\": 142.24,\n            \"y\": 107.95\n          },\n          \"uuid\": \"43b84d3a-5a53-5935-ad84-ef6110b8e2bd\"\n        }\n      ],\n      \"severity\": \"warning\",\n      \"type\": \"footprint_link_issues\"\n    },\n    {\n      \"description\": \"The current configuration does not include the footprint library 'Capacitor_THT'\",\n      \"items\": [\n        {\n          \"description\": \"Symbol C1 [C]\",\n          \"pos\": {\n            \"x\": 142.24,\n            \"y\": 129.54\n          },\n          \"uuid\": \"32064f43-5bba-5d82-83f8-bcf893403920\"\n        }\n      ],\n      \"severity\": \"warning\",\n      \"type\": \"footprint_link_issues\"\n    },\n    {\n      \"description\": \"The current configuration does not include the footprint library 'Capacitor_THT'\",\n      \"items\": [\n        {\n          \"description\": \"Symbol C2 [C]\",\n          \"pos\": {\n            \"x\": 158.75,\n            \"y\": 90.17\n          },\n          \"uuid\": \"c9ce8375-6bcb-569d-8d17-d71bddbce12c\"\n        }\n      ],\n      \"severity\": \"warning\",\n      \"type\": \"footprint_link_issues\"\n    },\n    {\n      \"description\": \"The current configuration does not include the footprint library 'Package_DIP'\",\n      \"items\": [\n        {\n          \"description\": \"Symbol U1 [NE555D]\",\n          \"pos\": {\n            \"x\": 176.53,\n            \"y\": 107.95\n          },\n          \"uuid\": \"bd2f8156-5ec1-59e7-8828-bbf255ab3632\"\n        }\n      ],\n      \"severity\": \"warning\",\n      \"type\": \"footprint_link_issues\"\n    }\n  ],\n  \"note\": \"KiCad 10.0.6 writes item positions in its ERC report 100 times too small; they are corrected here to millimetres in sheet coordinates. A length quoted inside an item description is KiCad's own text and carries the same error.\"\n}",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "source": "Reference555LedFlasher.kicad_sch",
+            "kicad_version": "10.0.6",
+            "violation_count": 10,
+            "violations": [
+              {
+                "description": "The current configuration does not include the footprint library 'Connector_PinHeader_2.54mm'",
+                "items": [
+                  {
+                    "description": "Symbol J2 [Conn_01x01]",
+                    "pos": {
+                      "x": 95.25,
+                      "y": 90.17
+                    },
+                    "uuid": "d1cfd518-f8f4-58f4-8785-a975f9a929e3"
+                  }
+                ],
+                "severity": "warning",
+                "type": "footprint_link_issues"
+              },
+              {
+                "description": "The current configuration does not include the footprint library 'Connector_PinHeader_2.54mm'",
+                "items": [
+                  {
+                    "description": "Symbol J3 [Conn_01x01]",
+                    "pos": {
+                      "x": 95.25,
+                      "y": 97.79
+                    },
+                    "uuid": "4b5026d2-04ee-57d9-aea6-c11b8f073dbb"
+                  }
+                ],
+                "severity": "warning",
+                "type": "footprint_link_issues"
+              },
+              {
+                "description": "The current configuration does not include the footprint library 'Connector_PinHeader_2.54mm'",
+                "items": [
+                  {
+                    "description": "Symbol J1 [Conn_01x01]",
+                    "pos": {
+                      "x": 95.25,
+                      "y": 105.41
+                    },
+                    "uuid": "6d3da5b9-27e5-5e84-a845-b32edf5580d9"
+                  }
+                ],
+                "severity": "warning",
+                "type": "footprint_link_issues"
+              },
+              {
+                "description": "The current configuration does not include the footprint library 'Resistor_THT'",
+                "items": [
+                  {
+                    "description": "Symbol R3 [R]",
+                    "pos": {
+                      "x": 116.84,
+                      "y": 93.98
+                    },
+                    "uuid": "7c47f3f9-9cb0-5f28-be17-7fc328b38c25"
+                  }
+                ],
+                "severity": "warning",
+                "type": "footprint_link_issues"
+              },
+              {
+                "description": "The current configuration does not include the footprint library 'LED_THT'",
+                "items": [
+                  {
+                    "description": "Symbol D1 [LED]",
+                    "pos": {
+                      "x": 116.84,
+                      "y": 105.41
+                    },
+                    "uuid": "445f8dce-1f8a-535e-b61a-e492d3fc42de"
+                  }
+                ],
+                "severity": "warning",
+                "type": "footprint_link_issues"
+              },
+              {
+                "description": "The current configuration does not include the footprint library 'Resistor_THT'",
+                "items": [
+                  {
+                    "description": "Symbol R1 [R]",
+                    "pos": {
+                      "x": 142.24,
+                      "y": 90.17
+                    },
+                    "uuid": "fe6696bb-cffc-542d-9c52-6133beb545aa"
+                  }
+                ],
+                "severity": "warning",
+                "type": "footprint_link_issues"
+              },
+              {
+                "description": "The current configuration does not include the footprint library 'Resistor_THT'",
+                "items": [
+                  {
+                    "description": "Symbol R2 [R]",
+                    "pos": {
+                      "x": 142.24,
+                      "y": 107.95
+                    },
+                    "uuid": "43b84d3a-5a53-5935-ad84-ef6110b8e2bd"
+                  }
+                ],
+                "severity": "warning",
+                "type": "footprint_link_issues"
+              },
+              {
+                "description": "The current configuration does not include the footprint library 'Capacitor_THT'",
+                "items": [
+                  {
+                    "description": "Symbol C1 [C]",
+                    "pos": {
+                      "x": 142.24,
+                      "y": 129.54
+                    },
+                    "uuid": "32064f43-5bba-5d82-83f8-bcf893403920"
+                  }
+                ],
+                "severity": "warning",
+                "type": "footprint_link_issues"
+              },
+              {
+                "description": "The current configuration does not include the footprint library 'Capacitor_THT'",
+                "items": [
+                  {
+                    "description": "Symbol C2 [C]",
+                    "pos": {
+                      "x": 158.75,
+                      "y": 90.17
+                    },
+                    "uuid": "c9ce8375-6bcb-569d-8d17-d71bddbce12c"
+                  }
+                ],
+                "severity": "warning",
+                "type": "footprint_link_issues"
+              },
+              {
+                "description": "The current configuration does not include the footprint library 'Package_DIP'",
+                "items": [
+                  {
+                    "description": "Symbol U1 [NE555D]",
+                    "pos": {
+                      "x": 176.53,
+                      "y": 107.95
+                    },
+                    "uuid": "bd2f8156-5ec1-59e7-8828-bbf255ab3632"
+                  }
+                ],
+                "severity": "warning",
+                "type": "footprint_link_issues"
+              }
+            ],
+            "note": "KiCad 10.0.6 writes item positions in its ERC report 100 times too small; they are corrected here to millimetres in sheet coordinates. A length quoted inside an item description is KiCad's own text and carries the same error."
+          }
+        }
+      }
+    }
+  ],
+  "server_exit_code": 0
+}

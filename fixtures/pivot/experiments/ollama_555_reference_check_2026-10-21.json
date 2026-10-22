@@ -1,0 +1,24 @@
+{
+  "accepted_as_engineering_evidence": false,
+  "completion_status": "stop",
+  "input_design": {
+    "decoupling": "100 nF from VCC to GND",
+    "formulas": {
+      "frequency_hz": "1.44/((RA+2*RB)*C)",
+      "high_s": "0.693*(RA+RB)*C",
+      "low_s": "0.693*RB*C"
+    },
+    "output": "pin 3 drives a two-pin pulse test header and sinks an indicator branch: VCC -> 1 kOhm -> red LED anode; LED cathode -> pin 3",
+    "supply": "5 V nominal regulated input, expected operating range 4.75-5.25 V",
+    "timer": "TI NE555P, DIP-8; pins 8 and 4 to VCC, pin 1 GND, pin 2 and 6 tied to TIMING, pin 7 DISCH, pin 5 CTRL decoupled to GND by 10 nF",
+    "timing": "RA=10 kOhm from VCC to pin 7, RB=47 kOhm from pin 7 to TIMING, C=10 uF from TIMING to GND"
+  },
+  "input_sha256": "0e7dcaa699802e0d6690c53df8bac3b5840aaf5f9d164f41e49310296f454ed7",
+  "model": "qwen3.5:9b",
+  "model_digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+  "prompt_sha256": "c0f507f5390d3d5ce5c05b8113d2fa8aecde44488bc410b54e036def61035fdc",
+  "purpose": "Local Ollama design-review experiment; advisory only and excluded from engineering acceptance evidence.",
+  "recorded_at_utc": "2026-10-21T23:42:29.093915+00:00",
+  "response": "Topology is inconsistent: the NE555 requires pins 2 and 6 tied together externally, but the description implies a single \"TIMING\" node without specifying the critical connection between pin 6 and the capacitor. Arithmetic yields ~3.4 Hz (f=1.44/((10k+94k)*10uF)), high time ~5.7 s, and low time ~2.8 s. Wiring defects include missing pin 2-to-6 jumper, incorrect LED polarity description (anode to VCC via resistor is correct, but cathode to output implies sinking mode which conflicts with standard astable sourcing), and insufficient decoupling placement detail. The 10 uF capacitor value drastically reduces frequency compared to typical designs.",
+  "schema_version": "ollama-advisory-review.v1"
+}

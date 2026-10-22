@@ -1,0 +1,1337 @@
+{
+  "baseline_commit": "f14a02c3140fd455ded8391ea65b8416b5d6e170",
+  "baseline_validation": {
+    "cli_help": "pass",
+    "import_ai_kicad": "pass",
+    "locked_kicad": "10.0.6; all six locked executable/library SHA-256 values matched",
+    "python_version": "3.12.12",
+    "run_scope": "unchanged branch baseline; tests/test_m2b.py includes fresh native KiCad builds, ERC and independent electrical/layout checks",
+    "test_command": "uv run --python 3.12 python -m pytest -q tests/test_m2b.py",
+    "test_result": "22 passed in 211.22 seconds"
+  },
+  "github_workflows": [
+    ".github/workflows/m2h2-base-render-inspection.yml",
+    ".github/workflows/m2h2-development-composition-probe.yml",
+    ".github/workflows/m2h2-fast-validation.yml",
+    ".github/workflows/m2h2-final-artifact-audit.yml",
+    ".github/workflows/m2h2-final-interactions.yml",
+    ".github/workflows/m2h2-final-qualification.yml",
+    ".github/workflows/m2h2-locked-qualification.yml",
+    ".github/workflows/m2h2-locked-toolchain-diagnostic.yml",
+    ".github/workflows/m2h2-persisted-native-render-inventory.yml",
+    ".github/workflows/m2h2-preserved-failure-inspection.yml",
+    ".github/workflows/m2h2-structural-qualification.yml",
+    ".github/workflows/m2h2-structural-render-inspection.yml"
+  ],
+  "known_gaps_for_pivot": [
+    "No MCP server, controller, canonical revision graph, board placement/router, or fabrication package exists at baseline.",
+    "No checked-in two-layer PCB or board profile accompanies the 555 timer schematic qualification."
+  ],
+  "modules": [
+    {
+      "imports": [],
+      "line_count": 1,
+      "path": "src/ai_kicad/__init__.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "argparse",
+        "assets",
+        "ir",
+        "json",
+        "kicad",
+        "m2a_build",
+        "m2b_build",
+        "pathlib",
+        "pydantic",
+        "schematic",
+        "sys",
+        "verify"
+      ],
+      "line_count": 268,
+      "path": "src/ai_kicad/__main__.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "dataclasses",
+        "decimal",
+        "hashlib",
+        "ir",
+        "pathlib",
+        "pydantic",
+        "re",
+        "sexpr"
+      ],
+      "line_count": 143,
+      "path": "src/ai_kicad/assets.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "copy",
+        "json",
+        "pathlib"
+      ],
+      "line_count": 133,
+      "path": "src/ai_kicad/ir.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "assets",
+        "importlib.metadata",
+        "ir",
+        "json",
+        "os",
+        "pathlib",
+        "platform",
+        "re",
+        "subprocess",
+        "tempfile",
+        "time",
+        "xml.etree.ElementTree"
+      ],
+      "line_count": 252,
+      "path": "src/ai_kicad/kicad.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "collections",
+        "dataclasses"
+      ],
+      "line_count": 148,
+      "path": "src/ai_kicad/m2_alignment_grid_composition_observer.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "itertools"
+      ],
+      "line_count": 174,
+      "path": "src/ai_kicad/m2_branch_feedback_composition_observer.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "m2_compose_candidate",
+        "m2_compose_repairs",
+        "m2_compose_workflow"
+      ],
+      "line_count": 49,
+      "path": "src/ai_kicad/m2_compose.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "ir",
+        "m2_compose_repairs",
+        "m2_conflicts",
+        "m2_geometry",
+        "m2_pack",
+        "m2_route",
+        "m2_semantics",
+        "m2a",
+        "m2b"
+      ],
+      "line_count": 650,
+      "path": "src/ai_kicad/m2_compose_candidate.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__"
+      ],
+      "line_count": 93,
+      "path": "src/ai_kicad/m2_compose_failure.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "ir",
+        "m2_conflicts",
+        "m2_geometry",
+        "m2_pack",
+        "m2_route",
+        "m2_semantics",
+        "m2a",
+        "m2b"
+      ],
+      "line_count": 611,
+      "path": "src/ai_kicad/m2_compose_repairs.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "collections",
+        "ir",
+        "m2_compose_candidate",
+        "m2_compose_failure",
+        "m2_compose_repairs",
+        "m2_composition_candidate_rank",
+        "m2_composition_qualification_observation",
+        "m2_conflicts",
+        "m2_fragments",
+        "m2_pack",
+        "m2_pack_search",
+        "m2_route",
+        "m2_routing_composition_observer",
+        "m2_semantics",
+        "m2a"
+      ],
+      "line_count": 792,
+      "path": "src/ai_kicad/m2_compose_workflow.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "itertools"
+      ],
+      "line_count": 93,
+      "path": "src/ai_kicad/m2_composition_alternative_search.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "re"
+      ],
+      "line_count": 97,
+      "path": "src/ai_kicad/m2_composition_anti_overfitting_audit.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "json",
+        "m2_composition_baseline_comparison"
+      ],
+      "line_count": 113,
+      "path": "src/ai_kicad/m2_composition_baseline_closure.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "math"
+      ],
+      "line_count": 111,
+      "path": "src/ai_kicad/m2_composition_baseline_comparison.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "json"
+      ],
+      "line_count": 114,
+      "path": "src/ai_kicad/m2_composition_candidate_evidence.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "m2_composition_rank_metrics",
+        "m2_composition_rank_scoring",
+        "m2_composition_rank_types"
+      ],
+      "line_count": 92,
+      "path": "src/ai_kicad/m2_composition_candidate_rank.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "hashlib",
+        "json"
+      ],
+      "line_count": 148,
+      "path": "src/ai_kicad/m2_composition_closure_record.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "json"
+      ],
+      "line_count": 72,
+      "path": "src/ai_kicad/m2_composition_hard_gate_audit.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "hashlib",
+        "json"
+      ],
+      "line_count": 171,
+      "path": "src/ai_kicad/m2_composition_metric_schema.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "base64",
+        "collections.abc",
+        "dataclasses",
+        "gzip",
+        "hashlib",
+        "json"
+      ],
+      "line_count": 78,
+      "path": "src/ai_kicad/m2_composition_native_archive.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses"
+      ],
+      "line_count": 112,
+      "path": "src/ai_kicad/m2_composition_objective_hierarchy.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "collections",
+        "dataclasses",
+        "m2_semantics",
+        "typing"
+      ],
+      "line_count": 203,
+      "path": "src/ai_kicad/m2_composition_observer.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "re"
+      ],
+      "line_count": 68,
+      "path": "src/ai_kicad/m2_composition_production_integration_audit.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "json",
+        "re"
+      ],
+      "line_count": 177,
+      "path": "src/ai_kicad/m2_composition_qualification_matrix.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "collections",
+        "collections.abc",
+        "dataclasses",
+        "m2_composition_qualification_matrix",
+        "m2_composition_quality",
+        "m2_semantics",
+        "typing"
+      ],
+      "line_count": 252,
+      "path": "src/ai_kicad/m2_composition_qualification_observation.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "collections.abc",
+        "dataclasses",
+        "m2_pack_constants",
+        "m2_semantics",
+        "m2_terminal_interface_flow",
+        "typing"
+      ],
+      "line_count": 331,
+      "path": "src/ai_kicad/m2_composition_quality.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "collections",
+        "m2_composition_rank_types",
+        "m2_route_constants",
+        "m2_terminal_interface_flow",
+        "m2a_constants"
+      ],
+      "line_count": 625,
+      "path": "src/ai_kicad/m2_composition_rank_metrics.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "collections",
+        "dataclasses",
+        "itertools",
+        "m2_composition_rank_metrics",
+        "m2_composition_rank_types",
+        "m2_pack_constants",
+        "m2a_constants"
+      ],
+      "line_count": 604,
+      "path": "src/ai_kicad/m2_composition_rank_scoring.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__"
+      ],
+      "line_count": 17,
+      "path": "src/ai_kicad/m2_composition_rank_types.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "hashlib",
+        "json"
+      ],
+      "line_count": 117,
+      "path": "src/ai_kicad/m2_composition_reproducibility.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "collections.abc",
+        "dataclasses",
+        "hashlib",
+        "json"
+      ],
+      "line_count": 92,
+      "path": "src/ai_kicad/m2_composition_source_hashes.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses"
+      ],
+      "line_count": 113,
+      "path": "src/ai_kicad/m2_composition_structural_audit.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "collections.abc",
+        "dataclasses",
+        "itertools",
+        "math"
+      ],
+      "line_count": 139,
+      "path": "src/ai_kicad/m2_composition_tiny_exhaustive_oracle.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses"
+      ],
+      "line_count": 72,
+      "path": "src/ai_kicad/m2_composition_tolerances.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__"
+      ],
+      "line_count": 215,
+      "path": "src/ai_kicad/m2_composition_tradeoff_report.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "enum",
+        "ir"
+      ],
+      "line_count": 56,
+      "path": "src/ai_kicad/m2_conflicts.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "m2_fragments_base",
+        "m2_fragments_builders",
+        "m2_fragments_geometry",
+        "m2_fragments_types",
+        "m2_fragments_variants"
+      ],
+      "line_count": 63,
+      "path": "src/ai_kicad/m2_fragments.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "collections.abc",
+        "dataclasses",
+        "ir",
+        "m2_fragments_types",
+        "m2_geometry",
+        "m2_semantics_core",
+        "m2_semantics_types",
+        "m2a_constants",
+        "m2a_core",
+        "m2b",
+        "types",
+        "typing"
+      ],
+      "line_count": 338,
+      "path": "src/ai_kicad/m2_fragments_base.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "ir",
+        "m2_fragments_base",
+        "m2_fragments_geometry",
+        "m2_fragments_types",
+        "m2_geometry",
+        "m2_semantics_core",
+        "m2a_constants",
+        "m2a_core",
+        "m2b",
+        "typing"
+      ],
+      "line_count": 634,
+      "path": "src/ai_kicad/m2_fragments_builders.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "ir",
+        "m2_fragments_base",
+        "m2_fragments_types",
+        "m2_geometry",
+        "m2_semantics_core",
+        "m2a_constants",
+        "m2a_core",
+        "m2b",
+        "typing"
+      ],
+      "line_count": 465,
+      "path": "src/ai_kicad/m2_fragments_geometry.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__"
+      ],
+      "line_count": 8,
+      "path": "src/ai_kicad/m2_fragments_types.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "ir",
+        "m2_fragments_base",
+        "m2_fragments_builders",
+        "m2_fragments_geometry",
+        "m2_semantics_core",
+        "m2a_core",
+        "m2b",
+        "typing"
+      ],
+      "line_count": 493,
+      "path": "src/ai_kicad/m2_fragments_variants.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "collections",
+        "dataclasses"
+      ],
+      "line_count": 171,
+      "path": "src/ai_kicad/m2_functional_block_composition_observer.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "math"
+      ],
+      "line_count": 91,
+      "path": "src/ai_kicad/m2_functional_block_observer.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "m2_semantics"
+      ],
+      "line_count": 156,
+      "path": "src/ai_kicad/m2_functional_composition_observer.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "collections",
+        "collections.abc",
+        "dataclasses",
+        "ir",
+        "itertools",
+        "m2_conflicts",
+        "typing"
+      ],
+      "line_count": 721,
+      "path": "src/ai_kicad/m2_geometry.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "collections",
+        "dataclasses"
+      ],
+      "line_count": 129,
+      "path": "src/ai_kicad/m2_graph_order_composition_oracle.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "itertools"
+      ],
+      "line_count": 245,
+      "path": "src/ai_kicad/m2_grouping_locality_oracle.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses"
+      ],
+      "line_count": 197,
+      "path": "src/ai_kicad/m2_interface_flow_composition_observer.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses"
+      ],
+      "line_count": 200,
+      "path": "src/ai_kicad/m2_interface_side_composition_observer.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "base64",
+        "gzip",
+        "hashlib",
+        "json",
+        "m2_composition_native_archive",
+        "pathlib",
+        "re",
+        "xml.etree"
+      ],
+      "line_count": 120,
+      "path": "src/ai_kicad/m2_native_render_archive_materialize.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "json"
+      ],
+      "line_count": 120,
+      "path": "src/ai_kicad/m2_native_render_inspection.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "m2_native_render_inspection"
+      ],
+      "line_count": 67,
+      "path": "src/ai_kicad/m2_native_render_inspection_closure.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "m2_pack_beam",
+        "m2_pack_constants",
+        "m2_pack_core",
+        "m2_pack_distribution",
+        "m2_pack_frontier",
+        "m2_pack_layout",
+        "m2_pack_search",
+        "m2_pack_semantic"
+      ],
+      "line_count": 115,
+      "path": "src/ai_kicad/m2_pack.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "m2_fragments_base",
+        "m2_fragments_types",
+        "m2_pack_constants",
+        "m2_pack_core",
+        "m2_pack_distribution",
+        "m2_semantics_core",
+        "m2a_constants",
+        "typing"
+      ],
+      "line_count": 616,
+      "path": "src/ai_kicad/m2_pack_beam.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "m2a_constants"
+      ],
+      "line_count": 43,
+      "path": "src/ai_kicad/m2_pack_constants.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "ir",
+        "m2_fragments_base",
+        "m2_fragments_types",
+        "m2_geometry",
+        "m2_pack_constants",
+        "m2_semantics_core",
+        "m2a_constants",
+        "typing"
+      ],
+      "line_count": 791,
+      "path": "src/ai_kicad/m2_pack_core.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "m2_fragments_base",
+        "m2_fragments_types",
+        "m2_geometry",
+        "m2_pack_constants",
+        "m2_pack_core",
+        "m2_semantics_core",
+        "m2a_constants",
+        "typing"
+      ],
+      "line_count": 411,
+      "path": "src/ai_kicad/m2_pack_distribution.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "ir",
+        "m2_fragments_types",
+        "m2_pack_constants",
+        "m2_pack_core",
+        "m2_pack_distribution",
+        "m2_route",
+        "m2_semantics_core",
+        "m2_terminal_interface_flow",
+        "m2a_constants",
+        "typing"
+      ],
+      "line_count": 838,
+      "path": "src/ai_kicad/m2_pack_frontier.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "m2_fragments_base",
+        "m2_pack_constants",
+        "m2_pack_core",
+        "m2_semantics_core",
+        "typing"
+      ],
+      "line_count": 179,
+      "path": "src/ai_kicad/m2_pack_layout.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "ir",
+        "itertools",
+        "m2_composition_candidate_rank",
+        "m2_composition_qualification_observation",
+        "m2_composition_quality",
+        "m2_fragments_base",
+        "m2_pack_beam",
+        "m2_pack_constants",
+        "m2_pack_core",
+        "m2_pack_distribution",
+        "m2_pack_frontier",
+        "m2_pack_layout",
+        "m2_pack_semantic",
+        "m2_route",
+        "m2_semantics_core",
+        "m2_terminal_interface_flow",
+        "m2a_constants",
+        "typing"
+      ],
+      "line_count": 1433,
+      "path": "src/ai_kicad/m2_pack_search.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "m2_fragments_types",
+        "m2_pack_constants",
+        "m2_pack_core",
+        "m2_pack_distribution",
+        "m2_semantics_core",
+        "m2a_constants",
+        "typing"
+      ],
+      "line_count": 373,
+      "path": "src/ai_kicad/m2_pack_semantic.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "itertools",
+        "math"
+      ],
+      "line_count": 136,
+      "path": "src/ai_kicad/m2_page_composition_observer.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses"
+      ],
+      "line_count": 148,
+      "path": "src/ai_kicad/m2_page_utilization_composition_observer.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "collections",
+        "dataclasses"
+      ],
+      "line_count": 186,
+      "path": "src/ai_kicad/m2_power_reference_composition_observer.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "collections.abc",
+        "dataclasses",
+        "fractions",
+        "itertools"
+      ],
+      "line_count": 103,
+      "path": "src/ai_kicad/m2_repeated_composition_observer.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "collections",
+        "dataclasses",
+        "itertools"
+      ],
+      "line_count": 50,
+      "path": "src/ai_kicad/m2_repeated_structure_composition_observer.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "m2_route_build",
+        "m2_route_constants",
+        "m2_route_core",
+        "m2_route_trees"
+      ],
+      "line_count": 77,
+      "path": "src/ai_kicad/m2_route.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "m2_conflicts",
+        "m2_fragments_types",
+        "m2_geometry",
+        "m2_pack_core",
+        "m2_route_constants",
+        "m2_route_core",
+        "m2_route_trees",
+        "m2_semantics_core",
+        "m2a_constants",
+        "typing"
+      ],
+      "line_count": 704,
+      "path": "src/ai_kicad/m2_route_build.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__"
+      ],
+      "line_count": 20,
+      "path": "src/ai_kicad/m2_route_constants.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "heapq",
+        "ir",
+        "itertools",
+        "m2_conflicts",
+        "m2_fragments_types",
+        "m2_geometry",
+        "m2_pack_constants",
+        "m2_pack_core",
+        "m2_route_constants",
+        "m2_semantics_core",
+        "m2a_constants"
+      ],
+      "line_count": 532,
+      "path": "src/ai_kicad/m2_route_core.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "m2_fragments_types",
+        "m2_geometry",
+        "m2_pack_core",
+        "m2_route_constants",
+        "m2_route_core",
+        "m2_semantics_core",
+        "m2_terminal_interface_flow",
+        "m2a_constants",
+        "typing"
+      ],
+      "line_count": 374,
+      "path": "src/ai_kicad/m2_route_trees.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "collections",
+        "dataclasses",
+        "itertools"
+      ],
+      "line_count": 237,
+      "path": "src/ai_kicad/m2_routing_clarity_composition_observer.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "collections",
+        "dataclasses",
+        "heapq",
+        "math"
+      ],
+      "line_count": 405,
+      "path": "src/ai_kicad/m2_routing_composition_observer.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "m2_semantics_core",
+        "m2_semantics_plan",
+        "m2_semantics_types"
+      ],
+      "line_count": 53,
+      "path": "src/ai_kicad/m2_semantics.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "ir",
+        "m2_conflicts",
+        "m2_semantics_types",
+        "typing"
+      ],
+      "line_count": 350,
+      "path": "src/ai_kicad/m2_semantics_core.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "ir",
+        "itertools",
+        "m2_semantics_core",
+        "m2_semantics_types",
+        "m2a_core",
+        "typing"
+      ],
+      "line_count": 632,
+      "path": "src/ai_kicad/m2_semantics_plan.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "typing"
+      ],
+      "line_count": 31,
+      "path": "src/ai_kicad/m2_semantics_types.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "m2_semantics",
+        "typing"
+      ],
+      "line_count": 57,
+      "path": "src/ai_kicad/m2_terminal_interface_flow.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "itertools",
+        "typing"
+      ],
+      "line_count": 181,
+      "path": "src/ai_kicad/m2_tiny_composition_oracle.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "itertools"
+      ],
+      "line_count": 353,
+      "path": "src/ai_kicad/m2_tiny_grid_composition_oracle.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "m2_tiny_grid_composition_oracle"
+      ],
+      "line_count": 86,
+      "path": "src/ai_kicad/m2_tiny_grid_oracle_miss_evidence.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "assets",
+        "m2a_artifacts",
+        "m2a_constants",
+        "m2a_core",
+        "schematic"
+      ],
+      "line_count": 67,
+      "path": "src/ai_kicad/m2a.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "ir",
+        "json",
+        "m2a_constants",
+        "m2a_core",
+        "pathlib",
+        "schematic",
+        "sexpr",
+        "xml.etree.ElementTree"
+      ],
+      "line_count": 456,
+      "path": "src/ai_kicad/m2a_artifacts.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__main__",
+        "assets",
+        "ir",
+        "json",
+        "kicad",
+        "m2a",
+        "pathlib",
+        "sys"
+      ],
+      "line_count": 128,
+      "path": "src/ai_kicad/m2a_build.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "pathlib"
+      ],
+      "line_count": 19,
+      "path": "src/ai_kicad/m2a_constants.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "assets",
+        "copy",
+        "dataclasses",
+        "decimal",
+        "ir",
+        "itertools",
+        "json",
+        "m2a_constants",
+        "re",
+        "sexpr",
+        "types",
+        "uuid"
+      ],
+      "line_count": 659,
+      "path": "src/ai_kicad/m2a_core.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "m2b_constants",
+        "m2b_evaluation",
+        "m2b_layout",
+        "m2b_observation",
+        "m2b_validation"
+      ],
+      "line_count": 55,
+      "path": "src/ai_kicad/m2b.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__main__",
+        "assets",
+        "ir",
+        "json",
+        "kicad",
+        "m2_compose",
+        "m2a",
+        "m2b",
+        "sys"
+      ],
+      "line_count": 230,
+      "path": "src/ai_kicad/m2b_build.py",
+      "project_imports": []
+    },
+    {
+      "imports": [],
+      "line_count": 32,
+      "path": "src/ai_kicad/m2b_constants.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "ir",
+        "m2_compose",
+        "m2a",
+        "m2b",
+        "m2b_layout",
+        "m2b_validation"
+      ],
+      "line_count": 557,
+      "path": "src/ai_kicad/m2b_evaluation.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "dataclasses",
+        "ir",
+        "itertools",
+        "m2_compose",
+        "m2a"
+      ],
+      "line_count": 660,
+      "path": "src/ai_kicad/m2b_layout.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "assets",
+        "functools",
+        "ir",
+        "m2_geometry",
+        "m2a",
+        "m2b_layout",
+        "pathlib",
+        "sexpr"
+      ],
+      "line_count": 701,
+      "path": "src/ai_kicad/m2b_observation.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "__future__",
+        "assets",
+        "copy",
+        "ir",
+        "json",
+        "m2a",
+        "m2b",
+        "re",
+        "sexpr"
+      ],
+      "line_count": 467,
+      "path": "src/ai_kicad/m2b_validation.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "assets",
+        "dataclasses",
+        "decimal",
+        "json",
+        "pathlib",
+        "re",
+        "sexpr",
+        "uuid"
+      ],
+      "line_count": 170,
+      "path": "src/ai_kicad/schematic.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "json",
+        "re"
+      ],
+      "line_count": 76,
+      "path": "src/ai_kicad/sexpr.py",
+      "project_imports": []
+    },
+    {
+      "imports": [
+        "dataclasses",
+        "decimal",
+        "pathlib",
+        "sexpr",
+        "xml.etree.ElementTree"
+      ],
+      "line_count": 211,
+      "path": "src/ai_kicad/verify.py",
+      "project_imports": []
+    }
+  ],
+  "reusable_seams": [
+    {
+      "area": "canonical circuit IR and schema",
+      "paths": [
+        "src/ai_kicad/ir.py",
+        "src/ai_kicad/m2b.py"
+      ]
+    },
+    {
+      "area": "KiCad symbol asset locks and resolution",
+      "paths": [
+        "src/ai_kicad/assets.py",
+        "fixtures/m2b/assets.lock.json"
+      ]
+    },
+    {
+      "area": "native schematic emission",
+      "paths": [
+        "src/ai_kicad/schematic.py",
+        "src/ai_kicad/m2a.py",
+        "src/ai_kicad/m2b_build.py"
+      ]
+    },
+    {
+      "area": "KiCad CLI invocation and toolchain verification",
+      "paths": [
+        "src/ai_kicad/kicad.py",
+        "fixtures/m1a/toolchain.lock.json"
+      ]
+    },
+    {
+      "area": "independent electrical reconstruction/comparison",
+      "paths": [
+        "src/ai_kicad/verify.py",
+        "src/ai_kicad/m2a.py",
+        "src/ai_kicad/m2b.py"
+      ]
+    },
+    {
+      "area": "locked real-tool schematic qualification",
+      "paths": [
+        "tests/test_m2b.py",
+        "fixtures/m2b/qualification/timer_astable/"
+      ]
+    }
+  ],
+  "schema_version": "mcp-pivot-repository-map.v1",
+  "source_module_count": 99,
+  "source_tree_oid": "ec1ebb8611b779438fd1ab5b7cb92ec178f7234f",
+  "test_inventory": {
+    "pytest_test_file_count": 123,
+    "test_config": "pyproject.toml",
+    "test_directories": [
+      "tests"
+    ]
+  },
+  "tool_script_count": 34
+}

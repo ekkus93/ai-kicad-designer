@@ -1,0 +1,128 @@
+{
+  "initialize": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+      "capabilities": {
+        "prompts": {
+          "listChanged": false
+        },
+        "resources": {
+          "listChanged": false,
+          "subscribe": false
+        },
+        "tools": {
+          "listChanged": false
+        }
+      },
+      "instructions": "KiCad EDA tools for schematic capture, PCB layout, symbol/footprint libraries, and project management.\n\nCRITICAL RULES:\n- NEVER read, edit, or write KiCad files (.kicad_sch, .kicad_pcb, .kicad_sym, .kicad_mod, .kicad_pro) directly. All manipulation MUST go through these MCP tools.\n- NEVER run kicad-cli commands directly. Use the export, ERC, and DRC tools provided by this server.\n- When a tool returns an error, try different parameters or a different tool. Do NOT fall back to manual file editing.\n\nSTART HERE (fetch one of these by name; do not search blind):\n- See what is in a schematic: list_schematic_components\n- Add a part (resistor, capacitor, IC, ...): place_component\n- Connect pins to a net: wire_pins_to_net\n- Check the schematic: run_erc\n- See what is on the board: list_pcb_footprints\n- Place or move a footprint: place_footprint, move_footprint\n- Route: add_trace, add_via, autoroute_pcb\n- Check the board: run_drc\n- Push the schematic to the board: update_pcb_from_schematic\n- Manufacturing output: export_gerbers\n- Start a new project: create_project\n- Anything else: search by what you want to do. There are 109 tools; these are the entry points, not the whole surface.\n\nFILE ACCESS:\n- These tools reach the filesystem through this server's own process, which already runs with the user's permissions. You do NOT need filesystem access, a connected folder, or any other permission from the host application to use them.\n- NEVER ask the user to connect, add, or grant access to a folder. If you need a file, call the tool.\n- Every path parameter takes an absolute path.\n\nCONFIGURED DEFAULTS:\n- schematic: /home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_drc_repair_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch\n- board: /home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_drc_repair_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_pcb\n- export directory: /home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_drc_repair_2026-10-22_run1/workspace\n- These are already filled in as the tools' default parameter values. Call the tool with no path argument at all. Do NOT ask the user for a path listed here, and do NOT guess one.",
+      "protocolVersion": "2025-03-26",
+      "serverInfo": {
+        "name": "kicad",
+        "version": "0.21.1"
+      }
+    }
+  },
+  "calls": [
+    {
+      "tool": "run_drc",
+      "arguments": {
+        "pcb_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_drc_repair_2026-10-22_run1/workspace/Reference555LedFlasher_repair.kicad_pcb"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 2,
+        "result": {
+          "content": [
+            {
+              "text": "{\n  \"source\": \"Reference555LedFlasher_repair.kicad_pcb\",\n  \"kicad_version\": \"10.0.6\",\n  \"violation_count\": 1,\n  \"violations\": [\n    {\n      \"description\": \"Track width (board setup constraints min width 0.2000 mm; actual 0.1500 mm)\",\n      \"items\": [\n        {\n          \"description\": \"Track [Net-(U1-THRES)] on B.Cu, length 0.5708 mm\",\n          \"pos\": {\n            \"x\": 26.8,\n            \"y\": 15.1236\n          },\n          \"uuid\": \"be6872c9-7ab4-461c-a51b-f59538c04e6c\"\n        }\n      ],\n      \"severity\": \"error\",\n      \"type\": \"track_width\"\n    }\n  ],\n  \"unconnected_count\": 0,\n  \"unconnected_items\": [],\n  \"note\": null\n}",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "source": "Reference555LedFlasher_repair.kicad_pcb",
+            "kicad_version": "10.0.6",
+            "violation_count": 1,
+            "violations": [
+              {
+                "description": "Track width (board setup constraints min width 0.2000 mm; actual 0.1500 mm)",
+                "items": [
+                  {
+                    "description": "Track [Net-(U1-THRES)] on B.Cu, length 0.5708 mm",
+                    "pos": {
+                      "x": 26.8,
+                      "y": 15.1236
+                    },
+                    "uuid": "be6872c9-7ab4-461c-a51b-f59538c04e6c"
+                  }
+                ],
+                "severity": "error",
+                "type": "track_width"
+              }
+            ],
+            "unconnected_count": 0,
+            "unconnected_items": [],
+            "note": null
+          }
+        }
+      }
+    },
+    {
+      "tool": "set_trace_width",
+      "arguments": {
+        "pcb_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_drc_repair_2026-10-22_run1/workspace/Reference555LedFlasher_repair.kicad_pcb",
+        "width": 0.2,
+        "net_name": "Net-(U1-THRES)",
+        "layer": "B.Cu"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 3,
+        "result": {
+          "content": [
+            {
+              "text": "{\n  \"traces_modified\": 5,\n  \"net\": \"Net-(U1-THRES)\",\n  \"new_width_mm\": 0.2\n}",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "traces_modified": 5,
+            "net": "Net-(U1-THRES)",
+            "new_width_mm": 0.2
+          }
+        }
+      }
+    },
+    {
+      "tool": "run_drc",
+      "arguments": {
+        "pcb_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_drc_repair_2026-10-22_run1/workspace/Reference555LedFlasher_repair.kicad_pcb"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 4,
+        "result": {
+          "content": [
+            {
+              "text": "{\n  \"source\": \"Reference555LedFlasher_repair.kicad_pcb\",\n  \"kicad_version\": \"10.0.6\",\n  \"violation_count\": 0,\n  \"violations\": [],\n  \"unconnected_count\": 0,\n  \"unconnected_items\": [],\n  \"note\": null\n}",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "source": "Reference555LedFlasher_repair.kicad_pcb",
+            "kicad_version": "10.0.6",
+            "violation_count": 0,
+            "violations": [],
+            "unconnected_count": 0,
+            "unconnected_items": [],
+            "note": null
+          }
+        }
+      }
+    }
+  ],
+  "server_exit_code": 0
+}

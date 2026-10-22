@@ -1,0 +1,64 @@
+{
+  "initialize": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+      "capabilities": {
+        "prompts": {
+          "listChanged": false
+        },
+        "resources": {
+          "listChanged": false,
+          "subscribe": false
+        },
+        "tools": {
+          "listChanged": false
+        }
+      },
+      "instructions": "KiCad EDA tools for schematic capture, PCB layout, symbol/footprint libraries, and project management.\n\nCRITICAL RULES:\n- NEVER read, edit, or write KiCad files (.kicad_sch, .kicad_pcb, .kicad_sym, .kicad_mod, .kicad_pro) directly. All manipulation MUST go through these MCP tools.\n- NEVER run kicad-cli commands directly. Use the export, ERC, and DRC tools provided by this server.\n- When a tool returns an error, try different parameters or a different tool. Do NOT fall back to manual file editing.\n\nSTART HERE (fetch one of these by name; do not search blind):\n- See what is in a schematic: list_schematic_components\n- Add a part (resistor, capacitor, IC, ...): place_component\n- Connect pins to a net: wire_pins_to_net\n- Check the schematic: run_erc\n- See what is on the board: list_pcb_footprints\n- Place or move a footprint: place_footprint, move_footprint\n- Route: add_trace, add_via, autoroute_pcb\n- Check the board: run_drc\n- Push the schematic to the board: update_pcb_from_schematic\n- Manufacturing output: export_gerbers\n- Start a new project: create_project\n- Anything else: search by what you want to do. There are 109 tools; these are the entry points, not the whole surface.\n\nFILE ACCESS:\n- These tools reach the filesystem through this server's own process, which already runs with the user's permissions. You do NOT need filesystem access, a connected folder, or any other permission from the host application to use them.\n- NEVER ask the user to connect, add, or grant access to a folder. If you need a file, call the tool.\n- Every path parameter takes an absolute path.\n\nCONFIGURED DEFAULTS:\n- schematic: /home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_sch\n- board: /home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_pcb\n- export directory: /home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run3/workspace\n- These are already filled in as the tools' default parameter values. Call the tool with no path argument at all. Do NOT ask the user for a path listed here, and do NOT guess one.",
+      "protocolVersion": "2025-03-26",
+      "serverInfo": {
+        "name": "kicad",
+        "version": "0.21.1"
+      }
+    }
+  },
+  "calls": [
+    {
+      "tool": "autoroute_pcb",
+      "arguments": {
+        "pcb_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run3/workspace/Reference555LedFlasher.kicad_pcb",
+        "max_passes": 1,
+        "num_threads": 1,
+        "timeout": 100,
+        "output_dir": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run3/autoroute"
+      },
+      "response": {
+        "jsonrpc": "2.0",
+        "id": 2,
+        "result": {
+          "content": [
+            {
+              "text": "{\n  \"routed_path\": \"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run3/autoroute/Reference555LedFlasher_routed.kicad_pcb\",\n  \"traces_added\": 38,\n  \"vias_added\": 0,\n  \"text_fields_fixed\": 4,\n  \"drc_violations\": 7,\n  \"drc_unconnected\": 5,\n  \"keepouts_promoted\": 0,\n  \"warnings\": [\n    \"This board is in a KiCad 9 era format (version 20241229) but pcbnew 10 is doing the routing, so the routed copy is written in the KiCad 10 format and may not open in KiCad 9. The original board is not touched.\"\n  ]\n}",
+              "type": "text"
+            }
+          ],
+          "isError": false,
+          "structuredContent": {
+            "routed_path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_footprint_sync_2026-10-22_run3/autoroute/Reference555LedFlasher_routed.kicad_pcb",
+            "traces_added": 38,
+            "vias_added": 0,
+            "text_fields_fixed": 4,
+            "drc_violations": 7,
+            "drc_unconnected": 5,
+            "keepouts_promoted": 0,
+            "warnings": [
+              "This board is in a KiCad 9 era format (version 20241229) but pcbnew 10 is doing the routing, so the routed copy is written in the KiCad 10 format and may not open in KiCad 9. The original board is not touched."
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "server_exit_code": 0
+}

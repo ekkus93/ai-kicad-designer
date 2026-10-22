@@ -1,0 +1,143 @@
+{
+  "trial": {
+    "schema_version": "pivot-benchmark.v1",
+    "trial_id": "productofamerica_qwen_inspect_2026-10-22_run2",
+    "task_id": "inspect_reference_circuit",
+    "fixture_sha256": "4aabc82324d4d723d0b98382c8cf82fff9a925fb9ebbf73220af90cfb51a6cbd",
+    "recorded_at_utc": "2026-10-22T01:54:31.889360Z",
+    "model": {
+      "provider": "ollama",
+      "model": "qwen3.5:9b",
+      "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+      "settings": {
+        "temperature": 0,
+        "num_ctx": 8192,
+        "num_predict": 1800
+      }
+    },
+    "backend": {
+      "name": "ProductOfAmerica",
+      "version": "0.21.1",
+      "build_id": "f5f82e02ffe17bbcba806fec35f3302ee332fefc",
+      "mode": "task_gated"
+    },
+    "time_limit_seconds": 240,
+    "token_limit": 32768,
+    "tool_call_limit": 8,
+    "elapsed_seconds": 10.29029203695245,
+    "token_count": 5157,
+    "tool_calls": [
+      {
+        "tool_name": "get_schematic_summary",
+        "duration_ms": 28,
+        "error_class": null,
+        "valid": true
+      },
+      {
+        "tool_name": "list_schematic_components",
+        "duration_ms": 6,
+        "error_class": null,
+        "valid": true
+      },
+      {
+        "tool_name": "run_erc",
+        "duration_ms": 471,
+        "error_class": null,
+        "valid": true
+      },
+      {
+        "tool_name": "export_netlist",
+        "duration_ms": 267,
+        "error_class": null,
+        "valid": true
+      }
+    ],
+    "gates": [
+      {
+        "gate_id": "native_pin_net_map",
+        "status": "FAIL",
+        "summary": "One or more timer pins are missing or assigned to the wrong net.",
+        "independent": true,
+        "evidence_paths": [
+          "model_output.json"
+        ]
+      },
+      {
+        "gate_id": "timing_calculation",
+        "status": "FAIL",
+        "summary": "At least one timing value is missing or outside 1% of the independent result.",
+        "independent": true,
+        "evidence_paths": [
+          "model_output.json"
+        ]
+      },
+      {
+        "gate_id": "led_current_bounds",
+        "status": "FAIL",
+        "summary": "Nominal current or the requested conservative upper bound is missing or incorrect.",
+        "independent": true,
+        "evidence_paths": [
+          "model_output.json"
+        ]
+      },
+      {
+        "gate_id": "required_mcp_tool_use",
+        "status": "PASS",
+        "summary": "The model used every task-required MCP tool.",
+        "independent": false,
+        "evidence_paths": [
+          "mcp_tool_calls.json"
+        ]
+      },
+      {
+        "gate_id": "source_schematic_unchanged",
+        "status": "PASS",
+        "summary": "The protected source schematic is unchanged.",
+        "independent": true,
+        "evidence_paths": [
+          "mcp_tool_calls.json"
+        ]
+      }
+    ],
+    "artifacts": [
+      {
+        "path": "model_output.json",
+        "sha256": "40296f53954fdce99fb6f86161f1b535108e6bfdd46858fc5723b7eb7149ce59",
+        "media_type": "application/json",
+        "role": "model_final_response"
+      },
+      {
+        "path": "mcp_tool_calls.json",
+        "sha256": "43003a40a7893128ef96253e3f2e22bc9ff925cb209550f2c44c22bab8409707",
+        "media_type": "application/json",
+        "role": "backend_call_trace"
+      }
+    ],
+    "status": "FAIL"
+  },
+  "server_info": {
+    "name": "kicad",
+    "version": "0.21.1"
+  },
+  "tool_errors": [],
+  "process_exit_code": 0,
+  "source_schematic_sha256": "9d819329416ae990c9ba1b9feddc5eca91c6220650259ea740b8fdc38f31903f",
+  "source_schematic_unchanged": true,
+  "workspace_hashes": {
+    "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+    "Reference555LedFlasher-erc.json": "b7884b9f447ba805039a47cd4d8997ca58eee7e0f378e1bdac814d7e2bb80b58",
+    "Reference555LedFlasher.cir": "51115dc2be8daa6234b42f73b3287be84459b05d40087d189bfaf6d55e2fc04c",
+    "Reference555LedFlasher.kicad_prl": "a61f9786f0934d13bc3efa5ef75250845c08a8c4ee1bfc2a4b9b25e7f5fbdd80",
+    "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+    "Reference555LedFlasher.kicad_sch": "9d819329416ae990c9ba1b9feddc5eca91c6220650259ea740b8fdc38f31903f",
+    "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+  },
+  "scores": {
+    "pass": 2,
+    "fail": 3,
+    "unsupported": 0,
+    "inconclusive": 0,
+    "accuracy": 0.4,
+    "eligible": 5
+  }
+}

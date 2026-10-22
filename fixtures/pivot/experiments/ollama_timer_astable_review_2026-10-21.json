@@ -1,0 +1,15 @@
+{
+  "accepted_as_engineering_evidence": false,
+  "input_path": "fixtures/m2b/timer_astable.json",
+  "input_sha256": "91832c0839b7630825747d96e53bdc1c151c92ffa0ddfb575dd4765691c6504d",
+  "model": "qwen3.5:9b",
+  "model_digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+  "ollama_version": "ollama version is 0.40.6",
+  "parse_status": "invalid_json",
+  "prompt_sha256": "2c91e604e8570c8e207b339fafc417d50058f41b7720fe9782f20cad33f3e247",
+  "purpose": "Preliminary design-review exercise; not a formal backend benchmark or acceptance evidence.",
+  "raw_response": "{\n  \"topology_summary\": \"The graph describes a NE555D timer configured in astable mode with two timing resistors (R1, R2), one timing capacitor (C1), and a bypass capacitor (C2). Power is supplied via J1 (VCC) and returned via J3 (REF). The output pulse is available at J2. Internal connections map the NE555 pinout to nets VCC, DISCH, TIMING, OUT, REF, and CONT.\",\n  \"pin_mapping_questions\": [\n    \"The 'source' connector (J1) connects to pins 8, 4, and 1 of U1; verify if pin 4 (Reset) is intended to be tied directly to VCC or if a separate reset input is required.\",\n    \"The 'return' connector (J3) connects only to pin 1 (Ground); verify if this is the sole ground connection for the bypass capacitor C2 and the NE555 internal substrate.\",\n    \"The 'output' connector (J2) maps to pin 3; confirm that no load or external circuitry is defined in the graph for the output pulse.\"\n  ],\n  \"missing_evidence\": [\n    \"Physical footprint or PCB layer assignment for components U1, R1, R2, C1, C2, J1, J2, J3.\",\n    \"Manufacturing verification data (e.g., DRC status, ERC status, Gerber files).\",\n    \"Electrical test results or simulation logs confirming the astable frequency and duty cycle.\",\n    \"MPN (Manufacturer Part Number) confirmation for 'NE",
+  "recorded_at_utc": "2026-10-21T23:36:13.648193+00:00",
+  "review": null,
+  "schema_version": "ollama-advisory-review.v1"
+}

@@ -1,0 +1,20 @@
+{
+  "schema_version": "ollama-review.v1",
+  "review_id": "reference_555_led_flasher_ollama_correction_2026-10-21_run1",
+  "model": "qwen3.5:9b",
+  "model_digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+  "options": {
+    "temperature": 0,
+    "num_ctx": 2048,
+    "num_predict": 400
+  },
+  "prompt": "Correct only this arithmetic with explicit units: T_high=0.693*(10000 ohm+47000 ohm)*10 microfarad; T_low=0.693*47000 ohm*10 microfarad; frequency=1/(T_high+T_low). 10 microfarad = 10e-6 farad. Return compact JSON with high_seconds, low_seconds, period_seconds, frequency_hz, and a dimensional-analysis string. Do not review anything else.",
+  "model_output": "{\n  \"high_seconds\": 3.4287,\n  \"low_seconds\": 0.693,\n  \"period_seconds\": 4.1217,\n  \"frequency_hz\": 0.2426,\n  \"dimensional-analysis-string\": \"(ohms * farads) = seconds; 1/seconds = hertz\"\n}",
+  "elapsed_seconds": 6.076,
+  "classification": "advisory_unverified",
+  "ground_truth": "0.395010 s high, 0.325710 s low, 0.720720 s period, 1.387501 Hz",
+  "independent_score": {
+    "timing_correct": false,
+    "reason": "Given 10e-6 F, the model returned 3.4287 s high and 0.693 s low; correct values are 0.395010 s and 0.325710 s."
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "schema_version": "pivot-benchmark.v1",
+  "trial_id": "ollama-direct-reference-review-run1-2026-10-21",
+  "task_id": "inspect_reference_circuit",
+  "fixture_sha256": "5e4b67c9ec4dd0e2c4370a0d8918f43a258da38b34c3ee7afd44cfe3f02f0dac",
+  "recorded_at_utc": "2026-10-21T23:52:45.231726Z",
+  "model": {
+    "provider": "ollama",
+    "model": "qwen3.5:9b",
+    "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "settings": {
+      "temperature": 0,
+      "num_ctx": 8192,
+      "num_predict": 1800,
+      "format": "json",
+      "think": false
+    }
+  },
+  "backend": {
+    "name": "direct-ollama-no-tools",
+    "version": "0.40.6",
+    "build_id": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "mode": "direct"
+  },
+  "time_limit_seconds": 240,
+  "token_limit": 32768,
+  "tool_call_limit": 8,
+  "elapsed_seconds": 26.634,
+  "token_count": 2144,
+  "tool_calls": [],
+  "gates": [
+    {
+      "gate_id": "native_pin_net_map",
+      "status": "FAIL",
+      "summary": "One or more timer pins are missing or assigned to the wrong net.",
+      "independent": true,
+      "evidence_paths": [
+        "fixtures/pivot/experiments/ollama_reference_review_2026-10-21_run1.json"
+      ]
+    },
+    {
+      "gate_id": "timing_calculation",
+      "status": "FAIL",
+      "summary": "At least one timing value is missing or outside 1% of the independent result.",
+      "independent": true,
+      "evidence_paths": [
+        "fixtures/pivot/experiments/ollama_reference_review_2026-10-21_run1.json"
+      ]
+    },
+    {
+      "gate_id": "led_current_bounds",
+      "status": "FAIL",
+      "summary": "Nominal current or the requested conservative upper bound is missing or incorrect.",
+      "independent": true,
+      "evidence_paths": [
+        "fixtures/pivot/experiments/ollama_reference_review_2026-10-21_run1.json"
+      ]
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "fixtures/pivot/experiments/ollama_reference_review_2026-10-21_run1.json",
+      "sha256": "4fd2cb704714d6e18c3af1c9dad07526c472c377956190d6ae33fee0bced3dd8",
+      "media_type": "application/json",
+      "role": "raw_model_trial"
+    }
+  ],
+  "status": "FAIL"
+}

@@ -1,0 +1,435 @@
+{
+  "schema_version": "konnect-smoke.v1",
+  "upstream_commit": "9488e5f09717cb508cb25779dc16586d1f06f758",
+  "binary_sha256": "dbb356a4761a6d108057a797407538bfd8e91cd06554f3c594519940db5fb85c",
+  "protocol_version": "2025-06-18",
+  "initialize": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+      "capabilities": {
+        "tools": {
+          "listChanged": true
+        }
+      },
+      "protocolVersion": "2025-06-18",
+      "serverInfo": {
+        "name": "konnect",
+        "version": "0.13.0"
+      }
+    }
+  },
+  "tool_count": 22,
+  "tools": [
+    {
+      "description": "List all available KiCAD toolsets with descriptions, categories, tool counts, and whether each is currently loaded. Only the starter kit (project, config) is loaded at startup \u2014 call load_toolset(name) to expose additional tools in subsequent tools/list responses. Always call this first to discover what tools are available for the task.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "name": "list_toolboxes"
+    },
+    {
+      "description": "Load a toolset by name so its tools appear in tools/list and can be called. Returns the list of tools that were added. Use list_toolboxes() first to see valid names. Pass an array to load several toolsets in one call -- cheaper, one tools/list refresh.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              }
+            ],
+            "description": "Toolset name (e.g. 'sch_components', 'pcb_routing'), or an array of names"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "name": "load_toolset"
+    },
+    {
+      "description": "Unload a toolset to remove its tools from the active session. Use this to keep the tool list manageable when switching tasks. With auto_load_toolsets enabled, tools reload on use.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "description": "Toolset name to unload",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "name": "unload_toolset"
+    },
+    {
+      "description": "Return the list of currently loaded toolsets and how many tools each provides.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "name": "get_active_toolsets"
+    },
+    {
+      "description": "Return the most recent tool calls this session (newest first) with call_id, tool name, toolset, duration, status (ok/error/not_found), and error_kind when failed. Use this to self-diagnose \u2014 e.g. 'why did the last call fail?' or 'what tools have I been running?'",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "limit": {
+            "default": 20,
+            "description": "Max number of calls to return (default 20, max 100). Pass 0 for all buffered calls.",
+            "type": "integer"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "get_recent_calls"
+    },
+    {
+      "description": "Return server uptime, total/error call counts, per-tool statistics, and the path to the JSONL call log. Good for 'what's my error rate today?' and 'which tool has been slowest?'.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "name": "server_stats"
+    },
+    {
+      "description": "Report read-only provenance for the Konnect process serving this call: build version and commit when available, executable path, conservatively detected install source, on-disk binary version, KiCad CLI version, redacted IPC endpoint, proven newer-binary state, platform-specific restart guidance, and whether installed skills, agents, and hooks match this build's bundle.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "name": "get_installation_info"
+    },
+    {
+      "description": "Replace this standalone Unix stdio server with the verified Konnect binary now on disk while preserving the client-owned pipes and original command-line arguments. The transport stops accepting requests and flushes this response, process bookkeeping is released, and then the validated executable identity is rechecked at the one-way exec handoff. Linux executes the open file directly. Loaded toolsets reset to startup state. Same-version development builds require allow_same_version=true.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "allow_same_version": {
+            "default": false,
+            "description": "Explicitly permit a same-version development rebuild. Downgrades are always refused.",
+            "type": "boolean"
+          },
+          "confirm": {
+            "description": "Must be true. Guards against an accidental reload mid-task.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "confirm"
+        ],
+        "type": "object"
+      },
+      "name": "reload_server"
+    },
+    {
+      "description": "Return the merged configuration (user defaults + project overrides). This is the config Claude should use for all design decisions. 'sources' says where each half came from ('file', 'defaults', or 'not_configured' when there is no project directory). Refuses with invalid_configuration, naming which file, rather than merging defaults in place of a file that cannot be used.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "project_dir": {
+            "description": "Project directory (optional)",
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "get_effective_config"
+    },
+    {
+      "description": "Update a user preference. Use dot-notation for nested keys, e.g. 'fab_constraints.fab_house'. Call this when the user says things like 'always use JLCPCB' or 'I prefer 0402 passives'. Every other key is kept, and the response is the file as read back. Refuses with invalid_configuration, writing nothing, when the existing file cannot be parsed or read; a persistence failure is mutation_outcome_uncertain, so read the file before retrying.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "key_path": {
+            "description": "Dot-notation path to the config key, e.g. 'fab_constraints.fab_house' or 'default_passives.decoupling_cap'",
+            "type": "string"
+          },
+          "value": {
+            "description": "New value to set (string, number, array, or object)"
+          }
+        },
+        "required": [
+          "key_path",
+          "value"
+        ],
+        "type": "object"
+      },
+      "name": "save_user_config"
+    },
+    {
+      "description": "Load project-specific configuration from <project_dir>/.konnect/project.json. Project config overrides user config where both exist. 'source' is 'file' or 'defaults' (no file; nothing is written). A file that cannot be parsed or read is refused with invalid_configuration.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "project_dir": {
+            "description": "Path to the KiCAD project directory. If omitted, uses the configured project_dir.",
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "load_project_config"
+    },
+    {
+      "description": "Create a new KiCAD project at the given path. Creates the directory, a blank .kicad_pro file, an empty .kicad_sch schematic, and a blank .kicad_pcb board file. Refuses to replace any existing project file.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "description": "Project name (used as filename stem)",
+            "type": "string"
+          },
+          "path": {
+            "description": "Directory path where the project will be created",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path",
+          "name"
+        ],
+        "type": "object"
+      },
+      "name": "create_project"
+    },
+    {
+      "description": "Export the schematic and PCB to PDF as a timestamped snapshot/checkpoint. Useful for saving progress before major edits.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "description": "Optional label to include in the filename",
+            "type": "string"
+          },
+          "output_dir": {
+            "description": "Directory to write snapshot PDFs",
+            "type": "string"
+          },
+          "pcb": {
+            "description": "Optional: path to .kicad_pcb file",
+            "type": "string"
+          },
+          "schematic": {
+            "description": "Path to .kicad_sch file",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schematic",
+          "output_dir"
+        ],
+        "type": "object"
+      },
+      "name": "snapshot_project"
+    },
+    {
+      "description": "Rename a KiCAD project: renames the .kicad_pro/.kicad_sch/.kicad_pcb/.kicad_prl files and rewrites the internal references that carry the old name. Renaming the files alone is NOT enough \u2014 every symbol instance stores (project \"name\"), and a mismatch there makes KiCAD treat the design as unannotated, losing every reference designator. Equivalent to eeschema's File > Save As. Use dry_run first.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "dry_run": {
+            "default": false,
+            "description": "Report the planned changes without touching anything. Default false.",
+            "type": "boolean"
+          },
+          "new_name": {
+            "description": "New project name, without extension",
+            "type": "string"
+          },
+          "project": {
+            "description": "Path to the existing .kicad_pro file",
+            "type": "string"
+          },
+          "rename_directory": {
+            "default": false,
+            "description": "Also rename the containing folder when it matches the old project name. Default false.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "project",
+          "new_name"
+        ],
+        "type": "object"
+      },
+      "name": "rename_project"
+    },
+    {
+      "description": "Load the user's global Konnect preferences. Call this at the start of every session to get preferred manufacturers, fab constraints, default passives, and design rules. 'source' says whether the answer is the user's file or Konnect's defaults (no file existed; the defaults are then written for the user to edit and 'persisted' says whether that worked). A file that exists but cannot be parsed or read is refused with invalid_configuration and is never replaced by defaults.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "name": "load_user_config"
+    },
+    {
+      "description": "Launch the live schematic viewer. The viewer shows the schematic as SVG and auto-refreshes when the file changes. Use this after placing components so the user can see the schematic in real-time as you edit it. For hierarchical designs, pass the root schematic \u2014 the viewer discovers every sheet reachable from it and shows a sheet selector.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "schematic": {
+            "description": "Path to the root .kicad_sch file to view",
+            "type": "string"
+          }
+        },
+        "required": [
+          "schematic"
+        ],
+        "type": "object"
+      },
+      "name": "open_schematic_viewer"
+    },
+    {
+      "description": "Save the currently open PCB board file via KiCAD IPC. Requires KiCAD to be running with IPC enabled.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "name": "save_project"
+    },
+    {
+      "description": "Add a natural-language design rule that Claude should follow in this project. Examples: 'Always use 100nF X7R for MCU decoupling within 3mm of power pin', 'Route USB D+/D- as 90-ohm differential pair'.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "project_dir": {
+            "description": "Project directory (for project-scoped rules)",
+            "type": "string"
+          },
+          "rule": {
+            "description": "The design rule in plain English",
+            "type": "string"
+          },
+          "scope": {
+            "default": "project",
+            "description": "'user' (applies to all projects) or 'project' (this project only)",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rule"
+        ],
+        "type": "object"
+      },
+      "name": "add_design_rule"
+    },
+    {
+      "description": "Read project metadata from a .kicad_pro file. Returns the project name, schematic and PCB paths, last modified time, project-file format version, and the generator versions recorded by the sibling design files. The compatibility kicad_version is null when those siblings disagree.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "description": "Path to the .kicad_pro project file",
+            "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "type": "object"
+      },
+      "name": "get_project_info"
+    },
+    {
+      "description": "Save a project-specific rule or override. Same dot-notation as save_user_config but writes to the project's .konnect/project.json, with the same refusals: an unusable existing file is never overwritten.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "key_path": {
+            "description": "Dot-notation config key",
+            "type": "string"
+          },
+          "project_dir": {
+            "description": "Project directory (optional, uses configured default)",
+            "type": "string"
+          },
+          "value": {
+            "description": "New value to set"
+          }
+        },
+        "required": [
+          "key_path",
+          "value"
+        ],
+        "type": "object"
+      },
+      "name": "save_project_config"
+    },
+    {
+      "description": "List PCB documents open in the running KiCad UI and optionally check whether one specific KiCad project or board is open over IPC.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "description": "Optional path to a .kicad_pro project or .kicad_pcb board to check",
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "open_project"
+    },
+    {
+      "description": "List all active design rules (user-level + project-level).",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "project_dir": {
+            "description": "Project directory (optional)",
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "list_design_rules"
+    }
+  ],
+  "installation_info_tool_present": true,
+  "installation_info_call": {
+    "jsonrpc": "2.0",
+    "id": 3,
+    "result": {
+      "content": [
+        {
+          "text": "{\"build\":{\"commit\":\"9488e5f09717cb508cb25779dc16586d1f06f758\",\"commit_source\":\"git_head\",\"profile\":\"release\",\"target_arch\":\"x86_64\",\"target_os\":\"linux\",\"version\":\"0.13.0\",\"working_tree_state\":\"not_recorded\"},\"configuration\":{\"search_policy\":\"first_existing_no_merge\",\"selected_path\":null,\"skipped_existing_paths\":[],\"source\":\"defaults\"},\"guidance\":{\"bundle_version\":\"0.13.0\",\"claude\":{\"checked\":\"now\",\"files\":[{\"kind\":\"skill\",\"name\":\"konnect/SKILL.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.claude/skills/konnect/SKILL.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"konnect/references/reliability-contract.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.claude/skills/konnect/references/reliability-contract.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-schematic/SKILL.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.claude/skills/kicad-schematic/SKILL.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-schematic/references/common-lib-ids.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.claude/skills/kicad-schematic/references/common-lib-ids.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-schematic/references/wiring-patterns.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.claude/skills/kicad-schematic/references/wiring-patterns.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-pcb/SKILL.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.claude/skills/kicad-pcb/SKILL.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-pcb/references/layer-reference.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.claude/skills/kicad-pcb/references/layer-reference.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-pcb/references/trace-width-table.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.claude/skills/kicad-pcb/references/trace-width-table.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-pcb/references/design-rules.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.claude/skills/kicad-pcb/references/design-rules.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-manufacture/SKILL.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.claude/skills/kicad-manufacture/SKILL.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-manufacture/references/jlcpcb-rules.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.claude/skills/kicad-manufacture/references/jlcpcb-rules.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-manufacture/references/gerber-layers.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.claude/skills/kicad-manufacture/references/gerber-layers.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-review/SKILL.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.claude/skills/kicad-review/SKILL.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-review/references/error-taxonomy.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.claude/skills/kicad-review/references/error-taxonomy.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-review/references/design-checklist.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.claude/skills/kicad-review/references/design-checklist.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-library/SKILL.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.claude/skills/kicad-library/SKILL.md\",\"status\":\"missing\"},{\"kind\":\"agent\",\"name\":\"kicad-design-review-agent.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.claude/agents/kicad-design-review-agent.md\",\"status\":\"missing\"},{\"kind\":\"agent\",\"name\":\"kicad-schematic-build-agent.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.claude/agents/kicad-schematic-build-agent.md\",\"status\":\"missing\"}],\"hooks\":[{\"event\":\"PreToolUse\",\"name\":\"pre-pcb-ipc\",\"reason\":null,\"status\":\"missing\"},{\"event\":\"PreToolUse\",\"name\":\"pre-pcb-fallback\",\"reason\":null,\"status\":\"missing\"},{\"event\":\"PreToolUse\",\"name\":\"pre-pcb-closed\",\"reason\":null,\"status\":\"missing\"},{\"event\":\"PreToolUse\",\"name\":\"pre-pcb-conditional\",\"reason\":null,\"status\":\"missing\"}],\"marker\":null,\"state\":\"not_installed\"},\"codex\":{\"checked\":\"now\",\"files\":[{\"kind\":\"skill\",\"name\":\"konnect/SKILL.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.agents/skills/konnect/SKILL.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"konnect/references/reliability-contract.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.agents/skills/konnect/references/reliability-contract.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-schematic/SKILL.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.agents/skills/kicad-schematic/SKILL.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-schematic/references/common-lib-ids.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.agents/skills/kicad-schematic/references/common-lib-ids.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-schematic/references/wiring-patterns.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.agents/skills/kicad-schematic/references/wiring-patterns.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-pcb/SKILL.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.agents/skills/kicad-pcb/SKILL.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-pcb/references/layer-reference.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.agents/skills/kicad-pcb/references/layer-reference.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-pcb/references/trace-width-table.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.agents/skills/kicad-pcb/references/trace-width-table.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-pcb/references/design-rules.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.agents/skills/kicad-pcb/references/design-rules.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-manufacture/SKILL.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.agents/skills/kicad-manufacture/SKILL.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-manufacture/references/jlcpcb-rules.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.agents/skills/kicad-manufacture/references/jlcpcb-rules.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-manufacture/references/gerber-layers.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.agents/skills/kicad-manufacture/references/gerber-layers.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-review/SKILL.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.agents/skills/kicad-review/SKILL.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-review/references/error-taxonomy.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.agents/skills/kicad-review/references/error-taxonomy.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-review/references/design-checklist.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.agents/skills/kicad-review/references/design-checklist.md\",\"status\":\"missing\"},{\"kind\":\"skill\",\"name\":\"kicad-library/SKILL.md\",\"path\":\"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1/home/.agents/skills/kicad-library/SKILL.md\",\"status\":\"missing\"}],\"hooks\":[],\"marker\":null,\"state\":\"not_installed\"},\"probe_status\":\"ok\"},\"installation\":{\"binary_on_disk\":{\"newer_than_running\":false,\"probe_status\":\"ok\",\"version\":\"0.13.0\"},\"evidence\":\"No verified KiCad PCM manifest was found beside this executable; standalone and source builds are intentionally not guessed from path names.\",\"manifest_path\":null,\"source\":\"unknown\"},\"ipc\":{\"configured\":false,\"endpoint\":null,\"source\":\"resolved_server_config\"},\"kicad\":{\"cli_path\":null,\"probe_status\":\"not_found\",\"version\":null},\"restart_guidance\":[\"Linux: restart the MCP client that launched Konnect; if KiCad launched it, stop the plugin server or quit and reopen KiCad after the update.\",\"Call get_installation_info again after restart and verify the serving version, commit, and executable path.\"],\"runtime\":{\"executable_path\":\"/tmp/mcp-p0-konnect-target/release/konnect\"}}",
+          "type": "text"
+        }
+      ],
+      "isError": false
+    }
+  },
+  "server_exit_code": 0,
+  "stderr": "2026-10-21T23:57:03.917124Z  WARN konnect::config: No KiCad IPC socket found (no KICAD_API_SOCKET, none detected at /tmp/kicad/api.sock). Live-KiCad tools will fail and file-backed ones will edit the project on disk instead. Enable Edit > Preferences > Plugins > 'Enable KiCad API' in KiCad, or set ipc_address in your config.\n",
+  "experiment_directory": "fixtures/pivot/experiments/konnect_smoke_2026-10-21_run1",
+  "classification": "inventory_only_no_project_mutation"
+}

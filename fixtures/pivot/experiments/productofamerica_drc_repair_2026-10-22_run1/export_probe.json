@@ -1,0 +1,185 @@
+{
+  "initialize": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+      "capabilities": {
+        "prompts": {
+          "listChanged": false
+        },
+        "resources": {
+          "listChanged": false,
+          "subscribe": false
+        },
+        "tools": {
+          "listChanged": false
+        }
+      },
+      "instructions": "KiCad EDA tools for schematic capture, PCB layout, symbol/footprint libraries, and project management.\n\nCRITICAL RULES:\n- NEVER read, edit, or write KiCad files (.kicad_sch, .kicad_pcb, .kicad_sym, .kicad_mod, .kicad_pro) directly. All manipulation MUST go through these MCP tools.\n- NEVER run kicad-cli commands directly. Use the export, ERC, and DRC tools provided by this server.\n- When a tool returns an error, try different parameters or a different tool. Do NOT fall back to manual file editing.\n\nSTART HERE (fetch one of these by name; do not search blind):\n- See what is in a schematic: list_schematic_components\n- Add a part (resistor, capacitor, IC, ...): place_component\n- Connect pins to a net: wire_pins_to_net\n- Check the schematic: run_erc\n- See what is on the board: list_pcb_footprints\n- Place or move a footprint: place_footprint, move_footprint\n- Route: add_trace, add_via, autoroute_pcb\n- Check the board: run_drc\n- Push the schematic to the board: update_pcb_from_schematic\n- Manufacturing output: export_gerbers\n- Start a new project: create_project\n- Anything else: search by what you want to do. There are 109 tools; these are the entry points, not the whole surface.\n\nFILE ACCESS:\n- These tools reach the filesystem through this server's own process, which already runs with the user's permissions. You do NOT need filesystem access, a connected folder, or any other permission from the host application to use them.\n- NEVER ask the user to connect, add, or grant access to a folder. If you need a file, call the tool.\n- Every path parameter takes an absolute path.\n\nCONFIGURED DEFAULTS:\n- schematic: /home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_drc_repair_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_sch\n- board: /home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_drc_repair_2026-10-22_run1/workspace/Reference555LedFlasher.kicad_pcb\n- export directory: /home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_drc_repair_2026-10-22_run1/workspace\n- These are already filled in as the tools' default parameter values. Call the tool with no path argument at all. Do NOT ask the user for a path listed here, and do NOT guess one.",
+      "protocolVersion": "2025-03-26",
+      "serverInfo": {
+        "name": "kicad",
+        "version": "0.21.1"
+      }
+    }
+  },
+  "response": {
+    "jsonrpc": "2.0",
+    "id": 2,
+    "result": {
+      "content": [
+        {
+          "text": "{\n  \"path\": \"/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_drc_repair_2026-10-22_run1/fabrication_preview\",\n  \"format\": \"gerber\",\n  \"files\": [\n    \"Reference555LedFlasher_repair-B_Adhesive.gba\",\n    \"Reference555LedFlasher_repair-B_Courtyard.gbr\",\n    \"Reference555LedFlasher_repair-B_Cu.gbl\",\n    \"Reference555LedFlasher_repair-B_Fab.gbr\",\n    \"Reference555LedFlasher_repair-B_Mask.gbs\",\n    \"Reference555LedFlasher_repair-B_Paste.gbp\",\n    \"Reference555LedFlasher_repair-B_Silkscreen.gbo\",\n    \"Reference555LedFlasher_repair-Edge_Cuts.gm1\",\n    \"Reference555LedFlasher_repair-F_Adhesive.gta\",\n    \"Reference555LedFlasher_repair-F_Courtyard.gbr\",\n    \"Reference555LedFlasher_repair-F_Cu.gtl\",\n    \"Reference555LedFlasher_repair-F_Fab.gbr\",\n    \"Reference555LedFlasher_repair-F_Mask.gts\",\n    \"Reference555LedFlasher_repair-F_Paste.gtp\",\n    \"Reference555LedFlasher_repair-F_Silkscreen.gto\",\n    \"Reference555LedFlasher_repair-Margin.gbr\",\n    \"Reference555LedFlasher_repair-User_1.gbr\",\n    \"Reference555LedFlasher_repair-User_2.gbr\",\n    \"Reference555LedFlasher_repair-User_3.gbr\",\n    \"Reference555LedFlasher_repair-User_4.gbr\",\n    \"Reference555LedFlasher_repair-User_Comments.gbr\",\n    \"Reference555LedFlasher_repair-User_Drawings.gbr\",\n    \"Reference555LedFlasher_repair-User_Eco1.gbr\",\n    \"Reference555LedFlasher_repair-User_Eco2.gbr\",\n    \"Reference555LedFlasher_repair-job.gbrjob\"\n  ],\n  \"count\": 25,\n  \"size_bytes\": null,\n  \"layer\": null,\n  \"drill_files\": [\n    \"Reference555LedFlasher_repair.drl\"\n  ],\n  \"drill_count\": 1,\n  \"note\": null\n}",
+          "type": "text"
+        }
+      ],
+      "isError": false,
+      "structuredContent": {
+        "path": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/productofamerica_drc_repair_2026-10-22_run1/fabrication_preview",
+        "format": "gerber",
+        "files": [
+          "Reference555LedFlasher_repair-B_Adhesive.gba",
+          "Reference555LedFlasher_repair-B_Courtyard.gbr",
+          "Reference555LedFlasher_repair-B_Cu.gbl",
+          "Reference555LedFlasher_repair-B_Fab.gbr",
+          "Reference555LedFlasher_repair-B_Mask.gbs",
+          "Reference555LedFlasher_repair-B_Paste.gbp",
+          "Reference555LedFlasher_repair-B_Silkscreen.gbo",
+          "Reference555LedFlasher_repair-Edge_Cuts.gm1",
+          "Reference555LedFlasher_repair-F_Adhesive.gta",
+          "Reference555LedFlasher_repair-F_Courtyard.gbr",
+          "Reference555LedFlasher_repair-F_Cu.gtl",
+          "Reference555LedFlasher_repair-F_Fab.gbr",
+          "Reference555LedFlasher_repair-F_Mask.gts",
+          "Reference555LedFlasher_repair-F_Paste.gtp",
+          "Reference555LedFlasher_repair-F_Silkscreen.gto",
+          "Reference555LedFlasher_repair-Margin.gbr",
+          "Reference555LedFlasher_repair-User_1.gbr",
+          "Reference555LedFlasher_repair-User_2.gbr",
+          "Reference555LedFlasher_repair-User_3.gbr",
+          "Reference555LedFlasher_repair-User_4.gbr",
+          "Reference555LedFlasher_repair-User_Comments.gbr",
+          "Reference555LedFlasher_repair-User_Drawings.gbr",
+          "Reference555LedFlasher_repair-User_Eco1.gbr",
+          "Reference555LedFlasher_repair-User_Eco2.gbr",
+          "Reference555LedFlasher_repair-job.gbrjob"
+        ],
+        "count": 25,
+        "size_bytes": null,
+        "layer": null,
+        "drill_files": [
+          "Reference555LedFlasher_repair.drl"
+        ],
+        "drill_count": 1,
+        "note": null
+      }
+    }
+  },
+  "server_exit_code": 0,
+  "files": [
+    {
+      "path": "fabrication_preview/Reference555LedFlasher_repair-B_Adhesive.gba",
+      "bytes": 473
+    },
+    {
+      "path": "fabrication_preview/Reference555LedFlasher_repair-B_Courtyard.gbr",
+      "bytes": 447
+    },
+    {
+      "path": "fabrication_preview/Reference555LedFlasher_repair-B_Cu.gbl",
+      "bytes": 4221
+    },
+    {
+      "path": "fabrication_preview/Reference555LedFlasher_repair-B_Fab.gbr",
+      "bytes": 456
+    },
+    {
+      "path": "fabrication_preview/Reference555LedFlasher_repair-B_Mask.gbs",
+      "bytes": 1991
+    },
+    {
+      "path": "fabrication_preview/Reference555LedFlasher_repair-B_Paste.gbp",
+      "bytes": 474
+    },
+    {
+      "path": "fabrication_preview/Reference555LedFlasher_repair-B_Silkscreen.gbo",
+      "bytes": 475
+    },
+    {
+      "path": "fabrication_preview/Reference555LedFlasher_repair-Edge_Cuts.gm1",
+      "bytes": 636
+    },
+    {
+      "path": "fabrication_preview/Reference555LedFlasher_repair-F_Adhesive.gta",
+      "bytes": 473
+    },
+    {
+      "path": "fabrication_preview/Reference555LedFlasher_repair-F_Courtyard.gbr",
+      "bytes": 1791
+    },
+    {
+      "path": "fabrication_preview/Reference555LedFlasher_repair-F_Cu.gtl",
+      "bytes": 3825
+    },
+    {
+      "path": "fabrication_preview/Reference555LedFlasher_repair-F_Fab.gbr",
+      "bytes": 31430
+    },
+    {
+      "path": "fabrication_preview/Reference555LedFlasher_repair-F_Mask.gts",
+      "bytes": 1991
+    },
+    {
+      "path": "fabrication_preview/Reference555LedFlasher_repair-F_Paste.gtp",
+      "bytes": 474
+    },
+    {
+      "path": "fabrication_preview/Reference555LedFlasher_repair-F_Silkscreen.gto",
+      "bytes": 18790
+    },
+    {
+      "path": "fabrication_preview/Reference555LedFlasher_repair-Margin.gbr",
+      "bytes": 447
+    },
+    {
+      "path": "fabrication_preview/Reference555LedFlasher_repair-User_1.gbr",
+      "bytes": 447
+    },
+    {
+      "path": "fabrication_preview/Reference555LedFlasher_repair-User_2.gbr",
+      "bytes": 447
+    },
+    {
+      "path": "fabrication_preview/Reference555LedFlasher_repair-User_3.gbr",
+      "bytes": 447
+    },
+    {
+      "path": "fabrication_preview/Reference555LedFlasher_repair-User_4.gbr",
+      "bytes": 447
+    },
+    {
+      "path": "fabrication_preview/Reference555LedFlasher_repair-User_Comments.gbr",
+      "bytes": 450
+    },
+    {
+      "path": "fabrication_preview/Reference555LedFlasher_repair-User_Drawings.gbr",
+      "bytes": 457
+    },
+    {
+      "path": "fabrication_preview/Reference555LedFlasher_repair-User_Eco1.gbr",
+      "bytes": 447
+    },
+    {
+      "path": "fabrication_preview/Reference555LedFlasher_repair-User_Eco2.gbr",
+      "bytes": 447
+    },
+    {
+      "path": "fabrication_preview/Reference555LedFlasher_repair-job.gbrjob",
+      "bytes": 4561
+    },
+    {
+      "path": "fabrication_preview/Reference555LedFlasher_repair.drl",
+      "bytes": 723
+    }
+  ]
+}

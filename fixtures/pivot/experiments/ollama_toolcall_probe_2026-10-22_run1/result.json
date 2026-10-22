@@ -1,0 +1,71 @@
+{
+  "recorded_at_utc": "2026-10-22T00:04:45.189108+00:00",
+  "request": {
+    "model": "qwen3.5:9b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Call the report_status tool now with status set to ready. Do not answer in text."
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "report_status",
+          "description": "Report one fixed status.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "ready"
+                ]
+              }
+            },
+            "required": [
+              "status"
+            ]
+          }
+        }
+      }
+    ],
+    "stream": false,
+    "think": false,
+    "options": {
+      "temperature": 0,
+      "num_ctx": 2048,
+      "num_predict": 150
+    }
+  },
+  "response": {
+    "model": "qwen3.5:9b",
+    "created_at": "2026-10-22T00:04:45.187518471Z",
+    "message": {
+      "role": "assistant",
+      "content": "",
+      "tool_calls": [
+        {
+          "id": "call_vm9wo39e",
+          "function": {
+            "index": 0,
+            "name": "report_status",
+            "arguments": {
+              "status": "ready"
+            }
+          }
+        }
+      ]
+    },
+    "done": true,
+    "done_reason": "stop",
+    "total_duration": 568750635,
+    "load_duration": 496352,
+    "prompt_eval_count": 292,
+    "prompt_eval_cached_count": 288,
+    "prompt_eval_duration": 55486000,
+    "eval_count": 26,
+    "eval_duration": 509551000
+  }
+}

@@ -1,0 +1,2050 @@
+{
+  "backend": "seeed",
+  "initialize": {
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+      "protocolVersion": "2025-03-26",
+      "capabilities": {
+        "experimental": {},
+        "logging": {},
+        "prompts": {
+          "listChanged": false
+        },
+        "resources": {
+          "subscribe": false,
+          "listChanged": false
+        },
+        "tools": {
+          "listChanged": true
+        },
+        "extensions": {
+          "io.modelcontextprotocol/ui": {}
+        }
+      },
+      "serverInfo": {
+        "name": "kicad-mcp-server",
+        "version": "3.4.11"
+      },
+      "instructions": "KiCad MCP Server - A server for analyzing KiCad schematics and PCBs,\n    and performing design rule checks.\n\n    Available capabilities:\n    - Schematic analysis (components, nets, symbols)\n    - PCB analysis (footprints, tracks, statistics)\n    - Design rule checking (ERC/DRC)\n    - Schematic summarization\n    - Hierarchical sheet and net tracing\n    - Pin/power/bus extraction and device tree generation\n    "
+    }
+  },
+  "tool_count": 47,
+  "tools": [
+    {
+      "name": "generate_device_tree",
+      "description": "Generate device tree source (.dts) file from schematic.\n\nThis function analyzes a KiCad schematic and generates a device tree\nsource file compatible with the specified SOC family.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "schematic_path": {
+            "type": "string",
+            "description": "Path to .kicad_sch file"
+          },
+          "target_soc": {
+            "default": "stm32f4",
+            "type": "string",
+            "description": "Target SOC family (stm32f4, esp32, nrf52)"
+          },
+          "output_path": {
+            "default": "",
+            "type": "string",
+            "description": "Optional output file path"
+          }
+        },
+        "required": [
+          "schematic_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "extract_gpio_config",
+      "description": "Extract GPIO pin configurations from schematic.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "schematic_path": {
+            "type": "string",
+            "description": "Path to .kicad_sch file"
+          },
+          "soc_family": {
+            "default": "",
+            "type": "string",
+            "description": "Optional SOC family filter"
+          }
+        },
+        "required": [
+          "schematic_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "extract_i2c_devices",
+      "description": "Extract I2C bus and device configurations.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "schematic_path": {
+            "type": "string",
+            "description": "Path to .kicad_sch file"
+          }
+        },
+        "required": [
+          "schematic_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "extract_spi_devices",
+      "description": "Extract SPI bus and device configurations.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "schematic_path": {
+            "type": "string",
+            "description": "Path to .kicad_sch file"
+          }
+        },
+        "required": [
+          "schematic_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "extract_power_domains",
+      "description": "Extract power domain and regulator configurations.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "schematic_path": {
+            "type": "string",
+            "description": "Path to .kicad_sch file"
+          }
+        },
+        "required": [
+          "schematic_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "validate_pin_configuration",
+      "description": "Validate pin configuration conflicts for device tree generation.\n\nThis function validates that the pin configuration is suitable for\ndevice tree generation and reports any conflicts or issues.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "schematic_path": {
+            "type": "string",
+            "description": "Path to .kicad_sch file"
+          }
+        },
+        "required": [
+          "schematic_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "trace_hierarchical_connection",
+      "description": "Trace component connections across hierarchical schematics.\n\nThis tool traces connections through the entire schematic hierarchy,\nincluding sub-sheets, to show complete signal paths.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "file_path": {
+            "type": "string",
+            "description": "Path to main .kicad_sch file"
+          },
+          "reference": {
+            "type": "string",
+            "description": "Component reference designator (e.g., 'U1', 'R5')"
+          },
+          "pin_number": {
+            "default": "",
+            "type": "string",
+            "description": "Optional pin number to trace (if empty, trace all pins)"
+          }
+        },
+        "required": [
+          "file_path",
+          "reference"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "analyze_hierarchical_nets",
+      "description": "Analyze all nets in hierarchical schematic design.\n\nThis tool analyzes network connections across the entire hierarchy,\nshowing how signals flow between main schematic and sub-sheets.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "file_path": {
+            "type": "string",
+            "description": "Path to main .kicad_sch file"
+          },
+          "filter_pattern": {
+            "default": "",
+            "type": "string",
+            "description": "Optional regex pattern to filter net names"
+          },
+          "show_hierarchy": {
+            "default": true,
+            "type": "boolean",
+            "description": "Whether to show hierarchical structure (default: True)"
+          }
+        },
+        "required": [
+          "file_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "generate_netlist",
+      "description": "Generate KiCad netlist from schematic file.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "schematic_path": {
+            "type": "string",
+            "description": "Path to .kicad_sch file"
+          }
+        },
+        "required": [
+          "schematic_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "trace_netlist_connection",
+      "description": "Trace component connections using netlist file (most accurate).",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "netlist_path": {
+            "type": "string",
+            "description": "Path to .xml netlist file"
+          },
+          "reference": {
+            "type": "string",
+            "description": "Component reference (e.g., 'R16')"
+          },
+          "pin_number": {
+            "default": "",
+            "type": "string",
+            "description": "Optional pin number (e.g., '1'). If empty, trace all pins."
+          }
+        },
+        "required": [
+          "netlist_path",
+          "reference"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "get_netlist_nets",
+      "description": "Get all nets from netlist file.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "netlist_path": {
+            "type": "string",
+            "description": "Path to .xml netlist file"
+          },
+          "filter_pattern": {
+            "default": "",
+            "type": "string",
+            "description": "Optional regex pattern to filter net names"
+          }
+        },
+        "required": [
+          "netlist_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "get_netlist_components",
+      "description": "Get all components from netlist with their network connections.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "netlist_path": {
+            "type": "string",
+            "description": "Path to .xml netlist file"
+          },
+          "filter_ref": {
+            "default": "",
+            "type": "string",
+            "description": "Optional reference filter (e.g., 'R', 'U', 'C')"
+          }
+        },
+        "required": [
+          "netlist_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "search_parts_registry",
+      "description": "Search an open registry of 21,000+ verified KiCad parts (no login).\n\nMatches part id, name, family, category, manufacturer and keywords.\nExample queries: \"usb c connector\", \"0402 capacitor\", \"nrf9151\".",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "query": {
+            "type": "string",
+            "description": "Search terms (all terms must match; '*' wildcards allowed)"
+          },
+          "limit": {
+            "default": 20,
+            "type": "integer",
+            "description": "Maximum number of results (default 20)"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "get_registry_part",
+      "description": "Get the full registry record for one part.\n\nIncludes download URLs (footprint/symbol/3D), datasheet link, dimension\nprovenance and field reports from real builds.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "part_id": {
+            "type": "string",
+            "description": "Registry part id (from search_parts_registry)"
+          }
+        },
+        "required": [
+          "part_id"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "download_registry_part",
+      "description": "Download a registry part's files into a local directory.\n\nDownloads are HTTPS-only, restricted to the registry's own hosts,\ncapped at 50 MB per file, and saved with extension-checked filenames.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "part_id": {
+            "type": "string",
+            "description": "Registry part id (from search_parts_registry)"
+          },
+          "save_dir": {
+            "type": "string",
+            "description": "Existing local directory (e.g. the project library folder)"
+          },
+          "formats": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Which files \u2014 any of \"footprint\", \"symbol\", \"step\",\n\"preview\" (default: footprint + symbol)"
+          }
+        },
+        "required": [
+          "part_id",
+          "save_dir"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "list_pcb_footprints",
+      "description": "List all footprints in a KiCad PCB file.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "file_path": {
+            "type": "string",
+            "description": "Path to .kicad_pcb file"
+          },
+          "filter_layer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional filter by layer (e.g., 'F.Cu', 'B.Cu')"
+          }
+        },
+        "required": [
+          "file_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "get_pcb_statistics",
+      "description": "Get statistics about a KiCad PCB design.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "file_path": {
+            "type": "string",
+            "description": "Path to .kicad_pcb file"
+          }
+        },
+        "required": [
+          "file_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "analyze_pcb_nets",
+      "description": "Analyze nets in a KiCad PCB file.\n\nProvides track width distribution, via distribution, per-net track\nlength ranking, layer coverage, and design rule comparison.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "file_path": {
+            "type": "string",
+            "description": "Path to .kicad_pcb file"
+          }
+        },
+        "required": [
+          "file_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "find_tracks_by_net",
+      "description": "Find track segments belonging to a specific net.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "file_path": {
+            "type": "string",
+            "description": "Path to .kicad_pcb file"
+          },
+          "net_name": {
+            "type": "string",
+            "description": "Name of the net to search for"
+          }
+        },
+        "required": [
+          "file_path",
+          "net_name"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "analyze_pcb_signal_integrity",
+      "description": "Analyze signal integrity: diff pair matching, RF traces, critical nets.\n\nAuto-detects differential pairs (e.g., USB_N/USB_P, DP/DN) and checks\nlength matching. Reports RF trace dimensions and longest signal nets.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "file_path": {
+            "type": "string",
+            "description": "Path to .kicad_pcb file"
+          },
+          "net_name": {
+            "default": "",
+            "type": "string",
+            "description": "Optional specific net to analyze in detail"
+          }
+        },
+        "required": [
+          "file_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "analyze_pcb_power_integrity",
+      "description": "Analyze power integrity: copper zones, power net routing, GND coverage.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "file_path": {
+            "type": "string",
+            "description": "Path to .kicad_pcb file"
+          }
+        },
+        "required": [
+          "file_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "setup_pcb_layout",
+      "description": "Initialize an empty PCB with the specified board outline dimensions.\n\nWrites a .kicad_pcb next to the schematic containing only the board\noutline (Edge.Cuts), a standard 2-layer stack and default design rules \u2014\nno footprints, tracks or nets. KiCad stores .kicad_pcb coordinates in\nmillimetres (plain decimals), so dimensions are emitted directly in mm.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "schematic_path": {
+            "type": "string",
+            "description": "Path to the .kicad_sch the board is based on (used to\nderive the .kicad_pcb path and board title)."
+          },
+          "width": {
+            "default": 100.0,
+            "type": "number",
+            "description": "Board width in the given unit."
+          },
+          "height": {
+            "default": 100.0,
+            "type": "number",
+            "description": "Board height in the given unit."
+          },
+          "unit": {
+            "default": "mm",
+            "type": "string",
+            "description": "\"mm\" (default) or \"mil\"."
+          }
+        },
+        "required": [
+          "schematic_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "export_gerber",
+      "description": "Export a PCB to Gerber + drill files for fabrication via kicad-cli.\n\nRuns KiCad's command-line exporter against the .kicad_pcb and reports the\nfiles actually produced. Requires KiCad 7+ installed with kicad-cli on PATH.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "pcb_path": {
+            "type": "string",
+            "description": "Path to the .kicad_pcb file."
+          },
+          "output_dir": {
+            "default": "",
+            "type": "string",
+            "description": "Directory for output (default: a \"gerber\" folder next to\nthe PCB)."
+          }
+        },
+        "required": [
+          "pcb_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "analyze_pin_functions",
+      "description": "Analyze pin functions and detect conflicts.\n\nThis function analyzes schematic to determine pin functions by:\n- Examining net names to infer functionality\n- Identifying MCU components and their pin mappings\n- Detecting potential pin conflicts",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "schematic_path": {
+            "type": "string",
+            "description": "Path to .kicad_sch file"
+          },
+          "reference": {
+            "default": "",
+            "type": "string",
+            "description": "Optional component reference (e.g., 'U1') to analyze specific component"
+          }
+        },
+        "required": [
+          "schematic_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "detect_pin_conflicts",
+      "description": "Detect pins with conflicting electrical connections.\n\nThis function checks for:\n- Multiple outputs on same net\n- Power-to-power connections\n- Unconnected input pins\n- Pin type mismatches",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "schematic_path": {
+            "type": "string",
+            "description": "Path to .kicad_sch file"
+          }
+        },
+        "required": [
+          "schematic_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "extract_pinmux_config",
+      "description": "Extract pin multiplexing configuration for MCUs.\n\nThis function extracts pin multiplexing (pinmux) configuration\nfor MCU components, showing which peripherals are assigned to which pins.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "schematic_path": {
+            "type": "string",
+            "description": "Path to .kicad_sch file"
+          },
+          "component_type": {
+            "default": "",
+            "type": "string",
+            "description": "Optional MCU type filter (e.g., 'stm32', 'esp32', 'nrf52')"
+          }
+        },
+        "required": [
+          "schematic_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "create_kicad_project",
+      "description": "Create a new KiCad project.\n\nBy default the project is empty: a blank board, schematic and project\nfile written by the installed KiCad itself, so they are in its native\nfile format.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "project_path": {
+            "type": "string",
+            "description": "Directory path for the project"
+          },
+          "project_name": {
+            "type": "string",
+            "description": "Name of the project (without extension)"
+          },
+          "title": {
+            "default": "",
+            "type": "string",
+            "description": "Optional project title (defaults to project_name)"
+          },
+          "company": {
+            "default": "",
+            "type": "string",
+            "description": "Optional company name"
+          },
+          "template": {
+            "default": "empty",
+            "type": "string",
+            "description": "\"empty\" (default) for a blank project, or a KiCad template\nto start from, by name (e.g. \"Arduino_Uno\", \"RaspberryPi-HAT\") or\nas a path to a template directory. Templates come with their own\nboard outline, footprints and schematic."
+          }
+        },
+        "required": [
+          "project_path",
+          "project_name"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "list_schematic_components",
+      "description": "List all components in a KiCad schematic file.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "file_path": {
+            "type": "string",
+            "description": "Path to .kicad_sch file"
+          },
+          "filter_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional filter by component type prefix (e.g., 'R', 'C', 'U', 'IC')"
+          },
+          "filter_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional filter by component value (partial match)"
+          },
+          "filter_dnp": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Optional filter by DNP flag (True=only DNP, False=only non-DNP)"
+          }
+        },
+        "required": [
+          "file_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "get_symbol_details",
+      "description": "Get detailed information about a specific symbol/component.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "file_path": {
+            "type": "string",
+            "description": "Path to .kicad_sch file"
+          },
+          "reference": {
+            "type": "string",
+            "description": "Component reference designator (e.g., 'R1', 'U1')"
+          }
+        },
+        "required": [
+          "file_path",
+          "reference"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "search_symbols",
+      "description": "Search for symbols/components matching a pattern.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "file_path": {
+            "type": "string",
+            "description": "Path to .kicad_sch file"
+          },
+          "pattern": {
+            "type": "string",
+            "description": "Search pattern (supports regex)"
+          },
+          "search_fields": {
+            "default": "all",
+            "type": "string",
+            "description": "Fields to search: 'all', 'reference', 'value', 'library'"
+          }
+        },
+        "required": [
+          "file_path",
+          "pattern"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "list_schematic_nets",
+      "description": "List all nets in a KiCad schematic.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "file_path": {
+            "type": "string",
+            "description": "Path to .kicad_sch file"
+          },
+          "filter_power": {
+            "default": false,
+            "type": "boolean",
+            "description": "If True, only show power nets (VCC, GND, etc.)"
+          }
+        },
+        "required": [
+          "file_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "get_schematic_info",
+      "description": "Get general information about a schematic file.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "file_path": {
+            "type": "string",
+            "description": "Path to .kicad_sch file"
+          }
+        },
+        "required": [
+          "file_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "add_hierarchical_label",
+      "description": "Add a hierarchical label on a component pin (cross-sheet connection).\n\nHierarchical labels are how signals cross sheet boundaries in KiCad: a\nlabel placed in a sub-sheet appears as a same-named pin on the parent\nsheet's sheet symbol, connecting the two. Placing them by hand for\nevery cross-sheet signal is the classic tedium this automates.\n\nThe label anchors EXACTLY on the pin (computed from the embedded\nsymbol geometry incl. rotation and the library-vs-sheet Y flip), so\nthe connection is electrically valid \u2014 verify with generate_netlist.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "file_path": {
+            "type": "string",
+            "description": "Path to the .kicad_sch file (the SUB-sheet for signals\ngoing up to its parent)."
+          },
+          "reference": {
+            "type": "string",
+            "description": "Component reference (e.g. 'U1')."
+          },
+          "pin": {
+            "type": "string",
+            "description": "Pin number."
+          },
+          "label_name": {
+            "default": "",
+            "type": "string",
+            "description": "Label text; defaults to the reference+pin when empty."
+          },
+          "shape": {
+            "default": "input",
+            "type": "string",
+            "description": "Electrical direction: input, output, bidirectional,\ntri_state or passive (ERC uses this)."
+          },
+          "x": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "y": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "file_path",
+          "reference",
+          "pin"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "add_global_label",
+      "description": "Add a global label on a component pin (project-wide connection).\n\nGlobal labels connect same-named signals anywhere in the whole\nhierarchy regardless of sheets \u2014 useful for power-style rails and\ncross-cutting signals where a hierarchical parent/child chain would\nbe awkward.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "file_path": {
+            "type": "string",
+            "description": "Path to the .kicad_sch file."
+          },
+          "reference": {
+            "type": "string",
+            "description": "Component reference (e.g. 'U1')."
+          },
+          "pin": {
+            "type": "string",
+            "description": "Pin number."
+          },
+          "label_name": {
+            "type": "string",
+            "description": "Global net name (required \u2014 globals are named nets)."
+          },
+          "shape": {
+            "default": "input",
+            "type": "string",
+            "description": "Electrical direction: input, output, bidirectional,\ntri_state or passive."
+          },
+          "x": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "y": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "required": [
+          "file_path",
+          "reference",
+          "pin",
+          "label_name"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "add_component_from_library",
+      "description": "Add a component from KiCad's built-in library to the schematic.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "file_path": {
+            "type": "string"
+          },
+          "library_name": {
+            "type": "string"
+          },
+          "symbol_name": {
+            "type": "string"
+          },
+          "reference": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "footprint": {
+            "default": "",
+            "type": "string"
+          },
+          "x": {
+            "default": 100,
+            "type": "number"
+          },
+          "y": {
+            "default": 100,
+            "type": "number"
+          },
+          "unit": {
+            "default": 1,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "file_path",
+          "library_name",
+          "symbol_name",
+          "reference",
+          "value"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "add_wire",
+      "description": "Add a wire (connection line) to the schematic.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "file_path": {
+            "type": "string"
+          },
+          "points": {
+            "items": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "file_path",
+          "points"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "add_label",
+      "description": "Add a local label (text label) to the schematic.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "file_path": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          },
+          "orientation": {
+            "default": 0,
+            "type": "number"
+          }
+        },
+        "required": [
+          "file_path",
+          "text",
+          "x",
+          "y"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "search_components_by_type",
+      "description": "Search for components by type (OLED, sensor, display, etc.).\n\nThis tool intelligently searches for components by their type, value,\nfootprint, or network connections to identify specific component categories.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "file_path": {
+            "type": "string",
+            "description": "Path to .kicad_sch file"
+          },
+          "component_type": {
+            "type": "string",
+            "description": "Type of component to search for (e.g., 'OLED', 'sensor', 'display', 'SPI', 'I2C')"
+          },
+          "search_in_subsheets": {
+            "default": true,
+            "type": "boolean",
+            "description": "Whether to search in hierarchical subsheets (default: True)"
+          }
+        },
+        "required": [
+          "file_path",
+          "component_type"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "run_erc",
+      "description": "Run Electrical Rules Check (ERC) on schematic.\n\nChecks for:\n- Unconnected pins\n- Power conflicts\n- Multiple outputs on same net\n- Pin type mismatches",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "schematic_path": {
+            "type": "string",
+            "description": "Path to .kicad_sch file"
+          }
+        },
+        "required": [
+          "schematic_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "run_drc",
+      "description": "Run Design Rules Check (DRC) on PCB.\n\nChecks for:\n- Clearance violations\n- Track spacing violations\n- Missing connections\n- Pad/footprint overlaps\n- Board edge constraints",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "pcb_path": {
+            "type": "string",
+            "description": "Path to .kicad_pcb file"
+          }
+        },
+        "required": [
+          "pcb_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "get_erc_violations",
+      "description": "Get filtered ERC violations from schematic.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "schematic_path": {
+            "type": "string",
+            "description": "Path to .kicad_sch file"
+          },
+          "severity": {
+            "default": "",
+            "type": "string",
+            "description": "Filter by severity ('error', 'warning', '') for all"
+          }
+        },
+        "required": [
+          "schematic_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "get_drc_violations",
+      "description": "Get filtered DRC violations from PCB.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "pcb_path": {
+            "type": "string",
+            "description": "Path to .kicad_pcb file"
+          },
+          "violation_type": {
+            "default": "",
+            "type": "string",
+            "description": "Filter by type (e.g., 'clearance', 'spacing', '') for all"
+          }
+        },
+        "required": [
+          "pcb_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "export_erc_report",
+      "description": "Export ERC report to file.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "schematic_path": {
+            "type": "string",
+            "description": "Path to .kicad_sch file"
+          },
+          "output_path": {
+            "default": "",
+            "type": "string",
+            "description": "Optional output file path (default: schematic_name_erc.txt)"
+          }
+        },
+        "required": [
+          "schematic_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "export_drc_report",
+      "description": "Export DRC report to file.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "pcb_path": {
+            "type": "string",
+            "description": "Path to .kicad_pcb file"
+          },
+          "output_path": {
+            "default": "",
+            "type": "string",
+            "description": "Optional output file path (default: pcb_name_drc.txt)"
+          }
+        },
+        "required": [
+          "pcb_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "render_pcb",
+      "description": "Render a 3D view of the PCB to a PNG image.\n\nProduces a photorealistic render of the assembled board via kicad-cli\n(footprints must have 3D models assigned; otherwise plain board geometry\nis rendered). Returns the image itself, so multimodal clients show it\ndirectly \u2014 useful for AI-assisted layout review.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "pcb_path": {
+            "type": "string",
+            "description": "Path to the .kicad_pcb file."
+          },
+          "side": {
+            "default": "top",
+            "type": "string",
+            "description": "Camera side: top, bottom, left, right, front, back."
+          },
+          "output_path": {
+            "default": "",
+            "type": "string",
+            "description": "Output PNG (default: <pcb>_render_<side>.png next to\nthe PCB)."
+          },
+          "width": {
+            "default": 1600,
+            "type": "integer",
+            "description": "Image width in pixels."
+          },
+          "height": {
+            "default": 900,
+            "type": "integer",
+            "description": "Image height in pixels."
+          },
+          "quality": {
+            "default": "basic",
+            "type": "string",
+            "description": "Render quality: basic (fast) or high (slower, raytraced)."
+          },
+          "rotate": {
+            "default": "",
+            "type": "string",
+            "description": "Optional board rotation 'X,Y,Z' in degrees for isometric\nviews, e.g. '-30,0,25'."
+          }
+        },
+        "required": [
+          "pcb_path"
+        ],
+        "type": "object"
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "export_pcb_3d",
+      "description": "Export the PCB as a STEP 3D model for mechanical CAD handoff.\n\nIncludes board body, footprints and their assigned 3D models.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "pcb_path": {
+            "type": "string",
+            "description": "Path to the .kicad_pcb file."
+          },
+          "output_path": {
+            "default": "",
+            "type": "string",
+            "description": "Output .step file (default: <pcb>.step next to the PCB)."
+          },
+          "board_only": {
+            "default": false,
+            "type": "boolean",
+            "description": "Export only the board body, without component models."
+          }
+        },
+        "required": [
+          "pcb_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    },
+    {
+      "name": "export_schematic_svg",
+      "description": "Export schematic pages to SVG images.\n\nRenders every page of the (hierarchical) schematic as an SVG file via\nkicad-cli. SVGs are vector graphics \u2014 clients and humans can zoom into\nany detail without quality loss.",
+      "inputSchema": {
+        "additionalProperties": false,
+        "properties": {
+          "schematic_path": {
+            "type": "string",
+            "description": "Path to the root .kicad_sch file."
+          },
+          "output_dir": {
+            "default": "",
+            "type": "string",
+            "description": "Output directory (default: <schematic>_svg/ next to it)."
+          }
+        },
+        "required": [
+          "schematic_path"
+        ],
+        "type": "object"
+      },
+      "outputSchema": {
+        "properties": {
+          "result": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "result"
+        ],
+        "type": "object",
+        "x-fastmcp-wrap-result": true
+      },
+      "_meta": {
+        "fastmcp": {
+          "tags": []
+        }
+      }
+    }
+  ]
+}

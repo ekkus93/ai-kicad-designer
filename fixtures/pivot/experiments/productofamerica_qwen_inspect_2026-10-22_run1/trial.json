@@ -1,0 +1,129 @@
+{
+  "trial": {
+    "schema_version": "pivot-benchmark.v1",
+    "trial_id": "productofamerica_qwen_inspect_2026-10-22_run1",
+    "task_id": "inspect_reference_circuit",
+    "fixture_sha256": "4aabc82324d4d723d0b98382c8cf82fff9a925fb9ebbf73220af90cfb51a6cbd",
+    "recorded_at_utc": "2026-10-22T01:54:05.429839Z",
+    "model": {
+      "provider": "ollama",
+      "model": "qwen3.5:9b",
+      "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+      "settings": {
+        "temperature": 0,
+        "num_ctx": 8192,
+        "num_predict": 1800
+      }
+    },
+    "backend": {
+      "name": "ProductOfAmerica",
+      "version": "0.21.1",
+      "build_id": "f5f82e02ffe17bbcba806fec35f3302ee332fefc",
+      "mode": "task_gated"
+    },
+    "time_limit_seconds": 240,
+    "token_limit": 32768,
+    "tool_call_limit": 8,
+    "elapsed_seconds": 38.44058790197596,
+    "token_count": 11749,
+    "tool_calls": [
+      {
+        "tool_name": "get_schematic_summary",
+        "duration_ms": 30,
+        "error_class": null,
+        "valid": true
+      },
+      {
+        "tool_name": "list_schematic_components",
+        "duration_ms": 7,
+        "error_class": null,
+        "valid": true
+      },
+      {
+        "tool_name": "run_erc",
+        "duration_ms": 1,
+        "error_class": "TOOL_ERROR",
+        "valid": false
+      },
+      {
+        "tool_name": "export_netlist",
+        "duration_ms": 1,
+        "error_class": "TOOL_ERROR",
+        "valid": false
+      },
+      {
+        "tool_name": "get_schematic_summary",
+        "duration_ms": 7,
+        "error_class": null,
+        "valid": true
+      }
+    ],
+    "gates": [
+      {
+        "gate_id": "structured_final_response",
+        "status": "FAIL",
+        "summary": "Model did not return valid structured JSON.",
+        "independent": true,
+        "evidence_paths": [
+          "model_output.json"
+        ]
+      },
+      {
+        "gate_id": "required_mcp_tool_use",
+        "status": "FAIL",
+        "summary": "Required MCP tools not successfully used: ['export_netlist', 'run_erc'].",
+        "independent": false,
+        "evidence_paths": [
+          "mcp_tool_calls.json"
+        ]
+      },
+      {
+        "gate_id": "source_schematic_unchanged",
+        "status": "PASS",
+        "summary": "The protected source schematic is unchanged.",
+        "independent": true,
+        "evidence_paths": [
+          "mcp_tool_calls.json"
+        ]
+      }
+    ],
+    "artifacts": [
+      {
+        "path": "model_output.json",
+        "sha256": "91177aaea38f6007ec018254216ef1d2446b2399bae6cf86c3aa840ab647e9c4",
+        "media_type": "application/json",
+        "role": "model_final_response"
+      },
+      {
+        "path": "mcp_tool_calls.json",
+        "sha256": "9d9d23b04e6bf30f7a2fca5048c4c251d93d710fa28f56250569f0e07f42be28",
+        "media_type": "application/json",
+        "role": "backend_call_trace"
+      }
+    ],
+    "status": "FAIL"
+  },
+  "server_info": {
+    "name": "kicad",
+    "version": "0.21.1"
+  },
+  "tool_errors": [],
+  "process_exit_code": 0,
+  "source_schematic_sha256": "9d819329416ae990c9ba1b9feddc5eca91c6220650259ea740b8fdc38f31903f",
+  "source_schematic_unchanged": true,
+  "workspace_hashes": {
+    "NE555D.kicad_sym": "40b6f3455dea99ec9308e5a0eaffc20c41e6affed2e3647c306bda7d92c49242",
+    "Reference555LedFlasher.kicad_prl": "a61f9786f0934d13bc3efa5ef75250845c08a8c4ee1bfc2a4b9b25e7f5fbdd80",
+    "Reference555LedFlasher.kicad_pro": "8b76f46de44c836a7d9f92c9bf47cae398d16cc7a74f1c2ab1ca541506e9f658",
+    "Reference555LedFlasher.kicad_sch": "9d819329416ae990c9ba1b9feddc5eca91c6220650259ea740b8fdc38f31903f",
+    "sym-lib-table": "a4de1258e80cd74562bec0caeaf5a7eddaa26047627827aa7caa2cff56306efe"
+  },
+  "scores": {
+    "pass": 1,
+    "fail": 2,
+    "unsupported": 0,
+    "inconclusive": 0,
+    "accuracy": 0.3333333333333333,
+    "eligible": 3
+  }
+}
