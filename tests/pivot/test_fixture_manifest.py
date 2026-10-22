@@ -10,6 +10,7 @@ from tools.pivot.verify_native_project import verify_native_project
 from tools.pivot.redraw_external_ports import redraw_external_ports
 from tools.pivot.connect_led_branch import connect_led_branch
 from tools.pivot.center_schematic import center_schematic
+from tools.pivot.connect_power_rails import connect_power_rails
 
 ROOT = Path(__file__).resolve().parents[2]
 MANIFEST = ROOT / "fixtures/pivot/reference_555_led_flasher_v1/manifest.json"
@@ -125,3 +126,13 @@ def test_centered_schematic_redraw_is_reproducible_and_fixture_is_locked(tmp_pat
     center_schematic(v3 / "Reference555LedFlasher.kicad_sch", output)
     assert output.read_bytes() == (v4 / "Reference555LedFlasher.kicad_sch").read_bytes()
     assert verify_manifest(ROOT / "fixtures/pivot/reference_555_led_flasher_v4/manifest.json", ROOT) == []
+
+
+def test_power_rail_redraw_is_reproducible_and_fixture_is_locked(tmp_path: Path) -> None:
+    v4 = ROOT / "fixtures/pivot/reference_555_led_flasher_v4/native_project"
+    v5 = ROOT / "fixtures/pivot/reference_555_led_flasher_v5/native_project"
+    assert verify_native_project(v5) == []
+    output = tmp_path / "Reference555LedFlasher.kicad_sch"
+    connect_power_rails(v4 / "Reference555LedFlasher.kicad_sch", output)
+    assert output.read_bytes() == (v5 / "Reference555LedFlasher.kicad_sch").read_bytes()
+    assert verify_manifest(ROOT / "fixtures/pivot/reference_555_led_flasher_v5/manifest.json", ROOT) == []
