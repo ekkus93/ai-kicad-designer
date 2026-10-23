@@ -344,8 +344,10 @@ def _optional_reference_nets(plan: SemanticPlan) -> frozenset[str]:
     """Return external reference nets that may be drawn as one physical tree.
 
     Such a net is distributive, carries no explicit geometry demand, reaches
-    exactly one interface fragment and at least two internal reference
-    terminals. Its labels remain the proven fallback presentation.
+    exactly one interface fragment and at least one internal reference
+    terminal. Even a single capacitor return should be visibly wired to its
+    external connector when an obstacle-checked route is feasible; same-name
+    labels remain the fallback when no legal route fits.
     """
     block_by_id = {block.id: block for block in plan.blocks}
     result = set()
@@ -368,7 +370,7 @@ def _optional_reference_nets(plan: SemanticPlan) -> frozenset[str]:
             presentation.role == "distributive"
             and not presentation.explicit_geometry_required
             and len(interface_fragments) == 1
-            and len(reference_fragments) >= 2
+            and len(reference_fragments) >= 1
         ):
             result.add(presentation.id)
     return frozenset(result)

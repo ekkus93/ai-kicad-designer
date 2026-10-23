@@ -24,6 +24,7 @@ from ai_kicad.m2b import (
     validate,
 )
 from ai_kicad.m2b_build import build
+from ai_kicad.m2_compose import compose_with_evidence
 
 FIX = ROOT / "fixtures/m2b"
 CASES = (
@@ -194,6 +195,19 @@ def test_semantic_and_electrical_mutations_are_explicit():
     altered["relationships"] = [r for r in altered["relationships"] if r["id"] != "bypass.plus"]
     with pytest.raises(InputError, match="SEMANTIC_PACKAGE_SUPPORT_CONFLICT"):
         active_layout(validate(altered, resolved), resolved)
+
+
+def test_single_external_reference_terminal_prefers_a_visible_wire():
+    resolved = assets()
+    rc = design("rc_lowpass", resolved)
+    composed, evidence = compose_with_evidence(rc, resolved)
+
+    # One capacitor return is enough to merit a physical route to the external
+    # reference connector when the router finds a legal tree. Same-name labels
+    # are reserved for the no-route fallback.
+    assert "REF" in composed.wire_nets
+    assert "REF" not in {name for name, _point in composed.labels}
+    assert "REF" in {route["net"] for route in evidence["routes"]}
 
 
 def test_changed_physical_membership_changes_real_kicad_result(tmp_path, launcher):
