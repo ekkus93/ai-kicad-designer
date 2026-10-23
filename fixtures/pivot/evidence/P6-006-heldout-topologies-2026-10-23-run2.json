@@ -1,0 +1,103 @@
+{
+  "schema_version": "pivot-evidence.v1",
+  "evidence_id": "P6-006-heldout-topologies-2026-10-23-run2",
+  "task_id": "P6-006",
+  "recorded_at_utc": "2026-10-23T08:19:38.960336Z",
+  "source_commit": "9444a75cb957d8a3a33d25de39e22fbe7b080112",
+  "revision_kind": "git_commit",
+  "revision_id": "9444a75cb957d8a3a33d25de39e22fbe7b080112",
+  "action": {
+    "summary": "Generate three held-out low-voltage circuit proposals and independently validate graph and first-order calculation gates",
+    "command": "PYTHONPATH=src:. .venv/bin/python tools/pivot/evaluate_ai_topology.py --experiment-id ai_topology_holdout_2026-10-23_run2 --model qwen3.5:9b",
+    "backend": "local Ollama and deterministic topology evaluator",
+    "backend_version": "Ollama 0.40.8; qwen3.5:9b digest 56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "toolchain": "Python 3.12.10; x86_64 Linux 7.0/glibc 2.39"
+  },
+  "status": "FAIL",
+  "artifacts": [
+    {
+      "path": "fixtures/pivot/heldout_topology_suite_v1.json",
+      "sha256": "9898fd16723e0039ba4bc6307d076e80b8203471fb5e60dea2bd9b662b33313d",
+      "media_type": "application/json",
+      "role": "held-out task suite"
+    },
+    {
+      "path": "tools/pivot/evaluate_ai_topology.py",
+      "sha256": "7c2bef53ca47a15cfafec1be7503c446f3272a1c7603bcb444ae7f6385fafd1e",
+      "media_type": "text/x-python",
+      "role": "topology generation and independent screening harness"
+    },
+    {
+      "path": "tests/pivot/test_ai_topology_eval.py",
+      "sha256": "490235f58a1a2634bf10940c8126b87d8b0b553dd8e18cffd942511d72e595c4",
+      "media_type": "text/x-python",
+      "role": "independent topology/check regression tests"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_run2/manifest.json",
+      "sha256": "d8c764fc9468422817dbb5d1208492ba2fe629354277b13f17cf860d00d77b33",
+      "media_type": "application/json",
+      "role": "experiment hash manifest"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_run2/reports/assessment.json",
+      "sha256": "6697fc8c5139c5e5da366bce2ba3e9a545b9f842b9f7bdc73bc950c7cad498e2",
+      "media_type": "application/json",
+      "role": "independent evaluation report"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_run2/raw/rc_lowpass_100hz.json",
+      "sha256": "f561e1f249856a7e5af19313fba99d48ce3c65deb8275aa429e77eb5f0be2930",
+      "media_type": "application/json",
+      "role": "raw model request and response"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_run2/raw/led_limiter_3ma.json",
+      "sha256": "42c4e474ae23756873a0453dbff749cf96d9a116e917fd1470a51c7a75315e05",
+      "media_type": "application/json",
+      "role": "raw model request and response"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_run2/raw/timer555_astable_2hz.json",
+      "sha256": "d746c7a5b96b30373b1d6166463ca416a851f34a53053eb79f39122e2da6833f",
+      "media_type": "application/json",
+      "role": "raw model request and response"
+    }
+  ],
+  "checks": [
+    {
+      "check_id": "heldout-topology-graph-and-engineering-gates",
+      "status": "FAIL",
+      "summary": "All three AI proposals failed independent structured graph validation; none reached SPICE or native KiCad checks. Candidate generation and raw outputs are reproducibly bound by model and suite digests.",
+      "evidence_paths": [
+        "fixtures/pivot/heldout_topology_suite_v1.json",
+        "tools/pivot/evaluate_ai_topology.py",
+        "tests/pivot/test_ai_topology_eval.py",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_run2/manifest.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_run2/reports/assessment.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_run2/raw/rc_lowpass_100hz.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_run2/raw/led_limiter_3ma.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_run2/raw/timer555_astable_2hz.json"
+      ],
+      "independent": true
+    }
+  ],
+  "ci_links": [],
+  "blockers": [
+    {
+      "code": "NO_CANDIDATE_PASSED",
+      "summary": "0/3 generated topologies passed the graph gate, so the held-out design cases have no candidate for downstream simulation or KiCad validation.",
+      "next_action": "Use a separately selected model or workflow and a fresh held-out suite; require calculation, SPICE, native KiCad and independent electrical-review gates.",
+      "requires_owner_input": false
+    },
+    {
+      "code": "HUMAN_ELECTRICAL_REVIEW",
+      "summary": "No independent human electrical review has been conducted.",
+      "next_action": "Owner or qualified reviewer must review an exact candidate revision after it passes deterministic gates.",
+      "requires_owner_input": true
+    }
+  ],
+  "notes": [
+    "This is a negative evaluation result, not a safety or validation pass. No proposal was emitted to KiCad, simulated, sourced, or approved."
+  ]
+}

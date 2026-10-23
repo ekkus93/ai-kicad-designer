@@ -1,0 +1,89 @@
+{
+  "schema_version": "ai-topology-assessment.v1",
+  "suite_id": "analog-topologies-v1",
+  "suite_path": "fixtures/pivot/heldout_topology_suite_v1.json",
+  "suite_sha256": "9898fd16723e0039ba4bc6307d076e80b8203471fb5e60dea2bd9b662b33313d",
+  "model": {
+    "name": "qwen3.5:9b",
+    "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "parameter_size": "9.0B",
+    "quantization_level": "Q4_K_M",
+    "ollama_version": "0.40.8"
+  },
+  "source_commit": "9444a75cb957d8a3a33d25de39e22fbe7b080112",
+  "host": {
+    "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "python": "3.12.10"
+  },
+  "sampling": {
+    "temperature": 0,
+    "seed": 20261023,
+    "think": false
+  },
+  "task_count": 3,
+  "passed": 0,
+  "failed": 3,
+  "results": [
+    {
+      "task_id": "rc_lowpass_100hz",
+      "status": "FAIL",
+      "checks": [
+        {
+          "check": "structured_graph",
+          "status": "FAIL",
+          "detail": "each net needs a name and at least two terminals"
+        }
+      ],
+      "metrics": {},
+      "downstream_gates": {
+        "spice": "NOT_RUN_STRUCTURED_GRAPH_REJECTED",
+        "native_kicad": "NOT_RUN_STRUCTURED_GRAPH_REJECTED",
+        "human_electrical_review": "PENDING"
+      },
+      "raw_output_path": "raw/rc_lowpass_100hz.json",
+      "raw_output_sha256": "f561e1f249856a7e5af19313fba99d48ce3c65deb8275aa429e77eb5f0be2930"
+    },
+    {
+      "task_id": "led_limiter_3ma",
+      "status": "FAIL",
+      "checks": [
+        {
+          "check": "structured_graph",
+          "status": "FAIL",
+          "detail": "each net needs a name and at least two terminals"
+        }
+      ],
+      "metrics": {},
+      "downstream_gates": {
+        "spice": "NOT_RUN_STRUCTURED_GRAPH_REJECTED",
+        "native_kicad": "NOT_RUN_STRUCTURED_GRAPH_REJECTED",
+        "human_electrical_review": "PENDING"
+      },
+      "raw_output_path": "raw/led_limiter_3ma.json",
+      "raw_output_sha256": "42c4e474ae23756873a0453dbff749cf96d9a116e917fd1470a51c7a75315e05"
+    },
+    {
+      "task_id": "timer555_astable_2hz",
+      "status": "FAIL",
+      "checks": [
+        {
+          "check": "structured_graph",
+          "status": "FAIL",
+          "detail": "component U1 has an invalid kind or pin list"
+        }
+      ],
+      "metrics": {},
+      "downstream_gates": {
+        "spice": "NOT_RUN_STRUCTURED_GRAPH_REJECTED",
+        "native_kicad": "NOT_RUN_STRUCTURED_GRAPH_REJECTED",
+        "human_electrical_review": "PENDING"
+      },
+      "raw_output_path": "raw/timer555_astable_2hz.json",
+      "raw_output_sha256": "d746c7a5b96b30373b1d6166463ca416a851f34a53053eb79f39122e2da6833f"
+    }
+  ],
+  "human_review": "PENDING",
+  "overall_status": "FAIL",
+  "created_at_utc": "2026-10-23T08:19:14.870063+00:00"
+}

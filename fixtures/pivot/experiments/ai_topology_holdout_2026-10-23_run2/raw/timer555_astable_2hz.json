@@ -1,0 +1,22 @@
+{
+  "task_id": "timer555_astable_2hz",
+  "prompt": "Design a 5 V NE555 astable oscillator near 2 Hz. Use the standard astable connection: pins 2 and 6 share the timing node, pin 7 lies between charge and discharge resistors, and a timing capacitor returns from the timing node to ground. Add a red output LED with a series resistor on pin 3. Use references U1, R1 (charge resistor), R2 (discharge resistor), C1, R3 (LED resistor), D1, VIN, GND and OUT. U1 pins are numbered 1 through 8; pin 1=GND, 2=TRIG, 3=OUT, 4=RESET, 5=CTRL, 6=THRESH, 7=DISCH, 8=VCC. D1 pins are A/K; each resistor and capacitor has A/B; ports VIN, GND and OUT have pin 1. Return exact values and the complete graph. Return JSON only using the supplied response schema.\nResponse schema: {\"topology\":\"string\",\"components\":[{\"ref\":\"string\",\"kind\":\"resistor|capacitor|led|timer555|port|ground\",\"value\":\"string or null\",\"pins\":[\"string\"]}],\"nets\":[{\"name\":\"string\",\"terminals\":[\"REF.pin\"]}]}",
+  "request": {
+    "model": "qwen3.5:9b",
+    "prompt": "Design a 5 V NE555 astable oscillator near 2 Hz. Use the standard astable connection: pins 2 and 6 share the timing node, pin 7 lies between charge and discharge resistors, and a timing capacitor returns from the timing node to ground. Add a red output LED with a series resistor on pin 3. Use references U1, R1 (charge resistor), R2 (discharge resistor), C1, R3 (LED resistor), D1, VIN, GND and OUT. U1 pins are numbered 1 through 8; pin 1=GND, 2=TRIG, 3=OUT, 4=RESET, 5=CTRL, 6=THRESH, 7=DISCH, 8=VCC. D1 pins are A/K; each resistor and capacitor has A/B; ports VIN, GND and OUT have pin 1. Return exact values and the complete graph. Return JSON only using the supplied response schema.\nResponse schema: {\"topology\":\"string\",\"components\":[{\"ref\":\"string\",\"kind\":\"resistor|capacitor|led|timer555|port|ground\",\"value\":\"string or null\",\"pins\":[\"string\"]}],\"nets\":[{\"name\":\"string\",\"terminals\":[\"REF.pin\"]}]}",
+    "format": "json",
+    "think": false,
+    "stream": false,
+    "options": {
+      "temperature": 0,
+      "seed": 20261023,
+      "num_predict": 1800
+    }
+  },
+  "response": "{\n  \"topology\": \"NE555 Astable Oscillator\",\n  \"components\": [\n    {\n      \"ref\": \"U1\",\n      \"kind\": \"timer555\",\n      \"value\": null,\n      \"pins\": [1, 2, 3, 4, 5, 6, 7, 8]\n    },\n    {\n      \"ref\": \"R1\",\n      \"kind\": \"resistor\",\n      \"value\": \"10k\",\n      \"pins\": [\"A\", \"B\"]\n    },\n    {\n      \"ref\": \"R2\",\n      \"kind\": \"resistor\",\n      \"value\": \"10k\",\n      \"pins\": [\"A\", \"B\"]\n    },\n    {\n      \"ref\": \"C1\",\n      \"kind\": \"capacitor\",\n      \"value\": \"150uF\",\n      \"pins\": [\"A\", \"B\"]\n    },\n    {\n      \"ref\": \"R3\",\n      \"kind\": \"resistor\",\n      \"value\": \"330\",\n      \"pins\": [\"A\", \"B\"]\n    },\n    {\n      \"ref\": \"D1\",\n      \"kind\": \"led\",\n      \"value\": null,\n      \"pins\": [\"A\", \"K\"]\n    }\n  ],\n  \"nets\": [\n    {\n      \"name\": \"VIN\",\n      \"terminals\": [\"U1.8\", \"R1.A\", \"R2.B\"]\n    },\n    {\n      \"name\": \"GND\",\n      \"terminals\": [\"U1.1\", \"C1.B\", \"D1.K\"]\n    },\n    {\n      \"name\": \"OUT\",\n      \"terminals\": [\"U1.3\", \"R3.A\", \"D1.A\"]\n    },\n    {\n      \"name\": \"TIMING_NODE\",\n      \"terminals\": [\"U1.2\", \"U1.6\", \"C1.A\", \"R1.B\", \"R2.A\"]\n    },\n    {\n      \"name\": \"DISCHARGE_NODE\",\n      \"terminals\": [\"U1.7\", \"R2.B\"]\n    }\n  ]\n}",
+  "done_reason": "stop",
+  "prompt_eval_count": 281,
+  "eval_count": 516,
+  "elapsed_s": 13.213,
+  "response_sha256": "b6204761445c05628edf808915ebe382a3b926f510af474b2923abb3b78f8b5a"
+}
