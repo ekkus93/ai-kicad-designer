@@ -1,0 +1,111 @@
+{
+  "schema_version": "ai-topology-assessment.v1",
+  "suite_id": "analog-topologies-v2",
+  "suite_path": "fixtures/pivot/heldout_topology_suite_v2.json",
+  "suite_sha256": "f1c52f02671884ebdd85a7ed316386d88b5a8f690b4b97a319fd308bcea11fb1",
+  "model": {
+    "name": "devstral-small-2:24b",
+    "digest": "24277f07f62db8f9cb68e9dfc679ea1818a7fbac47a50eff0a701d3f645b63c8",
+    "parameter_size": "24.0B",
+    "quantization_level": "Q4_K_M",
+    "ollama_version": "0.40.8"
+  },
+  "source_commit": "5c7f6310d30046c26f80cfe44304ba9f6ff46e57",
+  "host": {
+    "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "python": "3.12.10"
+  },
+  "sampling": {
+    "temperature": 0,
+    "seed": 20261023,
+    "think": false
+  },
+  "task_count": 3,
+  "passed": 0,
+  "failed": 3,
+  "results": [
+    {
+      "task_id": "rc_lowpass_1khz",
+      "status": "FAIL",
+      "checks": [
+        {
+          "check": "structured_graph",
+          "status": "PASS",
+          "detail": "All component terminals map exactly once to named nets."
+        },
+        {
+          "check": "rc_topology",
+          "status": "FAIL",
+          "detail": "Series R, output shunt C, and distinct source/output/return nodes."
+        },
+        {
+          "check": "cutoff_target",
+          "status": "PASS",
+          "detail": "independent RC calculation gives 1061.03 Hz; target range is 900.0-1100.0 Hz."
+        }
+      ],
+      "metrics": {
+        "cutoff_hz": 1061.0329539459688
+      },
+      "downstream_gates": {
+        "spice": "NOT_RUN",
+        "native_kicad": "NOT_RUN",
+        "human_electrical_review": "PENDING"
+      },
+      "raw_output_path": "raw/rc_lowpass_1khz.json",
+      "raw_output_sha256": "2b3d5f66a2c40579dc749acec4af281ef40d4d83405747556f635597c9e8380f"
+    },
+    {
+      "task_id": "led_limiter_5ma_9v",
+      "status": "FAIL",
+      "checks": [
+        {
+          "check": "structured_graph",
+          "status": "PASS",
+          "detail": "All component terminals map exactly once to named nets."
+        },
+        {
+          "check": "led_series_topology",
+          "status": "FAIL",
+          "detail": "The resistor and correctly oriented LED form one series path."
+        },
+        {
+          "check": "independent_calculation",
+          "status": "FAIL",
+          "detail": "resistance value must be a string"
+        }
+      ],
+      "metrics": {},
+      "downstream_gates": {
+        "spice": "NOT_RUN",
+        "native_kicad": "NOT_RUN",
+        "human_electrical_review": "PENDING"
+      },
+      "raw_output_path": "raw/led_limiter_5ma_9v.json",
+      "raw_output_sha256": "b1a800d419679b45d26efe2b4e3a16e3a434f0c246f9cddb99dba7fa69ec3ab8"
+    },
+    {
+      "task_id": "timer555_astable_4hz",
+      "status": "FAIL",
+      "checks": [
+        {
+          "check": "structured_graph",
+          "status": "FAIL",
+          "detail": "terminal assigned more than once: U1.4"
+        }
+      ],
+      "metrics": {},
+      "downstream_gates": {
+        "spice": "NOT_RUN_STRUCTURED_GRAPH_REJECTED",
+        "native_kicad": "NOT_RUN_STRUCTURED_GRAPH_REJECTED",
+        "human_electrical_review": "PENDING"
+      },
+      "raw_output_path": "raw/timer555_astable_4hz.json",
+      "raw_output_sha256": "d3294b849a6c96e3dc35a3700373968f1642a06801cfadff78c6143b13002efe"
+    }
+  ],
+  "human_review": "PENDING",
+  "overall_status": "FAIL",
+  "created_at_utc": "2026-10-23T10:35:29.345171+00:00"
+}

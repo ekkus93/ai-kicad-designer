@@ -1,0 +1,23 @@
+{
+  "task_id": "rc_lowpass_1khz",
+  "attempt": 0,
+  "prompt": "Design a passive first-order RC low-pass filter for a 5 V source with unloaded output and nominal cutoff near 1 kHz. Use one E12 resistor and one capacitor. Required components: R1 resistor (pins A/B), C1 capacitor (A/B), VIN input port (pin 1), VOUT observation port (pin 1), GND return port (pin 1). The resistor is in series from VIN to VOUT; the capacitor shunts VOUT to GND. Include each required component in the components array and assign every listed pin exactly once in the nets array. Every net needs at least two terminal IDs; a terminal ID must be REF.pin, never a net name. Return JSON only using the supplied response schema.\nResponse schema: {\"topology\":\"string\",\"components\":[{\"ref\":\"string\",\"kind\":\"resistor|capacitor|led|timer555|port|ground\",\"value\":\"string or null\",\"pins\":[\"string\"]}],\"nets\":[{\"name\":\"string\",\"terminals\":[\"REF.pin\"]}]}",
+  "request": {
+    "model": "qwythos-codex-q4:latest",
+    "prompt": "Design a passive first-order RC low-pass filter for a 5 V source with unloaded output and nominal cutoff near 1 kHz. Use one E12 resistor and one capacitor. Required components: R1 resistor (pins A/B), C1 capacitor (A/B), VIN input port (pin 1), VOUT observation port (pin 1), GND return port (pin 1). The resistor is in series from VIN to VOUT; the capacitor shunts VOUT to GND. Include each required component in the components array and assign every listed pin exactly once in the nets array. Every net needs at least two terminal IDs; a terminal ID must be REF.pin, never a net name. Return JSON only using the supplied response schema.\nResponse schema: {\"topology\":\"string\",\"components\":[{\"ref\":\"string\",\"kind\":\"resistor|capacitor|led|timer555|port|ground\",\"value\":\"string or null\",\"pins\":[\"string\"]}],\"nets\":[{\"name\":\"string\",\"terminals\":[\"REF.pin\"]}]}",
+    "format": "json",
+    "think": false,
+    "stream": false,
+    "options": {
+      "temperature": 0,
+      "seed": 20261023,
+      "num_predict": 1800
+    }
+  },
+  "response": "{\n  \"topology\": \"RC low-pass filter\",\n  \"components\": [\n    {\n      \"ref\": \"R1\",\n      \"kind\": \"resistor\",\n      \"value\": \"159\",\n      \"pins\": [ \"A\", \"B\" ]\n    },\n    {\n      \"ref\": \"C1\",\n      \"kind\": \"capacitor\",\n      \"value\": \"1000u\",\n      \"pins\": [ \"A\", \"B\" ]\n    }\n  ],\n  \"nets\": [\n    {\n      \"name\": \"VIN\",\n      \"terminals\": [ \"R1.A\", \"1\" ]\n    },\n    {\n      \"name\": \"VOUT\",\n      \"terminals\": [ \"R1.B\", \"C1.A\", \"1\" ]\n    },\n    {\n      \"name\": \"GND\",\n      \"terminals\": [ \"C1.B\", \"1\" ]\n    }\n  ]\n}",
+  "done_reason": "stop",
+  "prompt_eval_count": 224,
+  "eval_count": 228,
+  "elapsed_s": 5.185,
+  "response_sha256": "cf7f48a7936259eeef69a3d783d02ce7cbfa64eea60855e167604f63a32c0b07"
+}

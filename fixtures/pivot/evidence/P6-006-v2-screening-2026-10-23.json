@@ -1,0 +1,105 @@
+{
+  "schema_version": "pivot-evidence.v1",
+  "evidence_id": "P6-006-v2-screening-2026-10-23",
+  "task_id": "P6-006",
+  "recorded_at_utc": "2026-10-23T11:00:00Z",
+  "source_commit": "98d420c5587bfcfd5366bb3e459da5a09d304a40",
+  "revision_kind": "git_commit",
+  "revision_id": "98d420c5587bfcfd5366bb3e459da5a09d304a40",
+  "action": {
+    "summary": "Run three held-out analog topology tasks against three local Ollama model identities, with bounded independent-validator feedback repairs",
+    "command": "python tools/pivot/evaluate_ai_topology.py --suite fixtures/pivot/heldout_topology_suite_v2.json --output <write-once-run-directory> --repair-attempts 3; repeated for five model/run configurations",
+    "backend": "Ollama local inference",
+    "backend_version": "0.40.8",
+    "toolchain": "Python 3.12.10; Linux 7.0.0-38-generic x86_64/glibc 2.39"
+  },
+  "status": "FAIL",
+  "artifacts": [
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_v2_run1/manifest.json",
+      "sha256": "19b16cc0e73b0d82032dc84b95c3e48b63e0a60784265a968592ad03123045d8",
+      "media_type": "application/json",
+      "role": "immutable run manifest"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_v2_run1/reports/assessment.json",
+      "sha256": "1126df43445bb0372bc1f194a41ef13658a9d7f2b330aae7589ba149d31c783d",
+      "media_type": "application/json",
+      "role": "independent held-out assessment"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_v2_run2/manifest.json",
+      "sha256": "3b50954102ee461ba879223326967623b877dcf579cbbc324203273295379c9f",
+      "media_type": "application/json",
+      "role": "immutable run manifest"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_v2_run2/reports/assessment.json",
+      "sha256": "ead2ae62f258875d789c42b458a85618f9aab0bdb8a4665672da3bfc74ac2a1e",
+      "media_type": "application/json",
+      "role": "independent held-out assessment"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_qwen_v2_run1/manifest.json",
+      "sha256": "39d34fd2bd1da79669c5e91451809f8ae51b2548cab39f9257d3912e9b6b141f",
+      "media_type": "application/json",
+      "role": "immutable run manifest"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_qwen_v2_run1/reports/assessment.json",
+      "sha256": "4731a1519c0f6402c00dfe3bf565e14165c10c79321b9d207ec5bc510d115972",
+      "media_type": "application/json",
+      "role": "independent held-out assessment"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_qwen_v2_run2/manifest.json",
+      "sha256": "7b7af783c7045fa2b8666e084757d83a4f8652ba9a7157689aceb35e3413b81e",
+      "media_type": "application/json",
+      "role": "immutable run manifest"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_qwen_v2_run2/reports/assessment.json",
+      "sha256": "e5f186c5611b028728dce4e18db9440ab78692ca612adee8a39927f42924dd3b",
+      "media_type": "application/json",
+      "role": "independent held-out assessment"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_qwythos_v2_run1/manifest.json",
+      "sha256": "3702fe303f0038e435dd439ef3c59f11759622e1be68c2755093138d47c2e8c3",
+      "media_type": "application/json",
+      "role": "immutable run manifest"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_qwythos_v2_run1/reports/assessment.json",
+      "sha256": "34b9bc96ad4b454998d5f869f66fb70db9e804fac8e269d746822075c01a7c8f",
+      "media_type": "application/json",
+      "role": "independent held-out assessment"
+    }
+  ],
+  "checks": [
+    {
+      "check_id": "all-v2-model-runs-pass-structured-graph-gate",
+      "status": "FAIL",
+      "summary": "Five fresh-source v2 runs across Devstral Small 2 24B, Qwen 3.5 9B and Qwythos Codex Q4 failed all three task structured-graph gates after up to three validator-feedback repairs. SPICE and native KiCad validation were correctly not run for rejected graphs.",
+      "evidence_paths": [
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_v2_run1/manifest.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_v2_run1/reports/assessment.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_v2_run2/manifest.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_v2_run2/reports/assessment.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_qwen_v2_run1/manifest.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_qwen_v2_run1/reports/assessment.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_qwen_v2_run2/manifest.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_qwen_v2_run2/reports/assessment.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_qwythos_v2_run1/manifest.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_qwythos_v2_run1/reports/assessment.json"
+      ],
+      "independent": true
+    }
+  ],
+  "ci_links": [],
+  "blockers": [],
+  "notes": [
+    "This is negative evidence for the tested model/prompt/repair configurations, not proof that AI topology generation is generally impossible.",
+    "No generated topology is approved. The separate v1 Devstral RC candidate had passed scoped SPICE and KiCad gates; human electrical review remains pending."
+  ]
+}

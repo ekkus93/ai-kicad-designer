@@ -1,0 +1,181 @@
+{
+  "schema_version": "ai-topology-assessment.v1",
+  "suite_id": "analog-topologies-v2",
+  "suite_path": "fixtures/pivot/heldout_topology_suite_v2.json",
+  "suite_sha256": "f1c52f02671884ebdd85a7ed316386d88b5a8f690b4b97a319fd308bcea11fb1",
+  "model": {
+    "name": "qwen3.5:9b",
+    "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "parameter_size": "9.0B",
+    "quantization_level": "Q4_K_M",
+    "ollama_version": "0.40.8"
+  },
+  "source_commit": "98d420c5587bfcfd5366bb3e459da5a09d304a40",
+  "host": {
+    "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "python": "3.12.10"
+  },
+  "sampling": {
+    "temperature": 0,
+    "seed": 20261023,
+    "think": false,
+    "maximum_validator_repair_attempts": 3
+  },
+  "task_count": 3,
+  "passed": 0,
+  "failed": 3,
+  "results": [
+    {
+      "task_id": "rc_lowpass_1khz",
+      "status": "FAIL",
+      "checks": [
+        {
+          "check": "structured_graph",
+          "status": "FAIL",
+          "detail": "unknown component terminal: port.1"
+        }
+      ],
+      "metrics": {},
+      "downstream_gates": {
+        "spice": "NOT_RUN_STRUCTURED_GRAPH_REJECTED",
+        "native_kicad": "NOT_RUN_STRUCTURED_GRAPH_REJECTED",
+        "human_electrical_review": "PENDING"
+      },
+      "raw_output_path": "raw/rc_lowpass_1khz.attempt3.json",
+      "raw_output_sha256": "c8d5059827310a81fe273241ea45381ebd27c275df1ea7f5442c3dab70107677",
+      "attempts": [
+        {
+          "path": "raw/rc_lowpass_1khz.json",
+          "sha256": "48becc43ed06d6a99b972c7ce682b1bdfaba6cbb8eb2b1b86176430706eef61c",
+          "status": "FAIL",
+          "elapsed_s": 2.815
+        },
+        {
+          "path": "raw/rc_lowpass_1khz.attempt1.json",
+          "sha256": "270cd018586e0fab7a80d9b3609a224beb9f451ae7b99d3277f4738f1a86e48d",
+          "status": "FAIL",
+          "elapsed_s": 2.593
+        },
+        {
+          "path": "raw/rc_lowpass_1khz.attempt2.json",
+          "sha256": "d5fdd0cd6f62c653bed6ec44e91d2e56fb73b4d30b192c8ec95b1e203d062083",
+          "status": "FAIL",
+          "elapsed_s": 2.646
+        },
+        {
+          "path": "raw/rc_lowpass_1khz.attempt3.json",
+          "sha256": "c8d5059827310a81fe273241ea45381ebd27c275df1ea7f5442c3dab70107677",
+          "status": "FAIL",
+          "elapsed_s": 2.526
+        }
+      ]
+    },
+    {
+      "task_id": "led_limiter_5ma_9v",
+      "status": "FAIL",
+      "checks": [
+        {
+          "check": "structured_graph",
+          "status": "PASS",
+          "detail": "All component terminals map exactly once to named nets."
+        },
+        {
+          "check": "led_series_topology",
+          "status": "FAIL",
+          "detail": "The resistor and correctly oriented LED form one series path."
+        },
+        {
+          "check": "led_current_bounds",
+          "status": "FAIL",
+          "detail": "independent worst-case current is 17.436-18.462 mA; allowed range is 4.000-5.500 mA."
+        }
+      ],
+      "metrics": {
+        "minimum_led_current_a": 0.017435897435897435,
+        "maximum_led_current_a": 0.018461538461538463
+      },
+      "downstream_gates": {
+        "spice": "NOT_RUN",
+        "native_kicad": "NOT_RUN",
+        "human_electrical_review": "PENDING"
+      },
+      "raw_output_path": "raw/led_limiter_5ma_9v.attempt3.json",
+      "raw_output_sha256": "b39ed16fe89b550c1ec7a7a379dace10848b96e7fe34984483ed137866a2613a",
+      "attempts": [
+        {
+          "path": "raw/led_limiter_5ma_9v.json",
+          "sha256": "d444df55dad4ff58961a610c60d2fe05422099ce29a20c2dd7418af719964f74",
+          "status": "FAIL",
+          "elapsed_s": 4.723
+        },
+        {
+          "path": "raw/led_limiter_5ma_9v.attempt1.json",
+          "sha256": "c8b64b08c9369d36f6adfbd37a213545bf56744d1ee6b52fb8101deb04bf57b5",
+          "status": "FAIL",
+          "elapsed_s": 4.737
+        },
+        {
+          "path": "raw/led_limiter_5ma_9v.attempt2.json",
+          "sha256": "919cd57a090834c66898d7a34605d1d87d6d67548fd9ef74e26e242ace67425f",
+          "status": "FAIL",
+          "elapsed_s": 4.887
+        },
+        {
+          "path": "raw/led_limiter_5ma_9v.attempt3.json",
+          "sha256": "b39ed16fe89b550c1ec7a7a379dace10848b96e7fe34984483ed137866a2613a",
+          "status": "FAIL",
+          "elapsed_s": 4.684
+        }
+      ]
+    },
+    {
+      "task_id": "timer555_astable_4hz",
+      "status": "FAIL",
+      "checks": [
+        {
+          "check": "structured_graph",
+          "status": "FAIL",
+          "detail": "terminal assigned more than once: GND.1"
+        }
+      ],
+      "metrics": {},
+      "downstream_gates": {
+        "spice": "NOT_RUN_STRUCTURED_GRAPH_REJECTED",
+        "native_kicad": "NOT_RUN_STRUCTURED_GRAPH_REJECTED",
+        "human_electrical_review": "PENDING"
+      },
+      "raw_output_path": "raw/timer555_astable_4hz.attempt3.json",
+      "raw_output_sha256": "fd7d66789b6436d40ce5f66c45b9c004f2aba6fa9d31b46346a5d2327dd46507",
+      "attempts": [
+        {
+          "path": "raw/timer555_astable_4hz.json",
+          "sha256": "8e542d4b452891d7917b57aac206f77a56477e15cc2dfda03df1f847d8315d28",
+          "status": "FAIL",
+          "elapsed_s": 8.353
+        },
+        {
+          "path": "raw/timer555_astable_4hz.attempt1.json",
+          "sha256": "a7a3d0f38f3b7f7521f3621ec46b59837e400910dbf8dcc8bc1461dec020a5da",
+          "status": "FAIL",
+          "elapsed_s": 10.121
+        },
+        {
+          "path": "raw/timer555_astable_4hz.attempt2.json",
+          "sha256": "cc63c6d5dd472713c20eb6392365f1625896355f79c4714d29755c697cd79c0f",
+          "status": "FAIL",
+          "elapsed_s": 11.027
+        },
+        {
+          "path": "raw/timer555_astable_4hz.attempt3.json",
+          "sha256": "fd7d66789b6436d40ce5f66c45b9c004f2aba6fa9d31b46346a5d2327dd46507",
+          "status": "FAIL",
+          "elapsed_s": 10.244
+        }
+      ]
+    }
+  ],
+  "human_review": "PENDING",
+  "overall_status": "FAIL",
+  "created_at_utc": "2026-10-23T10:40:11.744042+00:00"
+}

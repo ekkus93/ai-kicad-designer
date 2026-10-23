@@ -1,0 +1,168 @@
+{
+  "schema_version": "ai-topology-assessment.v1",
+  "suite_id": "analog-topologies-v2",
+  "suite_path": "fixtures/pivot/heldout_topology_suite_v2.json",
+  "suite_sha256": "f1c52f02671884ebdd85a7ed316386d88b5a8f690b4b97a319fd308bcea11fb1",
+  "model": {
+    "name": "qwythos-codex-q4:latest",
+    "digest": "bfae748a8221aad2198217203fe9626f2cf6093ed0668d778157aa5044034905",
+    "parameter_size": "9.0B",
+    "quantization_level": "Q4_K_M",
+    "ollama_version": "0.40.8"
+  },
+  "source_commit": "98d420c5587bfcfd5366bb3e459da5a09d304a40",
+  "host": {
+    "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "python": "3.12.10"
+  },
+  "sampling": {
+    "temperature": 0,
+    "seed": 20261023,
+    "think": false,
+    "maximum_validator_repair_attempts": 3
+  },
+  "task_count": 3,
+  "passed": 0,
+  "failed": 3,
+  "results": [
+    {
+      "task_id": "rc_lowpass_1khz",
+      "status": "FAIL",
+      "checks": [
+        {
+          "check": "structured_graph",
+          "status": "FAIL",
+          "detail": "invalid terminal identity: '1'"
+        }
+      ],
+      "metrics": {},
+      "downstream_gates": {
+        "spice": "NOT_RUN_STRUCTURED_GRAPH_REJECTED",
+        "native_kicad": "NOT_RUN_STRUCTURED_GRAPH_REJECTED",
+        "human_electrical_review": "PENDING"
+      },
+      "raw_output_path": "raw/rc_lowpass_1khz.attempt3.json",
+      "raw_output_sha256": "01f5836114f855937b034f5086c8c227978f921291dc5f62fc9a4246fedf3b8b",
+      "attempts": [
+        {
+          "path": "raw/rc_lowpass_1khz.json",
+          "sha256": "ea7e5f81bfec206f9b4105f8ba335e83e1c0d742a2a16d588048b437c155fc90",
+          "status": "FAIL",
+          "elapsed_s": 5.185
+        },
+        {
+          "path": "raw/rc_lowpass_1khz.attempt1.json",
+          "sha256": "9fc8406a8791377dee18fa7b20779da0916d8fffdd11a51f3d06d456c1723322",
+          "status": "FAIL",
+          "elapsed_s": 2.527
+        },
+        {
+          "path": "raw/rc_lowpass_1khz.attempt2.json",
+          "sha256": "a151e594324b45f983eeef4c61fe352b2fe68dc81f41d3e47455311ca8abb627",
+          "status": "FAIL",
+          "elapsed_s": 2.382
+        },
+        {
+          "path": "raw/rc_lowpass_1khz.attempt3.json",
+          "sha256": "01f5836114f855937b034f5086c8c227978f921291dc5f62fc9a4246fedf3b8b",
+          "status": "FAIL",
+          "elapsed_s": 2.392
+        }
+      ]
+    },
+    {
+      "task_id": "led_limiter_5ma_9v",
+      "status": "FAIL",
+      "checks": [
+        {
+          "check": "structured_graph",
+          "status": "FAIL",
+          "detail": "unknown component terminal: REF.pin"
+        }
+      ],
+      "metrics": {},
+      "downstream_gates": {
+        "spice": "NOT_RUN_STRUCTURED_GRAPH_REJECTED",
+        "native_kicad": "NOT_RUN_STRUCTURED_GRAPH_REJECTED",
+        "human_electrical_review": "PENDING"
+      },
+      "raw_output_path": "raw/led_limiter_5ma_9v.attempt3.json",
+      "raw_output_sha256": "ffc6f0cb40773243d1a4d124d5e1a11d8efeb9f3a2353f889e0b784164b2a87a",
+      "attempts": [
+        {
+          "path": "raw/led_limiter_5ma_9v.json",
+          "sha256": "141d9aa2278d7338757ddd8cec08f39760dc2e9ac62c8627469519ca7c94753b",
+          "status": "FAIL",
+          "elapsed_s": 2.462
+        },
+        {
+          "path": "raw/led_limiter_5ma_9v.attempt1.json",
+          "sha256": "9cf0b3892d400973ee676590498b6d4380c77a24839af8f841ea5a12cdd178a7",
+          "status": "FAIL",
+          "elapsed_s": 2.428
+        },
+        {
+          "path": "raw/led_limiter_5ma_9v.attempt2.json",
+          "sha256": "7bf2d4517a997191eb799381f6fbe9c56cf914b45744e25e8e49fed24bc98618",
+          "status": "FAIL",
+          "elapsed_s": 2.728
+        },
+        {
+          "path": "raw/led_limiter_5ma_9v.attempt3.json",
+          "sha256": "ffc6f0cb40773243d1a4d124d5e1a11d8efeb9f3a2353f889e0b784164b2a87a",
+          "status": "FAIL",
+          "elapsed_s": 2.314
+        }
+      ]
+    },
+    {
+      "task_id": "timer555_astable_4hz",
+      "status": "FAIL",
+      "checks": [
+        {
+          "check": "structured_graph",
+          "status": "FAIL",
+          "detail": "invalid terminal identity: 'VCC'"
+        }
+      ],
+      "metrics": {},
+      "downstream_gates": {
+        "spice": "NOT_RUN_STRUCTURED_GRAPH_REJECTED",
+        "native_kicad": "NOT_RUN_STRUCTURED_GRAPH_REJECTED",
+        "human_electrical_review": "PENDING"
+      },
+      "raw_output_path": "raw/timer555_astable_4hz.attempt3.json",
+      "raw_output_sha256": "4487e404128e8f0cf0786c99e74c105cacf5dcbc85bd67555dae035d0592f4c7",
+      "attempts": [
+        {
+          "path": "raw/timer555_astable_4hz.json",
+          "sha256": "29fb573edec34d3ac809973ee7e39989b60526b4c057b4eb09e40a1373db908d",
+          "status": "FAIL",
+          "elapsed_s": 8.753
+        },
+        {
+          "path": "raw/timer555_astable_4hz.attempt1.json",
+          "sha256": "88ab2fd769c1d16a005fd98d7c62ca9387b1afa65ddc3bf5863ec2a95b5f4050",
+          "status": "FAIL",
+          "elapsed_s": 10.2
+        },
+        {
+          "path": "raw/timer555_astable_4hz.attempt2.json",
+          "sha256": "f74567aab0dbc1454184183d3b59942af7d9f97cfc7e130ce1e805c809c1b621",
+          "status": "FAIL",
+          "elapsed_s": 10.211
+        },
+        {
+          "path": "raw/timer555_astable_4hz.attempt3.json",
+          "sha256": "4487e404128e8f0cf0786c99e74c105cacf5dcbc85bd67555dae035d0592f4c7",
+          "status": "FAIL",
+          "elapsed_s": 9.955
+        }
+      ]
+    }
+  ],
+  "human_review": "PENDING",
+  "overall_status": "FAIL",
+  "created_at_utc": "2026-10-23T10:41:25.451393+00:00"
+}

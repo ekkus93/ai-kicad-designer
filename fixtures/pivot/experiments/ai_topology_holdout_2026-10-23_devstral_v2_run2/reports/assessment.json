@@ -1,0 +1,145 @@
+{
+  "schema_version": "ai-topology-assessment.v1",
+  "suite_id": "analog-topologies-v2",
+  "suite_path": "fixtures/pivot/heldout_topology_suite_v2.json",
+  "suite_sha256": "f1c52f02671884ebdd85a7ed316386d88b5a8f690b4b97a319fd308bcea11fb1",
+  "model": {
+    "name": "devstral-small-2:24b",
+    "digest": "24277f07f62db8f9cb68e9dfc679ea1818a7fbac47a50eff0a701d3f645b63c8",
+    "parameter_size": "24.0B",
+    "quantization_level": "Q4_K_M",
+    "ollama_version": "0.40.8"
+  },
+  "source_commit": "98d420c5587bfcfd5366bb3e459da5a09d304a40",
+  "host": {
+    "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "python": "3.12.10"
+  },
+  "sampling": {
+    "temperature": 0,
+    "seed": 20261023,
+    "think": false,
+    "maximum_validator_repair_attempts": 1
+  },
+  "task_count": 3,
+  "passed": 0,
+  "failed": 3,
+  "results": [
+    {
+      "task_id": "rc_lowpass_1khz",
+      "status": "FAIL",
+      "checks": [
+        {
+          "check": "structured_graph",
+          "status": "FAIL",
+          "detail": "terminal assigned more than once: R1.B"
+        }
+      ],
+      "metrics": {},
+      "downstream_gates": {
+        "spice": "NOT_RUN_STRUCTURED_GRAPH_REJECTED",
+        "native_kicad": "NOT_RUN_STRUCTURED_GRAPH_REJECTED",
+        "human_electrical_review": "PENDING"
+      },
+      "raw_output_path": "raw/rc_lowpass_1khz.attempt1.json",
+      "raw_output_sha256": "72077375668ee4d9920266ecc109c17b67155cc87240c47c36050c2225b2c079",
+      "attempts": [
+        {
+          "path": "raw/rc_lowpass_1khz.json",
+          "sha256": "145163b2ab1528bec38eb027e9424f69ecbc32315a06db48036504d567e8cd2e",
+          "status": "FAIL",
+          "elapsed_s": 11.824
+        },
+        {
+          "path": "raw/rc_lowpass_1khz.attempt1.json",
+          "sha256": "72077375668ee4d9920266ecc109c17b67155cc87240c47c36050c2225b2c079",
+          "status": "FAIL",
+          "elapsed_s": 14.653
+        }
+      ]
+    },
+    {
+      "task_id": "led_limiter_5ma_9v",
+      "status": "FAIL",
+      "checks": [
+        {
+          "check": "structured_graph",
+          "status": "PASS",
+          "detail": "All component terminals map exactly once to named nets."
+        },
+        {
+          "check": "led_series_topology",
+          "status": "FAIL",
+          "detail": "The resistor and correctly oriented LED form one series path."
+        },
+        {
+          "check": "led_current_bounds",
+          "status": "FAIL",
+          "detail": "independent worst-case current is 20.606-21.818 mA; allowed range is 4.000-5.500 mA."
+        }
+      ],
+      "metrics": {
+        "minimum_led_current_a": 0.020606060606060607,
+        "maximum_led_current_a": 0.02181818181818182
+      },
+      "downstream_gates": {
+        "spice": "NOT_RUN",
+        "native_kicad": "NOT_RUN",
+        "human_electrical_review": "PENDING"
+      },
+      "raw_output_path": "raw/led_limiter_5ma_9v.attempt1.json",
+      "raw_output_sha256": "c4c45a5914c4070095869ddb2fd8378f2448098ddf66a5c319f838001196d8f2",
+      "attempts": [
+        {
+          "path": "raw/led_limiter_5ma_9v.json",
+          "sha256": "0f87e49dab2b66b8bbfd8d30eb59ecdecd3f5eff57dce4fb7b025dc2f63362ae",
+          "status": "FAIL",
+          "elapsed_s": 12.502
+        },
+        {
+          "path": "raw/led_limiter_5ma_9v.attempt1.json",
+          "sha256": "c4c45a5914c4070095869ddb2fd8378f2448098ddf66a5c319f838001196d8f2",
+          "status": "FAIL",
+          "elapsed_s": 13.937
+        }
+      ]
+    },
+    {
+      "task_id": "timer555_astable_4hz",
+      "status": "FAIL",
+      "checks": [
+        {
+          "check": "structured_graph",
+          "status": "FAIL",
+          "detail": "invalid terminal identity: 'VCC'"
+        }
+      ],
+      "metrics": {},
+      "downstream_gates": {
+        "spice": "NOT_RUN_STRUCTURED_GRAPH_REJECTED",
+        "native_kicad": "NOT_RUN_STRUCTURED_GRAPH_REJECTED",
+        "human_electrical_review": "PENDING"
+      },
+      "raw_output_path": "raw/timer555_astable_4hz.attempt1.json",
+      "raw_output_sha256": "2b9c8c359370b07c38e4ade48143e9c8e824d60ad96ab7d89c2dc547a0996164",
+      "attempts": [
+        {
+          "path": "raw/timer555_astable_4hz.json",
+          "sha256": "a214dd885bfac6a0185fa5b4686dc46b71df806e10ebf6958d7473f85c597878",
+          "status": "FAIL",
+          "elapsed_s": 31.71
+        },
+        {
+          "path": "raw/timer555_astable_4hz.attempt1.json",
+          "sha256": "2b9c8c359370b07c38e4ade48143e9c8e824d60ad96ab7d89c2dc547a0996164",
+          "status": "FAIL",
+          "elapsed_s": 32.515
+        }
+      ]
+    }
+  ],
+  "human_review": "PENDING",
+  "overall_status": "FAIL",
+  "created_at_utc": "2026-10-23T10:38:11.280766+00:00"
+}
