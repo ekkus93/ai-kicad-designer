@@ -286,6 +286,61 @@ def test_llm_repair_rejects_wrong_net_and_never_reports_false_pass(tmp_path):
     assert (tmp_path / "rejected-attempts/candidate-1.kicad_pcb").read_text() == source
 
 
+def test_llm_retry_receives_prior_gate_diagnostic_and_starts_from_known_good(tmp_path):
+    track_uuid = "02a0f503-d2e4-405e-ace8-bda5a3ed2547"
+    source = (
+        "(kicad_pcb (segment (start 1 2) (end 3 4) (width 0.1) "
+        f'(layer "B.Cu") (net "/OUT") (uuid "{track_uuid}")))'
+    )
+    known_good = tmp_path / "board.kicad_pcb"
+    known_good.write_text(source)
+
+    class Provider:
+        provider_id = "test-llm"
+
+        def __init__(self):
+            self.handoffs = []
+
+        def complete(self, handoff):
+            self.handoffs.append(handoff)
+            width = 0.15 if handoff["attempt"] == 1 else 0.2
+            return {
+                "operation": "set_track_width",
+                "track_uuid": track_uuid,
+                "net_name": "/OUT",
+                "expected_width_mm": 0.1,
+                "new_width_mm": width,
+                "rationale": "Test bounded retry.",
+            }
+
+    provider = Provider()
+    result = llm_bounded_repair(
+        known_good,
+        tmp_path / "retry-attempts",
+        provider,
+        lambda _candidate: {
+            "violations": [
+                {
+                    "type": "track_width",
+                    "items": [{"uuid": track_uuid, "net_name": "/OUT", "width_mm": 0.1}],
+                }
+            ]
+        },
+        lambda candidate: (
+            "(width 0.200000)" in candidate.read_text(),
+            "minimum width is 0.2 mm",
+        ),
+        limit=2,
+        maximum_width_mm=0.5,
+    )
+    assert result.status == "PASS" and result.attempts == 2
+    assert provider.handoffs[1]["previous_attempts"][0]["result"] == "FAIL"
+    assert "minimum width" in provider.handoffs[1]["previous_attempts"][0]["diagnostic"]
+    assert (tmp_path / "retry-attempts/candidate-1.kicad_pcb").read_text() != source
+    assert provider.handoffs[1]["candidate_sha256"] == provider.handoffs[0]["candidate_sha256"]
+    assert known_good.read_text() == source
+
+
 def test_track_width_proposal_rejects_unknown_operations_and_bounds():
     with pytest.raises(ValidationError):
         TrackWidthProposal(

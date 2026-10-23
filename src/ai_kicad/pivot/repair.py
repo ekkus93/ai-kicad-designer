@@ -189,9 +189,11 @@ def llm_bounded_repair(
     source_sha = hashlib.sha256(original).hexdigest()
     diagnostics = []
     proposals = []
+    attempt_history = []
     for attempt in range(1, limit + 1):
         candidate = work / f"candidate-{attempt}{known_good.suffix}"
         shutil.copy2(known_good, candidate)
+        attempt_record = {"attempt": attempt}
         try:
             inspection = inspect(candidate)
             proposal_data = provider.complete(
@@ -204,9 +206,11 @@ def llm_bounded_repair(
                     "maximum_width_mm": maximum_width_mm,
                     "allowed_operation": "set_track_width",
                     "diagnostics": inspection,
+                    "previous_attempts": attempt_history,
                 }
             )
             proposal = TrackWidthProposal.model_validate(proposal_data)
+            attempt_record["proposal"] = proposal.model_dump()
             violations = inspection.get("violations")
             if not isinstance(violations, list):
                 raise ValueError("inspection must contain a violations list")
@@ -235,6 +239,9 @@ def llm_bounded_repair(
         except Exception as exc:
             passed, diagnostic = False, f"proposal or gate error: {type(exc).__name__}: {exc}"
         diagnostics.append(diagnostic)
+        attempt_record["result"] = "PASS" if passed else "FAIL"
+        attempt_record["diagnostic"] = diagnostic
+        attempt_history.append(attempt_record)
         if passed:
             if known_good.read_bytes() != original:
                 raise RuntimeError("known-good input changed during LLM repair")
