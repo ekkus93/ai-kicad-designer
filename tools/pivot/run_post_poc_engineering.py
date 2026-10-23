@@ -38,7 +38,7 @@ def main() -> None:
         assumptions=["No inductive load", "No external voltage on pulse output"],
         unresolved=[],
     )
-    catalog_data = json.loads((root / "fixtures/pivot/catalog/reference_parts.v1.json").read_text())
+    catalog_data = json.loads((root / "fixtures/pivot/catalog/reference_parts.v2.json").read_text())
     catalog = [CatalogPart.model_validate(part) for part in catalog_data["parts"]]
     timer = select_part(
         catalog,
@@ -58,10 +58,10 @@ def main() -> None:
     verification = json.loads(
         (
             root
-            / "fixtures/pivot/experiments/reference_poc_2026-10-22_run7/reports/verification_report.json"
+            / "fixtures/pivot/experiments/approved_c2_footprint_2026-10-23_run3/reports/verification_report.json"
         ).read_text()
     )
-    bom = json.loads((root / "fixtures/pivot/reference_555_led_flasher_v1/bom.json").read_text())
+    bom = json.loads((root / "fixtures/pivot/reference_555_led_flasher_v8/bom.json").read_text())
     assembly = export_through_hole_assembly(verification["board"], bom, output / "assembly")
     report = {
         "schema_version": "post-poc-engineering.v1",

@@ -25,6 +25,8 @@ from ai_kicad.pivot.engineering import (
     select_part,
 )
 from ai_kicad.pivot.spice import simulate_rc_charge
+from ai_kicad.pivot.model import DesignModel
+from ai_kicad.pivot.native import verify_pin_pad_maps
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -147,6 +149,32 @@ def test_reference_catalog_covers_bom_and_keeps_unsourced_supply_unapproved():
             required_capacitance_f=10e-6,
             required_polarity="bipolar",
         )
+
+
+def test_owner_approved_c2_footprint_revision_matches_locked_native_project():
+    catalog_data = json.loads((ROOT / "fixtures/pivot/catalog/reference_parts.v2.json").read_text())
+    fixture = ROOT / "fixtures/pivot/reference_555_led_flasher_v8"
+    bom = json.loads((fixture / "bom.json").read_text())
+    footprint_lock = json.loads((fixture / "footprint_assets.lock.json").read_text())
+    catalog = {part.mpn: part for part in map(CatalogPart.model_validate, catalog_data["parts"])}
+    c2 = next(item for item in bom["items"] if item["refdes"] == "C2")
+    part = catalog[c2["mpn"]]
+    assert part.approved is True
+    assert part.footprint == c2["footprint"]
+    assert c2["footprint"] == "Capacitor_THT:C_Disc_D3.8mm_W2.6mm_P2.50mm"
+    asset = next(
+        asset
+        for asset in footprint_lock["assets"]
+        if f"{asset['library']}:{asset['footprint']}" == c2["footprint"]
+    )
+    footprint_bytes = (fixture / asset["path"]).read_bytes()
+    assert hashlib.sha256(footprint_bytes).hexdigest() == asset["sha256"]
+    model = DesignModel.model_validate_json((fixture / "design-model.v1.json").read_bytes())
+    model.require_revision_match()
+    verification = verify_pin_pad_maps(model, fixture / "assets/footprints")
+    assert verification["status"] == "PASS"
+    c2_result = next(result for result in verification["components"] if result["reference"] == "C2")
+    assert c2_result["footprint"] == c2["footprint"]
 
 
 def test_reference_calculations_and_boundaries():

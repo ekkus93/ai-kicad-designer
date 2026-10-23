@@ -1,0 +1,580 @@
+{
+  "schema_version": "design-model.v1",
+  "design_id": "reference_555_led_flasher_v1",
+  "revision_id": "sha256:2d95a698d615a75b2e527c7b33e995a8e717bec50b44a4fccc3329bc99a74456",
+  "parent_revision": null,
+  "title": "Reference555LedFlasher",
+  "native_artifacts": {},
+  "requirements": {
+    "function": "5 V NE555 astable LED flasher",
+    "risk_class": "benign-low-voltage"
+  },
+  "hierarchy": [
+    {
+      "sheet_id": "/",
+      "name": "Root",
+      "parent_sheet_id": null
+    }
+  ],
+  "components": [
+    {
+      "component_id": "timer",
+      "reference": "U1",
+      "value": "NE555D",
+      "symbol": "Timer:NE555D",
+      "symbol_sha256": "9c3b4d51d17e9a3eb9a17facc61554a530a53aefcdf15e1de08f275586f4d027",
+      "mpn": "NE555P",
+      "pins": [
+        {
+          "number": "1",
+          "name": "GND",
+          "electrical_type": "power_in"
+        },
+        {
+          "number": "8",
+          "name": "VCC",
+          "electrical_type": "power_in"
+        },
+        {
+          "number": "2",
+          "name": "TRIG",
+          "electrical_type": "input"
+        },
+        {
+          "number": "3",
+          "name": "OUT",
+          "electrical_type": "output"
+        },
+        {
+          "number": "4",
+          "name": "~{RST}",
+          "electrical_type": "input"
+        },
+        {
+          "number": "5",
+          "name": "CONT",
+          "electrical_type": "passive"
+        },
+        {
+          "number": "6",
+          "name": "THRES",
+          "electrical_type": "input"
+        },
+        {
+          "number": "7",
+          "name": "DISCH",
+          "electrical_type": "input"
+        }
+      ],
+      "footprint": "Package_DIP:DIP-8_W7.62mm",
+      "footprint_sha256": "222fb44370968119abbd978176814cc43a71bc32ac2de275d8a3c418c0830fc6",
+      "pin_pad_map": [
+        {
+          "pin": "1",
+          "pad": "1"
+        },
+        {
+          "pin": "2",
+          "pad": "2"
+        },
+        {
+          "pin": "3",
+          "pad": "3"
+        },
+        {
+          "pin": "4",
+          "pad": "4"
+        },
+        {
+          "pin": "5",
+          "pad": "5"
+        },
+        {
+          "pin": "6",
+          "pad": "6"
+        },
+        {
+          "pin": "7",
+          "pad": "7"
+        },
+        {
+          "pin": "8",
+          "pad": "8"
+        }
+      ]
+    },
+    {
+      "component_id": "charge",
+      "reference": "R1",
+      "value": "10k",
+      "symbol": "Device:R",
+      "symbol_sha256": "dc1af32e02302c859a2101926e9ecd41d859880b02956293c9781ba6cf281f25",
+      "mpn": "CFR-25JB-52-10K",
+      "pins": [
+        {
+          "number": "1",
+          "name": "",
+          "electrical_type": "passive"
+        },
+        {
+          "number": "2",
+          "name": "",
+          "electrical_type": "passive"
+        }
+      ],
+      "footprint": "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal",
+      "footprint_sha256": "58b4bad35c78cb7f33c76c99b8d8f08bb836b0ba742bcbbaffb6f7f73e5ffbe6",
+      "pin_pad_map": [
+        {
+          "pin": "1",
+          "pad": "1"
+        },
+        {
+          "pin": "2",
+          "pad": "2"
+        }
+      ]
+    },
+    {
+      "component_id": "discharge",
+      "reference": "R2",
+      "value": "47k",
+      "symbol": "Device:R",
+      "symbol_sha256": "dc1af32e02302c859a2101926e9ecd41d859880b02956293c9781ba6cf281f25",
+      "mpn": "CFR-25JB-52-47K",
+      "pins": [
+        {
+          "number": "1",
+          "name": "",
+          "electrical_type": "passive"
+        },
+        {
+          "number": "2",
+          "name": "",
+          "electrical_type": "passive"
+        }
+      ],
+      "footprint": "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal",
+      "footprint_sha256": "58b4bad35c78cb7f33c76c99b8d8f08bb836b0ba742bcbbaffb6f7f73e5ffbe6",
+      "pin_pad_map": [
+        {
+          "pin": "1",
+          "pad": "1"
+        },
+        {
+          "pin": "2",
+          "pad": "2"
+        }
+      ]
+    },
+    {
+      "component_id": "timing_cap",
+      "reference": "C1",
+      "value": "10u",
+      "symbol": "Device:C",
+      "symbol_sha256": "b18b33e0e8f7b9b076c97a7e2a6c894fb858bf2b0104b7ec9b7caf6d74392a6a",
+      "mpn": "ECEA1CN100UE",
+      "pins": [
+        {
+          "number": "1",
+          "name": "",
+          "electrical_type": "passive"
+        },
+        {
+          "number": "2",
+          "name": "",
+          "electrical_type": "passive"
+        }
+      ],
+      "footprint": "Capacitor_THT:CP_Radial_D8.0mm_P5.00mm",
+      "footprint_sha256": "08b9e57077b1f259a08ca16018e320d50c6c0ac30f5d11f7a1cbb1547bed19b2",
+      "pin_pad_map": [
+        {
+          "pin": "1",
+          "pad": "1"
+        },
+        {
+          "pin": "2",
+          "pad": "2"
+        }
+      ]
+    },
+    {
+      "component_id": "control_bypass",
+      "reference": "C2",
+      "value": "10n",
+      "symbol": "Device:C",
+      "symbol_sha256": "b18b33e0e8f7b9b076c97a7e2a6c894fb858bf2b0104b7ec9b7caf6d74392a6a",
+      "mpn": "C315C103K5R5TA",
+      "pins": [
+        {
+          "number": "1",
+          "name": "",
+          "electrical_type": "passive"
+        },
+        {
+          "number": "2",
+          "name": "",
+          "electrical_type": "passive"
+        }
+      ],
+      "footprint": "Capacitor_THT:C_Disc_D3.8mm_W2.6mm_P2.50mm",
+      "footprint_sha256": "62dd9db9262fa5ce8e1cb05ab5f346c86af3ec0acf4b2f34344c8ff05193a322",
+      "pin_pad_map": [
+        {
+          "pin": "1",
+          "pad": "1"
+        },
+        {
+          "pin": "2",
+          "pad": "2"
+        }
+      ]
+    },
+    {
+      "component_id": "source",
+      "reference": "J1",
+      "value": "Supply",
+      "symbol": "Connector_Generic:Conn_01x01",
+      "symbol_sha256": "5832ce1f0a29183e3234c7b9651c9220ccd64fd22cd297db7872475da4eb0158",
+      "mpn": "TSW-101-07-L-S",
+      "pins": [
+        {
+          "number": "1",
+          "name": "Pin_1",
+          "electrical_type": "passive"
+        }
+      ],
+      "footprint": "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical",
+      "footprint_sha256": "4fc60019e8f0bb2c220af4980349e0a9968f5bf9b8f068d769139c3939e7a86b",
+      "pin_pad_map": [
+        {
+          "pin": "1",
+          "pad": "1"
+        }
+      ]
+    },
+    {
+      "component_id": "output",
+      "reference": "J2",
+      "value": "Pulse output",
+      "symbol": "Connector_Generic:Conn_01x01",
+      "symbol_sha256": "5832ce1f0a29183e3234c7b9651c9220ccd64fd22cd297db7872475da4eb0158",
+      "mpn": "TSW-101-07-L-S",
+      "pins": [
+        {
+          "number": "1",
+          "name": "Pin_1",
+          "electrical_type": "passive"
+        }
+      ],
+      "footprint": "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical",
+      "footprint_sha256": "4fc60019e8f0bb2c220af4980349e0a9968f5bf9b8f068d769139c3939e7a86b",
+      "pin_pad_map": [
+        {
+          "pin": "1",
+          "pad": "1"
+        }
+      ]
+    },
+    {
+      "component_id": "return",
+      "reference": "J3",
+      "value": "Return",
+      "symbol": "Connector_Generic:Conn_01x01",
+      "symbol_sha256": "5832ce1f0a29183e3234c7b9651c9220ccd64fd22cd297db7872475da4eb0158",
+      "mpn": "TSW-101-07-L-S",
+      "pins": [
+        {
+          "number": "1",
+          "name": "Pin_1",
+          "electrical_type": "passive"
+        }
+      ],
+      "footprint": "Connector_PinHeader_2.54mm:PinHeader_1x01_P2.54mm_Vertical",
+      "footprint_sha256": "4fc60019e8f0bb2c220af4980349e0a9968f5bf9b8f068d769139c3939e7a86b",
+      "pin_pad_map": [
+        {
+          "pin": "1",
+          "pad": "1"
+        }
+      ]
+    },
+    {
+      "component_id": "led_resistor",
+      "reference": "R3",
+      "value": "1k",
+      "symbol": "Device:R",
+      "symbol_sha256": "dc1af32e02302c859a2101926e9ecd41d859880b02956293c9781ba6cf281f25",
+      "mpn": "CFR-25JB-52-1K",
+      "pins": [
+        {
+          "number": "1",
+          "name": "",
+          "electrical_type": "passive"
+        },
+        {
+          "number": "2",
+          "name": "",
+          "electrical_type": "passive"
+        }
+      ],
+      "footprint": "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal",
+      "footprint_sha256": "58b4bad35c78cb7f33c76c99b8d8f08bb836b0ba742bcbbaffb6f7f73e5ffbe6",
+      "pin_pad_map": [
+        {
+          "pin": "1",
+          "pad": "1"
+        },
+        {
+          "pin": "2",
+          "pad": "2"
+        }
+      ]
+    },
+    {
+      "component_id": "indicator",
+      "reference": "D1",
+      "value": "WP7113ID",
+      "symbol": "Device:LED",
+      "symbol_sha256": "64bb32add3fa490b740ec4322a41604cd932600b24316bc5faa42df0b23eb7bc",
+      "mpn": "WP7113ID",
+      "pins": [
+        {
+          "number": "1",
+          "name": "K",
+          "electrical_type": "passive"
+        },
+        {
+          "number": "2",
+          "name": "A",
+          "electrical_type": "passive"
+        }
+      ],
+      "footprint": "LED_THT:LED_D5.0mm",
+      "footprint_sha256": "efba51d29b26d31bbf3957a5813ee41872a071099d3f28bf6354a857f7129392",
+      "pin_pad_map": [
+        {
+          "pin": "1",
+          "pad": "1"
+        },
+        {
+          "pin": "2",
+          "pad": "2"
+        }
+      ]
+    }
+  ],
+  "nets": [
+    {
+      "net_id": "VCC",
+      "role": "vcc",
+      "terminals": [
+        {
+          "component_id": "source",
+          "pin": "1",
+          "unit": 1,
+          "sheet": "/"
+        },
+        {
+          "component_id": "timer",
+          "pin": "8",
+          "unit": 1,
+          "sheet": "/"
+        },
+        {
+          "component_id": "timer",
+          "pin": "4",
+          "unit": 1,
+          "sheet": "/"
+        },
+        {
+          "component_id": "charge",
+          "pin": "1",
+          "unit": 1,
+          "sheet": "/"
+        },
+        {
+          "component_id": "led_resistor",
+          "pin": "1",
+          "unit": 1,
+          "sheet": "/"
+        }
+      ]
+    },
+    {
+      "net_id": "DISCH",
+      "role": "disch",
+      "terminals": [
+        {
+          "component_id": "charge",
+          "pin": "2",
+          "unit": 1,
+          "sheet": "/"
+        },
+        {
+          "component_id": "discharge",
+          "pin": "1",
+          "unit": 1,
+          "sheet": "/"
+        },
+        {
+          "component_id": "timer",
+          "pin": "7",
+          "unit": 1,
+          "sheet": "/"
+        }
+      ]
+    },
+    {
+      "net_id": "TIMING",
+      "role": "timing",
+      "terminals": [
+        {
+          "component_id": "discharge",
+          "pin": "2",
+          "unit": 1,
+          "sheet": "/"
+        },
+        {
+          "component_id": "timing_cap",
+          "pin": "1",
+          "unit": 1,
+          "sheet": "/"
+        },
+        {
+          "component_id": "timer",
+          "pin": "2",
+          "unit": 1,
+          "sheet": "/"
+        },
+        {
+          "component_id": "timer",
+          "pin": "6",
+          "unit": 1,
+          "sheet": "/"
+        }
+      ]
+    },
+    {
+      "net_id": "OUT",
+      "role": "out",
+      "terminals": [
+        {
+          "component_id": "timer",
+          "pin": "3",
+          "unit": 1,
+          "sheet": "/"
+        },
+        {
+          "component_id": "output",
+          "pin": "1",
+          "unit": 1,
+          "sheet": "/"
+        },
+        {
+          "component_id": "indicator",
+          "pin": "1",
+          "unit": 1,
+          "sheet": "/"
+        }
+      ]
+    },
+    {
+      "net_id": "REF",
+      "role": "ref",
+      "terminals": [
+        {
+          "component_id": "timer",
+          "pin": "1",
+          "unit": 1,
+          "sheet": "/"
+        },
+        {
+          "component_id": "timing_cap",
+          "pin": "2",
+          "unit": 1,
+          "sheet": "/"
+        },
+        {
+          "component_id": "control_bypass",
+          "pin": "2",
+          "unit": 1,
+          "sheet": "/"
+        },
+        {
+          "component_id": "return",
+          "pin": "1",
+          "unit": 1,
+          "sheet": "/"
+        }
+      ]
+    },
+    {
+      "net_id": "CONT",
+      "role": "cont",
+      "terminals": [
+        {
+          "component_id": "timer",
+          "pin": "5",
+          "unit": 1,
+          "sheet": "/"
+        },
+        {
+          "component_id": "control_bypass",
+          "pin": "1",
+          "unit": 1,
+          "sheet": "/"
+        }
+      ]
+    },
+    {
+      "net_id": "LED_A",
+      "role": "led_a",
+      "terminals": [
+        {
+          "component_id": "led_resistor",
+          "pin": "2",
+          "unit": 1,
+          "sheet": "/"
+        },
+        {
+          "component_id": "indicator",
+          "pin": "2",
+          "unit": 1,
+          "sheet": "/"
+        }
+      ]
+    }
+  ],
+  "electrical_assertions": [
+    {
+      "assertion_id": "supply_voltage_range",
+      "kind": "inclusive_range",
+      "parameters": {
+        "maximum_v": 5.25,
+        "minimum_v": 4.75,
+        "nominal_v": 5.0
+      },
+      "source": "https://jlcpcb.com/capabilities/pcb-capabilities/"
+    }
+  ],
+  "manufacturing_profile": {
+    "profile_id": "conservative_2layer_50x35_v1",
+    "board_width_mm": 50.0,
+    "board_height_mm": 35.0,
+    "copper_layers": 2,
+    "thickness_mm": 1.6,
+    "min_track_mm": 0.25,
+    "min_clearance_mm": 0.25,
+    "min_drill_mm": 0.3,
+    "min_via_diameter_mm": 0.6,
+    "copper_to_edge_mm": 0.3,
+    "copper_weight_oz": 1.0,
+    "material": "FR-4",
+    "solder_mask_sides": 2,
+    "silkscreen_sides": 2,
+    "qualification_status": "reference",
+    "source": "https://jlcpcb.com/capabilities/pcb-capabilities/"
+  }
+}
