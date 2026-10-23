@@ -1,0 +1,52 @@
+{
+  "schema_version": "llm-drc-repair-assessment.v1",
+  "experiment_id": "llm_drc_repair_2026-10-22_run2",
+  "source_commit": "61cdc5b4c7763aab6b52dd0514bba08c5b0cbc62",
+  "implementation_sha256": "e6096bdcdfde5ae261954f3fd87ea195cfaad0decb50dd72aaa8974d712093f1",
+  "provider": "ollama:qwen2.5:0.5b",
+  "model_digest": "a8b0c51577010a279d933d14c2a8ab4b268079d44c5c8830c0a93900f1827c67",
+  "model_bytes": 397821319,
+  "kicad_version": "10.0.6",
+  "source_board_sha256": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+  "faulty_board_sha256": "cc23ee4adceb8f3ca12c9013f966760d074a6d3d48738e86d5c8048b6525d650",
+  "fault_injected": {
+    "type": "track_width",
+    "track_uuid": "02a0f503-d2e4-405e-ace8-bda5a3ed2547",
+    "net_name": "/OUT",
+    "width_before_mm": 0.2,
+    "width_fault_mm": 0.1
+  },
+  "status": "PASS",
+  "attempts": 1,
+  "proposals": [
+    {
+      "operation": "set_track_width",
+      "track_uuid": "02a0f503-d2e4-405e-ace8-bda5a3ed2547",
+      "net_name": "/OUT",
+      "expected_width_mm": 0.1,
+      "new_width_mm": 0.2,
+      "rationale": "/OUT"
+    }
+  ],
+  "diagnostics": [
+    "{\"copper_connectivity_preserved\": true, \"independent_board_status\": \"PASS\", \"native_drc_errors\": 0, \"native_unconnected_items\": 0, \"pin_pad_net_partitions_preserved\": true}"
+  ],
+  "repaired_board_sha256": "567d21ee5531df5f534674fd168bb53019d184802a276255c331337700b16616",
+  "drc_reports": [
+    {
+      "path": "reports/drc-01.json",
+      "sha256": "4013b30b329b6d750aa468ffcbb07bb2bb1b4a2295fdafa0b4859130da12e4e2",
+      "errors": [
+        "track_width"
+      ]
+    },
+    {
+      "path": "reports/drc-02.json",
+      "sha256": "d9edd8d39b97bd12dd33476cb807a335fda7d794cfaa31d3c087fb5221ec7901",
+      "errors": []
+    }
+  ],
+  "independent_connectivity": "PASS: pin-pad-net partitions and copper connectivity match known-good board",
+  "known_good_unchanged": true,
+  "scope": "One deliberately injected track-width DRC error on the locked reference board; does not establish repair quality for other DRC classes."
+}

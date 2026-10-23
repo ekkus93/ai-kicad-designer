@@ -257,6 +257,8 @@ Define an internal typed `DesignBackend` capability manifest, with operations su
 7. **Assembly (optional initially):** complete BOM with MPNs, alternates/stock evidence, refdes count, position/side/rotation, placement/centroid, paste layers, assembly drawing as appropriate; provider-specific conventions verified.
 8. **Human/physical:** human review before manufacturing order; actual physical success only after receiving, assembling and electrically testing the board.
 
+LLM repair is advisory and bounded. A provider may select only a typed allowlisted operation against a current, identified violation. Apply each proposal to a separate candidate copy, verify its target identity and precondition against the native artifact, then rerun native DRC and independent connectivity/equivalence checks. Preserve rejected candidates and diagnostics; never change the known-good revision. Unsupported violation classes, invalid proposals, timeouts, or exhausted attempts must terminate as `BLOCKED`/`FAIL`, never as a clean result. The first validated operation family is limited to widening a single track that KiCad has reported in a `track_width` error; the model cannot edit arbitrary KiCad text or choose another DRC repair class.
+
 ### 8.2 Pass/fail taxonomy
 
 `NOT_RUN`, `RUNNING`, `PASS`, `FAIL`, `BLOCKED`, `UNSUPPORTED`, `WAIVED_WITH_APPROVAL`, `INCONCLUSIVE`. `PASS` is valid only with source-specific verified evidence. `UNSUPPORTED`, `BLOCKED`, skipped jobs or old-source evidence are never silently `PASS`. Warnings require explicit severity and policy disposition. Every gate records exact design revision, toolchain, check configuration and artifacts.

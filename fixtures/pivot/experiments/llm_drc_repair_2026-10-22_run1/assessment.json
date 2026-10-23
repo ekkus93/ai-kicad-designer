@@ -1,0 +1,39 @@
+{
+  "schema_version": "llm-drc-repair-assessment.v1",
+  "experiment_id": "llm_drc_repair_2026-10-22_run1",
+  "provider": "ollama:qwen2.5:0.5b",
+  "model_digest": "NAME            ID              SIZE      MODIFIED      \nqwen2.5:0.5b    a8b0c5157701    397 MB    2 minutes ago",
+  "kicad_version": "10.0.6",
+  "source_board_sha256": "0002148852be6a7967d12dc548bf0f461eeafd46f25c45c77d554e2862c54a60",
+  "faulty_board_sha256": "cc23ee4adceb8f3ca12c9013f966760d074a6d3d48738e86d5c8048b6525d650",
+  "fault_injected": {
+    "type": "track_width",
+    "track_uuid": "02a0f503-d2e4-405e-ace8-bda5a3ed2547",
+    "net_name": "/OUT",
+    "width_before_mm": 0.2,
+    "width_fault_mm": 0.1
+  },
+  "status": "PASS",
+  "attempts": 1,
+  "diagnostics": [
+    "{\"copper_connectivity_preserved\": true, \"drc_errors\": 0, \"independent_board_status\": \"PASS\", \"net_partitions_preserved\": true, \"unconnected\": 0}"
+  ],
+  "repaired_board_sha256": "567d21ee5531df5f534674fd168bb53019d184802a276255c331337700b16616",
+  "drc_reports": [
+    {
+      "path": "reports/attempt-01-drc.json",
+      "sha256": "44b3bbbe669e60e9243dab9a66445520cd80f16e91f361de3fe6a0e4c754ee10",
+      "violations": [
+        "track_width"
+      ]
+    },
+    {
+      "path": "reports/attempt-02-drc.json",
+      "sha256": "c07047444fbe6b58246702aef25c94c802ebb1ef3ad187ad9f5dea49f0238dca",
+      "violations": []
+    }
+  ],
+  "independent_connectivity": "PASS: pin-pad-net partitions and copper connectivity equal to known-good board",
+  "known_good_unchanged": true,
+  "scope": "One deliberately narrow track-width fault on the tracked reference board; no evidence about general model repair quality or other DRC classes."
+}
