@@ -51,6 +51,7 @@ class SupplierMapping(StrictModel):
 
 class CatalogPart(StrictModel):
     mpn: str
+    manufacturer: str = Field(min_length=1)
     category: str
     package: str
     footprint: str
@@ -58,6 +59,11 @@ class CatalogPart(StrictModel):
     voltage_min_v: float | None = None
     voltage_max_v: float | None = None
     power_rating_w: float | None = None
+    resistance_ohm: float | None = Field(default=None, gt=0)
+    capacitance_f: float | None = Field(default=None, gt=0)
+    tolerance_percent: float | None = Field(default=None, gt=0, le=100)
+    dielectric: str | None = None
+    polarity: str | None = None
     approved: bool
     datasheet_url: str
     datasheet_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
@@ -90,6 +96,11 @@ def select_part(
     package: str,
     minimum_voltage_v: float = 0,
     required_pin_map: dict[str, str] | None = None,
+    minimum_power_w: float = 0,
+    required_resistance_ohm: float | None = None,
+    required_capacitance_f: float | None = None,
+    required_dielectric: str | None = None,
+    required_polarity: str | None = None,
 ) -> CatalogPart:
     matches = [
         part
@@ -97,7 +108,20 @@ def select_part(
         if part.approved
         and part.category == category
         and part.package == package
-        and (part.voltage_max_v is None or part.voltage_max_v >= minimum_voltage_v)
+        and (
+            minimum_voltage_v <= 0
+            or part.voltage_max_v is not None
+            and part.voltage_max_v >= minimum_voltage_v
+        )
+        and (
+            minimum_power_w <= 0
+            or part.power_rating_w is not None
+            and part.power_rating_w >= minimum_power_w
+        )
+        and (required_resistance_ohm is None or part.resistance_ohm == required_resistance_ohm)
+        and (required_capacitance_f is None or part.capacitance_f == required_capacitance_f)
+        and (required_dielectric is None or part.dielectric == required_dielectric)
+        and (required_polarity is None or part.polarity == required_polarity)
         and (required_pin_map is None or part.pin_map == required_pin_map)
     ]
     if len(matches) != 1:

@@ -1,4 +1,5 @@
 import json
+import hashlib
 from pathlib import Path
 
 import pytest
@@ -66,6 +67,24 @@ def test_catalog_exact_selection_rejects_package_pinout_and_voltage_negatives():
     assert timer.mpn == "NE555P"
     assert timer.supplier_mappings[0].supplier_part_number == "296-NE555P-ND"
     assert timer.supplier_mappings[0].checked_on == "2026-10-22"
+    resistor = select_part(
+        catalog,
+        category="resistor",
+        package="Axial DIN0207, 7.62mm lead pitch",
+        minimum_power_w=0.25,
+        required_resistance_ohm=10_000,
+    )
+    assert resistor.mpn == "CFR-25JB-52-10K"
+    capacitor = select_part(
+        catalog,
+        category="capacitor",
+        package="Radial 3.81mm x 2.54mm, 2.54mm lead pitch",
+        minimum_voltage_v=5.25,
+        required_capacitance_f=10e-9,
+        required_dielectric="X7R",
+        required_polarity="nonpolar",
+    )
+    assert capacitor.mpn == "C315C103K5R5TA"
     incomplete_approved = dict(data["parts"][0], supplier_mappings=[])
     with pytest.raises(ValidationError, match="dated supplier mapping"):
         CatalogPart.model_validate(incomplete_approved)
@@ -73,6 +92,57 @@ def test_catalog_exact_selection_rejects_package_pinout_and_voltage_negatives():
         select_part(catalog, category="timer", package="SOIC-8")
     with pytest.raises(RequirementError, match="unsupported"):
         select_part(catalog, category="timer", package="PDIP-8", minimum_voltage_v=20)
+    with pytest.raises(RequirementError, match="unsupported"):
+        select_part(
+            catalog,
+            category="resistor",
+            package="Axial DIN0207, 7.62mm lead pitch",
+            minimum_power_w=0.5,
+            required_resistance_ohm=10_000,
+        )
+    with pytest.raises(RequirementError, match="unsupported"):
+        select_part(
+            catalog,
+            category="capacitor",
+            package="Radial 5.0mm diameter x 11.0mm, 5.0mm lead pitch",
+            required_polarity="bipolar",
+        )
+
+
+def test_reference_catalog_covers_bom_and_keeps_unsourced_supply_unapproved():
+    data = json.loads((ROOT / "fixtures/pivot/catalog/reference_parts.v1.json").read_text())
+    bom = json.loads((ROOT / "fixtures/pivot/reference_555_led_flasher_v1/bom.json").read_text())
+    footprint_lock = json.loads(
+        (
+            ROOT / "fixtures/pivot/reference_555_led_flasher_v1/footprint_assets.lock.json"
+        ).read_text()
+    )
+    fixture = ROOT / "fixtures/pivot/reference_555_led_flasher_v1"
+    locked_footprints = {
+        f"{asset['library']}:{asset['footprint']}": asset for asset in footprint_lock["assets"]
+    }
+    catalog = {part.mpn: part for part in map(CatalogPart.model_validate, data["parts"])}
+    assert set(catalog) == {item["mpn"] for item in bom["items"]}
+    for item in bom["items"]:
+        part = catalog[item["mpn"]]
+        assert part.footprint == item["footprint"]
+        asset = locked_footprints[part.footprint]
+        footprint_bytes = (fixture / asset["path"]).read_bytes()
+        assert hashlib.sha256(footprint_bytes).hexdigest() == asset["sha256"]
+        assert part.pin_map == item["symbol_pin_to_pad"]
+        assert len(part.datasheet_sha256) == 64
+        assert (not part.approved) or part.supplier_mappings
+    bipolar = catalog["ECEA1CN100UE"]
+    assert not bipolar.approved
+    assert not bipolar.supplier_mappings
+    with pytest.raises(RequirementError, match="unsupported"):
+        select_part(
+            list(catalog.values()),
+            category="capacitor",
+            package=bipolar.package,
+            required_capacitance_f=10e-6,
+            required_polarity="bipolar",
+        )
 
 
 def test_reference_calculations_and_boundaries():
