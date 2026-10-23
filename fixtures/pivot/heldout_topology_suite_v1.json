@@ -1,0 +1,40 @@
+{
+  "schema_version": "heldout-ai-topology-suite.v1",
+  "suite_id": "analog-topologies-v1",
+  "description": "Three bounded low-voltage topology proposals with independent graph and first-order calculation gates.",
+  "response_schema": {
+    "topology": "string",
+    "components": [
+      {
+        "ref": "string",
+        "kind": "resistor|capacitor|led|timer555|port|ground",
+        "value": "string or null",
+        "pins": ["string"]
+      }
+    ],
+    "nets": [{"name": "string", "terminals": ["REF.pin"]}]
+  },
+  "tasks": [
+    {
+      "task_id": "rc_lowpass_100hz",
+      "family": "rc_lowpass",
+      "requirements": "5 V source, unloaded output, first-order low-pass, nominal cutoff 100 Hz, one resistor and one capacitor.",
+      "prompt": "Design a passive first-order RC low-pass filter for a 5 V source, with an unloaded output and nominal cutoff of 100 Hz. Use one resistor and one capacitor, choose standard E12 values, and provide the complete exact pin-to-net graph. Use references R1, C1, VIN, VOUT and GND. Pins are R1 A/B, C1 A/B, VIN 1, VOUT 1, GND 1. Include three nets named VIN, VOUT and GND. Return JSON only using the supplied response schema.",
+      "limits": {"cutoff_min_hz": 90.0, "cutoff_max_hz": 110.0}
+    },
+    {
+      "task_id": "led_limiter_3ma",
+      "family": "led_limiter",
+      "requirements": "5 V nominal source, red indicator LED current 2-4 mA, one series resistor, grounded return.",
+      "prompt": "Design a 5 V nominal red indicator LED circuit targeting 2-4 mA with exactly one series current-limiting resistor. Assume LED forward voltage 1.8-2.2 V. Use references R1, D1, VIN, GND and OUT. Pins are R1 A/B, D1 A/K, VIN 1, GND 1, OUT 1. Provide the complete exact pin-to-net graph and values; include nets VIN, LED_NODE and GND. OUT is an optional observation port on the LED anode node. Return JSON only using the supplied response schema.",
+      "limits": {"supply_v": 5.0, "led_forward_min_v": 1.8, "led_forward_max_v": 2.2, "current_min_a": 0.002, "current_max_a": 0.004}
+    },
+    {
+      "task_id": "timer555_astable_2hz",
+      "family": "timer555_astable",
+      "requirements": "5 V NE555 astable near 2 Hz; 555 output drives a red LED through a series resistor; no external clock.",
+      "prompt": "Design a 5 V NE555 astable oscillator near 2 Hz. Use the standard astable connection: pins 2 and 6 share the timing node, pin 7 lies between charge and discharge resistors, and a timing capacitor returns from the timing node to ground. Add a red output LED with a series resistor on pin 3. Use references U1, R1 (charge resistor), R2 (discharge resistor), C1, R3 (LED resistor), D1, VIN, GND and OUT. U1 pins are numbered 1 through 8; pin 1=GND, 2=TRIG, 3=OUT, 4=RESET, 5=CTRL, 6=THRESH, 7=DISCH, 8=VCC. D1 pins are A/K; each resistor and capacitor has A/B; ports VIN, GND and OUT have pin 1. Return exact values and the complete graph. Return JSON only using the supplied response schema.",
+      "limits": {"supply_v": 5.0, "frequency_min_hz": 1.5, "frequency_max_hz": 2.5, "led_forward_min_v": 1.8, "led_forward_max_v": 2.2, "led_current_min_a": 0.002, "led_current_max_a": 0.004}
+    }
+  ]
+}
