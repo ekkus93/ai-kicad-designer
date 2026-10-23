@@ -2,6 +2,7 @@ import shutil
 from pathlib import Path
 
 import pytest
+from pydantic import ValidationError
 
 from ai_kicad.pivot.cli import _model_from_fixture
 from ai_kicad.pivot.fabrication import (
@@ -16,7 +17,12 @@ from ai_kicad.pivot.release import (
     require_clean_native_reports,
     verify_artifact_manifest,
 )
-from ai_kicad.pivot.repair import bounded_repair
+from ai_kicad.pivot.repair import (
+    OllamaRepairProvider,
+    TrackWidthProposal,
+    bounded_repair,
+    llm_bounded_repair,
+)
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -173,3 +179,125 @@ def test_bounded_repair_stops_as_blocked(tmp_path):
         limit=2,
     )
     assert result.status == "BLOCKED" and result.accepted is None and result.attempts == 2
+
+
+def test_llm_repair_applies_one_typed_track_edit_and_preserves_source(tmp_path):
+    track_uuid = "02a0f503-d2e4-405e-ace8-bda5a3ed2547"
+    known_good = tmp_path / "board.kicad_pcb"
+    source = (
+        "(kicad_pcb (segment (start 1 2) (end 3 4) (width 0.1) "
+        f'(layer "B.Cu") (net "/OUT") (uuid "{track_uuid}")))'
+    )
+    known_good.write_text(source)
+
+    class Provider:
+        provider_id = "test-llm"
+
+        def complete(self, handoff):
+            assert handoff["allowed_operation"] == "set_track_width"
+            assert handoff["source_sha256"]
+            return {
+                "operation": "set_track_width",
+                "track_uuid": track_uuid,
+                "net_name": "/OUT",
+                "expected_width_mm": 0.1,
+                "new_width_mm": 0.2,
+                "rationale": "The DRC report identifies this narrow segment.",
+            }
+
+    result = llm_bounded_repair(
+        known_good,
+        tmp_path / "llm-attempts",
+        Provider(),
+        lambda _candidate: {
+            "violations": [
+                {
+                    "type": "track_width",
+                    "items": [
+                        {
+                            "uuid": track_uuid,
+                            "net_name": "/OUT",
+                            "width_mm": 0.1,
+                        }
+                    ],
+                }
+            ]
+        },
+        lambda candidate: (
+            "(width 0.200000)" in candidate.read_text(),
+            "native DRC clean",
+        ),
+        limit=2,
+        maximum_width_mm=0.5,
+    )
+    assert result.status == "PASS" and result.attempts == 1
+    assert result.proposals[0]["new_width_mm"] == 0.2
+    assert known_good.read_text() == source
+    assert result.accepted is not None and result.accepted.read_text() != source
+
+
+def test_llm_repair_rejects_wrong_net_and_never_reports_false_pass(tmp_path):
+    track_uuid = "02a0f503-d2e4-405e-ace8-bda5a3ed2547"
+    source = (
+        "(kicad_pcb (segment (start 1 2) (end 3 4) (width 0.1) "
+        f'(layer "B.Cu") (net "/OUT") (uuid "{track_uuid}")))'
+    )
+    known_good = tmp_path / "board.kicad_pcb"
+    known_good.write_text(source)
+
+    class Provider:
+        provider_id = "test-llm"
+
+        def complete(self, _handoff):
+            return {
+                "operation": "set_track_width",
+                "track_uuid": track_uuid,
+                "net_name": "/VCC",
+                "expected_width_mm": 0.1,
+                "new_width_mm": 0.2,
+                "rationale": "Deliberate wrong-net proposal.",
+            }
+
+    result = llm_bounded_repair(
+        known_good,
+        tmp_path / "rejected-attempts",
+        Provider(),
+        lambda _candidate: {
+            "violations": [
+                {
+                    "type": "track_width",
+                    "items": [
+                        {
+                            "uuid": track_uuid,
+                            "net_name": "/OUT",
+                            "width_mm": 0.1,
+                        }
+                    ],
+                }
+            ]
+        },
+        lambda _candidate: pytest.fail("gate must not run after invalid edit"),
+        limit=1,
+        maximum_width_mm=0.5,
+    )
+    assert result.status == "BLOCKED" and result.accepted is None
+    assert "proposal net differs" in result.diagnostics[0]
+    assert known_good.read_text() == source
+    assert (tmp_path / "rejected-attempts/candidate-1.kicad_pcb").read_text() == source
+
+
+def test_track_width_proposal_rejects_unknown_operations_and_bounds():
+    with pytest.raises(ValidationError):
+        TrackWidthProposal(
+            operation="run_shell_command",
+            track_uuid="x",
+            net_name="/OUT",
+            expected_width_mm=0.1,
+            new_width_mm=100,
+            rationale="unsafe",
+        )
+
+
+def test_ollama_repair_provider_rejects_remote_endpoint():
+    with pytest.raises(ValueError, match="local HTTP"):
+        OllamaRepairProvider("qwen2.5:0.5b", base_url="https://example.invalid")
