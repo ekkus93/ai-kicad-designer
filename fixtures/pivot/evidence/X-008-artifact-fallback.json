@@ -1,0 +1,55 @@
+{
+  "schema_version": "pivot-evidence.v1",
+  "evidence_id": "X-008-artifact-fallback-2026-10-22",
+  "task_id": "X-008",
+  "recorded_at_utc": "2026-10-23T05:39:54.548037Z",
+  "source_commit": "52a06762ecfb347a9202a654cd1a5bed917b09ea",
+  "revision_kind": "git_commit",
+  "revision_id": "52a06762ecfb347a9202a654cd1a5bed917b09ea",
+  "action": {
+    "summary": "Exercise local artifact-upload fallback, integrity checks and workflow wiring",
+    "command": ".venv/bin/pytest -q tests/pivot/test_artifact_fallback.py; actionlint .github/workflows/m2h2-locked-qualification.yml",
+    "backend": "pytest, Ruff and actionlint",
+    "backend_version": "pytest 9.0.2; actionlint 1.7.12",
+    "toolchain": "Python 3.12.10"
+  },
+  "status": "PASS",
+  "artifacts": [
+    {
+      "path": ".github/workflows/m2h2-locked-qualification.yml",
+      "sha256": "6e7edfac507ed62f659a513c3b39f73985203f13ce357c2d3b6db754e428aa05",
+      "media_type": "text/yaml",
+      "role": "workflow fallback integration"
+    },
+    {
+      "path": "tools/pivot/preserve_artifact_fallback.py",
+      "sha256": "01869bd66ee0e3504e3220a3a619b2483cdf0855321c8869ecfae1aa369ab521",
+      "media_type": "text/x-python",
+      "role": "content-addressed preservation implementation"
+    },
+    {
+      "path": "tests/pivot/test_artifact_fallback.py",
+      "sha256": "9bf53d4c6752c44e7e5b23009e3d3c612fcac26b0d4ac5d095dce9d2ac2120e9",
+      "media_type": "text/x-python",
+      "role": "failure-path regression tests"
+    }
+  ],
+  "checks": [
+    {
+      "check_id": "simulated-upload-failure-preservation",
+      "status": "PASS",
+      "summary": "Three failure-path tests pass; an independent SHA-256 recomputation verifies stored files, repeated runs retain links, and tampering and symlinks are rejected. Workflow syntax passes actionlint.",
+      "evidence_paths": [
+        ".github/workflows/m2h2-locked-qualification.yml",
+        "tools/pivot/preserve_artifact_fallback.py",
+        "tests/pivot/test_artifact_fallback.py"
+      ],
+      "independent": true
+    }
+  ],
+  "ci_links": [],
+  "blockers": [],
+  "notes": [
+    "The actual GitHub artifact quota failure was not induced; the upload-failure branch was exercised locally through the fallback implementation. The self-hosted Actions run remains unavailable because the repository has zero registered runners."
+  ]
+}
