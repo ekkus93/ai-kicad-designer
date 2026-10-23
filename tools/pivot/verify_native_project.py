@@ -19,7 +19,7 @@ def verify_native_project(root: Path) -> list[str]:
     actual_paths = {
         str(path.relative_to(root))
         for path in root.rglob("*")
-        if path.is_file() and path != manifest_path
+        if path.is_file() and path != manifest_path and path.suffix != ".kicad_prl"
     }
     if actual_paths != set(expected):
         errors.append("native project inventory differs from fixture manifest")

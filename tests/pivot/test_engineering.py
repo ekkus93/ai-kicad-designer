@@ -1,6 +1,8 @@
 import json
 import hashlib
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 import pytest
 from pydantic import ValidationError
@@ -14,6 +16,7 @@ from ai_kicad.pivot.engineering import (
     astable_555,
     decoupling_capacitance,
     export_through_hole_assembly,
+    export_kicad_smt_assembly,
     export_smt_assembly,
     led_resistor,
     regulator_thermal,
@@ -222,3 +225,70 @@ def test_pcbway_smt_bom_centroid_and_rotation_negatives(tmp_path):
     wrong = [dict(bom[0], quantity=2), bom[1]]
     with pytest.raises(RequirementError, match="quantity"):
         export_smt_assembly(placements, wrong, tmp_path / "wrong")
+
+
+def test_native_kicad_smt_export_binds_position_paste_and_drawing_to_board(tmp_path):
+    board = tmp_path / "assembly.kicad_pcb"
+    board.write_text(
+        '(kicad_pcb (footprint "Resistor_SMD:R_0603_1608Metric" (property "Reference" "R1")))'
+    )
+    bom = [
+        {
+            "reference": "R1",
+            "quantity": 1,
+            "mpn": "RC0603",
+            "footprint": "Resistor_SMD:R_0603_1608Metric",
+        }
+    ]
+
+    def fake_cli(command, **_kwargs):
+        if "pos" in command:
+            output = Path(command[command.index("--output") + 1])
+            output.write_text(
+                "Ref,Val,Package,PosX,PosY,Rot,Side\n"
+                "R1,10k,R_0603_1608Metric,10.2500,4.5000,-90.0,bottom\n"
+            )
+        elif "gerbers" in command:
+            output = Path(command[command.index("--output") + 1])
+            (output / "assembly-F_Paste.gbr").write_text("%FSLAX46Y46*%\n%LPD*%\n")
+        else:
+            Path(command[command.index("--output") + 1]).write_bytes(b"%PDF-1.5 test")
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    with patch("ai_kicad.pivot.engineering.subprocess.run", side_effect=fake_cli) as cli:
+        report = export_kicad_smt_assembly(["kicad-cli"], board, bom, tmp_path / "package")
+
+    assert report["status"] == "PASS"
+    assert report["placement_count"] == 1
+    assert report["paste"] == ["paste/assembly-F_Paste.gbr"]
+    assert report["assembly_drawing"] == "assembly.pdf"
+    centroid = (tmp_path / "package/centroid.csv").read_text()
+    assert "R1,10.2500mm,4.5000mm,Bottom,270.00" in centroid
+    assert len(report["output_sha256"]) == 4
+    assert len(cli.call_args_list) == 3
+
+
+def test_native_kicad_smt_export_rejects_footprint_mismatch_before_promotion(tmp_path):
+    board = tmp_path / "assembly.kicad_pcb"
+    board.write_text('(kicad_pcb (footprint "R_0603_1608Metric" (property "Reference" "R1")))')
+    bom = [
+        {
+            "reference": "R1",
+            "quantity": 1,
+            "mpn": "RC0603",
+            "footprint": "C_0603_1608Metric",
+        }
+    ]
+
+    def fake_cli(command, **_kwargs):
+        output = Path(command[command.index("--output") + 1])
+        output.write_text(
+            "Ref,Val,Package,PosX,PosY,Rot,Side\n"
+            "R1,10k,R_0603_1608Metric,10.2500,4.5000,90.0,Front\n"
+        )
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    with patch("ai_kicad.pivot.engineering.subprocess.run", side_effect=fake_cli):
+        with pytest.raises(RequirementError, match="footprint differs"):
+            export_kicad_smt_assembly(["kicad-cli"], board, bom, tmp_path / "package")
+    assert not (tmp_path / "package").exists()

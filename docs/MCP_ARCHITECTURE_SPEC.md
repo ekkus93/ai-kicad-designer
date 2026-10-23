@@ -304,7 +304,7 @@ Initial board: simple, known-good, low-voltage, two-layer **555 timer LED flashe
 
 ### 10.3 Assembly extension (later acceptance gate)
 
-BOM with quantity/refdes/MPN/footprint/tolerance/substitutions, approved sourcing notes; centroid/pick-and-place with correct side/rotation/origin/refdes mapping; required paste layers, assembly drawing and exceptions for hand-assembled/thru-hole parts. Do not label a fab-only output “PCBA-ready.” [PCBWay assembly FAQ](https://www.pcbway.com/assembly-faq.html), [assembly file requirements](https://m.pcbway.com/assembly-file-requirements.html).
+BOM with quantity/refdes/MPN/footprint/tolerance/substitutions, approved sourcing notes; centroid/pick-and-place with correct side/rotation/origin/refdes mapping; required paste layers, assembly drawing and exceptions for hand-assembled/thru-hole parts. For KiCad SMT export, derive placements from the native board's position export and bind each placement to the BOM and native footprint before packaging. Normalize KiCad's side and signed-angle conventions explicitly; verify the assembler's origin and rotation convention against a known board. Generate paste and assembly drawing artifacts from that same board and include source/output hashes. An exporter mechanics smoke is not proof of BOM correctness, assembler acceptance, or PCBA readiness. Do not label a fab-only output “PCBA-ready.” [PCBWay assembly FAQ](https://www.pcbway.com/assembly-faq.html), [assembly file requirements](https://m.pcbway.com/assembly-file-requirements.html).
 
 ### 10.4 Explicit separation of outcomes
 

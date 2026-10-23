@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import math
+import subprocess
+import tempfile
 from datetime import date
 from pathlib import Path
 
 from pydantic import Field, field_validator, model_validator
 
 from .evidence import StrictModel
+from ai_kicad.sexpr import children, parse
 
 
 class RequirementError(ValueError):
@@ -276,6 +280,180 @@ def export_smt_assembly(
         "rotation_convention": "Counter-clockwise degrees as viewed from the placement side.",
         "paste_layers_required": sorted({placement.side for placement in placements}),
     }
+
+
+def export_kicad_smt_assembly(
+    launcher: list[str],
+    board: Path,
+    smt_bom_rows: list[dict],
+    destination: Path,
+) -> dict:
+    """Export PCBWay-style SMT BOM/PnP, paste Gerbers and assembly drawing from one board."""
+    if not launcher or not board.is_file() or not smt_bom_rows:
+        raise RequirementError("KiCad launcher, native board and nonempty SMT BOM are required")
+    references = [row.get("reference") for row in smt_bom_rows]
+    if any(not isinstance(reference, str) for reference in references):
+        raise RequirementError("SMT BOM references must be strings")
+    if len(references) != len(set(references)):
+        raise RequirementError("duplicate SMT BOM reference")
+    if destination.exists():
+        raise RequirementError("assembly destination already exists")
+
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(
+        prefix=".kicad-smt-assembly-", dir=destination.parent
+    ) as temporary:
+        stage = Path(temporary)
+        package = stage / "package"
+        raw_positions = stage / "native_positions.csv"
+        position_command = [
+            *launcher,
+            "pcb",
+            "export",
+            "pos",
+            "--format",
+            "csv",
+            "--units",
+            "mm",
+            "--smd-only",
+            "--exclude-dnp",
+            "--side",
+            "both",
+            "--output",
+            str(raw_positions),
+            str(board),
+        ]
+        completed = subprocess.run(
+            position_command,
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
+        if completed.returncode:
+            raise RequirementError(
+                "KiCad position export failed: " + completed.stderr.strip()[-1000:]
+            )
+        with raw_positions.open(newline="") as stream:
+            reader = csv.DictReader(stream)
+            required = {"Ref", "Package", "PosX", "PosY", "Rot", "Side"}
+            if not required <= set(reader.fieldnames or ()):
+                raise RequirementError("KiCad position CSV has unsupported columns")
+            records = list(reader)
+        if not records:
+            raise RequirementError("native board contains no SMT placements")
+        if {record["Ref"] for record in records} != set(references):
+            raise RequirementError("SMT BOM and native placement references disagree")
+        if len(records) != len(references):
+            raise RequirementError("native position file contains duplicate references")
+
+        board_tree = parse(board.read_text())
+        board_footprints = {}
+        requested_references = set(references)
+        for footprint in children(board_tree, "footprint"):
+            props = [prop for prop in children(footprint, "property") if prop[1] == "Reference"]
+            if len(props) != 1:
+                raise RequirementError("native board has ambiguous footprint reference")
+            reference = props[0][2]
+            if reference in requested_references:
+                if reference in board_footprints:
+                    raise RequirementError("native board has duplicate SMT footprint reference")
+                board_footprints[reference] = footprint[1]
+        rows_by_reference = {row["reference"]: row for row in smt_bom_rows}
+        placements = []
+        for record in records:
+            reference = record["Ref"]
+            bom_row = rows_by_reference[reference]
+            if bom_row.get("quantity") != 1:
+                raise RequirementError("SMT BOM quantity must be one per reference")
+            board_footprint = board_footprints.get(reference)
+            if (
+                board_footprint is None
+                or board_footprint.split(":", 1)[-1]
+                != bom_row.get("footprint", "").split(":", 1)[-1]
+                or record["Package"] != board_footprint.split(":", 1)[-1]
+            ):
+                raise RequirementError("SMT BOM footprint differs from native board")
+            side = {"front": "Top", "top": "Top", "back": "Bottom", "bottom": "Bottom"}.get(
+                record["Side"].strip().lower()
+            )
+            if side is None:
+                raise RequirementError("KiCad position CSV has an unsupported board side")
+            try:
+                placements.append(
+                    AssemblyPlacement(
+                        reference=reference,
+                        x_mm=float(record["PosX"].removesuffix("mm")),
+                        y_mm=float(record["PosY"].removesuffix("mm")),
+                        side=side,
+                        rotation_deg=float(record["Rot"]) % 360,
+                        footprint=bom_row["footprint"],
+                    )
+                )
+            except (KeyError, ValueError) as error:
+                raise RequirementError(f"invalid native placement for {reference}") from error
+
+        report = export_smt_assembly(placements, smt_bom_rows, package)
+        paste_dir = package / "paste"
+        paste_dir.mkdir()
+        gerber_command = [
+            *launcher,
+            "pcb",
+            "export",
+            "gerbers",
+            "--layers",
+            "F.Paste,B.Paste",
+            "--output",
+            str(paste_dir),
+            str(board),
+        ]
+        gerbers = subprocess.run(
+            gerber_command, check=False, capture_output=True, text=True, timeout=120
+        )
+        if gerbers.returncode:
+            raise RequirementError("KiCad paste export failed: " + gerbers.stderr.strip()[-1000:])
+        paste_files = sorted(
+            path
+            for path in paste_dir.iterdir()
+            if path.is_file() and "_Paste." in path.name and path.stat().st_size
+        )
+        if not paste_files:
+            raise RequirementError("KiCad produced no nonempty paste-layer Gerbers")
+
+        drawing = package / "assembly.pdf"
+        pdf_command = [
+            *launcher,
+            "pcb",
+            "export",
+            "pdf",
+            "--mode-single",
+            "--layers",
+            "F.Fab,B.Fab,F.SilkS,B.SilkS,Edge.Cuts",
+            "--output",
+            str(drawing),
+            str(board),
+        ]
+        pdf = subprocess.run(pdf_command, check=False, capture_output=True, text=True, timeout=120)
+        if pdf.returncode or not drawing.is_file() or not drawing.stat().st_size:
+            raise RequirementError("KiCad assembly drawing export failed")
+        outputs = [
+            package / "bom.csv",
+            package / "centroid.csv",
+            drawing,
+            *paste_dir.iterdir(),
+        ]
+        report.update(
+            paste=[str(path.relative_to(package)) for path in paste_files],
+            assembly_drawing="assembly.pdf",
+            source_board_sha256=hashlib.sha256(board.read_bytes()).hexdigest(),
+            output_sha256={
+                str(path.relative_to(package)): hashlib.sha256(path.read_bytes()).hexdigest()
+                for path in outputs
+            },
+            native_position_export="kicad-cli pcb export pos --smd-only --exclude-dnp",
+        )
+        package.rename(destination)
+        return report
 
 
 SUPPORTED_DOMAINS = {
