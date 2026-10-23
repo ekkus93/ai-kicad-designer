@@ -1,0 +1,112 @@
+{
+  "schema_version": "pivot-evidence.v1",
+  "evidence_id": "P6-009-single-terminal-reference-routing-2026-10-23",
+  "task_id": "P6-009",
+  "recorded_at_utc": "2026-10-23T09:19:31.329646Z",
+  "source_commit": "7cdd6b5f2e809dbba8c450d3e3bf6084eb8d2703",
+  "revision_kind": "git_commit",
+  "revision_id": "7cdd6b5f2e809dbba8c450d3e3bf6084eb8d2703",
+  "action": {
+    "summary": "Route a feasible external reference net physically even when it has only one internal terminal",
+    "command": "PYTHONPATH=src:. .venv/bin/pytest -q tests/test_m2b.py::test_single_external_reference_terminal_prefers_a_visible_wire; KiCad 10.0.6 M2b netlist/ERC/SVG + independent graph and layout checks",
+    "backend": "M2b semantic composition/routing, KiCad 10.0.6, independent M2b observer",
+    "backend_version": "M2b source at 7cdd6b5f2e809dbba8c450d3e3bf6084eb8d2703; KiCad CLI 10.0.6",
+    "toolchain": "Python 3.12; x86_64 Linux 7.0/glibc 2.39; frozen-host qualification not claimed"
+  },
+  "status": "PASS",
+  "artifacts": [
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/generalized_rule_run/manifest.json",
+      "sha256": "f2bca7c19b3982f00f73b431d09ffa73ca1930778946a687f5054556a6d3245c",
+      "media_type": "application/json",
+      "role": "generalized external reference-wire rule source and regression evidence"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/generalized_rule_run/rule_evaluation.json",
+      "sha256": "0c815ae3f3f429d62e9b102670dc48284df8199b9c37cf199724aac1c4c9df7c",
+      "media_type": "application/json",
+      "role": "generalized external reference-wire rule source and regression evidence"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/generalized_rule_run/test_result.json",
+      "sha256": "658653dd111354505391251ea5c7fa51182bb5cd638ea80910acaf77145c8f47",
+      "media_type": "application/json",
+      "role": "generalized external reference-wire rule source and regression evidence"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/generalized_rule_run/kicad_check.json",
+      "sha256": "2498ea593d09d1de7f5ce3082eb7a29a4f66c5da8d446713b7ef9285b2fd33d0",
+      "media_type": "application/json",
+      "role": "generalized external reference-wire rule source and regression evidence"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/generalized_rule_run/project/AIRcLowpassCandidate.kicad_sch",
+      "sha256": "4467c01c99a2ffbf1154812ce8472a8c4faf4ee72e9e00bfe985686cda56c247",
+      "media_type": "text/plain",
+      "role": "generalized external reference-wire rule source and regression evidence"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/generalized_rule_run/reports/netlist.xml",
+      "sha256": "8aef7e96362cf0e5c5c9f19191e65d9d17873d989679e1aa145d0d1fc96679b2",
+      "media_type": "text/plain",
+      "role": "generalized external reference-wire rule source and regression evidence"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/generalized_rule_run/reports/erc.json",
+      "sha256": "d5c4caacead3940eb573ae9fc8be2b8f7f9bbc0f3713e33c725937ffeaa7f3a4",
+      "media_type": "application/json",
+      "role": "generalized external reference-wire rule source and regression evidence"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/generalized_rule_run/renders/schematic/AIRcLowpassCandidate.svg",
+      "sha256": "808be18705dcba79810aabbe74d56d5d62826a119b3d280d00f74808aca74430",
+      "media_type": "image/svg+xml",
+      "role": "generalized external reference-wire rule source and regression evidence"
+    },
+    {
+      "path": "src/ai_kicad/m2_route_trees.py",
+      "sha256": "aadf4264cc5ebb56d6d5d30fd8efa7efb1866437e29d961ca6a15eef90fe65c2",
+      "media_type": "text/x-python",
+      "role": "generalized external reference-wire rule source and regression evidence"
+    },
+    {
+      "path": "tests/test_m2b.py",
+      "sha256": "e8ed7082bab15a9eb08471fbb8fadcb83c2a01f38ab8f780cfa773ebb94f2c85",
+      "media_type": "text/x-python",
+      "role": "generalized external reference-wire rule source and regression evidence"
+    },
+    {
+      "path": "docs/SCHEMATIC_LAYOUT_SPEC.md",
+      "sha256": "43af0fdc24c91c944ceb315b37b243c1ce9ababd62893cb428342b31f88ad8c6",
+      "media_type": "text/plain",
+      "role": "generalized external reference-wire rule source and regression evidence"
+    }
+  ],
+  "checks": [
+    {
+      "check_id": "single-terminal-external-reference-is-visible-wire",
+      "status": "PASS",
+      "summary": "The RC fixture with one external return connector and one internal capacitor return receives an obstacle-checked four-segment REF tree; no matching-label fallback is used. Focused regression passes, KiCad netlist partition matches, ERC has zero violations and observed layout passes.",
+      "evidence_paths": [
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/generalized_rule_run/manifest.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/generalized_rule_run/rule_evaluation.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/generalized_rule_run/test_result.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/generalized_rule_run/kicad_check.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/generalized_rule_run/project/AIRcLowpassCandidate.kicad_sch",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/generalized_rule_run/reports/netlist.xml",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/generalized_rule_run/reports/erc.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/generalized_rule_run/renders/schematic/AIRcLowpassCandidate.svg",
+        "src/ai_kicad/m2_route_trees.py",
+        "tests/test_m2b.py",
+        "docs/SCHEMATIC_LAYOUT_SPEC.md"
+      ],
+      "independent": true
+    }
+  ],
+  "ci_links": [],
+  "blockers": [],
+  "notes": [
+    "Matching labels remain the fallback for candidates where the physical tree cannot pass route gates.",
+    "This probe is not locked-host qualification; current desktop host identity differs from the pinned host."
+  ]
+}
