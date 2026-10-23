@@ -1,0 +1,70 @@
+{
+  "schema_version": "pivot-evidence.v1",
+  "evidence_id": "P6-002-mechanical-audit-2026-10-23",
+  "task_id": "P6-002",
+  "recorded_at_utc": "2026-10-23T12:00:00Z",
+  "source_commit": "5377c7b7f7752def61341b89cd3de5e8ada08bff",
+  "revision_kind": "git_commit",
+  "revision_id": "5377c7b7f7752def61341b89cd3de5e8ada08bff",
+  "action": {
+    "summary": "Compare selected KEMET C2 package dimensions with the pinned KiCad footprint geometry and identify a dimension-matched library candidate",
+    "command": "Compare manufacturer C315C103K5R5TA drawing/specification with KiCad 10.0.6 footprint body and pad geometry",
+    "backend": "Manual manufacturer-to-library dimensional audit",
+    "backend_version": "KEMET C315 datasheet; KiCad 10.0.6 footprint library",
+    "toolchain": "Python 3.12; KiCad 10.0.6 AppImage library"
+  },
+  "status": "FAIL",
+  "artifacts": [
+    {
+      "path": "fixtures/pivot/catalog/reference_parts.v1.json",
+      "sha256": "e7bcbc3be83832530b4583f2ee4b1eaa30168e572bfadff0f723b86e26cb90df",
+      "media_type": "application/json",
+      "role": "catalog assignment under audit"
+    },
+    {
+      "path": "/home/phil/Applications/kicad-10.0.6/AppDir/usr/share/kicad/footprints/Capacitor_THT.pretty/C_Disc_D3.0mm_W1.6mm_P2.50mm.kicad_mod",
+      "sha256": "20f0649b7c52102c5bd6618c7233a8a1b8fdd1a2cd229ba34c2e46a18a478e26",
+      "media_type": "text/plain",
+      "role": "currently assigned footprint"
+    },
+    {
+      "path": "/home/phil/Applications/kicad-10.0.6/AppDir/usr/share/kicad/footprints/Capacitor_THT.pretty/C_Disc_D3.8mm_W2.6mm_P2.50mm.kicad_mod",
+      "sha256": "62dd9db9262fa5ce8e1cb05ab5f346c86af3ec0acf4b2f34344c8ff05193a322",
+      "media_type": "text/plain",
+      "role": "candidate footprint for review"
+    }
+  ],
+  "checks": [
+    {
+      "check_id": "catalog-footprint-body-envelope-matches-manufacturer-part",
+      "status": "FAIL",
+      "summary": "The catalog assigns C_Disc_D3.0mm_W1.6mm_P2.50mm to C315C103K5R5TA. KEMET specifies max body dimensions 3.81 x 2.54 mm and 2.54 mm nominal lead spacing; the assigned footprint describes a 3.0 x 1.6 mm body and 2.50 mm pad pitch. C_Disc_D3.8mm_W2.6mm_P2.50mm is a better dimensional candidate, but has not been approved or validated in the full board context.",
+      "evidence_paths": [
+        "fixtures/pivot/catalog/reference_parts.v1.json",
+        "/home/phil/Applications/kicad-10.0.6/AppDir/usr/share/kicad/footprints/Capacitor_THT.pretty/C_Disc_D3.0mm_W1.6mm_P2.50mm.kicad_mod",
+        "/home/phil/Applications/kicad-10.0.6/AppDir/usr/share/kicad/footprints/Capacitor_THT.pretty/C_Disc_D3.8mm_W2.6mm_P2.50mm.kicad_mod"
+      ],
+      "independent": true
+    }
+  ],
+  "ci_links": [],
+  "blockers": [
+    {
+      "code": "OWNER_FOOTPRINT_REVIEW",
+      "summary": "Approve the proposed replacement footprint for the reference C2 component, or provide a different footprint decision.",
+      "next_action": "Review the exact catalog BOM context and proposed C_Disc_D3.8mm_W2.6mm_P2.50mm footprint; confirm before any catalog/BOM mapping change.",
+      "requires_owner_input": true
+    },
+    {
+      "code": "REMAINING_CATALOG_MECHANICAL_AUDIT",
+      "summary": "The remaining seven unique catalog MPNs have not all received this manufacturer-drawing-to-footprint geometry comparison.",
+      "next_action": "Continue the mechanical audit after the C2 mismatch is dispositioned, preserving separate findings for each part.",
+      "requires_owner_input": false
+    }
+  ],
+  "notes": [
+    "Manufacturer source: https://search.kemet.com/component-documentation/download/specsheet/C315C103K5R5TA (catalog records the source URL and existing SHA-256).",
+    "No source BOM, frozen reference design, catalog approval flag or footprint assignment was changed by this audit.",
+    "The candidate footprint has the correct nominal body envelope and a 2.50 mm pad pitch within the manufacturer lead-spacing tolerance; this dimensional comparison alone is not footprint approval."
+  ]
+}
