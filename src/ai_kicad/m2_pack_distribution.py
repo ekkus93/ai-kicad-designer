@@ -21,6 +21,7 @@ from .m2_pack_core import (
     PlacedFragment,
     _place,
 )
+from .m2_transform import transform_library_point
 from .m2_semantics_core import PlacementConflict, check_placement_constraints
 from .m2a_constants import PITCH
 
@@ -398,8 +399,12 @@ def _measured_repack(
         item = placed[obligation.owner]
         origin = item.fragment.positions[obligation.occurrence]
         angle = item.fragment.angles.get(obligation.occurrence, 0)
-        x, y = obligation.pin_x, -obligation.pin_y
-        dx, dy = {0: (x, y), 90: (y, -x), 180: (-x, -y), 270: (-y, x)}[angle]
+        dx, dy = transform_library_point(
+            obligation.pin_x,
+            obligation.pin_y,
+            angle,
+            item.fragment.mirrors.get(obligation.occurrence),
+        )
         return origin[0] + item.delta[0] + dx, origin[1] + item.delta[1] + dy
 
     try:

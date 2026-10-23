@@ -157,6 +157,7 @@ def _finish(
                             sx,
                             sy,
                             draft.angles.get(occurrence, 0),
+                            draft.mirrors.get(occurrence),
                         )
                     )
             step_x, step_y = {
@@ -462,4 +463,5 @@ def _finish(
         protected_paths=protected_paths,
         obligations=obligations,
         wire_provenance=tuple(segment.provenance for segment in local_segments),
+        mirrors=dict(draft.mirrors),
     )

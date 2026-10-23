@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import itertools
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from .ir import InputError
 from .m2_geometry import label_text_rect
@@ -14,12 +14,12 @@ from .m2_text_layout import (
     property_envelopes,
     property_page_angle,
 )
+from .m2_transform import transform_library_point
 
 
-def _turn(pin: Pin, angle: int) -> tuple[int, int]:
+def _turn(pin: Pin, angle: int, mirror: str | None = None) -> tuple[int, int]:
     """KiCad library Y is upward; sheet Y is downward."""
-    x, y = pin.x, -pin.y
-    return {0: (x, y), 90: (y, -x), 180: (-x, -y), 270: (-y, x)}[angle]
+    return transform_library_point(pin.x, pin.y, angle, mirror)
 
 
 def orientation_for_flow(asset: Asset, first: str, second: str, axis: str) -> int:
@@ -47,6 +47,7 @@ class Draft:
     labels: list
     junctions: list
     text_positions: dict
+    mirrors: dict[tuple[str, int], str] = field(default_factory=dict)
 
     def point(self, component: str, number: str) -> tuple[int, int]:
         c = next(c for c in self.design["components"] if c["id"] == component)
@@ -57,7 +58,9 @@ class Draft:
             if p.number == number
         )
         x, y = self.positions[(component, unit)]
-        dx, dy = _turn(pin, self.angles.get((component, unit), 0))
+        dx, dy = _turn(
+            pin, self.angles.get((component, unit), 0), self.mirrors.get((component, unit))
+        )
         return x + dx, y + dy
 
     def route(self, net: str, *points):
@@ -71,12 +74,24 @@ class Draft:
     def label(self, net: str, point):
         self.labels.append((net, point))
 
-    def add(self, component: str, x: int, y: int, unit: int = 1, angle: int = 0):
+    def add(
+        self,
+        component: str,
+        x: int,
+        y: int,
+        unit: int = 1,
+        angle: int = 0,
+        mirror: str | None = None,
+    ):
         key = (component, unit)
         if key in self.positions:
             raise InputError("duplicate geometry owner")
         self.positions[key] = (x, y)
         self.angles[key] = angle
+        if mirror is not None:
+            if mirror not in {"x", "y"}:
+                raise InputError(f"unsupported KiCad mirror axis: {mirror}")
+            self.mirrors[key] = mirror
         asset = next(c for c in self.design["components"] if c["id"] == component)["asset"]
         self.text_positions[key] = (
             (x + 8 * PITCH, y - 2 * PITCH) if asset == "Device:C" else (x, y - 8 * PITCH)
@@ -196,6 +211,7 @@ def passive_layout(design: dict, resolved: dict[str, Asset], partial: bool = Fal
         d.angles,
         d.text_positions,
         text_angles,
+        mirrors=d.mirrors,
     )
 
 
@@ -312,6 +328,7 @@ def power_stage_layout(design: dict, resolved: dict[str, Asset], partial: bool =
         metrics,
         d.angles,
         d.text_positions,
+        mirrors=d.mirrors,
     )
 
 
@@ -453,6 +470,7 @@ def timing_layout(design: dict, resolved: dict[str, Asset], partial: bool = Fals
         metrics,
         d.angles,
         d.text_positions,
+        mirrors=d.mirrors,
     )
 
 
@@ -467,7 +485,11 @@ def measure(design: dict, resolved: dict[str, Asset], draft: Draft) -> dict:
         if body:
             left, top, right, bottom = body
             corners = [
-                _turn(Pin("", "", "", xx, yy), draft.angles.get((cid, unit), 0))
+                _turn(
+                    Pin("", "", "", xx, yy),
+                    draft.angles.get((cid, unit), 0),
+                    draft.mirrors.get((cid, unit)),
+                )
                 for xx in (left, right)
                 for yy in (top, bottom)
             ]
@@ -684,7 +706,7 @@ def _place_all_component_text_slots(design: dict, draft: Draft) -> None:
         else:
             left, top, right, bottom = body
             corners = [
-                _turn(Pin("", "", "", x, y), draft.angles.get(key, 0))
+                _turn(Pin("", "", "", x, y), draft.angles.get(key, 0), draft.mirrors.get(key))
                 for x in (left, right)
                 for y in (top, bottom)
             ]

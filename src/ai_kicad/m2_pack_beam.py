@@ -18,6 +18,7 @@ from .m2_pack_constants import (
 from .m2_pack_core import Packing, PlacedFragment, _place
 from .m2_pack_distribution import _measured_repack
 from .m2a_constants import PITCH
+from .m2_transform import transform_library_point
 
 if TYPE_CHECKING:
     from .m2_semantics_core import SemanticPlan
@@ -99,13 +100,12 @@ def _partial_beam_candidates(
         placed = state[item.owner]
         origin = placed.fragment.positions[item.occurrence]
         angle = placed.fragment.angles.get(item.occurrence, 0)
-        px, py = item.pin_x, -item.pin_y
-        dx, dy = {
-            0: (px, py),
-            90: (py, -px),
-            180: (-px, -py),
-            270: (-py, px),
-        }[angle]
+        dx, dy = transform_library_point(
+            item.pin_x,
+            item.pin_y,
+            angle,
+            placed.fragment.mirrors.get(item.occurrence),
+        )
         return origin[0] + placed.delta[0] + dx, origin[1] + placed.delta[1] + dy
 
     def partial_legal(state: dict[str, PlacedFragment]) -> bool:

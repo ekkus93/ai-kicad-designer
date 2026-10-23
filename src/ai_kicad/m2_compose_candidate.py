@@ -151,6 +151,7 @@ def _assemble_candidate(design: dict, resolved: dict, plan, packing: Packing, re
                 )
             draft.positions[key] = _translate(point, delta)
         draft.angles.update(fragment.angles)
+        draft.mirrors.update(fragment.mirrors)
         draft.text_positions.update(
             (key, _translate(point, delta)) for key, point in fragment.text_positions.items()
         )

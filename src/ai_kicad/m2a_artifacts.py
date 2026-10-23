@@ -16,6 +16,7 @@ from .m2a_core import (
     _uid,
 )
 from .m2_text_layout import property_page_angle, property_positions
+from .m2_transform import transform_library_point
 from .schematic import _mm
 from .sexpr import children, one, parse, quote
 
@@ -66,9 +67,11 @@ def emit(design: dict, assets: dict[str, Asset], scene: Scene, out: Path) -> Pat
         asset = assets[c["asset"]]
         x, y = scene.positions[(component, unit)]
         ref = c["refdes"]
+        mirror = scene.mirrors.get((component, unit))
+        mirror_entry = f"(mirror {mirror}) " if mirror else ""
         lines.append(
             f"  (symbol (lib_id {quote(asset.library_id)}) (at {_mm(x)} {_mm(y)} {scene.angles.get((component, unit), 0)}) "
-            f"(unit {unit or 1}) (in_bom yes) (on_board yes) (dnp no) "
+            f"(unit {unit or 1}) {mirror_entry}(in_bom yes) (on_board yes) (dnp no) "
             f"(uuid {quote(_uid(design, 'symbol', component + ':' + str(unit)))})"
         )
         tx, ty = scene.text_positions.get((component, unit), (x + 10 * PITCH, y - 8 * PITCH))
@@ -145,6 +148,7 @@ def verify_serialized_scene(design: dict, scene: Scene, schematic: Path) -> None
     )
     serialized_positions = {}
     serialized_angles = {}
+    serialized_mirrors = {}
     serialized_text = {}
     serialized_text_angles = {}
     for symbol in children(tree, "symbol"):
@@ -160,6 +164,11 @@ def verify_serialized_scene(design: dict, scene: Scene, schematic: Path) -> None
         at = one(symbol, "at")
         serialized_positions[key] = (_nm(at[1]), _nm(at[2]))
         serialized_angles[key] = int(at[3])
+        mirror = children(symbol, "mirror")
+        if mirror:
+            if len(mirror) != 1 or mirror[0][1] not in {"x", "y"}:
+                raise InputError("SERIALIZED_SCENE_MIRROR_INVALID")
+            serialized_mirrors[key] = mirror[0][1]
         text_at = one(reference, "at")
         value_at = one(value, "at")
         text_point = (_nm(text_at[1]), _nm(text_at[2]))
@@ -181,6 +190,8 @@ def verify_serialized_scene(design: dict, scene: Scene, schematic: Path) -> None
         raise InputError("SERIALIZED_SCENE_SYMBOL_POSITIONS_CHANGED")
     if serialized_angles != {key: scene.angles.get(key, 0) for key in scene.positions}:
         raise InputError("SERIALIZED_SCENE_SYMBOL_ANGLES_CHANGED")
+    if serialized_mirrors != dict(scene.mirrors):
+        raise InputError("SERIALIZED_SCENE_SYMBOL_MIRRORS_CHANGED")
     if serialized_text != dict(scene.text_positions):
         raise InputError("SERIALIZED_SCENE_TEXT_POSITIONS_CHANGED")
     if serialized_text_angles != {key: scene.text_angles.get(key, 0) for key in scene.positions}:
@@ -236,9 +247,12 @@ def observe(schematic: Path, xml_path: Path) -> dict:
         if angle not in (0, 90, 180, 270):
             raise InputError("unsupported occurrence rotation")
         x, y = _nm(at[1]), _nm(at[2])
+        mirror_nodes = children(symbol, "mirror")
+        if len(mirror_nodes) > 1 or (mirror_nodes and mirror_nodes[0][1] not in {"x", "y"}):
+            raise InputError("unsupported occurrence mirror")
+        mirror = mirror_nodes[0][1] if mirror_nodes else None
         for pin, info in actual.items():
-            px, py = info["x"], -info["y"]
-            dx, dy = {0: (px, py), 90: (py, -px), 180: (-px, -py), 270: (-py, px)}[angle]
+            dx, dy = transform_library_point(info["x"], info["y"], angle, mirror)
             pin_positions[(ref, pin)] = (x + dx, y + dy)
         properties = {
             prop[1]: {

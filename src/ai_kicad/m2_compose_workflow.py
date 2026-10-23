@@ -467,6 +467,7 @@ def compose_with_evidence(design: dict, resolved: dict) -> tuple[Scene, dict]:
             draft.angles,
             draft.text_positions,
             readable_property_angles(draft.angles),
+            mirrors=draft.mirrors,
         )
     )
     scene = certify_scene_inputs(

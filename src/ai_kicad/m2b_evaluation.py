@@ -554,4 +554,5 @@ def active_layout(design: dict, resolved: dict[str, Asset], partial: bool = Fals
         d.angles,
         d.text_positions,
         {key: angle for key, angle in d.angles.items() if angle in (90, 270)},
+        mirrors=d.mirrors,
     )

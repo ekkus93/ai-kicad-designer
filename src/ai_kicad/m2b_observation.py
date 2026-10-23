@@ -46,11 +46,13 @@ def _local_pin_number_rectangles(definition: str, unit: int) -> tuple:
     return tuple(rectangles)
 
 
-def pin_number_rectangles(definition: str, unit: int, x: int, y: int, angle: int) -> tuple:
+def pin_number_rectangles(
+    definition: str, unit: int, x: int, y: int, angle: int, mirror: str | None = None
+) -> tuple:
     rectangles = []
     for px, py, dx, dy, width, height in _local_pin_number_rectangles(definition, unit):
-        cx, cy = _turn(Pin("", "", "", px, py), angle)
-        _vx, vy = _turn(Pin("", "", "", dx, dy), angle)
+        cx, cy = _turn(Pin("", "", "", px, py), angle, mirror)
+        _vx, vy = _turn(Pin("", "", "", dx, dy), angle, mirror)
         cx, cy = x + cx, y + cy
         half = (width + 1) // 2
         # Native horizontal pin numbers are above the pin midpoint;
@@ -101,13 +103,17 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
         unit = int(one(symbol, "unit")[1])
         at = one(symbol, "at")
         x, y, angle = _nm(at[1]), _nm(at[2]), int(at[3])
+        mirror_nodes = children(symbol, "mirror")
+        if len(mirror_nodes) > 1 or (mirror_nodes and mirror_nodes[0][1] not in {"x", "y"}):
+            raise InputError("unsupported occurrence mirror")
+        mirror = mirror_nodes[0][1] if mirror_nodes else None
         instances[(ref, unit)] = (x, y, angle)
         if lib == "power:PWR_FLAG":
             source_refs.add(ref)
         if lib in definitions:
             visible_pin_numbers.extend(
                 (ref, rectangle)
-                for rectangle in pin_number_rectangles(definitions[lib], unit, x, y, angle)
+                for rectangle in pin_number_rectangles(definitions[lib], unit, x, y, angle, mirror)
             )
         if lib != "power:PWR_FLAG":
             for prop in children(symbol, "property"):
@@ -158,7 +164,7 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
                 min(z[3] for z in boxes),
             )
             corners = [
-                _turn(Pin("", "", "", xx, yy), angle)
+                _turn(Pin("", "", "", xx, yy), angle, mirror)
                 for xx in (left, right)
                 for yy in (top, bottom)
             ]

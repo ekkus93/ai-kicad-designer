@@ -35,6 +35,7 @@ from .m2_pack_layout import (
     _arrangements,
     _pack_shelves,
 )
+from .m2_transform import transform_library_point
 from .m2_pack_semantic import (
     _repeated_peer_alignment_candidates,
     _semantic_block_order_candidates,
@@ -86,8 +87,12 @@ def _fanout_output_corridor_candidates(
         item = placed[obligation.owner]
         origin = item.fragment.positions[obligation.occurrence]
         angle = item.fragment.angles.get(obligation.occurrence, 0)
-        px, py = obligation.pin_x, -obligation.pin_y
-        dx, dy = {0: (px, py), 90: (py, -px), 180: (-px, -py), 270: (-py, px)}[angle]
+        dx, dy = transform_library_point(
+            obligation.pin_x,
+            obligation.pin_y,
+            angle,
+            item.fragment.mirrors.get(obligation.occurrence),
+        )
         return origin[0] + item.delta[0] + dx, origin[1] + item.delta[1] + dy
 
     def legal(items: tuple) -> bool:
@@ -583,8 +588,12 @@ def _observed_output_corridor_candidate(
         item = placed[obligation.owner]
         origin = item.fragment.positions[obligation.occurrence]
         angle = item.fragment.angles.get(obligation.occurrence, 0)
-        px, py = obligation.pin_x, -obligation.pin_y
-        dx, dy = {0: (px, py), 90: (py, -px), 180: (-px, -py), 270: (-py, px)}[angle]
+        dx, dy = transform_library_point(
+            obligation.pin_x,
+            obligation.pin_y,
+            angle,
+            item.fragment.mirrors.get(obligation.occurrence),
+        )
         return origin[0] + item.delta[0] + dx, origin[1] + item.delta[1] + dy
 
     def terminal_observation(placed: dict[str, object]):

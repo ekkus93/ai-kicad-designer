@@ -71,6 +71,7 @@ class FragmentVariant:
     construction_trace: tuple[tuple[str, ...], ...] = ()
     construction_uncovered: tuple[str, ...] = ()
     retention_uncovered: tuple[str, ...] = ()
+    mirrors: Mapping[Occurrence, str] = field(default_factory=dict)
 
     def construction_evidence(self) -> dict:
         return {
@@ -85,6 +86,7 @@ class FragmentVariant:
     def __post_init__(self) -> None:
         object.__setattr__(self, "positions", MappingProxyType(dict(self.positions)))
         object.__setattr__(self, "angles", MappingProxyType(dict(self.angles)))
+        object.__setattr__(self, "mirrors", MappingProxyType(dict(self.mirrors)))
         object.__setattr__(self, "text_positions", MappingProxyType(dict(self.text_positions)))
         if self.content_envelope is None:
             object.__setattr__(self, "content_envelope", self.envelope)
@@ -114,7 +116,7 @@ def _body_rect(design: dict, resolved: dict[str, Asset], draft: Draft, key: Occu
         return x - 3 * PITCH, y - 3 * PITCH, x + 3 * PITCH, y + 3 * PITCH
     left, top, right, bottom = body
     corners = [
-        _turn(Pin("", "", "", xx, yy), draft.angles.get(key, 0))
+        _turn(Pin("", "", "", xx, yy), draft.angles.get(key, 0), draft.mirrors.get(key))
         for xx in (left, right)
         for yy in (top, bottom)
     ]
@@ -145,7 +147,7 @@ def _place_component_text(design: dict, resolved: dict[str, Asset], draft: Draft
             asset = resolved[component["asset"]]
             pins = asset.units.get(key[1], asset.units.get(0, ()))
             if pins:
-                dx, _dy = _turn(pins[0], draft.angles.get(key, 0))
+                dx, _dy = _turn(pins[0], draft.angles.get(key, 0), draft.mirrors.get(key))
                 if dx:
                     side = -1 if dx > 0 else 1
                     preferred_connector_slots = tuple(

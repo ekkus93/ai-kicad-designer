@@ -175,7 +175,8 @@ def _distribution_repack(
                 for key, point in item.fragment.positions.items()
             }
             angles = {key: angle for item in changed for key, angle in item.fragment.angles.items()}
-            draft = Draft(design, resolved, positions, angles, [], [], [], [], {})
+            mirrors = {key: axis for item in changed for key, axis in item.fragment.mirrors.items()}
+            draft = Draft(design, resolved, positions, angles, [], [], [], [], {}, mirrors)
             try:
                 check_placement_constraints(plan, draft.point)
             except PlacementConflict:
@@ -229,7 +230,10 @@ def _structural_repack(design, resolved, plan, packing: Packing, conflict: Place
     angles = {
         key: angle for item in packing.fragments for key, angle in item.fragment.angles.items()
     }
-    draft = Draft(design, resolved, positions, angles, [], [], [], [], {})
+    mirrors = {
+        key: axis for item in packing.fragments for key, axis in item.fragment.mirrors.items()
+    }
+    draft = Draft(design, resolved, positions, angles, [], [], [], [], {}, mirrors)
     relation = next((item for item in plan.precedence if item.id == conflict.obligation), None)
     if relation is None:
         relation = next((item for item in plan.local_spans if item.id == conflict.obligation), None)
@@ -451,7 +455,8 @@ def _structural_repack(design, resolved, plan, packing: Packing, conflict: Place
             for item in changed
             for key, point in item.fragment.positions.items()
         }
-        trial = Draft(design, resolved, moved_positions, angles, [], [], [], [], {})
+        mirrors = {key: axis for item in changed for key, axis in item.fragment.mirrors.items()}
+        trial = Draft(design, resolved, moved_positions, angles, [], [], [], [], {}, mirrors)
         try:
             check_placement_constraints(plan, trial.point)
         except PlacementConflict:

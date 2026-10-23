@@ -38,6 +38,7 @@ from ai_kicad.m2_route import (
     MAX_TAPS_PER_ATTACHMENT,
     MAX_TRACKS_PER_SIDE,
 )
+from ai_kicad.m2_text_layout import padded, property_envelopes
 from ai_kicad.m2_semantics import (
     BlockPlan,
     SemanticEdge,
@@ -333,6 +334,57 @@ def test_route_demand_turns_rectangle_fit_into_reserved_repack():
         ]
     )
     assert pack_fragments(plan, {"source": (reserved,), "target": (sink,)})
+
+
+def test_expanded_text_reservation_expands_the_block_before_packing():
+    source = _block("source")
+    target = _block("target", role="signal_in")
+    plan = SemanticPlan(
+        (source, target),
+        (SemanticEdge("signal", "source", "target", "N", ("manual",)),),
+        {},
+        ("source", "target"),
+    )
+    source_gateway = Gateway(
+        source.ports[0].id,
+        "N",
+        (("source", "1"),),
+        "source:N",
+        (20 * P, 10 * P),
+        "right",
+        ((20 * P, 10 * P), (21 * P, 10 * P)),
+        frozenset({"right"}),
+        (),
+    )
+    target_gateway = Gateway(
+        target.ports[0].id,
+        "N",
+        (("target", "1"),),
+        "target:N",
+        (0, 10 * P),
+        "left",
+        ((0, 10 * P), (-P, 10 * P)),
+        frozenset({"left"}),
+        (),
+    )
+    bare = _variant(source, "source.bare", (0, 0, 20 * P, 20 * P), source_gateway)
+    field_rect = padded(property_envelopes("R1", "LongMultilineValue", (24 * P, 10 * P))[1])
+    text_reserved = replace(
+        bare,
+        id="source.text-expanded",
+        envelope=(0, 0, field_rect[2], 20 * P),
+        packing_envelope=(0, 0, field_rect[2], 20 * P),
+        reservations=(Reservation("field.R1.value", "exclusive", "source", "text", field_rect),),
+    )
+    sink = _variant(target, "target.v0", (0, 0, 20 * P, 20 * P), target_gateway)
+    initial = pack_fragment_candidates(plan, {"source": (bare,), "target": (sink,)})[0]
+    expanded = pack_fragment_candidates(plan, {"source": (text_reserved,), "target": (sink,)})[0]
+    initial_source = next(item for item in initial.fragments if item.fragment.block.id == "source")
+    expanded_source = next(
+        item for item in expanded.fragments if item.fragment.block.id == "source"
+    )
+    assert expanded_source.envelope[2] > initial_source.envelope[2]
+    assert pack_fragments(plan, {"source": (text_reserved,), "target": (sink,)})
 
 
 def test_universal_gateway_escape_and_protected_path_ownership():

@@ -366,6 +366,7 @@ class Scene:
     certificate_digest: str | None = None
     certificate_input_digest: str | None = None
     certificate_policy: dict | None = None
+    mirrors: dict[tuple[str, int], str] = field(default_factory=dict)
 
 
 def scene_geometry_digest(scene: Scene) -> str:
@@ -379,6 +380,7 @@ def scene_geometry_digest(scene: Scene) -> str:
         "labels": [[net, *point] for net, point in scene.labels],
         "junctions": [list(point) for point in scene.junctions],
         "angles": [[key[0], key[1], angle] for key, angle in sorted(scene.angles.items())],
+        "mirrors": [[key[0], key[1], axis] for key, axis in sorted(scene.mirrors.items())],
         "text_positions": [
             [key[0], key[1], *point] for key, point in sorted(scene.text_positions.items())
         ],
@@ -395,6 +397,10 @@ def certify_scene_geometry(scene: Scene) -> Scene:
         raise InputError(
             f"SCENE_TEXT_POSITION_INCOMPLETE: missing={sorted(set(scene.positions) - set(scene.text_positions))}"
         )
+    if set(scene.mirrors) - set(scene.positions) or any(
+        axis not in {"x", "y"} for axis in scene.mirrors.values()
+    ):
+        raise InputError("SCENE_MIRROR_INVALID")
     frozen = Scene(
         MappingProxyType(dict(scene.positions)),
         tuple(scene.wires),
@@ -405,6 +411,7 @@ def certify_scene_geometry(scene: Scene) -> Scene:
         MappingProxyType(dict(scene.angles)),
         MappingProxyType(dict(scene.text_positions)),
         MappingProxyType(dict(scene.text_angles)),
+        mirrors=MappingProxyType(dict(scene.mirrors)),
     )
     frozen.certificate_digest = scene_geometry_digest(frozen)
     return frozen

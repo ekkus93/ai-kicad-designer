@@ -107,6 +107,7 @@ def _access_alternatives(
             [item for item in base.labels if item[1] not in stale_label_points],
             list(base.junctions),
             dict(base.text_positions),
+            dict(base.mirrors),
         )
         anchors = {
             suffix: (
@@ -161,6 +162,7 @@ def _access_alternatives(
                 [item for item in base.labels if item[1] not in stale_label_points],
                 list(base.junctions),
                 dict(base.text_positions),
+                dict(base.mirrors),
             )
             anchors = {
                 suffix: (gateway.anchor, gateway.escape_direction)
