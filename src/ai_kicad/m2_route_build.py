@@ -11,6 +11,7 @@ from .m2_geometry import (
     Gateway,
     Reservation,
     canonical_conductor_tree,
+    label_text_rect,
     point_on_segment,
 )
 from .m2_pack_core import PlacedFragment
@@ -106,6 +107,35 @@ def route_between_fragments(
     def net_gateways(net: str) -> tuple[Gateway, ...]:
         return tuple(gateway for item in placed for gateway in item.gateways if gateway.net == net)
 
+    def routing_reservation(item: PlacedFragment, reservation: Reservation) -> Reservation:
+        """Route against label ink bounds; packing retains its larger clearance.
+
+        The broader label reservation remains authoritative for placement.
+        During routing, exact measured glyph bounds prevent a clearance-only
+        overlap from making a short pin escape impossible while still rejecting
+        any conductor that crosses rendered label text.
+        """
+        if not (
+            reservation.clearance_class == "label"
+            and reservation.id.startswith("reservation.label.")
+        ):
+            return reservation
+        try:
+            index = int(reservation.id.rsplit(".", 1)[-1])
+            net, local_point = item.fragment.labels[index]
+        except (ValueError, IndexError):
+            return reservation
+        point = (local_point[0] + item.delta[0], local_point[1] + item.delta[1])
+        return Reservation(
+            reservation.id,
+            reservation.occupancy,
+            reservation.owner,
+            reservation.clearance_class,
+            label_text_rect(net, point),
+            reservation.permitted_net,
+            reservation.capacity,
+        )
+
     def group_order(item: tuple[str, list[SemanticEdge]]) -> tuple[int, int, int, int, str]:
         net, edges = item
         priority = (
@@ -145,7 +175,9 @@ def route_between_fragments(
         if net in distribution_nets or not edges:
             active_gateway_ids.update(gateway.id for gateway in net_gateways(net))
     scene_reservations = tuple(
-        reservation for item in placed for reservation in item.reservations
+        routing_reservation(item, reservation)
+        for item in placed
+        for reservation in item.reservations
     ) + tuple(
         _gateway_channel(gateway)
         for item in placed

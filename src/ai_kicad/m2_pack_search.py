@@ -1412,7 +1412,36 @@ def pack_fragment_candidates(
                             ),
                         )
                     )
-        return _retain_composition_seed_diversity(tuple(successful), tuple(extras))
+        retained = _retain_composition_seed_diversity(tuple(successful), tuple(extras))
+        if output_count <= 3:
+            # The measured frontier may be individually legal but routeable
+            # only from a less prominent retained seed (for example when a
+            # sibling output blocks the nearest candidate). Prove a bounded
+            # route-aware alternative before the eight-seed cap discards it.
+            from .m2_composition_qualification_observation import observe_composition_packing
+            from .m2_route import route_between_fragments
+
+            for baseline in retained:
+                for option in _interface_frontier_candidates(plan, baseline, route_check=True):
+                    if option.attempts[-1] != "interface-frontier-output":
+                        continue
+                    try:
+                        route_between_fragments(plan, option.fragments)
+                    except InputError:
+                        continue
+                    if not observe_composition_packing(plan, option).passed:
+                        continue
+                    route_proven = type(option)(
+                        option.fragments,
+                        (*option.attempts[:-1], "route-proof:pass", option.attempts[-1]),
+                    )
+                    remaining = tuple(
+                        candidate
+                        for candidate in retained
+                        if candidate.attempts[-1] != "interface-frontier-output"
+                    )
+                    return (route_proven, *remaining)[:CANDIDATE_BUDGET]
+        return retained
 
     partial = _partial_beam_candidates(plan, variants)
     if partial:
