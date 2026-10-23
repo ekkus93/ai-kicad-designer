@@ -1,0 +1,85 @@
+{
+  "schema_version": "pivot-evidence.v1",
+  "evidence_id": "P6-006-visible-return-2026-10-23",
+  "task_id": "P6-006",
+  "recorded_at_utc": "2026-10-23T09:01:50.998977Z",
+  "source_commit": "3e3da6595fdc3611c382fcc23c2ce390c306112f",
+  "revision_kind": "git_commit",
+  "revision_id": "3e3da6595fdc3611c382fcc23c2ce390c306112f",
+  "action": {
+    "summary": "Replace visually separated same-name return labels with a physically drawn wire to the capacitor return connector",
+    "command": "PYTHONPATH=src:. .venv/bin/python tools/pivot/connect_ai_rc_reference_visibly.py --source fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/reproduction/project/AIRcLowpassCandidate.kicad_sch --output fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/visible_return/project/AIRcLowpassCandidate.kicad_sch; KiCad 10.0.6 CLI netlist/ERC/SVG export; independent M2b graph and observed-layout comparison",
+    "backend": "deterministic schematic correction and KiCad 10.0.6 AppImage",
+    "backend_version": "KiCad CLI 10.0.6; M2b independent observer",
+    "toolchain": "Python 3.12; Linux 7.0/glibc 2.39 x86_64; locked-host qualification not claimed"
+  },
+  "status": "PASS",
+  "artifacts": [
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/visible_return/manifest.json",
+      "sha256": "63c8bf11462c0b74c9f5357d3453f2d322ac11aa34e8c847d1b6c1f5e60d76b3",
+      "media_type": "application/json",
+      "role": "visible return correction and independent native KiCad validation evidence"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/visible_return/kicad_check.json",
+      "sha256": "0a8094ac90963273c4caf3dd9a4c978ae33af05cff6c61c226e44cc358c6babd",
+      "media_type": "application/json",
+      "role": "visible return correction and independent native KiCad validation evidence"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/visible_return/project/AIRcLowpassCandidate.kicad_sch",
+      "sha256": "25f417b74f645856e46f7483c1c12eed70f9c166de4824211c357cd5bd232482",
+      "media_type": "text/plain",
+      "role": "visible return correction and independent native KiCad validation evidence"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/visible_return/reports/netlist.xml",
+      "sha256": "5408f7f8b3e05fb75525e31f65ae40c6c13bfe2109ec5ed45492fdfe84e36d63",
+      "media_type": "text/plain",
+      "role": "visible return correction and independent native KiCad validation evidence"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/visible_return/reports/erc.json",
+      "sha256": "a68d36deeb6be90a1be5d7576b80f203f7754ff8509f4ed671d78c548b2919e4",
+      "media_type": "application/json",
+      "role": "visible return correction and independent native KiCad validation evidence"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/visible_return/renders/schematic/AIRcLowpassCandidate.svg",
+      "sha256": "bb846acfb44dc3989879c3aa2de199c3e1846d8ceff3f5059f96e198f128018d",
+      "media_type": "image/svg+xml",
+      "role": "visible return correction and independent native KiCad validation evidence"
+    },
+    {
+      "path": "tools/pivot/connect_ai_rc_reference_visibly.py",
+      "sha256": "4b768aa367b206457fdec0f187436de422bb87939bcab1d56002694ef6db5fca",
+      "media_type": "text/x-python",
+      "role": "visible return correction and independent native KiCad validation evidence"
+    }
+  ],
+  "checks": [
+    {
+      "check_id": "visible-return-wire-preserves-candidate-graph",
+      "status": "PASS",
+      "summary": "J3 moved beside C1 and a continuous wire visibly connects capacitor return pin C1.2 to connector J3.1; observed KiCad netlist has the same candidate pin partition, ERC has zero violations, observed layout has no hard failures.",
+      "evidence_paths": [
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/visible_return/manifest.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/visible_return/kicad_check.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/visible_return/project/AIRcLowpassCandidate.kicad_sch",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/visible_return/reports/netlist.xml",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/visible_return/reports/erc.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-23_devstral_run1/native/visible_return/renders/schematic/AIRcLowpassCandidate.svg",
+        "tools/pivot/connect_ai_rc_reference_visibly.py"
+      ],
+      "independent": true
+    }
+  ],
+  "ci_links": [],
+  "blockers": [],
+  "notes": [
+    "The underlying reference net was electrically connected before this change through two same-named local labels; the correction addresses schematic readability by drawing the connection directly.",
+    "This scoped visual correction does not close P6-006 overall: only 1 of 3 held-out proposals passed and human electrical review remains pending.",
+    "The host is not the frozen qualification identity."
+  ]
+}
