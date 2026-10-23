@@ -1,0 +1,138 @@
+{
+  "schema_version": "pivot-evidence.v1",
+  "evidence_id": "P6-002-mechanical-audit-round2-2026-10-23",
+  "task_id": "P6-002",
+  "recorded_at_utc": "2026-10-23T16:54:12Z",
+  "source_commit": "ed171e424d4012714389e57af4d68e7dbab9bb34",
+  "revision_kind": "git_commit",
+  "revision_id": "ed171e424d4012714389e57af4d68e7dbab9bb34",
+  "action": {
+    "summary": "Compare the remaining non-C2 BOM parts against their manufacturer package/mechanical data and the locked KiCad 10.0.6 footprints",
+    "command": "Manufacturer drawing/specification dimensional review of v8 BOM and hashed footprint assets",
+    "backend": "Manual dimensional comparison using manufacturer primary documentation and locked KiCad footprint files",
+    "backend_version": "KiCad 10.0.6; manufacturer documentation accessed 2026-10-23",
+    "toolchain": "Python 3.12; SHA-256; KiCad 10.0.6 AppImage library"
+  },
+  "status": "INCONCLUSIVE",
+  "artifacts": [
+    {
+      "path": "fixtures/pivot/reference_555_led_flasher_v8/bom.json",
+      "sha256": "fc6cec908203b8ff7dd6438553b89db5ab7f98434132f0b1e3f3aeb918e763a7",
+      "media_type": "application/json",
+      "role": "exact BOM assignments audited"
+    },
+    {
+      "path": "fixtures/pivot/catalog/reference_parts.v2.json",
+      "sha256": "cafb9aa60014e13e9e2975146a9e48129c4caa84ca2133ac736f276be2b18f0b",
+      "media_type": "application/json",
+      "role": "pinned MPN and footprint catalog audited"
+    },
+    {
+      "path": "fixtures/pivot/reference_555_led_flasher_v8/assets/footprints/Resistor_THT.pretty/R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal.kicad_mod",
+      "sha256": "58b4bad35c78cb7f33c76c99b8d8f08bb836b0ba742bcbbaffb6f7f73e5ffbe6",
+      "media_type": "text/plain",
+      "role": "footprint assigned to all three Yageo CFR-25 parts"
+    },
+    {
+      "path": "fixtures/pivot/reference_555_led_flasher_v8/assets/footprints/Package_DIP.pretty/DIP-8_W7.62mm.kicad_mod",
+      "sha256": "222fb44370968119abbd978176814cc43a71bc32ac2de275d8a3c418c0830fc6",
+      "media_type": "text/plain",
+      "role": "NE555P footprint"
+    },
+    {
+      "path": "fixtures/pivot/reference_555_led_flasher_v8/assets/footprints/LED_THT.pretty/LED_D5.0mm.kicad_mod",
+      "sha256": "efba51d29b26d31bbf3957a5813ee41872a071099d3f28bf6354a857f7129392",
+      "media_type": "text/plain",
+      "role": "WP7113ID footprint"
+    },
+    {
+      "path": "fixtures/pivot/reference_555_led_flasher_v8/assets/footprints/Connector_PinHeader_2.54mm.pretty/PinHeader_1x01_P2.54mm_Vertical.kicad_mod",
+      "sha256": "4fc60019e8f0bb2c220af4980349e0a9968f5bf9b8f068d769139c3939e7a86b",
+      "media_type": "text/plain",
+      "role": "TSW-101-07-L-S footprint for J1-J3"
+    },
+    {
+      "path": "fixtures/pivot/reference_555_led_flasher_v8/assets/footprints/Capacitor_THT.pretty/CP_Radial_D8.0mm_P5.00mm.kicad_mod",
+      "sha256": "08b9e57077b1f259a08ca16018e320d50c6c0ac30f5d11f7a1cbb1547bed19b2",
+      "media_type": "text/plain",
+      "role": "ECEA1CN100UE footprint under review"
+    }
+  ],
+  "checks": [
+    {
+      "check_id": "Yageo-CFR-25-footprint-pattern",
+      "status": "PASS",
+      "summary": "The three CFR-25 MPNs share the same mechanical series. Manufacturer data gives nominal body 6.3 x 2.4 mm, lead diameter 0.55 mm and 52.4 mm straight lead form. The assigned footprint provides a 7.62 mm formed-lead pad pitch, 0.8 mm drills, and nominal 6.3 x 2.5 mm fab body; its 7.62 mm holes are an intentional board forming pattern rather than the shipped lead span.",
+      "evidence_paths": [
+        "fixtures/pivot/reference_555_led_flasher_v8/bom.json",
+        "fixtures/pivot/catalog/reference_parts.v2.json",
+        "fixtures/pivot/reference_555_led_flasher_v8/assets/footprints/Resistor_THT.pretty/R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal.kicad_mod"
+      ],
+      "independent": true
+    },
+    {
+      "check_id": "TI-NE555P-DIP8-pattern",
+      "status": "PASS",
+      "summary": "NE555P is the 8-pin PDIP variant. The KiCad footprint provides eight 2.54 mm-pitch pads in two rows 7.62 mm apart and a nominal 6.35 mm-wide through-hole DIP body outline, matching the TI P-package pattern. This check covers package/pad geometry, not a substitute-device qualification.",
+      "evidence_paths": [
+        "fixtures/pivot/reference_555_led_flasher_v8/bom.json",
+        "fixtures/pivot/catalog/reference_parts.v2.json",
+        "fixtures/pivot/reference_555_led_flasher_v8/assets/footprints/Package_DIP.pretty/DIP-8_W7.62mm.kicad_mod"
+      ],
+      "independent": true
+    },
+    {
+      "check_id": "Kingbright-WP7113ID-footprint-pattern",
+      "status": "PASS",
+      "summary": "WP7113ID is a 5 mm T-1 3/4 LED. Manufacturer recommended PCB holes are 2.54 mm apart and 0.9 mm diameter; the assigned footprint uses that exact pitch and drill, and its F.Fab lens diameter is 5.0 mm. The larger flange is represented by the footprint's silk/courtyard envelope.",
+      "evidence_paths": [
+        "fixtures/pivot/reference_555_led_flasher_v8/bom.json",
+        "fixtures/pivot/catalog/reference_parts.v2.json",
+        "fixtures/pivot/reference_555_led_flasher_v8/assets/footprints/LED_THT.pretty/LED_D5.0mm.kicad_mod"
+      ],
+      "independent": true
+    },
+    {
+      "check_id": "Samtec-TSW-101-07-L-S-footprint-pattern",
+      "status": "PASS",
+      "summary": "The exact Samtec part is a single vertical through-hole .100 inch header with a 0.635 mm square post. The assigned footprint is one vertical pad with a 1.0 mm drill and a 1.7 mm copper land; this provides clearance for the post and matches the exact one-pin configuration. There is no multi-pin spacing requirement for this SKU.",
+      "evidence_paths": [
+        "fixtures/pivot/reference_555_led_flasher_v8/bom.json",
+        "fixtures/pivot/catalog/reference_parts.v2.json",
+        "fixtures/pivot/reference_555_led_flasher_v8/assets/footprints/Connector_PinHeader_2.54mm.pretty/PinHeader_1x01_P2.54mm_Vertical.kicad_mod"
+      ],
+      "independent": true
+    },
+    {
+      "check_id": "Panasonic-ECEA1CN100UE-footprint-body-representation",
+      "status": "INCONCLUSIVE",
+      "summary": "Panasonic specifies a 5.0 mm diameter, 11.0 mm long bipolar radial capacitor with 5.0 mm lead pitch. The assigned footprint's pad pitch is correct and its 8.0 mm courtyard is the documented conservative allowance, but its F.Fab body circle and linked 3D model are D8.0 mm. The component should physically fit; the manufacturing drawing/model overstates the actual component body by 3 mm. Do not claim exact mechanical representation until the owner chooses a 5 mm body model/footprint treatment.",
+      "evidence_paths": [
+        "fixtures/pivot/reference_555_led_flasher_v8/bom.json",
+        "fixtures/pivot/catalog/reference_parts.v2.json",
+        "fixtures/pivot/reference_555_led_flasher_v8/assets/footprints/Capacitor_THT.pretty/CP_Radial_D8.0mm_P5.00mm.kicad_mod"
+      ],
+      "independent": true
+    }
+  ],
+  "ci_links": [],
+  "blockers": [
+    {
+      "code": "OWNER_C1_FOOTPRINT_REPRESENTATION",
+      "summary": "C1's currently assigned pad pattern fits, but its 8 mm fab body and 3D model do not depict the exact 5 mm Panasonic component body.",
+      "next_action": "Choose whether to add a project-local footprint with a 5 mm F.Fab outline and no inaccurate 3D model while retaining the 8 mm courtyard, or retain the current conservative 8 mm body/courtyard representation.",
+      "requires_owner_input": true
+    },
+    {
+      "code": "PANASONIC_EXACT_SUPPLIER_SKU",
+      "summary": "The exact ECEA1CN100UE distributor SKU and lifecycle remain unconfirmed.",
+      "next_action": "Obtain a manufacturer-authorized exact ordering code and lifecycle/supplier confirmation; do not substitute the discontinued UB variant without approval.",
+      "requires_owner_input": false
+    }
+  ],
+  "notes": [
+    "Primary sources: Yageo CFR series datasheet https://www.yageogroup.com/component-documentation/download/specsheet/CFR-25JB-52-10K; TI NE555 datasheet https://www.ti.com/lit/ds/symlink/ne555.pdf; Kingbright WP7113ID datasheet https://www.kingbrightusa.com/images/catalog/spec/wp7113id.pdf; Samtec exact SKU page https://www.samtec.com/products/tsw-101-07-l-s; Panasonic exact ECEA1CN100UE page https://industrial.panasonic.com/kr/products/pt/aluminum-cap-lead/models/ECEA1CN100UE.",
+    "C2 is excluded from this round because its footprint correction and exact v8 qualification have separate approval-bound evidence in P6-002-c2-footprint-approval-2026-10-23.json.",
+    "All checks are limited to mechanical pattern comparison. No sourcing authorization, substitution approval, fabrication approval, or physical fit test is implied."
+  ]
+}
