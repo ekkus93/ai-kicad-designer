@@ -120,6 +120,7 @@ jobs:
             "${core_bands[@]}"
 
       - name: Upload locked qualification evidence
+        id: upload-evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -130,6 +131,27 @@ jobs:
             fixtures/m2h2/interaction_qualification_${{ inputs.group }}_final_candidate_${{ github.run_id }}_${{ github.sha }}
             fixtures/m2h2/interaction_alternatives_final_candidate_${{ github.run_id }}_${{ github.sha }}
           if-no-files-found: warn
+
+      - name: Preserve evidence locally if artifact upload fails
+        if: always() && steps.upload-evidence.outcome != 'success'
+        shell: bash
+        env:
+          RUN_SOURCE_SHA: ${{ github.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          RUN_ID: ${{ github.run_id }}
+          RUN_GROUP: ${{ inputs.group }}
+        run: |
+          set -euo pipefail
+          python tools/pivot/preserve_artifact_fallback.py \
+            --root "$GITHUB_WORKSPACE" \
+            --destination "$GITHUB_WORKSPACE/fixtures/pivot/artifact-fallbacks" \
+            --source-sha "$RUN_SOURCE_SHA" \
+            --run-url "$RUN_URL" \
+            --summary-file "$GITHUB_STEP_SUMMARY" \
+            --input "fixtures/m2h2/development_checks/locked_current_regressions_${RUN_ID}_${RUN_SOURCE_SHA}" \
+            --input "fixtures/m2h2/qualification_final_candidate_${RUN_ID}_${RUN_SOURCE_SHA}" \
+            --input "fixtures/m2h2/interaction_qualification_${RUN_GROUP}_final_candidate_${RUN_ID}_${RUN_SOURCE_SHA}" \
+            --input "fixtures/m2h2/interaction_alternatives_final_candidate_${RUN_ID}_${RUN_SOURCE_SHA}"
 
       - name: Git diff check
         run: git diff --check
