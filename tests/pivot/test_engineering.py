@@ -1,3 +1,4 @@
+import csv
 import json
 import hashlib
 from pathlib import Path
@@ -227,6 +228,52 @@ def test_pcbway_smt_bom_centroid_and_rotation_negatives(tmp_path):
         export_smt_assembly(placements, wrong, tmp_path / "wrong")
 
 
+def test_pcbway_bom_groups_same_part_and_preserves_supplier_fields(tmp_path):
+    placements = [
+        AssemblyPlacement(
+            reference=reference,
+            x_mm=index * 2.0,
+            y_mm=1.0,
+            side="Top",
+            rotation_deg=0,
+            footprint="Resistor_SMD:R_0603_1608Metric",
+        )
+        for index, reference in enumerate(("R1", "R2"), start=1)
+    ]
+    bom = [
+        {
+            "reference": reference,
+            "quantity": 1,
+            "mpn": "RC0603FR-0710KL",
+            "manufacturer": "Yageo",
+            "distributor_part_number": "311-10.0KHRCT-ND",
+            "description": "10 kOhm 1% 0603 resistor",
+            "package": "0603",
+            "footprint": "Resistor_SMD:R_0603_1608Metric",
+        }
+        for reference in ("R1", "R2")
+    ]
+    report = export_smt_assembly(placements, bom, tmp_path / "grouped")
+    with (tmp_path / "grouped/bom.csv").open(newline="") as stream:
+        rows = list(csv.DictReader(stream))
+    assert report["bom_line_count"] == 1
+    assert rows == [
+        {
+            "Line#": "1",
+            "Quantity Per Part Number": "2",
+            "Reference Designator": "R1, R2",
+            "Part Number": "RC0603FR-0710KL",
+            "Part Description": "10 kOhm 1% 0603 resistor",
+            "Package": "0603",
+            "Type": "Surface mount",
+            "Manufacturer Name": "Yageo",
+            "Manufacturer Part Number": "RC0603FR-0710KL",
+            "Distributor Part Number": "311-10.0KHRCT-ND",
+            "Footprint": "Resistor_SMD:R_0603_1608Metric",
+        }
+    ]
+
+
 def test_native_kicad_smt_export_binds_position_paste_and_drawing_to_board(tmp_path):
     board = tmp_path / "assembly.kicad_pcb"
     board.write_text(
@@ -250,7 +297,7 @@ def test_native_kicad_smt_export_binds_position_paste_and_drawing_to_board(tmp_p
             )
         elif "gerbers" in command:
             output = Path(command[command.index("--output") + 1])
-            (output / "assembly-F_Paste.gbr").write_text("%FSLAX46Y46*%\n%LPD*%\n")
+            (output / "assembly-B_Paste.gbr").write_text("%FSLAX46Y46*%\n%LPD*%\n")
         else:
             Path(command[command.index("--output") + 1]).write_bytes(b"%PDF-1.5 test")
         return SimpleNamespace(returncode=0, stdout="", stderr="")
@@ -260,7 +307,7 @@ def test_native_kicad_smt_export_binds_position_paste_and_drawing_to_board(tmp_p
 
     assert report["status"] == "PASS"
     assert report["placement_count"] == 1
-    assert report["paste"] == ["paste/assembly-F_Paste.gbr"]
+    assert report["paste"] == ["paste/assembly-B_Paste.gbr"]
     assert report["assembly_drawing"] == "assembly.pdf"
     centroid = (tmp_path / "package/centroid.csv").read_text()
     assert "R1,10.2500mm,4.5000mm,Bottom,270.00" in centroid
@@ -270,13 +317,15 @@ def test_native_kicad_smt_export_binds_position_paste_and_drawing_to_board(tmp_p
 
 def test_native_kicad_smt_export_rejects_footprint_mismatch_before_promotion(tmp_path):
     board = tmp_path / "assembly.kicad_pcb"
-    board.write_text('(kicad_pcb (footprint "R_0603_1608Metric" (property "Reference" "R1")))')
+    board.write_text(
+        '(kicad_pcb (footprint "Resistor_SMD:R_0603_1608Metric" (property "Reference" "R1")))'
+    )
     bom = [
         {
             "reference": "R1",
             "quantity": 1,
             "mpn": "RC0603",
-            "footprint": "C_0603_1608Metric",
+            "footprint": "OtherLibrary:R_0603_1608Metric",
         }
     ]
 
@@ -290,5 +339,45 @@ def test_native_kicad_smt_export_rejects_footprint_mismatch_before_promotion(tmp
 
     with patch("ai_kicad.pivot.engineering.subprocess.run", side_effect=fake_cli):
         with pytest.raises(RequirementError, match="footprint differs"):
+            export_kicad_smt_assembly(["kicad-cli"], board, bom, tmp_path / "package")
+    assert not (tmp_path / "package").exists()
+
+
+def test_native_kicad_smt_export_requires_paste_file_for_every_mounted_side(tmp_path):
+    board = tmp_path / "assembly.kicad_pcb"
+    board.write_text(
+        "(kicad_pcb "
+        '(footprint "Resistor_SMD:R_0603_1608Metric" (property "Reference" "R1")) '
+        '(footprint "Capacitor_SMD:C_0603_1608Metric" (property "Reference" "C1")))'
+    )
+    bom = [
+        {
+            "reference": "R1",
+            "quantity": 1,
+            "mpn": "RC0603",
+            "footprint": "Resistor_SMD:R_0603_1608Metric",
+        },
+        {
+            "reference": "C1",
+            "quantity": 1,
+            "mpn": "CC0603",
+            "footprint": "Capacitor_SMD:C_0603_1608Metric",
+        },
+    ]
+
+    def fake_cli(command, **_kwargs):
+        output = Path(command[command.index("--output") + 1])
+        if "pos" in command:
+            output.write_text(
+                "Ref,Val,Package,PosX,PosY,Rot,Side\n"
+                "R1,10k,R_0603_1608Metric,10.2500,4.5000,0.0,top\n"
+                "C1,1uF,C_0603_1608Metric,12.2500,4.5000,0.0,bottom\n"
+            )
+        elif "gerbers" in command:
+            (output / "assembly-F_Paste.gbr").write_text("%FSLAX46Y46*%\n%LPD*%\n")
+        return SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    with patch("ai_kicad.pivot.engineering.subprocess.run", side_effect=fake_cli):
+        with pytest.raises(RequirementError, match="Bottom paste"):
             export_kicad_smt_assembly(["kicad-cli"], board, bom, tmp_path / "package")
     assert not (tmp_path / "package").exists()

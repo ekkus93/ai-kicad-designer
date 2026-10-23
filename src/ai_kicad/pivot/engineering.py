@@ -236,25 +236,75 @@ def export_smt_assembly(
     references = [placement.reference for placement in placements]
     if len(references) != len(set(references)):
         raise RequirementError("duplicate assembly placement")
+    bom_references = [row.get("reference") for row in bom_rows]
+    if len(bom_references) != len(set(bom_references)):
+        raise RequirementError("duplicate SMT BOM reference")
     bom_by_reference = {row["reference"]: row for row in bom_rows}
     if set(references) != set(bom_by_reference):
         raise RequirementError("SMT BOM and placement references disagree")
+    grouped_bom = {}
+    for placement in placements:
+        row = bom_by_reference[placement.reference]
+        if (
+            type(row.get("quantity")) is not int
+            or row["quantity"] != 1
+            or row.get("footprint") != placement.footprint
+        ):
+            raise RequirementError("SMT BOM quantity or footprint mismatch")
+        mpn = row.get("mpn")
+        if not isinstance(mpn, str) or not mpn.strip():
+            raise RequirementError("SMT BOM manufacturer part number is required")
+        values = {
+            "part_number": row.get("part_number") or mpn,
+            "description": row.get("description", ""),
+            "package": row.get("package") or placement.footprint,
+            "manufacturer": row.get("manufacturer", row.get("manufacturer_name", "")),
+            "mpn": mpn,
+            "distributor_part_number": row.get("distributor_part_number", ""),
+            "footprint": placement.footprint,
+        }
+        if any(not isinstance(value, str) for value in values.values()):
+            raise RequirementError("SMT BOM part details must be strings")
+        key = tuple(values.values())
+        grouped_bom.setdefault(key, {"values": values, "references": []})["references"].append(
+            placement.reference
+        )
+    groups = sorted(grouped_bom.values(), key=lambda group: min(group["references"]))
     destination.mkdir(parents=True, exist_ok=False)
     with (destination / "bom.csv").open("w", newline="") as stream:
         writer = csv.DictWriter(
-            stream, fieldnames=["Designator", "Quantity", "Manufacturer Part Number", "Footprint"]
+            stream,
+            fieldnames=[
+                "Line#",
+                "Quantity Per Part Number",
+                "Reference Designator",
+                "Part Number",
+                "Part Description",
+                "Package",
+                "Type",
+                "Manufacturer Name",
+                "Manufacturer Part Number",
+                "Distributor Part Number",
+                "Footprint",
+            ],
         )
         writer.writeheader()
-        for placement in sorted(placements, key=lambda item: item.reference):
-            row = bom_by_reference[placement.reference]
-            if row.get("quantity") != 1 or row.get("footprint") != placement.footprint:
-                raise RequirementError("SMT BOM quantity or footprint mismatch")
+        for line_number, group in enumerate(groups, start=1):
+            values = group["values"]
+            designators = sorted(group["references"])
             writer.writerow(
                 {
-                    "Designator": placement.reference,
-                    "Quantity": 1,
-                    "Manufacturer Part Number": row["mpn"],
-                    "Footprint": placement.footprint,
+                    "Line#": line_number,
+                    "Quantity Per Part Number": len(designators),
+                    "Reference Designator": ", ".join(designators),
+                    "Part Number": values["part_number"],
+                    "Part Description": values["description"],
+                    "Package": values["package"],
+                    "Type": "Surface mount",
+                    "Manufacturer Name": values["manufacturer"],
+                    "Manufacturer Part Number": values["mpn"],
+                    "Distributor Part Number": values["distributor_part_number"],
+                    "Footprint": values["footprint"],
                 }
             )
     with (destination / "centroid.csv").open("w", newline="") as stream:
@@ -277,6 +327,7 @@ def export_smt_assembly(
         "bom": "bom.csv",
         "centroid": "centroid.csv",
         "placement_count": len(placements),
+        "bom_line_count": len(grouped_bom),
         "rotation_convention": "Counter-clockwise degrees as viewed from the placement side.",
         "paste_layers_required": sorted({placement.side for placement in placements}),
     }
@@ -367,10 +418,12 @@ def export_kicad_smt_assembly(
             if bom_row.get("quantity") != 1:
                 raise RequirementError("SMT BOM quantity must be one per reference")
             board_footprint = board_footprints.get(reference)
+            bom_footprint = bom_row.get("footprint", "")
+            qualified_footprint_mismatch = ":" in bom_footprint and board_footprint != bom_footprint
             if (
                 board_footprint is None
-                or board_footprint.split(":", 1)[-1]
-                != bom_row.get("footprint", "").split(":", 1)[-1]
+                or qualified_footprint_mismatch
+                or board_footprint.split(":", 1)[-1] != bom_footprint.split(":", 1)[-1]
                 or record["Package"] != board_footprint.split(":", 1)[-1]
             ):
                 raise RequirementError("SMT BOM footprint differs from native board")
@@ -419,6 +472,14 @@ def export_kicad_smt_assembly(
         )
         if not paste_files:
             raise RequirementError("KiCad produced no nonempty paste-layer Gerbers")
+        required_paste_markers = {
+            "Top": "-F_Paste.",
+            "Bottom": "-B_Paste.",
+        }
+        for side in {placement.side for placement in placements}:
+            marker = required_paste_markers[side]
+            if not any(marker in path.name for path in paste_files):
+                raise RequirementError(f"KiCad produced no nonempty {side} paste Gerber")
 
         drawing = package / "assembly.pdf"
         pdf_command = [
@@ -451,6 +512,9 @@ def export_kicad_smt_assembly(
                 for path in outputs
             },
             native_position_export="kicad-cli pcb export pos --smd-only --exclude-dnp",
+            coordinate_origin="KiCad page origin (top-left); drill/place origin option omitted",
+            bottom_x_negated=False,
+            rotation_source="native KiCad Rot field normalized modulo 360 degrees",
         )
         package.rename(destination)
         return report
