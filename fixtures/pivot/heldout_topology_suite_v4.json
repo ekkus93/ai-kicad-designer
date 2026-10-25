@@ -1,0 +1,66 @@
+{
+  "schema_version": "heldout-ai-topology-suite.v4",
+  "suite_id": "analog-topologies-v4",
+  "description": "Prompt-clarified follow-up to v3: pins are local names in component declarations, full ref.pin identities occur only in net terminal lists, and net labels do not define connectivity.",
+  "response_schema": {
+    "topology": "string",
+    "components": [
+      {
+        "ref": "string",
+        "kind": "resistor|capacitor|led|timer555|port|ground",
+        "value": "string or null",
+        "pins": [
+          "string"
+        ]
+      }
+    ],
+    "nets": [
+      {
+        "name": "string",
+        "terminals": [
+          "REF.pin"
+        ]
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "rc_lowpass_1khz",
+      "family": "rc_lowpass",
+      "requirements": "5 V source, unloaded output, first-order low-pass near 1 kHz; one resistor and one capacitor; E12 values.",
+      "prompt": "Design a passive first-order RC low-pass filter for a 5 V source with unloaded output and nominal cutoff near 1 kHz. Use one E12 resistor and one capacitor. Required components: R1 resistor (pins A/B), C1 capacitor (A/B), VIN input port (pin 1), VOUT observation port (pin 1), GND return port (pin 1). The resistor is in series from VIN to VOUT; the capacitor shunts VOUT to GND. Include each required component in the components array and assign every listed pin exactly once in the nets array. Every net needs at least two terminal IDs; a terminal ID must be REF.pin, never a net name. Return JSON only using the supplied response schema. Component ref strings must exactly be R1, C1, VIN, VOUT, and GND. For example, the VIN port terminal is VIN.1; do not use generic names such as port.1. Net names may be any unique strings; connections are defined only by terminal membership. In components[].pins, list only the local pin names shown in parentheses (such as \"1\", \"A\", or \"K\"), never a full ref.pin string. For example, VIN has pins [\"1\"], while its net terminal is \"VIN.1\".",
+      "limits": {
+        "cutoff_min_hz": 900.0,
+        "cutoff_max_hz": 1100.0
+      }
+    },
+    {
+      "task_id": "led_limiter_5ma_9v",
+      "family": "led_limiter",
+      "requirements": "9 V nominal source, red indicator LED, target current about 5 mA, exactly one series current-limiting resistor, grounded return.",
+      "prompt": "Design a 9 V nominal red indicator LED circuit targeting 4-5 mA, with exactly one series current-limiting resistor. Assume LED forward voltage 1.8-2.2 V. Required components: R1 resistor (pins A/B), D1 LED (pins A/K), VIN source port (pin 1), GND return port (pin 1), and OUT observation port (pin 1). Connect VIN through R1 to the LED anode; connect LED cathode to GND; OUT observes the LED anode node. Include all five components and assign every listed pin exactly once. Every net needs at least two terminal IDs; terminal IDs must be REF.pin, never a net name. Return JSON only using the supplied response schema. Component ref strings must exactly be R1, D1, VIN, GND, and OUT. For example, the OUT port terminal is OUT.1; do not use generic names such as port.1. Net names may be any unique strings; connections are defined only by terminal membership. In components[].pins, list only the local pin names shown in parentheses (such as \"1\", \"A\", or \"K\"), never a full ref.pin string. For example, VIN has pins [\"1\"], while its net terminal is \"VIN.1\".",
+      "limits": {
+        "supply_v": 9.0,
+        "led_forward_min_v": 1.8,
+        "led_forward_max_v": 2.2,
+        "current_min_a": 0.004,
+        "current_max_a": 0.0055
+      }
+    },
+    {
+      "task_id": "timer555_astable_4hz",
+      "family": "timer555_astable",
+      "requirements": "5 V NE555 astable near 4.5 Hz; pin 3 drives a red LED through a series resistor; timing capacitor returns to ground; include 10 nF bypass from pin 5 to ground.",
+      "prompt": "Design a 5 V NE555 astable oscillator near 4.5 Hz, using E12 values where practical. Use standard astable connections: pin 8=VCC, pin 4=RESET tied to VCC, pin 1=GND, pins 2=TRIG and 6=THRESH share the timing node, R1 charge resistor connects VCC to pin 7 DISCH, R2 discharge resistor connects pin 7 to the timing node, and C1 connects timing node to GND. Add C2=10nF from pin 5 CTRL to GND. Pin 3 OUT drives a red LED through R3 in series to GND, with OUT port observing pin 3. Required components: U1 timer555 pins \"1\" through \"8\"; R1, R2, R3 resistors each pins A/B; C1 and C2 capacitors each A/B; D1 LED pins A/K; VIN, GND and OUT ports each pin 1. Include every required component and assign every listed pin exactly once. Every net needs at least two terminal IDs; terminal IDs must be REF.pin, never a net name. Return JSON only using the supplied response schema. Component ref strings must exactly be U1, R1, R2, R3, C1, C2, D1, VIN, GND, and OUT. The supply/ground/output terminals are VIN.1, GND.1, and OUT.1. Do not use generic names such as port.1. Net names may be any unique strings; connections are defined only by terminal membership. In components[].pins, list only the local pin names shown in parentheses (such as \"1\", \"A\", or \"K\"), never a full ref.pin string. For example, VIN has pins [\"1\"], while its net terminal is \"VIN.1\".",
+      "limits": {
+        "supply_v": 5.0,
+        "frequency_min_hz": 4.0,
+        "frequency_max_hz": 5.0,
+        "led_forward_min_v": 1.8,
+        "led_forward_max_v": 2.2,
+        "led_current_min_a": 0.002,
+        "led_current_max_a": 0.004
+      }
+    }
+  ]
+}
