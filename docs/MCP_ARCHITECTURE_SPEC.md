@@ -25,6 +25,14 @@ This specification proposes an **architectural pivot within the existing reposit
 7. Reach the first end-to-end PCB package using a **fixed, known-good circuit** before attempting unconstrained natural-language circuit synthesis. Do not confuse an exportable PCB with an electrically valid design or fabrication approval.
 8. Preserve M2h2 evidence and frozen evaluation contracts. Treat existing visual-layout acceptance as an **open independent research track**; it does not block the new manufacturing proof of concept. Never mislabel its historical `PASS` artifacts as current-source acceptance.
 
+**Schematic workflow direction confirmed with the owner (2026-10-25):** Develop
+automatic generation, rendered-image review and iterative correction as the normal
+schematic workflow. The LLM inspects the actual schematic and check results,
+requests supported changes, and reviews each resulting revision again. The
+controller applies those changes and enforces acceptance and stopping conditions.
+Routine supported corrections proceed without human intervention. Section 6.5
+defines the target; the current bounded implementation is its first increment.
+
 ## 2. Motivation and evidence boundary
 
 ### 2.1 Current state (not pivot acceptance)
@@ -175,7 +183,7 @@ Initial system: **one engineering LLM loop** with context isolated at major phas
 |---|---|---|
 | `REQUIREMENTS` | requirements, constraints, reference/docs search, state | requirements explicit; unresolved uncertainties listed |
 | `CIRCUIT_DESIGN` | part/circuit model, calculations, simulation request, state | topology pinned and essential electrical assertions documented |
-| `SCHEMATIC` | create/inspect/modify symbols/nets, run ERC, observe connectivity | serialized schematic equivalence and ERC; electrical assertions scoped |
+| `SCHEMATIC` | generate/render/inspect/modify schematic, run ERC, observe connectivity | serialized equivalence and ERC; current-revision image review against the user's readability brief; no unresolved required corrections; electrical assertions scoped |
 | `FOOTPRINTS` | resolve/inspect part packages and pads, sync PCB | exact symbol-pin ↔ footprint-pad mapping; full mapping coverage |
 | `PCB_PLACEMENT` | board profile, groups, placements, scoring, inspect | outline and placement legal under selected fab profile |
 | `PCB_ROUTING` | routes, vias, zones, router plan/apply, DRC | all required nets connected, no unauthorized shorts, DRC pass |
@@ -197,6 +205,39 @@ Initial system: **one engineering LLM loop** with context isolated at major phas
 Measure at least: full inventory, phase-gated, task-gated, and direct code/file automation baselines using identical task, model, sampling settings, time/token limits, fixture versions, and independent judges. Track tool-call validity, semantic completion, cost/latency, provenance completeness, repairs and regressions. A tool-gated MCP must demonstrably improve success/cost or safety to be retained.
 
 ### 6.5 Rendered schematic review and automatic remediation
+
+**Target workflow:** The schematic phase must run the following cycle automatically:
+
+1. Generate the initial native schematic from the intended circuit and requirements.
+2. Run electrical, geometry and readability checks and render the saved schematic.
+3. Give a vision-capable LLM the full page, useful close-ups, check results and the
+   user's review brief. It must inspect the current drawing even when ERC passes.
+4. Have the model identify issues and request concrete edits through supported tools.
+5. Apply edits to an isolated candidate, rerun affected checks, render fresh images,
+   and return the new revision and feedback to the model.
+6. Repeat until the defined electrical/readability gates and current-image review
+   pass with no outstanding required edits, or stop with an explicit unresolved
+   issue and reason when capabilities, information or budgets prevent progress.
+
+The model's judgment and deterministic checks are complementary. Passing ERC alone
+does not establish a readable drawing; model approval cannot override a failed
+gate. Routine iterations must not require a person to inspect each image, suggest
+coordinates, or manually edit a schematic. Human assistance is reserved for missing
+requirements, engineering decisions, unsupported changes and unresolved stops;
+the separate human electrical/manufacturing review gates still apply.
+
+Readability requirements must include the owner's applicable preferences: clear
+component/value association, close and legible labels, balanced page composition,
+and continuous visible local REF/VCC connections where feasible. The full target
+therefore includes constrained symbol/group movement and corresponding rerouting,
+in addition to property placement. Implementations must declare their supported
+edit scope and preserve the intended circuit through independent verification.
+
+**Current implementation and remaining gap:** P6-010 implements the first bounded
+loop below. P6-011 qualifies its visual decisions, extends its edit capabilities,
+and integrates it as the normal `SCHEMATIC` phase workflow. Completing P6-010 does
+not mean this broader target is complete. Qualification on existing vetted circuits
+is the next development priority before expanding novel circuit generation.
 
 `tools/pivot/review_schematic.py` connects native generation, independent KiCad checks,
 rendered images and local-model revision requests into one bounded loop. The initial
@@ -303,7 +344,7 @@ Define an internal typed `DesignBackend` capability manifest, with operations su
 7. **Assembly (optional initially):** complete BOM with MPNs, alternates/stock evidence, refdes count, position/side/rotation, placement/centroid, paste layers, assembly drawing as appropriate; provider-specific conventions verified.
 8. **Human/physical:** human review before manufacturing order; actual physical success only after receiving, assembling and electrically testing the board.
 
-LLM repair is advisory and bounded. A provider may select only a typed allowlisted operation against a current, identified violation. Apply each proposal to a separate candidate copy, verify its target identity and precondition against the native artifact, then rerun native DRC and independent connectivity/equivalence checks. Preserve rejected candidates and diagnostics; never change the known-good revision. Unsupported violation classes, invalid proposals, timeouts, or exhausted attempts must terminate as `BLOCKED`/`FAIL`, never as a clean result. The first validated operation family is limited to widening a single track that KiCad has reported in a `track_width` error; the model cannot edit arbitrary KiCad text or choose another DRC repair class.
+Automatic model-requested repairs are bounded by typed allowlisted operations and independent gates. For PCB DRC repair, a provider may select only an operation against a current, identified violation. Apply each proposal to a separate candidate copy, verify its target identity and precondition against the native artifact, then rerun native DRC and independent connectivity/equivalence checks. Preserve rejected candidates and diagnostics; never change the known-good revision. Unsupported violation classes, invalid proposals, timeouts, or exhausted attempts must terminate as `BLOCKED`/`FAIL`, never as a clean result. The first validated PCB DRC repair family is limited to widening a single track that KiCad has reported in a `track_width` error; the model cannot edit arbitrary KiCad text or choose another DRC repair class. Schematic image review and supported automatic edits are a separate operation family governed by section 6.5; they are not limited to PCB track-width repair.
 
 ### 8.2 Pass/fail taxonomy
 
