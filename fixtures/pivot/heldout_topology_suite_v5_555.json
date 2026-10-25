@@ -1,0 +1,43 @@
+{
+  "schema_version": "heldout-ai-topology-suite.v5",
+  "suite_id": "analog-topology-555-terminal-partition-v5",
+  "description": "Focused 555 follow-up with explicit single-membership terminal partition rules after v4 duplicated VIN.1 and GND.1.",
+  "response_schema": {
+    "topology": "string",
+    "components": [
+      {
+        "ref": "string",
+        "kind": "resistor|capacitor|led|timer555|port|ground",
+        "value": "string or null",
+        "pins": [
+          "string"
+        ]
+      }
+    ],
+    "nets": [
+      {
+        "name": "string",
+        "terminals": [
+          "REF.pin"
+        ]
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "timer555_astable_4hz",
+      "family": "timer555_astable",
+      "requirements": "5 V NE555 astable near 4.5 Hz; pin 3 drives a red LED through a series resistor; timing capacitor returns to ground; include 10 nF bypass from pin 5 to ground.",
+      "prompt": "Design a 5 V NE555 astable oscillator near 4.5 Hz, using E12 values where practical. Use standard astable connections: pin 8=VCC, pin 4=RESET tied to VCC, pin 1=GND, pins 2=TRIG and 6=THRESH share the timing node, R1 charge resistor connects VCC to pin 7 DISCH, R2 discharge resistor connects pin 7 to the timing node, and C1 connects timing node to GND. Add C2=10nF from pin 5 CTRL to GND. Pin 3 OUT drives a red LED through R3 in series to GND, with OUT port observing pin 3. Required components: U1 timer555 pins \"1\" through \"8\"; R1, R2, R3 resistors each pins A/B; C1 and C2 capacitors each A/B; D1 LED pins A/K; VIN, GND and OUT ports each pin 1. Include every required component and assign every listed pin exactly once. Every net needs at least two terminal IDs; terminal IDs must be REF.pin, never a net name. Return JSON only using the supplied response schema. Component ref strings must exactly be U1, R1, R2, R3, C1, C2, D1, VIN, GND, and OUT. The supply/ground/output terminals are VIN.1, GND.1, and OUT.1. Do not use generic names such as port.1. Net names may be any unique strings; connections are defined only by terminal membership. In components[].pins, list only the local pin names shown in parentheses (such as \"1\", \"A\", or \"K\"), never a full ref.pin string. For example, VIN has pins [\"1\"], while its net terminal is \"VIN.1\". IMPORTANT TERMINAL PARTITION RULE: each physical terminal ID may occur in exactly one nets[].terminals array. VIN.1 must occur once on the VCC net with U1.8, U1.4, and R1; do not repeat VIN.1 on a separate RESET net. GND.1, U1.1, D1.K, C1 ground pin, C2 ground pin, and the LED resistor return pin all belong together in one ground net; do not repeat GND.1 across multiple nets. More generally, merge all conductors on the same electrical node into one net entry. Before returning JSON, enumerate every component terminal mentally and verify that none is omitted or repeated.",
+      "limits": {
+        "supply_v": 5.0,
+        "frequency_min_hz": 4.0,
+        "frequency_max_hz": 5.0,
+        "led_forward_min_v": 1.8,
+        "led_forward_max_v": 2.2,
+        "led_current_min_a": 0.002,
+        "led_current_max_a": 0.004
+      }
+    }
+  ]
+}

@@ -1,0 +1,91 @@
+{
+  "schema_version": "ai-topology-assessment.v1",
+  "suite_id": "analog-topology-555-terminal-partition-v5",
+  "suite_path": "fixtures/pivot/heldout_topology_suite_v5_555.json",
+  "suite_sha256": "dc6ffcc9ddea031f1b19446b1c03dcc41d7519077f4bce20b4b72236c80b6dea",
+  "model": {
+    "name": "devstral-small-2:24b",
+    "digest": "24277f07f62db8f9cb68e9dfc679ea1818a7fbac47a50eff0a701d3f645b63c8",
+    "parameter_size": "24.0B",
+    "quantization_level": "Q4_K_M",
+    "ollama_version": "0.40.8"
+  },
+  "source_commit": "e10319f9387b0f0b53478e58b6c063acd338aca9",
+  "host": {
+    "platform": "Linux-7.0.0-38-generic-x86_64-with-glibc2.39",
+    "machine": "x86_64",
+    "python": "3.12.10"
+  },
+  "sampling": {
+    "temperature": 0,
+    "seed": 20261023,
+    "think": false,
+    "maximum_validator_repair_attempts": 2
+  },
+  "task_count": 1,
+  "passed": 0,
+  "failed": 1,
+  "results": [
+    {
+      "task_id": "timer555_astable_4hz",
+      "status": "FAIL",
+      "checks": [
+        {
+          "check": "structured_graph",
+          "status": "PASS",
+          "detail": "All component terminals map exactly once to named nets."
+        },
+        {
+          "check": "timer_astable_topology",
+          "status": "FAIL",
+          "detail": "NE555 supply/reset/timing/LED connections match the required topology."
+        },
+        {
+          "check": "oscillator_frequency",
+          "status": "FAIL",
+          "detail": "independent 555 astable estimate is 1.44 Hz; target range is 4.0-5.0 Hz."
+        },
+        {
+          "check": "led_current_bounds",
+          "status": "FAIL",
+          "detail": "independent LED current estimate is 5.957-6.809 mA."
+        }
+      ],
+      "metrics": {
+        "frequency_hz": 1.4399999712000007,
+        "minimum_led_current_a": 0.005957446808510638,
+        "maximum_led_current_a": 0.006808510638297873
+      },
+      "downstream_gates": {
+        "spice": "NOT_RUN",
+        "native_kicad": "NOT_RUN",
+        "human_electrical_review": "PENDING"
+      },
+      "raw_output_path": "raw/timer555_astable_4hz.attempt2.json",
+      "raw_output_sha256": "40a8318c747795ee0794c49e607276b46b11045b2b06d31da988fd9b370189fb",
+      "attempts": [
+        {
+          "path": "raw/timer555_astable_4hz.json",
+          "sha256": "5499ebec0c2d727475d6f6237f1c66f8ab1cf370c02ec015002dafbdd1624ea1",
+          "status": "FAIL",
+          "elapsed_s": 32.607
+        },
+        {
+          "path": "raw/timer555_astable_4hz.attempt1.json",
+          "sha256": "0eb19d2b04178464ba014f340aa47381d1960c1e0b821a94f2f8c322ca8f6ec0",
+          "status": "FAIL",
+          "elapsed_s": 27.585
+        },
+        {
+          "path": "raw/timer555_astable_4hz.attempt2.json",
+          "sha256": "40a8318c747795ee0794c49e607276b46b11045b2b06d31da988fd9b370189fb",
+          "status": "FAIL",
+          "elapsed_s": 27.735
+        }
+      ]
+    }
+  ],
+  "human_review": "PENDING",
+  "overall_status": "FAIL",
+  "created_at_utc": "2026-10-25T04:04:22.673857+00:00"
+}
