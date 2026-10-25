@@ -196,6 +196,48 @@ Initial system: **one engineering LLM loop** with context isolated at major phas
 
 Measure at least: full inventory, phase-gated, task-gated, and direct code/file automation baselines using identical task, model, sampling settings, time/token limits, fixture versions, and independent judges. Track tool-call validity, semantic completion, cost/latency, provenance completeness, repairs and regressions. A tool-gated MCP must demonstrably improve success/cost or safety to be retained.
 
+### 6.5 Rendered schematic review and automatic remediation
+
+`tools/pivot/review_schematic.py` connects native generation, independent KiCad checks,
+rendered images and local-model revision requests into one bounded loop. The initial
+implementation accepts a validated single-sheet M2b circuit as the intended design;
+it can generate the initial schematic or inspect an existing native schematic against
+that circuit. This loop does not independently establish that the intended circuit
+meets an electrical product specification.
+
+Each candidate is saved in a separate directory. The controller runs KiCad 10.0.6
+ERC and native netlist export, independently compares the component/value and terminal
+inventories with the intended circuit, observes emitted geometry, and renders both
+the complete page and a drawing close-up. A local Ollama model advertising vision
+receives those PNGs, the reports, field coordinates, intended circuit and exact
+schematic SHA-256 revision. A text-only model cannot stand in for visual review.
+
+The model returns `accept`, `revise`, or `needs_help`, with issues and typed actions:
+
+- `move_field`: place one existing Reference/Value field for a specific symbol unit.
+- `translate_sheet`: translate the complete drawing, including wires and fields.
+- `regenerate_schematic`: recompute symbols, placement and wiring from the intended
+  circuit. This repairs serialization, missing-part/value and connectivity defects
+  without allowing a model to silently change the intended circuit.
+
+Every edit creates a new candidate and invalidates prior images and reports. The
+new native bytes must be checked and visually reviewed again. A stale revision,
+unsupported action or malformed reply is rejected and its diagnostic returned to
+the model within the same budget. Hard-check failures cannot be overridden by model
+approval. `ACCEPTED_FOR_REVIEW` requires every independent gate to pass and the model
+to accept that exact revision with no issues or pending actions. Prior passing
+candidates remain available if a subsequent edit regresses; only joint acceptance
+produces an accepted artifact pointer.
+
+Stop on acceptance, an explicit request for help, repeated candidate bytes, model or
+native-tool failure, or exhaustion of review/time/token budgets. Preserve requests,
+responses, image hashes, native files, reports, tool versions and implementation
+hashes, including failed candidates. A machine/model acceptance is scoped schematic
+review evidence; human electrical review, locked-host qualification and manufacturing
+approval retain their separate gates. General symbol movement with automatic rerouting,
+arbitrary topology changes and hierarchical sheets require additional operations and
+independent acceptance before being enabled.
+
 ## 7. MCP tool contracts (proposed v0)
 
 The names below are **design targets**, not claims that existing MCPs implement them. Avoid having all tools visible simultaneously. Group tools into on-demand bundles, with bulk operations preferred over hundreds of low-level coordinate calls. All mutations return a new `revision_id` and structured verification status; readonly calls must identify the revision inspected.
