@@ -1,0 +1,108 @@
+{
+  "source_commit": "df0f263604053ecbb1d6b915f1835bf412a5b819",
+  "runs": {
+    "rc_wiring_locked": {
+      "environment": {
+        "PYTHONPATH": "src:."
+      },
+      "argv": [
+        "uv",
+        "run",
+        "python",
+        "tools/pivot/review_schematic.py",
+        "--design",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/inputs/intended_rc.json",
+        "--source",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/inputs/corrupted_rc.kicad_sch",
+        "--kicad-apprun",
+        "/home/phil/Applications/kicad-10.0.6/AppDir/AppRun",
+        "--model",
+        "qwen3.5:9b",
+        "--output",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_wiring_locked",
+        "--max-reviews",
+        "6",
+        "--max-seconds",
+        "600"
+      ],
+      "output_must_be_new": true
+    },
+    "rc_labels_locked": {
+      "environment": {
+        "PYTHONPATH": "src:."
+      },
+      "argv": [
+        "uv",
+        "run",
+        "python",
+        "tools/pivot/review_schematic.py",
+        "--design",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/inputs/intended_rc.json",
+        "--source",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/inputs/distant_value_rc.kicad_sch",
+        "--review-brief",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/inputs/readability-brief.txt",
+        "--kicad-apprun",
+        "/home/phil/Applications/kicad-10.0.6/AppDir/AppRun",
+        "--model",
+        "qwen3.5:9b",
+        "--output",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked",
+        "--max-reviews",
+        "6",
+        "--max-seconds",
+        "600"
+      ],
+      "output_must_be_new": true
+    },
+    "led_locked": {
+      "environment": {
+        "PYTHONPATH": "src:."
+      },
+      "argv": [
+        "uv",
+        "run",
+        "python",
+        "tools/pivot/review_schematic.py",
+        "--design",
+        "fixtures/m2b/led_series.json",
+        "--kicad-apprun",
+        "/home/phil/Applications/kicad-10.0.6/AppDir/AppRun",
+        "--model",
+        "qwen3.5:9b",
+        "--output",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/led_locked",
+        "--max-reviews",
+        "6",
+        "--max-seconds",
+        "600"
+      ],
+      "output_must_be_new": true
+    },
+    "timer_locked_libraries": {
+      "environment": {
+        "PYTHONPATH": "src:."
+      },
+      "argv": [
+        "uv",
+        "run",
+        "python",
+        "tools/pivot/review_schematic.py",
+        "--design",
+        "fixtures/pivot/reference_555_led_flasher_v8/design.json",
+        "--kicad-apprun",
+        "/home/phil/Applications/kicad-10.0.6/AppDir/AppRun",
+        "--model",
+        "qwen3.5:9b",
+        "--output",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/timer_locked_libraries",
+        "--max-reviews",
+        "6",
+        "--max-seconds",
+        "600"
+      ],
+      "output_must_be_new": true
+    }
+  },
+  "note": "Use new output directories when reproducing; archived outputs must not be overwritten."
+}

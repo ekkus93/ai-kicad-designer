@@ -1,0 +1,424 @@
+{
+  "schema_version": "pivot-evidence.v1",
+  "evidence_id": "P6-010-schematic-review-loop-2026-10-25",
+  "task_id": "P6-010",
+  "recorded_at_utc": "2026-10-25T18:24:46.052607Z",
+  "source_commit": "df0f263604053ecbb1d6b915f1835bf412a5b819",
+  "revision_kind": "git_commit",
+  "revision_id": "df0f263604053ecbb1d6b915f1835bf412a5b819",
+  "action": {
+    "summary": "Generate native schematics, review actual PNGs with a local vision model, apply typed corrections and independently check/review each revision",
+    "command": "PYTHONPATH=src:. uv run python tools/pivot/review_schematic.py --design fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/inputs/intended_rc.json --source fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/inputs/corrupted_rc.kicad_sch --kicad-apprun /home/phil/Applications/kicad-10.0.6/AppDir/AppRun --model qwen3.5:9b --output fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_wiring_locked --max-reviews 6 --max-seconds 600\nPYTHONPATH=src:. uv run python tools/pivot/review_schematic.py --design fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/inputs/intended_rc.json --source fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/inputs/distant_value_rc.kicad_sch --review-brief fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/inputs/readability-brief.txt --kicad-apprun /home/phil/Applications/kicad-10.0.6/AppDir/AppRun --model qwen3.5:9b --output fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked --max-reviews 6 --max-seconds 600\nPYTHONPATH=src:. uv run python tools/pivot/review_schematic.py --design fixtures/m2b/led_series.json --kicad-apprun /home/phil/Applications/kicad-10.0.6/AppDir/AppRun --model qwen3.5:9b --output fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/led_locked --max-reviews 6 --max-seconds 600\nPYTHONPATH=src:. uv run python tools/pivot/review_schematic.py --design fixtures/pivot/reference_555_led_flasher_v8/design.json --kicad-apprun /home/phil/Applications/kicad-10.0.6/AppDir/AppRun --model qwen3.5:9b --output fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/timer_locked_libraries --max-reviews 6 --max-seconds 600",
+    "backend": "M2b native compiler, KiCad CLI, independent observers, bounded schematic controller and local Ollama vision reviewer",
+    "backend_version": "KiCad 10.0.6; Ollama 0.40.8; Qwen 3.5 9B digest 56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "toolchain": "Python 3.12.10; Linux x86_64/glibc 2.39; rsvg-convert and ImageMagick versions/hashes recorded in run manifests; not locked-host qualification"
+  },
+  "status": "PASS",
+  "artifacts": [
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/summary.json",
+      "sha256": "fae30a4c395052cad1102b7c1583c79033f4e93b093d41924b850f69cb92d951",
+      "media_type": "application/json",
+      "role": "compact outcomes and explicit historical/model limitations"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/artifact-index.json",
+      "sha256": "453340c14786e9c59f77c31e171b0e3cf312e0aec371b043f0234cba66c0c014",
+      "media_type": "application/json",
+      "role": "hash inventory for every retained experiment file, including ignored KiCad runtime files"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/README.md",
+      "sha256": "e23e555fa855375587e3ddba0accdefdc4babf29719661c11dd28f6775df1e61",
+      "media_type": "text/markdown",
+      "role": "human-readable reproduction and interpretation of final and failed runs"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/reproduce.json",
+      "sha256": "b1d95d3a61a904fd709f505bc2cd6fd296e294f46fa17fad2c348837b31dc7be",
+      "media_type": "application/json",
+      "role": "exact source, environment and argv for all final cases"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/verify_evidence.py",
+      "sha256": "d23cbb407762d4adbd878b4b8efd5e354a6eb7bec8a53de8a256a5e62bbbf867",
+      "media_type": "text/x-python",
+      "role": "independent manifest/image/source/revision verification program"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/validation/pivot-tests.xml",
+      "sha256": "1f816abca3fee063f3d083ee3f9a7f7a2b8012336ea6fc00652002d14dc58abc",
+      "media_type": "application/xml",
+      "role": "129-test pivot regression report"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/validation/result.json",
+      "sha256": "a28124f2bcad919bcd8d084a164866d6ef160b4fed5a3fc47e9da00a7086b9cf",
+      "media_type": "application/json",
+      "role": "exact source and pytest/Ruff command outcomes"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_wiring_locked/result.json",
+      "sha256": "163ef917f7975d0d55f797e47b684106119b5b522597413864d9296fee05d1b6",
+      "media_type": "application/json",
+      "role": "controller iterations and exact accepted schematic for rc_wiring_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_wiring_locked/manifest.json",
+      "sha256": "4a62913af0a27d1be7055d86f55eb1028f405aa014037353d26f9b0a95d84e51",
+      "media_type": "application/json",
+      "role": "exact implementation/tool/artifact hashes for rc_wiring_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_wiring_locked/candidates/001/assessment.json",
+      "sha256": "6952650aeb908db81fa6d9df08678d650785395dc9dad83d22f7eec30372431d",
+      "media_type": "application/json",
+      "role": "independent native KiCad and geometry gates for rc_wiring_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_wiring_locked/candidates/001/project/DevstralV4RcLowpass1kHz.kicad_sch",
+      "sha256": "75595782283eecc619f7586395e93a17d3bf4f6e0de6032e1ac6a4c0ad1b0211",
+      "media_type": "application/x-kicad-schematic",
+      "role": "accepted native schematic for rc_wiring_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_wiring_locked/candidates/001/reports/netlist.xml",
+      "sha256": "435c3242578c8da6c53ba21c6565bdded0252b3d9873c7c58f45486dbba3b2a8",
+      "media_type": "application/xml",
+      "role": "KiCad-exported terminal partitions for rc_wiring_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_wiring_locked/candidates/001/reports/erc.json",
+      "sha256": "9b23a118f0b318e14c99e26ddcb66c5cbc401c69e2dc403d574d9a2e41033b05",
+      "media_type": "application/json",
+      "role": "KiCad ERC report for rc_wiring_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_wiring_locked/candidates/001/review-images/drawing.png",
+      "sha256": "c9b18bd25d1bcfadf11215e679e78865a77ec4328a027604a4b60b50029aefb5",
+      "media_type": "image/png",
+      "role": "actual final close-up image reviewed by the model for rc_wiring_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_wiring_locked/reviews/000.json",
+      "sha256": "e2f922c5b66b054eff31f2a685076449455d3da681b5fe3acc8935758275bd5f",
+      "media_type": "application/json",
+      "role": "exact prompt, images, model response and usage for rc_wiring_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_wiring_locked/reviews/001.json",
+      "sha256": "f3ee9b5dc41e3c0d0acd68a7ae05c2097848f818896c1fbeda6affbf4f397dbc",
+      "media_type": "application/json",
+      "role": "exact prompt, images, model response and usage for rc_wiring_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_wiring_locked/candidates/000/assessment.json",
+      "sha256": "3257d5c9d9a57e03ea13604fea6010bbf753389a84ae15709a072d65d9e7ec28",
+      "media_type": "application/json",
+      "role": "initial injected-defect assessment for rc_wiring_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked/result.json",
+      "sha256": "ba103ae53ba3f47aefab192e1da1ca50390e30d6441e44f11e1ede7f444a6be5",
+      "media_type": "application/json",
+      "role": "controller iterations and exact accepted schematic for rc_labels_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked/manifest.json",
+      "sha256": "c064790cc89ac7272290dc0aa0da82cd8ae0bf798271aceca8d111be8426db08",
+      "media_type": "application/json",
+      "role": "exact implementation/tool/artifact hashes for rc_labels_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked/candidates/004/assessment.json",
+      "sha256": "46fda57d04cd531eb464f398f657140289e0c2a1d6302e56fed63260ba17aee8",
+      "media_type": "application/json",
+      "role": "independent native KiCad and geometry gates for rc_labels_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked/candidates/004/project/distant_value_rc.kicad_sch",
+      "sha256": "13213a20d769080a0a72ab7fde701aa263746c45009628ed92e3ab9e294daab3",
+      "media_type": "application/x-kicad-schematic",
+      "role": "accepted native schematic for rc_labels_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked/candidates/004/reports/netlist.xml",
+      "sha256": "e4a78c9f1d6cbfa4737440c3b913d48ee1b86dbbe203e1235755d63eb81b77f5",
+      "media_type": "application/xml",
+      "role": "KiCad-exported terminal partitions for rc_labels_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked/candidates/004/reports/erc.json",
+      "sha256": "4b8920c0a1bd3f685e71b5c6c33bdf53c2f8376e7792aabf3600dcd4efbfea34",
+      "media_type": "application/json",
+      "role": "KiCad ERC report for rc_labels_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked/candidates/004/review-images/drawing.png",
+      "sha256": "cf1039fc490f6d349ff1af433dc76c14aea23d8ca70b0c17550fba2b29af7b87",
+      "media_type": "image/png",
+      "role": "actual final close-up image reviewed by the model for rc_labels_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked/reviews/000.json",
+      "sha256": "4c239e98bde6577808169128548791c5c8950eb6047d7d70d8d44e9c8f260c20",
+      "media_type": "application/json",
+      "role": "exact prompt, images, model response and usage for rc_labels_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked/reviews/001.json",
+      "sha256": "0ca19a1f686c9996212e19e799566fdca3891230147fba8ee62e1f4698290bde",
+      "media_type": "application/json",
+      "role": "exact prompt, images, model response and usage for rc_labels_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked/reviews/002.json",
+      "sha256": "45dedb1eccdbc6f666406c925a8167d83ff294a7e05803bcbf6a7cd7d92c2738",
+      "media_type": "application/json",
+      "role": "exact prompt, images, model response and usage for rc_labels_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked/reviews/003.json",
+      "sha256": "2221e28a5e608dc4e806d236a830f3ede63b28ded2579fecff231133534f5e61",
+      "media_type": "application/json",
+      "role": "exact prompt, images, model response and usage for rc_labels_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked/reviews/004.json",
+      "sha256": "ae751b9f1c7e19a13fa2402a08e117835e88dce519dfa660001383ab24a1b80c",
+      "media_type": "application/json",
+      "role": "exact prompt, images, model response and usage for rc_labels_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked/candidates/000/assessment.json",
+      "sha256": "08742ae3541acabd3285c066e830c0a7a2dd20e9304890cb3c63bc6d88f16d72",
+      "media_type": "application/json",
+      "role": "initial injected-defect assessment for rc_labels_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/led_locked/result.json",
+      "sha256": "dd3709472b3aab8b7618f6c9ec8844e8af628b1afeb7d006060e5bd654320cf2",
+      "media_type": "application/json",
+      "role": "controller iterations and exact accepted schematic for led_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/led_locked/manifest.json",
+      "sha256": "59bd4f0d66a91075c2642aead74364f3d5ff0716f2f7d8426cef924864847257",
+      "media_type": "application/json",
+      "role": "exact implementation/tool/artifact hashes for led_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/led_locked/candidates/000/assessment.json",
+      "sha256": "8d8f49a6c27d8be4b4d2218961642f618329371b0890126938b2f1efbce554db",
+      "media_type": "application/json",
+      "role": "independent native KiCad and geometry gates for led_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/led_locked/candidates/000/project/LedSeries.kicad_sch",
+      "sha256": "c529897ada99a1b30737bae4f1ba1321e329c33fae5fbc799ff1ef6d3918c20b",
+      "media_type": "application/x-kicad-schematic",
+      "role": "accepted native schematic for led_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/led_locked/candidates/000/reports/netlist.xml",
+      "sha256": "3cca615221f86a3b2e329d85d9e51f2edb7e779d0d6aa24a861330d2d691a973",
+      "media_type": "application/xml",
+      "role": "KiCad-exported terminal partitions for led_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/led_locked/candidates/000/reports/erc.json",
+      "sha256": "d17848d0216e480bb358e6ddd888f08745c9bf39ff6b5f8d2d26f1037b67a14c",
+      "media_type": "application/json",
+      "role": "KiCad ERC report for led_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/led_locked/candidates/000/review-images/drawing.png",
+      "sha256": "e64b8b55abe554e66859d56d6ab463bdcd337861c862ec5eed685119d5576e27",
+      "media_type": "image/png",
+      "role": "actual final close-up image reviewed by the model for led_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/led_locked/reviews/000.json",
+      "sha256": "89e2a7861c886f8d1bba92436ff3e21d4301d486636d78b57ba6977848fa8e52",
+      "media_type": "application/json",
+      "role": "exact prompt, images, model response and usage for led_locked"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/timer_locked_libraries/result.json",
+      "sha256": "34bb8d31a9ba24e49223749f089ad1901fc277917b1bfd29cc17e78dea813089",
+      "media_type": "application/json",
+      "role": "controller iterations and exact accepted schematic for timer_locked_libraries"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/timer_locked_libraries/manifest.json",
+      "sha256": "9e626bfb3d850b8cfa80ccecd57fefb0c07e90b64218513ebc02003893300639",
+      "media_type": "application/json",
+      "role": "exact implementation/tool/artifact hashes for timer_locked_libraries"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/timer_locked_libraries/candidates/000/assessment.json",
+      "sha256": "d194f9c79bce809294745c26d75e55d49675dd141ddc7157cf740fca335eee22",
+      "media_type": "application/json",
+      "role": "independent native KiCad and geometry gates for timer_locked_libraries"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/timer_locked_libraries/candidates/000/project/Reference555LedFlasher.kicad_sch",
+      "sha256": "1f603f2c3c81d3990f954045ba62d8a6e2d4bfcb714952714030a3cac4bc27e8",
+      "media_type": "application/x-kicad-schematic",
+      "role": "accepted native schematic for timer_locked_libraries"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/timer_locked_libraries/candidates/000/reports/netlist.xml",
+      "sha256": "f1597efccd1d3e68ea6a3529f0ab8a9c0c4d17511d2ed23d4b05e29dd5ea82c8",
+      "media_type": "application/xml",
+      "role": "KiCad-exported terminal partitions for timer_locked_libraries"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/timer_locked_libraries/candidates/000/reports/erc.json",
+      "sha256": "68280ab4343e1a520c4484e5b0ef80e828f2157fd5db419f2dddb6eb64657faf",
+      "media_type": "application/json",
+      "role": "KiCad ERC report for timer_locked_libraries"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/timer_locked_libraries/candidates/000/review-images/drawing.png",
+      "sha256": "a222e25dcb25cddb3e56d9b38425e10257455cf63bd8330258f38091efddc540",
+      "media_type": "image/png",
+      "role": "actual final close-up image reviewed by the model for timer_locked_libraries"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/timer_locked_libraries/reviews/000.json",
+      "sha256": "e61811748ca510a79633027f8f07a1a0414518ff1df825004ec96f05b3906310",
+      "media_type": "application/json",
+      "role": "exact prompt, images, model response and usage for timer_locked_libraries"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_visual_only/result.json",
+      "sha256": "d35c4cdbb44307687aeb70be00c1d8acd7af111102bf55fbf4ee00eb79f1340e",
+      "media_type": "application/json",
+      "role": "retained failed or falsely accepted exploratory outcome for rc_visual_only"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_visual_thinking/result.json",
+      "sha256": "55214e6c12ff5c2a162016224dd96702392ed959e672e0e6f5b33269989cedf8",
+      "media_type": "application/json",
+      "role": "retained failed or falsely accepted exploratory outcome for rc_visual_thinking"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/timer_generated/result.json",
+      "sha256": "db721bf53352dc827f96f4fd319b6b4fb2eefcfb50fe7b564d8891b3da70e5d5",
+      "media_type": "application/json",
+      "role": "retained failed or falsely accepted exploratory outcome for timer_generated"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_visual_only/reviews/000.json",
+      "sha256": "838c43fe96665f01392e21d553d04b3b2bff8495feb448060095bc8b0b4b4757",
+      "media_type": "application/json",
+      "role": "historical false acceptance before locality gate"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_visual_only/candidates/000/review-images/drawing.png",
+      "sha256": "019c114aed3afbccdcf9b6e463ad2387f030b7492d613f92b129d1844f40c525",
+      "media_type": "image/png",
+      "role": "deliberately distant C1 value missed by the earlier model"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/inputs/input_defects.json",
+      "sha256": "e81d5b691ce7c15e37c027ef3555ff98959eafcf13ce84d5e741addc6260dbed",
+      "media_type": "application/json",
+      "role": "reproducible removed-wire and field-overlap injection"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/inputs/visual_input_defect.json",
+      "sha256": "1824ecc6d75da7d5479ceb3ce7221b11732140250e1219eb8a284e95c7669e90",
+      "media_type": "application/json",
+      "role": "reproducible distant-value injection"
+    }
+  ],
+  "checks": [
+    {
+      "check_id": "native-generation-plus-actual-image-review",
+      "status": "PASS",
+      "summary": "Fresh LED and 10-component 555 native schematics passed all six independent gates and exact-revision image/model review; one review each. This establishes loop execution, not universal aesthetic quality.",
+      "evidence_paths": [
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/led_locked/result.json",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/led_locked/manifest.json",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/led_locked/candidates/000/assessment.json",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/led_locked/candidates/000/project/LedSeries.kicad_sch",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/led_locked/candidates/000/reports/netlist.xml",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/led_locked/candidates/000/reports/erc.json",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/led_locked/candidates/000/review-images/drawing.png",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/led_locked/reviews/000.json",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/timer_locked_libraries/result.json",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/timer_locked_libraries/manifest.json",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/timer_locked_libraries/candidates/000/assessment.json",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/timer_locked_libraries/candidates/000/project/Reference555LedFlasher.kicad_sch",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/timer_locked_libraries/candidates/000/reports/netlist.xml",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/timer_locked_libraries/candidates/000/reports/erc.json",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/timer_locked_libraries/candidates/000/review-images/drawing.png",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/timer_locked_libraries/reviews/000.json"
+      ],
+      "independent": true
+    },
+    {
+      "check_id": "autonomous-wiring-and-overlap-regeneration",
+      "status": "PASS",
+      "summary": "An RC input with a removed wire and overlapping J1 fields failed initial gates; the model requested regeneration, the controller rebuilt it, and a second image review accepted only the independently passing new revision.",
+      "evidence_paths": [
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_wiring_locked/result.json",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_wiring_locked/manifest.json",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_wiring_locked/candidates/001/assessment.json",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_wiring_locked/candidates/001/project/DevstralV4RcLowpass1kHz.kicad_sch",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_wiring_locked/candidates/001/reports/netlist.xml",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_wiring_locked/candidates/001/reports/erc.json",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_wiring_locked/candidates/001/review-images/drawing.png",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_wiring_locked/reviews/000.json",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_wiring_locked/reviews/001.json",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_wiring_locked/candidates/000/assessment.json"
+      ],
+      "independent": true
+    },
+    {
+      "check_id": "autonomous-label-repair-with-rejected-intermediates",
+      "status": "PASS",
+      "summary": "A C1 value 77.37 mm from its symbol was rejected by the locality gate. Across five reviews, overlap feedback and an invalid-reference rejection were automatically returned to the model; only the checked and re-reviewed final field position was accepted.",
+      "evidence_paths": [
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked/result.json",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked/manifest.json",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked/candidates/004/assessment.json",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked/candidates/004/project/distant_value_rc.kicad_sch",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked/candidates/004/reports/netlist.xml",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked/candidates/004/reports/erc.json",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked/candidates/004/review-images/drawing.png",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked/reviews/000.json",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked/reviews/001.json",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked/reviews/002.json",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked/reviews/003.json",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked/reviews/004.json",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/rc_labels_locked/candidates/000/assessment.json"
+      ],
+      "independent": true
+    },
+    {
+      "check_id": "revision-artifact-and-regression-contract",
+      "status": "PASS",
+      "summary": "All retained manifests and model-image hashes verify; final review hashes match native files and exact source blobs. The pivot suite passes 129 tests, including stale reviews, artifact changes during model calls, invalid edits, regressions, cycles and budgets. Ruff and formatting pass.",
+      "evidence_paths": [
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/summary.json",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/artifact-index.json",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/verify_evidence.py",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/validation/pivot-tests.xml",
+        "fixtures/pivot/experiments/schematic_review_loop_2026-10-25_run1/validation/result.json"
+      ],
+      "independent": true
+    }
+  ],
+  "ci_links": [],
+  "blockers": [],
+  "notes": [
+    "PASS is scoped to the implemented execution and supported edit contract: field placement, whole-sheet translation and regeneration from the intended circuit.",
+    "The pre-locality model falsely accepted a visually detached value; its result is preserved and explicitly marked as a visual detection failure in the summary. Model visual judgment alone is not sufficient.",
+    "The 555 model acceptance does not establish satisfaction of earlier owner preferences for fully visible REF/VCC wiring. Additional routing edits and diverse visual qualification remain P6-011.",
+    "Thinking-enabled exploratory calls exhausted the 4096-token output limit; the run was not accepted. A first 555 run stopped on missing library registrations; isolated locked symbol libraries resolve that backend issue in the final run.",
+    "Human electrical review and locked-host qualification retain their separate open gates. No fabrication or external action is approved by this software/model result."
+  ]
+}

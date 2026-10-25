@@ -1,0 +1,74 @@
+{
+  "schema_version": "schematic-review-loop.v1",
+  "status": "ACCEPTED_FOR_REVIEW",
+  "reason": "All independent checks (native tools, ERC, electrical equivalence, observed layout, field separation, and field locality) pass. The schematic images show clear component references and values with no overlaps or misplaced labels. Connectivity matches the intended circuit profile, and page composition is clean. No unresolved issues are present.",
+  "accepted_schematic": "candidates/001/project/distant_value_rc.kicad_sch",
+  "best_passing_schematic": "candidates/001/project/distant_value_rc.kicad_sch",
+  "reviewer": {
+    "model": "qwen3.5:9b",
+    "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "ollama_version": "0.40.8",
+    "capabilities": [
+      "completion",
+      "vision",
+      "tools",
+      "thinking"
+    ],
+    "options": {
+      "temperature": 0,
+      "seed": 20261025,
+      "num_ctx": 16384,
+      "num_predict": 2048
+    },
+    "think": false
+  },
+  "iterations": [
+    {
+      "iteration": 0,
+      "revision": "sha256:63540b7f1979c8c129b5431d681ab677442607a26158db2c1290f27c97df4c15",
+      "schematic": "candidates/000/project/distant_value_rc.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:63540b7f1979c8c129b5431d681ab677442607a26158db2c1290f27c97df4c15",
+        "decision": "revise",
+        "issues": [
+          "The 'Value' field for component C1 is located at (150.0, 100.0), which is 77.369106 mm away from the component symbol. This exceeds the acceptable proximity limit and violates the field_locality check."
+        ],
+        "actions": [
+          {
+            "operation": "move_field",
+            "reference": "C1",
+            "unit": 1,
+            "field": "Value",
+            "x_mm": 95.0,
+            "y_mm": 65.0,
+            "angle": 0
+          }
+        ],
+        "rationale": "The independent check identified that the 'Value' field for capacitor C1 is too distant from its symbol (77.37 mm). To satisfy the visual review brief and the field_locality requirement, this field must be moved closer to the component. The proposed move places it at a reasonable distance while maintaining clear association."
+      }
+    },
+    {
+      "iteration": 1,
+      "revision": "sha256:10b4de293a7ac4e94761b60955617cb0b12f0609fe9fe8d4be462e0f97b88c23",
+      "schematic": "candidates/001/project/distant_value_rc.kicad_sch",
+      "independent_checks_pass": true,
+      "review": {
+        "base_revision": "sha256:10b4de293a7ac4e94761b60955617cb0b12f0609fe9fe8d4be462e0f97b88c23",
+        "decision": "accept",
+        "issues": [],
+        "actions": [],
+        "rationale": "All independent checks (native tools, ERC, electrical equivalence, observed layout, field separation, and field locality) pass. The schematic images show clear component references and values with no overlaps or misplaced labels. Connectivity matches the intended circuit profile, and page composition is clean. No unresolved issues are present."
+      }
+    }
+  ],
+  "model_tokens": 13694,
+  "elapsed_seconds": 17.59,
+  "budgets": {
+    "max_reviews": 6,
+    "max_seconds": 600.0,
+    "max_model_tokens": 60000
+  },
+  "human_electrical_review": "PENDING",
+  "locked_host_qualification": false
+}

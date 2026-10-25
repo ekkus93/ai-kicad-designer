@@ -1,0 +1,128 @@
+{
+  "schema_version": "schematic-review-demo.v1",
+  "qualified_source_commit": "df0f263604053ecbb1d6b915f1835bf412a5b819",
+  "scope": "bounded native schematic review execution and supported edits; intended electrical design remains authoritative",
+  "final_runs": {
+    "led_locked": {
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reviews": 1,
+      "model_tokens": 7091,
+      "elapsed_seconds": 6.772,
+      "accepted_schematic": "led_locked/candidates/000/project/LedSeries.kicad_sch",
+      "schematic_sha256": "c529897ada99a1b30737bae4f1ba1321e329c33fae5fbc799ff1ef6d3918c20b",
+      "checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "field_separation": "PASS",
+        "field_locality": "PASS"
+      },
+      "drawing": "led_locked/candidates/000/review-images/drawing.png"
+    },
+    "rc_labels_locked": {
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reviews": 5,
+      "model_tokens": 36667,
+      "elapsed_seconds": 39.953,
+      "accepted_schematic": "rc_labels_locked/candidates/004/project/distant_value_rc.kicad_sch",
+      "schematic_sha256": "13213a20d769080a0a72ab7fde701aa263746c45009628ed92e3ab9e294daab3",
+      "checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "field_separation": "PASS",
+        "field_locality": "PASS"
+      },
+      "drawing": "rc_labels_locked/candidates/004/review-images/drawing.png"
+    },
+    "rc_wiring_locked": {
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reviews": 2,
+      "model_tokens": 14816,
+      "elapsed_seconds": 18.284,
+      "accepted_schematic": "rc_wiring_locked/candidates/001/project/DevstralV4RcLowpass1kHz.kicad_sch",
+      "schematic_sha256": "75595782283eecc619f7586395e93a17d3bf4f6e0de6032e1ac6a4c0ad1b0211",
+      "checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "field_separation": "PASS",
+        "field_locality": "PASS"
+      },
+      "drawing": "rc_wiring_locked/candidates/001/review-images/drawing.png"
+    },
+    "timer_locked_libraries": {
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reviews": 1,
+      "model_tokens": 9602,
+      "elapsed_seconds": 19.915,
+      "accepted_schematic": "timer_locked_libraries/candidates/000/project/Reference555LedFlasher.kicad_sch",
+      "schematic_sha256": "1f603f2c3c81d3990f954045ba62d8a6e2d4bfcb714952714030a3cac4bc27e8",
+      "checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "field_separation": "PASS",
+        "field_locality": "PASS"
+      },
+      "drawing": "timer_locked_libraries/candidates/000/review-images/drawing.png"
+    }
+  },
+  "earlier_runs": {
+    "led_generated": {
+      "reported_status": "ACCEPTED_FOR_REVIEW",
+      "reviews": 1,
+      "reason": "The schematic shows a simple LED circuit with J1 (Input), R1 (1k resistor), D1 (LED), and J2 (Return). All component labels, values, and wiring are clear and correctly placed. The ERC and electrical equivalence checks pass. No unresolved issues found in the visual review or layout composition."
+    },
+    "rc_corrupted": {
+      "reported_status": "ACCEPTED_FOR_REVIEW",
+      "reviews": 2,
+      "reason": "The independent checks (native_tools, erc, electrical_equivalence, observed_layout) all passed. The schematic images show a clean layout with no overlaps or unresolved issues. All component references and values match the intended circuit. No repairs are needed.",
+      "independent_visual_audit": "Prototype: repair converged, but the close-up retained the page background. Subsequent runs correct the renderer."
+    },
+    "rc_corrupted_v2": {
+      "reported_status": "ACCEPTED_FOR_REVIEW",
+      "reviews": 2,
+      "reason": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, field_separation) passed. No unresolved issues detected in the schematic images or data."
+    },
+    "rc_final": {
+      "reported_status": "ACCEPTED_FOR_REVIEW",
+      "reviews": 2,
+      "reason": "All independent checks (native tools, ERC, electrical equivalence, observed layout) pass. Visual inspection confirms readable labels, correct component values (R1 10k, C1 15n), proper wiring topology (J1\u2013R1\u2013J2 series path, J3 shunt to C1), and no unresolved issues in page composition or field placement."
+    },
+    "rc_visual_gated": {
+      "reported_status": "ACCEPTED_FOR_REVIEW",
+      "reviews": 2,
+      "reason": "All independent checks (native tools, ERC, electrical equivalence, observed layout, field separation, and field locality) pass. The schematic images show clear component references and values with no overlaps or misplaced labels. Connectivity matches the intended circuit profile, and page composition is clean. No unresolved issues are present."
+    },
+    "rc_visual_only": {
+      "reported_status": "ACCEPTED_FOR_REVIEW",
+      "reviews": 1,
+      "reason": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, field_separation) pass. The schematic text and artifacts are consistent with the intended circuit: R1=10k, C1=15n, J1 Input, J2 Output, J3 Return, with correct connectivity and no unresolved issues or overlaps requiring repair.",
+      "independent_visual_audit": "FAIL: the model accepted the deliberately detached C1 value. This motivated the generalized locality gate."
+    },
+    "rc_visual_thinking": {
+      "reported_status": "LIMIT_REACHED",
+      "reviews": 6,
+      "reason": "review budget exhausted",
+      "independent_visual_audit": "NO ACCEPTANCE: six truncated 4096-token responses exhausted the review budget; repeated invalid replies now stop earlier."
+    },
+    "timer_generated": {
+      "reported_status": "NO_PROGRESS",
+      "reviews": 1,
+      "reason": "candidate repeats an earlier revision",
+      "independent_visual_audit": "NO ACCEPTANCE: missing Timer/power registrations caused ERC warnings and a repeated candidate. Isolated locked library registration resolves the backend issue."
+    }
+  },
+  "human_electrical_review": "PENDING",
+  "locked_host_qualification": false,
+  "limitations": [
+    "Before the locality gate, Qwen accepted the deliberately detached C1 value label; model visual judgment alone is insufficient.",
+    "The generated 555 still uses multiple REF and VCC labels. Model acceptance does not establish satisfaction of all earlier owner wiring-style preferences.",
+    "Supported edits are field placement, whole-sheet translation and regeneration from the intended circuit. Arbitrary symbol movement, custom routing and topology changes are not implemented."
+  ]
+}
