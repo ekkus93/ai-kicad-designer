@@ -12,6 +12,7 @@ import tempfile
 
 from ai_kicad.ir import InputError
 from ai_kicad.kicad import ToolFailure, run_headless
+from ai_kicad.m2_text_layout import overlaps, property_page_angle, text_extents
 from ai_kicad.m2_compose import compose_with_evidence
 from ai_kicad.m2a_artifacts import emit, observe, verify_serialized_scene
 from ai_kicad.m2b import assets, check_observed_layout, compare, validate
@@ -112,6 +113,44 @@ def edit_schematic_text(text: str, actions: list[SchematicAction]) -> str:
             text = text[:start] + block + text[end:]
     parse(text)
     return text
+
+
+def field_collision_witnesses(tree: list) -> list[list[str]]:
+    """Measure visible property envelopes, including fields on the same symbol."""
+    boxes = []
+    for symbol in children(tree, "symbol"):
+        props = {p[1]: p for p in children(symbol, "property")}
+        reference = props["Reference"][2]
+        unit = one(symbol, "unit")[1]
+        symbol_angle = int(float(one(symbol, "at")[3]))
+        for name in ("Reference", "Value"):
+            prop = props.get(name)
+            if prop is None or children(prop, "hide"):
+                continue
+            effect_nodes = children(prop, "effects")
+            if effect_nodes and (children(effect_nodes[0], "hide") or "hide" in effect_nodes[0]):
+                continue
+            scale = 1.0
+            if effect_nodes:
+                size = one(one(effect_nodes[0], "font"), "size")
+                scale = max(float(size[1]), float(size[2])) / 1.27
+            at = one(prop, "at")
+            angle = property_page_angle(symbol_angle, int(float(at[3])))
+            width, height = text_extents(prop[2], angle)
+            width, height = width / 1e6 * scale, height / 1e6 * scale
+            x, y = float(at[1]), float(at[2])
+            boxes.append(
+                (
+                    f"{reference}:{unit}.{name}",
+                    (x - width / 2, y - height / 2, x + width / 2, y + height / 2),
+                )
+            )
+    return [
+        [first[0], second[0]]
+        for i, first in enumerate(boxes)
+        for second in boxes[i + 1 :]
+        if overlaps(first[1], second[1])
+    ]
 
 
 class NativeSchematicEngine:
@@ -227,6 +266,10 @@ class NativeSchematicEngine:
             except (InputError, ValueError, KeyError) as error:
                 diagnostics.append(str(error))
         tree = parse(schematic.read_text())
+        field_collisions = field_collision_witnesses(tree)
+        checks["field_separation"] = "FAIL" if field_collisions else "PASS"
+        if field_collisions:
+            diagnostics.append(f"overlapping reference/value fields: {field_collisions}")
         fields = []
         for symbol in children(tree, "symbol"):
             props = {p[1]: p for p in children(symbol, "property")}
@@ -253,6 +296,7 @@ class NativeSchematicEngine:
             "electrical": electrical,
             "layout": layout,
             "field_inventory": fields,
+            "field_collision_witnesses": field_collisions,
             "intended_circuit": self.design,
             "toolchain": self.toolchain,
             "schematic_sha256": file_hash(schematic),
@@ -285,6 +329,7 @@ class NativeSchematicEngine:
                 "export",
                 "svg",
                 "--exclude-drawing-sheet",
+                "--no-background-color",
                 "--output",
                 str(renders),
                 str(schematic),

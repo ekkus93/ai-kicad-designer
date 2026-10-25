@@ -12,7 +12,11 @@ from ai_kicad.pivot.schematic_review import (
     TranslateSheet,
     run_schematic_review,
 )
-from ai_kicad.pivot.schematic_review_native import NativeSchematicEngine, edit_schematic_text
+from ai_kicad.pivot.schematic_review_native import (
+    NativeSchematicEngine,
+    edit_schematic_text,
+    field_collision_witnesses,
+)
 from ai_kicad.sexpr import one, parse
 
 
@@ -217,6 +221,15 @@ def test_invalid_native_edit_is_atomic(tmp_path):
     assert source.read_text() == SCHEMATIC
     assert not (tmp_path / "candidate").exists()
     assert not list(tmp_path.glob(".review-edit-*"))
+
+
+def test_field_collision_gate_includes_fields_on_same_symbol():
+    upright = SCHEMATIC.replace("(at 25 30 0)", "(at 25 30 90)").replace(
+        "(at 25 33 0)", "(at 25 33 90)"
+    )
+    assert not field_collision_witnesses(parse(upright))
+    corrupted = upright.replace('"Value" "10k" (at 25 33 90)', '"Value" "10k" (at 25 30 90)')
+    assert field_collision_witnesses(parse(corrupted)) == [["R1:1.Reference", "R1:1.Value"]]
 
 
 def test_translation_moves_conductors_and_properties_but_not_library():
