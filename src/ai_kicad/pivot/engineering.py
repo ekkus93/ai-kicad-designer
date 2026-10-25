@@ -328,7 +328,9 @@ def export_smt_assembly(
         "centroid": "centroid.csv",
         "placement_count": len(placements),
         "bom_line_count": len(grouped_bom),
-        "rotation_convention": "Counter-clockwise degrees as viewed from the placement side.",
+        "rotation_convention": (
+            "Native KiCad angle normalized to [0,360); no side-specific remapping applied."
+        ),
         "paste_layers_required": sorted({placement.side for placement in placements}),
     }
 
@@ -357,6 +359,20 @@ def export_kicad_smt_assembly(
         stage = Path(temporary)
         package = stage / "package"
         raw_positions = stage / "native_positions.csv"
+        board_tree = parse(board.read_text())
+        setup_nodes = children(board_tree, "setup")
+        aux_origin_nodes = (
+            children(setup_nodes[0], "aux_axis_origin") if len(setup_nodes) == 1 else []
+        )
+        if len(aux_origin_nodes) != 1 or len(aux_origin_nodes[0]) != 3:
+            raise RequirementError(
+                "PCBWay centroid export requires one KiCad drill/place origin; set it at the "
+                "board's lower-left corner before export"
+            )
+        try:
+            aux_origin_mm = [float(aux_origin_nodes[0][1]), float(aux_origin_nodes[0][2])]
+        except ValueError as error:
+            raise RequirementError("KiCad drill/place origin is not numeric") from error
         position_command = [
             *launcher,
             "pcb",
@@ -370,6 +386,7 @@ def export_kicad_smt_assembly(
             "--exclude-dnp",
             "--side",
             "both",
+            "--use-drill-file-origin",
             "--output",
             str(raw_positions),
             str(board),
@@ -398,7 +415,6 @@ def export_kicad_smt_assembly(
         if len(records) != len(references):
             raise RequirementError("native position file contains duplicate references")
 
-        board_tree = parse(board.read_text())
         board_footprints = {}
         requested_references = set(references)
         for footprint in children(board_tree, "footprint"):
@@ -512,9 +528,18 @@ def export_kicad_smt_assembly(
                 for path in outputs
             },
             native_position_export="kicad-cli pcb export pos --smd-only --exclude-dnp",
-            coordinate_origin="KiCad page origin (top-left); drill/place origin option omitted",
+            coordinate_origin="KiCad drill/place auxiliary origin",
+            coordinate_origin_mm=aux_origin_mm,
+            coordinate_origin_requirement=(
+                "Board auxiliary origin must be set at the lower-left board corner from a "
+                "top-side view per PCBWay's KiCad instructions"
+            ),
             bottom_x_negated=False,
             rotation_source="native KiCad Rot field normalized modulo 360 degrees",
+            provider_rotation_note=(
+                "PCBWay documents orientation from a top-side view; this exporter preserves "
+                "native KiCad angles without side-specific remapping"
+            ),
         )
         package.rename(destination)
         return report

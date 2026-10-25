@@ -305,7 +305,8 @@ def test_pcbway_bom_groups_same_part_and_preserves_supplier_fields(tmp_path):
 def test_native_kicad_smt_export_binds_position_paste_and_drawing_to_board(tmp_path):
     board = tmp_path / "assembly.kicad_pcb"
     board.write_text(
-        '(kicad_pcb (footprint "Resistor_SMD:R_0603_1608Metric" (property "Reference" "R1")))'
+        "(kicad_pcb (setup (aux_axis_origin 0 0)) "
+        '(footprint "Resistor_SMD:R_0603_1608Metric" (property "Reference" "R1")))'
     )
     bom = [
         {
@@ -337,6 +338,9 @@ def test_native_kicad_smt_export_binds_position_paste_and_drawing_to_board(tmp_p
     assert report["placement_count"] == 1
     assert report["paste"] == ["paste/assembly-B_Paste.gbr"]
     assert report["assembly_drawing"] == "assembly.pdf"
+    assert report["coordinate_origin_mm"] == [0.0, 0.0]
+    assert "lower-left" in report["coordinate_origin_requirement"]
+    assert "--use-drill-file-origin" in cli.call_args_list[0].args[0]
     centroid = (tmp_path / "package/centroid.csv").read_text()
     assert "R1,10.2500mm,4.5000mm,Bottom,270.00" in centroid
     assert len(report["output_sha256"]) == 4
@@ -346,7 +350,8 @@ def test_native_kicad_smt_export_binds_position_paste_and_drawing_to_board(tmp_p
 def test_native_kicad_smt_export_rejects_footprint_mismatch_before_promotion(tmp_path):
     board = tmp_path / "assembly.kicad_pcb"
     board.write_text(
-        '(kicad_pcb (footprint "Resistor_SMD:R_0603_1608Metric" (property "Reference" "R1")))'
+        "(kicad_pcb (setup (aux_axis_origin 0 0)) "
+        '(footprint "Resistor_SMD:R_0603_1608Metric" (property "Reference" "R1")))'
     )
     bom = [
         {
@@ -374,7 +379,7 @@ def test_native_kicad_smt_export_rejects_footprint_mismatch_before_promotion(tmp
 def test_native_kicad_smt_export_requires_paste_file_for_every_mounted_side(tmp_path):
     board = tmp_path / "assembly.kicad_pcb"
     board.write_text(
-        "(kicad_pcb "
+        "(kicad_pcb (setup (aux_axis_origin 0 0)) "
         '(footprint "Resistor_SMD:R_0603_1608Metric" (property "Reference" "R1")) '
         '(footprint "Capacitor_SMD:C_0603_1608Metric" (property "Reference" "C1")))'
     )
@@ -408,4 +413,22 @@ def test_native_kicad_smt_export_requires_paste_file_for_every_mounted_side(tmp_
     with patch("ai_kicad.pivot.engineering.subprocess.run", side_effect=fake_cli):
         with pytest.raises(RequirementError, match="Bottom paste"):
             export_kicad_smt_assembly(["kicad-cli"], board, bom, tmp_path / "package")
+    assert not (tmp_path / "package").exists()
+
+
+def test_native_kicad_smt_export_requires_drill_place_origin(tmp_path):
+    board = tmp_path / "assembly.kicad_pcb"
+    board.write_text(
+        '(kicad_pcb (footprint "Resistor_SMD:R_0603_1608Metric" (property "Reference" "R1")))'
+    )
+    bom = [
+        {
+            "reference": "R1",
+            "quantity": 1,
+            "mpn": "RC0603",
+            "footprint": "Resistor_SMD:R_0603_1608Metric",
+        }
+    ]
+    with pytest.raises(RequirementError, match="lower-left corner"):
+        export_kicad_smt_assembly(["kicad-cli"], board, bom, tmp_path / "package")
     assert not (tmp_path / "package").exists()
