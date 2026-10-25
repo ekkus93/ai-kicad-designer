@@ -16,7 +16,7 @@ from ai_kicad.m2_text_layout import overlaps, property_page_angle, text_extents
 from ai_kicad.m2_compose import compose_with_evidence
 from ai_kicad.m2a_artifacts import emit, observe, verify_serialized_scene
 from ai_kicad.m2b import assets, check_observed_layout, compare, validate
-from ai_kicad.sexpr import children, one, parse
+from ai_kicad.sexpr import children, one, parse, quote
 
 from .schematic_review import (
     MoveField,
@@ -154,6 +154,38 @@ def field_collision_witnesses(tree: list) -> list[list[str]]:
     ]
 
 
+def write_locked_symbol_table(directory: Path, resolved: dict) -> tuple[Path, dict]:
+    """Register the exact resolved symbol definitions in an isolated KiCad configuration."""
+    libraries = {}
+    for library_id, asset in sorted(resolved.items()):
+        library, name = library_id.split(":", 1)
+        libraries.setdefault(library, []).append(
+            asset.definition.replace(
+                f"(symbol {quote(library_id)}",
+                f"(symbol {quote(name)}",
+                1,
+            )
+        )
+    folder = directory / "locked-symbols"
+    folder.mkdir()
+    entries, hashes = [], {}
+    for library, definitions in sorted(libraries.items()):
+        path = folder / f"{library}.kicad_sym"
+        path.write_text(
+            '(kicad_symbol_lib (version 20241209) (generator "ai_kicad")\n'
+            + "\n".join(definitions)
+            + ")\n"
+        )
+        hashes[library] = file_hash(path)
+        entries.append(
+            f'(lib (name {quote(library)}) (type "KiCad") '
+            f'(uri {quote(str(path.resolve()))}) (options "") (descr "Locked symbols"))'
+        )
+    table = folder / "sym-lib-table"
+    table.write_text("(sym_lib_table (version 7)\n" + "\n".join(entries) + ")\n")
+    return table, hashes
+
+
 class NativeSchematicEngine:
     """Generate, render and independently inspect a single-sheet supported M2b design."""
 
@@ -235,6 +267,7 @@ class NativeSchematicEngine:
 
     def assess(self, schematic: Path, directory: Path) -> SchematicAssessment:
         diagnostics = []
+        generated_table, symbol_hashes = write_locked_symbol_table(directory, self.resolved)
         checks = {
             "native_tools": "PASS",
             "erc": "FAIL",
@@ -242,7 +275,7 @@ class NativeSchematicEngine:
             "observed_layout": "FAIL",
         }
         try:
-            run_headless(schematic, self.launcher, directory, self.symbol_table)
+            run_headless(schematic, self.launcher, directory, self.symbol_table or generated_table)
         except ToolFailure as error:
             checks["native_tools"] = "FAIL"
             diagnostics.append(str(error))
@@ -309,6 +342,8 @@ class NativeSchematicEngine:
             "field_locality": locality,
             "intended_circuit": self.design,
             "toolchain": self.toolchain,
+            "symbol_table_sha256": file_hash(self.symbol_table or generated_table),
+            "locked_symbol_library_sha256": symbol_hashes,
             "schematic_sha256": file_hash(schematic),
             "image_sha256": {p.name: file_hash(p) for p in images},
         }

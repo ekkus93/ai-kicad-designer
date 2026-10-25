@@ -16,6 +16,7 @@ from ai_kicad.pivot.schematic_review_native import (
     NativeSchematicEngine,
     edit_schematic_text,
     field_collision_witnesses,
+    write_locked_symbol_table,
 )
 from ai_kicad.pivot.schematic_fields import measure_field_locality
 from ai_kicad.sexpr import one, parse
@@ -278,6 +279,24 @@ def test_field_locality_is_invariant_under_whole_sheet_translation():
         ],
     )
     assert measure_field_locality(parse(translated)) == measure_field_locality(parse(SCHEMATIC))
+
+
+def test_isolated_library_table_includes_timer_and_power_definitions(tmp_path):
+    from ai_kicad.m2b import assets
+    from ai_kicad.sexpr import children
+
+    table, hashes = write_locked_symbol_table(tmp_path, assets())
+    names = {one(entry, "name")[1] for entry in children(parse(table.read_text()), "lib")}
+    assert {"Timer", "power", "Device", "Connector_Generic"} <= names
+    assert names == set(hashes)
+    timer = parse((table.parent / "Timer.kicad_sym").read_text())
+    definition = next(s for s in children(timer, "symbol") if s[1] == "NE555D")
+    numbers = {
+        one(pin, "number")[1]
+        for body in children(definition, "symbol")
+        for pin in children(body, "pin")
+    }
+    assert numbers == {str(i) for i in range(1, 9)}
 
 
 def test_translation_moves_conductors_and_properties_but_not_library():
