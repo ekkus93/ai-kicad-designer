@@ -30,6 +30,11 @@ or keeping component labels close to their symbols. The brief is included in the
 logged model instructions. When the independent gates already pass, the model
 can still request supported visual edits to satisfy that brief.
 
+The independent field-locality gate limits the distance between a visible field
+envelope and its own symbol anchor to 25.4 mm by default. Change this explicit
+readability constraint with `--max-field-distance-mm` when a design requires it.
+It applies to every component and is separate from field overlap checks.
+
 The default model call uses an explicit 16,384-token context, 2,048 output tokens,
 temperature zero and thinking disabled. `--think` enables model thinking and
 raises the output allowance to 4,096. The installed tag's digest, capabilities,
@@ -61,6 +66,7 @@ requires the project's calculation/simulation and human electrical review gates.
 
 Other outcomes are `NEEDS_HELP`, `NO_PROGRESS`, `LIMIT_REACHED`, or `TOOL_ERROR`.
 Review count, wall-clock and model-token budgets prevent endless iteration. A
+repeated invalid reply also stops as `NO_PROGRESS`. A
 subprocess/model request has its own timeout; budget checks run between operations
 and prevent acceptance after the total budget has expired. Every candidate is
 retained, including regressions. `best_passing_schematic` is an independently
@@ -84,3 +90,9 @@ The v5 555 generation prompt was found to contain conflicting LED resistor
 guidance. Its runs remain historical records with this limitation; the corrected
 suite is `fixtures/pivot/heldout_topology_suite_v6_555.json`. That separate circuit
 generation benchmark is not evidence that this schematic image loop converges.
+
+Initial live probing found that Qwen could accept a visually detached value label
+when only electrical/collision checks passed. That false acceptance is preserved
+in the experiment evidence. The locality gate was added so this geometric defect
+cannot be overridden by model approval. Model visual judgment alone remains
+insufficient for certifying all aesthetic or readability concerns.

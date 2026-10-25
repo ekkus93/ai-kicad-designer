@@ -17,6 +17,7 @@ from ai_kicad.pivot.schematic_review_native import (
     edit_schematic_text,
     field_collision_witnesses,
 )
+from ai_kicad.pivot.schematic_fields import measure_field_locality
 from ai_kicad.sexpr import one, parse
 
 
@@ -149,6 +150,29 @@ def test_model_token_budget_cannot_be_overridden_by_acceptance(tmp_path):
     assert result["model_tokens"] == 11
 
 
+@pytest.mark.parametrize("target", ["schematic", "image"])
+def test_artifact_change_during_model_call_invalidates_acceptance(tmp_path, target):
+    class MutatingReviewer(Reviewer):
+        def review(self, assessment, feedback, record):
+            raw = super().review(assessment, feedback, record)
+            artifact = assessment.schematic if target == "schematic" else assessment.images[0]
+            artifact.write_bytes(b"changed-after-checks")
+            return raw
+
+    result = run_schematic_review(Engine((True,)), MutatingReviewer([{}]), tmp_path / "run")
+    assert result["status"] == "TOOL_ERROR"
+    assert result["accepted_schematic"] is None
+    assert result["best_passing_schematic"] is None
+
+
+def test_repeated_invalid_acceptance_stops_with_feedback(tmp_path):
+    reviewer = Reviewer([{}, {}])
+    result = run_schematic_review(Engine((False,)), reviewer, tmp_path / "run")
+    assert result["status"] == "NO_PROGRESS"
+    assert len(result["iterations"]) == 2
+    assert "acceptance refused" in reviewer.inputs[1][2]
+
+
 SCHEMATIC = """(kicad_sch (version 20250114)
  (lib_symbols (symbol "Device:R" (property "Reference" "R" (at 0 0 0))))
  (wire (pts (xy 10 20) (xy 20 20)))
@@ -232,6 +256,30 @@ def test_field_collision_gate_includes_fields_on_same_symbol():
     assert field_collision_witnesses(parse(corrupted)) == [["R1:1.Reference", "R1:1.Value"]]
 
 
+def test_distant_field_cannot_pass_locality_gate():
+    assert not measure_field_locality(parse(SCHEMATIC))["witnesses"]
+    distant = SCHEMATIC.replace('"Value" "10k" (at 25 33 0)', '"Value" "10k" (at 150 100 0)')
+    result = measure_field_locality(parse(distant))
+    assert len(result["witnesses"]) == 1
+    assert result["witnesses"][0]["field"] == "Value"
+    assert result["witnesses"][0]["reference"] == "R1"
+    assert not measure_field_locality(parse(distant), maximum_mm=200)["witnesses"]
+
+
+def test_field_locality_is_invariant_under_whole_sheet_translation():
+    translated = edit_schematic_text(
+        SCHEMATIC,
+        [
+            TranslateSheet(
+                operation="translate_sheet",
+                dx_mm=35.56,
+                dy_mm=25.4,
+            )
+        ],
+    )
+    assert measure_field_locality(parse(translated)) == measure_field_locality(parse(SCHEMATIC))
+
+
 def test_translation_moves_conductors_and_properties_but_not_library():
     source = SCHEMATIC.replace('"10k"', '"10k (at 5 6)"')
     moved = edit_schematic_text(
@@ -265,7 +313,7 @@ def test_vision_adapter_sends_actual_images_and_schema(tmp_path, monkeypatch):
         }[path]
 
     monkeypatch.setattr(OllamaSchematicReviewer, "_request", request)
-    reviewer = OllamaSchematicReviewer("vision:test")
+    reviewer = OllamaSchematicReviewer("vision:test", review_brief="Keep labels close to symbols.")
     project = tmp_path / "project"
     project.mkdir()
     schematic, image = project / "test.kicad_sch", tmp_path / "preview.png"
@@ -280,6 +328,7 @@ def test_vision_adapter_sends_actual_images_and_schema(tmp_path, monkeypatch):
     assert base64.b64decode(payload["messages"][1]["images"][0]) == image.read_bytes()
     assert payload["format"]["properties"]["base_revision"]
     assert payload["options"]["num_ctx"] == 16384
+    assert "Keep labels close to symbols." in payload["messages"][0]["content"]
     log = json.loads((tmp_path / "review.json").read_text())
     assert log["images"][0]["sha256"]
     assert "image-content" not in json.dumps(log)

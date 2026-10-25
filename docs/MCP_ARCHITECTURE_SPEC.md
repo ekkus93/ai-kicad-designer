@@ -211,6 +211,10 @@ inventories with the intended circuit, observes emitted geometry, and renders bo
 the complete page and a drawing close-up. A local Ollama model advertising vision
 receives those PNGs, the reports, field coordinates, intended circuit and exact
 schematic SHA-256 revision. A text-only model cannot stand in for visual review.
+Independent field checks include same-symbol reference/value collisions and a
+configurable locality bound (25.4 mm by default from the field envelope to its
+own symbol anchor). Machine PASS results cover those stated measurements only;
+the model must still inspect the images against the user's visual review brief.
 
 The model returns `accept`, `revise`, or `needs_help`, with issues and typed actions:
 
@@ -230,7 +234,7 @@ candidates remain available if a subsequent edit regresses; only joint acceptanc
 produces an accepted artifact pointer.
 
 Stop on acceptance, an explicit request for help, repeated candidate bytes, model or
-native-tool failure, or exhaustion of review/time/token budgets. Preserve requests,
+native-tool failure, repeated invalid replies, or exhaustion of review/time/token budgets. Preserve requests,
 responses, image hashes, native files, reports, tool versions and implementation
 hashes, including failed candidates. A machine/model acceptance is scoped schematic
 review evidence; human electrical review, locked-host qualification and manufacturing

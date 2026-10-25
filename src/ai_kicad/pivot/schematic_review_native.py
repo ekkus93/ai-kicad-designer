@@ -27,6 +27,7 @@ from .schematic_review import (
     file_hash,
     write_json,
 )
+from .schematic_fields import measure_field_locality
 
 
 def _top_level_forms(text: str) -> list[tuple[int, int, list]]:
@@ -163,12 +164,14 @@ class NativeSchematicEngine:
         *,
         source: Path | None = None,
         symbol_table: Path | None = None,
+        maximum_field_distance_mm: float = 25.4,
     ):
         self.resolved = assets()
         self.design = validate(design, self.resolved)
         self.launcher = launcher.resolve()
         self.source = source.resolve() if source else None
         self.symbol_table = symbol_table
+        self.maximum_field_distance_mm = maximum_field_distance_mm
         self.environment = dict(os.environ, LC_ALL="C", TZ="UTC")
         self.renderer = shutil.which("rsvg-convert")
         self.convert = shutil.which("convert")
@@ -270,6 +273,12 @@ class NativeSchematicEngine:
         checks["field_separation"] = "FAIL" if field_collisions else "PASS"
         if field_collisions:
             diagnostics.append(f"overlapping reference/value fields: {field_collisions}")
+        locality = measure_field_locality(tree, self.maximum_field_distance_mm)
+        checks["field_locality"] = "FAIL" if locality["witnesses"] else "PASS"
+        if locality["witnesses"]:
+            diagnostics.append(
+                f"reference/value fields too far from their symbols: {locality['witnesses']}"
+            )
         fields = []
         for symbol in children(tree, "symbol"):
             props = {p[1]: p for p in children(symbol, "property")}
@@ -297,6 +306,7 @@ class NativeSchematicEngine:
             "layout": layout,
             "field_inventory": fields,
             "field_collision_witnesses": field_collisions,
+            "field_locality": locality,
             "intended_circuit": self.design,
             "toolchain": self.toolchain,
             "schematic_sha256": file_hash(schematic),

@@ -34,9 +34,28 @@ def main() -> int:
     parser.add_argument(
         "--review-brief", type=Path, help="text file with visual review requirements"
     )
+    parser.add_argument("--max-field-distance-mm", type=float, default=25.4)
     args = parser.parse_args()
+    root = Path(__file__).resolve().parents[2]
+    implementation_paths = (
+        Path(__file__).resolve(),
+        root / "src/ai_kicad/pivot/schematic_review.py",
+        root / "src/ai_kicad/pivot/schematic_review_native.py",
+        root / "src/ai_kicad/pivot/schematic_fields.py",
+    )
+    source_commit = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"],
+        cwd=root,
+        text=True,
+    ).strip()
+    implementation_hashes = {str(p.relative_to(root)): file_hash(p) for p in implementation_paths}
     design = json.loads(args.design.read_text())
-    engine = NativeSchematicEngine(design, args.kicad_apprun, source=args.source)
+    engine = NativeSchematicEngine(
+        design,
+        args.kicad_apprun,
+        source=args.source,
+        maximum_field_distance_mm=args.max_field_distance_mm,
+    )
     reviewer = OllamaSchematicReviewer(
         args.model,
         endpoint=args.ollama_url,
@@ -53,24 +72,16 @@ def main() -> int:
         max_seconds=args.max_seconds,
         max_model_tokens=args.max_model_tokens,
     )
-    root = Path(__file__).resolve().parents[2]
     write_json(
         output / "manifest.json",
         {
             "schema_version": "schematic-review-experiment.v1",
-            "source_commit": subprocess.check_output(
-                ["git", "rev-parse", "HEAD"],
-                cwd=root,
-                text=True,
-            ).strip(),
-            "implementation_sha256": {
-                str(p.relative_to(root)): file_hash(p)
-                for p in (
-                    Path(__file__).resolve(),
-                    root / "src/ai_kicad/pivot/schematic_review.py",
-                    root / "src/ai_kicad/pivot/schematic_review_native.py",
-                )
-            },
+            "source_commit": source_commit,
+            "implementation_sha256": implementation_hashes,
+            "implementation_unchanged_during_run": all(
+                file_hash(p) == implementation_hashes[str(p.relative_to(root))]
+                for p in implementation_paths
+            ),
             "design_sha256": file_hash(args.design),
             "initial_schematic_sha256": file_hash(args.source) if args.source else None,
             "host": platform.platform(),
