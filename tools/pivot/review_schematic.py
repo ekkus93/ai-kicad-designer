@@ -31,6 +31,9 @@ def main() -> int:
     parser.add_argument("--max-seconds", type=float, default=600)
     parser.add_argument("--max-model-tokens", type=int, default=60000)
     parser.add_argument("--think", action="store_true")
+    parser.add_argument(
+        "--review-brief", type=Path, help="text file with visual review requirements"
+    )
     args = parser.parse_args()
     design = json.loads(args.design.read_text())
     engine = NativeSchematicEngine(design, args.kicad_apprun, source=args.source)
@@ -39,6 +42,7 @@ def main() -> int:
         endpoint=args.ollama_url,
         think=args.think,
         output_tokens=4096 if args.think else 2048,
+        **({"review_brief": args.review_brief.read_text()} if args.review_brief else {}),
     )
     output = args.output.resolve()
     result = run_schematic_review(

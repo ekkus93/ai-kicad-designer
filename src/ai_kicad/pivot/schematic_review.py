@@ -101,6 +101,7 @@ class OllamaSchematicReviewer:
         context_tokens: int = 16384,
         output_tokens: int = 2048,
         think: bool = False,
+        review_brief: str = "Inspect readable labels, visible local wiring and page composition.",
     ):
         url = urlparse(endpoint)
         if (
@@ -124,6 +125,7 @@ class OllamaSchematicReviewer:
             "num_predict": output_tokens,
         }
         self.model, self.think = model, think
+        self.review_brief = review_brief
         info = self._request("/api/show", {"model": model})
         if "vision" not in info.get("capabilities", []):
             raise ValueError("selected Ollama model does not report vision capability")
@@ -174,6 +176,8 @@ class OllamaSchematicReviewer:
             "Use decision=revise with concrete actions when a supported repair is possible. "
             "Use needs_help if essential requirements or repairs are unsupported. "
             "Use accept with empty actions and issues only after inspecting the latest images."
+            " Follow the user's review brief below when judging visual acceptability.\n"
+            + self.review_brief
         )
         handoff = {
             "base_revision": assessment.revision,

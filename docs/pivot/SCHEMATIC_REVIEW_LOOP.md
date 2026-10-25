@@ -24,6 +24,12 @@ schematic against the intended circuit supplied by `--design`. Output must be a
 new directory. Original source files are never overwritten. The intended circuit
 uses the repository's supported M2b IR and locked symbol assets.
 
+Use `--review-brief /path/to/readability-requirements.txt` to provide the user's
+visual criteria, such as connecting nearby return terminals with visible wires
+or keeping component labels close to their symbols. The brief is included in the
+logged model instructions. When the independent gates already pass, the model
+can still request supported visual edits to satisfy that brief.
+
 The default model call uses an explicit 16,384-token context, 2,048 output tokens,
 temperature zero and thinking disabled. `--think` enables model thinking and
 raises the output allowance to 4,096. The installed tag's digest, capabilities,
