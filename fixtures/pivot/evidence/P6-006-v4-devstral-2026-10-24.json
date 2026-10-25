@@ -1,0 +1,171 @@
+{
+  "schema_version": "pivot-evidence.v1",
+  "evidence_id": "P6-006-v4-devstral-2026-10-24",
+  "task_id": "P6-006",
+  "recorded_at_utc": "2026-10-25T00:34:50Z",
+  "source_commit": "2de1c9933eae53638846cd93a93345a3f131809f",
+  "revision_kind": "git_commit",
+  "revision_id": "2de1c9933eae53638846cd93a93345a3f131809f",
+  "action": {
+    "summary": "Run held-out topology v4 with Devstral Small 2, then advance the successful RC candidate through KiCad and ngspice checks",
+    "command": "PYTHONPATH=src:. uv run python tools/pivot/evaluate_ai_topology.py --experiment-id ai_topology_holdout_2026-10-24_devstral_v4_run1 --model devstral-small-2:24b --suite fixtures/pivot/heldout_topology_suite_v4.json --repair-attempts 2; validate_ai_rc_candidate_kicad.py; ngspice-42 -b rc_lowpass_ac.cir",
+    "backend": "Ollama topology proposal, independent Python evaluator, KiCad native checker, ngspice AC simulator",
+    "backend_version": "Ollama 0.40.8; Devstral Small 2 24B Q4_K_M; KiCad 10.0.6; ngspice 42",
+    "toolchain": "Python 3.12.10; host Linux x86_64 glibc 2.39"
+  },
+  "status": "INCONCLUSIVE",
+  "artifacts": [
+    {
+      "path": "fixtures/pivot/heldout_topology_suite_v4.json",
+      "sha256": "7ffaaab3a4478d50e9c9cd3ca45434db325b060b89755cb9fd403d276c31254b",
+      "media_type": "application/json",
+      "role": "held-out prompt and task definitions"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/manifest.json",
+      "sha256": "7ce0c232bab038b5c3eaa76b45ee4ff16ee17b7e257412a6921bc4b87e6e4859",
+      "media_type": "application/json",
+      "role": "content-hash manifest for exact-source run and downstream artifacts"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/reports/assessment.json",
+      "sha256": "d061e0819be93c5951026cebe747b2fc6530ef7d5065a43ac839451956bd282c",
+      "media_type": "application/json",
+      "role": "complete three-task model screening result"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/raw/rc_lowpass_1khz.json",
+      "sha256": "cc18f9f96a951b0471e5c62b657f6d62d0d152bfc59bae409eac5af917c50138",
+      "media_type": "application/json",
+      "role": "successful RC proposal raw response"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/raw/led_limiter_5ma_9v.attempt1.json",
+      "sha256": "110d69b6e713a387a3f76c8e2523a67a5a68a85a538aee7128b80dc61fd1b206",
+      "media_type": "application/json",
+      "role": "repaired LED proposal raw response"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/raw/timer555_astable_4hz.attempt2.json",
+      "sha256": "20992787becf2227338c138a1780638c14d76feb1d5b4900927038d723cbeb40",
+      "media_type": "application/json",
+      "role": "final failed 555 proposal raw response"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/native/ai_rc_lowpass_m2b.json",
+      "sha256": "74ecc38f05ba7f0515e16f490ee3fffc8058f07d788e5c87b372413ca8ac1596",
+      "media_type": "application/json",
+      "role": "M2b mapping of exact RC proposal to KiCad symbols"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/native/downstream-validation.json",
+      "sha256": "149e05406d5a921789fcd28c6c6db995d6c6235e0405c7539b2881f658639f55",
+      "media_type": "application/json",
+      "role": "scoped native KiCad and ngspice follow-up"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/native/kicad_retry1/kicad_check.json",
+      "sha256": "d9f90f3cc912daffe9fe1edfe3221a123135a1cab48992021bb5ef87f33d859d",
+      "media_type": "application/json",
+      "role": "KiCad 10.0.6 schematic, ERC, netlist and layout observer report"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/native/kicad_retry1/reports/erc.json",
+      "sha256": "454ef58368763aacc464291ebbdaa2981301b961dc1aba29b897cb125d127e4c",
+      "media_type": "application/json",
+      "role": "KiCad ERC report"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/native/kicad_retry1/reports/netlist.xml",
+      "sha256": "520416cfc70b352fc870c7132a1bf9229ab32610a3565b272aa3b53473b523fa",
+      "media_type": "application/xml",
+      "role": "KiCad exported netlist"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/native/kicad_retry1/renders/schematic/DevstralV4RcLowpass1kHz.svg",
+      "sha256": "74e761390378ba823f75ad974d62a2f513a0d6e4811335c94a76a3950bbae832",
+      "media_type": "image/svg+xml",
+      "role": "native KiCad schematic render"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/native/rc_lowpass_ac.cir",
+      "sha256": "f7c38c41b143e36f072399e74a6cfc767ca42fedf2b9e19612ed8bf4fc8be50e",
+      "media_type": "text/plain",
+      "role": "ngspice AC circuit corresponding to exact generated values"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/native/rc_lowpass_ac.tsv",
+      "sha256": "1793faf1dc9209223ba90cd1d2c043e1020fd7fcd5c440bb3f06537d5bdde29f",
+      "media_type": "text/tab-separated-values",
+      "role": "501 ngspice AC sweep samples"
+    },
+    {
+      "path": "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/native/ngspice.log",
+      "sha256": "268d917ebff1239c3de3faf9dc39db6708f371e2ba83726da0469f11bbec3beb",
+      "media_type": "text/plain",
+      "role": "ngspice 42 execution log"
+    }
+  ],
+  "checks": [
+    {
+      "check_id": "heldout-v4-three-task-screen",
+      "status": "FAIL",
+      "summary": "RC low-pass and LED limiter passed the independent graph/value checks (LED after one bounded repair); the NE555 task failed because VIN.1 was assigned more than once after two repairs. Overall suite result is 2/3 and remains a bounded screening outcome.",
+      "evidence_paths": [
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/reports/assessment.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/raw/rc_lowpass_1khz.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/raw/led_limiter_5ma_9v.attempt1.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/raw/timer555_astable_4hz.attempt2.json"
+      ],
+      "independent": true
+    },
+    {
+      "check_id": "rc-lowpass-analytical-cutoff",
+      "status": "PASS",
+      "summary": "Generated 10 kOhm and 15 nF values give an independently calculated cutoff of 1061.03 Hz, within the 900\u20131100 Hz target.",
+      "evidence_paths": [
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/raw/rc_lowpass_1khz.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/reports/assessment.json"
+      ],
+      "independent": true
+    },
+    {
+      "check_id": "rc-lowpass-native-kicad",
+      "status": "PASS",
+      "summary": "KiCad 10.0.6 exact mapped schematic passes netlist partition comparison, ERC with zero violations, and observed-layout hard checks. Locked-host qualification is not claimed.",
+      "evidence_paths": [
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/native/ai_rc_lowpass_m2b.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/native/kicad_retry1/kicad_check.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/native/kicad_retry1/reports/erc.json",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/native/kicad_retry1/reports/netlist.xml"
+      ],
+      "independent": true
+    },
+    {
+      "check_id": "rc-lowpass-ngspice-ac",
+      "status": "PASS",
+      "summary": "A 501-point ngspice 42 AC sweep gives the nearest -3.0103 dB sample at 1071.52 Hz, 0.99% from the 1061.03 Hz analytical cutoff.",
+      "evidence_paths": [
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/native/rc_lowpass_ac.cir",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/native/rc_lowpass_ac.tsv",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/native/ngspice.log",
+        "fixtures/pivot/experiments/ai_topology_holdout_2026-10-24_devstral_v4_run1/native/downstream-validation.json"
+      ],
+      "independent": true
+    }
+  ],
+  "ci_links": [],
+  "blockers": [
+    {
+      "code": "OWNER_ELECTRICAL_REVIEW",
+      "summary": "Human electrical review remains required for any generated candidate advanced beyond screening; no candidate is approved.",
+      "next_action": "Independently review the exact RC proposal/render and its stated assumptions before treating it as an accepted topology.",
+      "requires_owner_input": true
+    }
+  ],
+  "notes": [
+    "The local host does not match the frozen locked-host identity. This native KiCad run is exploratory host evidence only.",
+    "The LED proposal has not been advanced to native KiCad or simulation. The 555 proposal was rejected before those gates.",
+    "The separately audited owner-approved 555 reference project remains unrelated to and does not approve any generated proposal."
+  ]
+}

@@ -1,0 +1,150 @@
+{
+  "schema_version": "pivot-evidence.v1",
+  "evidence_id": "P6-005-pcbway-origin-smoke-2026-10-25",
+  "task_id": "P6-005",
+  "recorded_at_utc": "2026-10-25T01:30:00Z",
+  "source_commit": "b682a4ba031d12d4bd4a3a2bc3a43271f678e8d6",
+  "revision_kind": "git_commit",
+  "revision_id": "b682a4ba031d12d4bd4a3a2bc3a43271f678e8d6",
+  "action": {
+    "summary": "Smoke-test native KiCad SMT assembly export with PCBWay drill/place origin on a repository example board",
+    "command": "KiCad 10.0.6 kicad-cli pcb export pos --smd-only --exclude-dnp --use-drill-file-origin; export BOM, centroid, paste Gerbers and assembly PDF",
+    "backend": "KiCad 10.0.6 AppImage and export_kicad_smt_assembly",
+    "backend_version": "KiCad 10.0.6; PCBWay exporter source b682a4ba",
+    "toolchain": "Linux x86_64; Python 3.12; KiCad 10.0.6"
+  },
+  "status": "INCONCLUSIVE",
+  "artifacts": [
+    {
+      "path": "fixtures/pivot/experiments/p6_005_pcbway_origin_audit_2026-10-25_run1/report.json",
+      "sha256": "f0afa042c4d15488633e5aa0b84b1bac8deb2404d7aae872e6000bdd1a266cdb",
+      "media_type": "application/json",
+      "role": "export report and output hashes"
+    },
+    {
+      "path": "fixtures/pivot/experiments/p6_005_pcbway_origin_audit_2026-10-25_run1/package/bom.csv",
+      "sha256": "c75c5e1766e2462b2608bbef1dfb2ec3d69e914932d78b1abf7444de3b89c231",
+      "media_type": "text/csv",
+      "role": "synthetic demo procurement BOM"
+    },
+    {
+      "path": "fixtures/pivot/experiments/p6_005_pcbway_origin_audit_2026-10-25_run1/package/centroid.csv",
+      "sha256": "2beb5d49f2107cf9d3d906e6be8d2a65f7c209f741a279cfe6d7d642692af9e5",
+      "media_type": "text/csv",
+      "role": "67-placement centroid file"
+    },
+    {
+      "path": "fixtures/pivot/experiments/p6_005_pcbway_origin_audit_2026-10-25_run1/package/assembly.pdf",
+      "sha256": "b38431cefa354625baceeb4463deed9b18027ebe12a4915726948031a090a379",
+      "media_type": "application/pdf",
+      "role": "generated assembly drawing, visually inspected"
+    },
+    {
+      "path": "fixtures/pivot/experiments/p6_005_pcbway_origin_audit_2026-10-25_run1/package/paste/SensorProject_t16-pcb-B_Paste.gbp",
+      "sha256": "2d5c13e25cd2c1b5a3b8d92cc4d8a99b28da5d6c3b229e27bdddaa50b308e132",
+      "media_type": "application/x-gerber",
+      "role": "generated bottom paste Gerber"
+    },
+    {
+      "path": "fixtures/pivot/experiments/p6_005_pcbway_origin_audit_2026-10-25_run1/package/paste/SensorProject_t16-pcb-F_Paste.gtp",
+      "sha256": "2a98b3831c61a25b52f3c5f19c789384a299517754badc93a8e6e5a21c838468",
+      "media_type": "application/x-gerber",
+      "role": "generated top paste Gerber"
+    },
+    {
+      "path": "fixtures/pivot/experiments/p6_005_pcbway_origin_audit_2026-10-25_run1/previews/assembly-board-crop.png",
+      "sha256": "4cebfad14519061c3d4dc300246b89b381f265007cc467182fc639101e937cf7",
+      "media_type": "image/png",
+      "role": "visual inspection showing dense overlapping labels on demo drawing"
+    },
+    {
+      "path": "fixtures/pivot/experiments/p6_005_pcbway_origin_audit_2026-10-25_run1/previews/front-paste-board.png",
+      "sha256": "3516efc8002c9aab6214c570def3beb696867622ceaf6ab7497d2b57dc1d0852",
+      "media_type": "image/png",
+      "role": "KiCad-rendered front paste layer preview; not decoded from Gerber"
+    },
+    {
+      "path": "fixtures/pivot/experiments/p6_005_pcbway_origin_audit_2026-10-25_run1/previews/back-paste-board.png",
+      "sha256": "fc21fdb046f0046d5536d6314a3e8e1d6de423e4712f92778835ed8145021d30",
+      "media_type": "image/png",
+      "role": "KiCad-rendered back paste layer preview; not decoded from Gerber"
+    },
+    {
+      "path": "examples/good/SensorProject_t16-pcb-main/SensorProject_t16-pcb.kicad_pcb",
+      "sha256": "1ea2203a79a3b02bb97ace5191e0cdddaf54f77e8d810c38e18794f90095e4f8",
+      "media_type": "application/vnd.kicad.pcb",
+      "role": "source example board used for smoke test"
+    },
+    {
+      "path": "src/ai_kicad/pivot/engineering.py",
+      "sha256": "0937efe9001081bb107cf2930ac040aee4f3e267d115bfb3f415b3d20c62d3ba",
+      "media_type": "text/x-python",
+      "role": "PCBWay assembly exporter implementation"
+    },
+    {
+      "path": "tests/pivot/test_engineering.py",
+      "sha256": "7c7f9a68fc374fdfcd41474370f2d2180fa864c985dd11c632a6e9a9a74aa348",
+      "media_type": "text/x-python",
+      "role": "exporter parser, origin and rotation regression tests"
+    }
+  ],
+  "checks": [
+    {
+      "check_id": "pcbway-smoke-package-generation",
+      "status": "PASS",
+      "summary": "Generated a 67-placement centroid file, 67-line synthetic BOM, both paste Gerbers and assembly PDF; report records auxiliary origin (49.65, 95.19) mm and output SHA-256 values.",
+      "evidence_paths": [
+        "fixtures/pivot/experiments/p6_005_pcbway_origin_audit_2026-10-25_run1/report.json",
+        "fixtures/pivot/experiments/p6_005_pcbway_origin_audit_2026-10-25_run1/package/bom.csv",
+        "fixtures/pivot/experiments/p6_005_pcbway_origin_audit_2026-10-25_run1/package/centroid.csv",
+        "fixtures/pivot/experiments/p6_005_pcbway_origin_audit_2026-10-25_run1/package/assembly.pdf",
+        "fixtures/pivot/experiments/p6_005_pcbway_origin_audit_2026-10-25_run1/package/paste/SensorProject_t16-pcb-B_Paste.gbp",
+        "fixtures/pivot/experiments/p6_005_pcbway_origin_audit_2026-10-25_run1/package/paste/SensorProject_t16-pcb-F_Paste.gtp"
+      ],
+      "independent": false
+    },
+    {
+      "check_id": "assembly-drawing-visual-inspection",
+      "status": "INCONCLUSIVE",
+      "summary": "The demo board drawing is densely annotated with overlapping component labels and is not acceptable as visual evidence of a usable assembly drawing. Synthetic demo board only.",
+      "evidence_paths": [
+        "fixtures/pivot/experiments/p6_005_pcbway_origin_audit_2026-10-25_run1/report.json",
+        "fixtures/pivot/experiments/p6_005_pcbway_origin_audit_2026-10-25_run1/package/assembly.pdf",
+        "fixtures/pivot/experiments/p6_005_pcbway_origin_audit_2026-10-25_run1/previews/assembly-board-crop.png"
+      ],
+      "independent": true
+    },
+    {
+      "check_id": "paste-gerber-content-review",
+      "status": "INCONCLUSIVE",
+      "summary": "Previews are KiCad-rendered paste layers, not independently decoded previews of the generated Gerber files; Gerber contents and provider interpretation remain unreviewed.",
+      "evidence_paths": [
+        "fixtures/pivot/experiments/p6_005_pcbway_origin_audit_2026-10-25_run1/package/paste/SensorProject_t16-pcb-B_Paste.gbp",
+        "fixtures/pivot/experiments/p6_005_pcbway_origin_audit_2026-10-25_run1/package/paste/SensorProject_t16-pcb-F_Paste.gtp",
+        "fixtures/pivot/experiments/p6_005_pcbway_origin_audit_2026-10-25_run1/previews/front-paste-board.png",
+        "fixtures/pivot/experiments/p6_005_pcbway_origin_audit_2026-10-25_run1/previews/back-paste-board.png"
+      ],
+      "independent": false
+    }
+  ],
+  "ci_links": [],
+  "blockers": [
+    {
+      "code": "VISUAL_AND_PROVIDER_REVIEW",
+      "summary": "Assembly drawing is cluttered; paste output has not been independently decoded and bottom-side numeric rotation convention has not been confirmed by PCBWay.",
+      "next_action": "Improve and independently inspect drawing and Gerber previews; confirm bottom-side angle convention with PCBWay; repeat with an approved SMT design and BOM.",
+      "requires_owner_input": false
+    },
+    {
+      "code": "APPROVED_BOM_AND_COMPONENT_QUALIFICATION",
+      "summary": "Smoke test uses a synthetic BOM on a repository demo board and is not an approved design or sourcing record.",
+      "next_action": "Complete P6-002 sourcing/mechanical decisions, then validate against an approved SMT board and BOM.",
+      "requires_owner_input": true
+    }
+  ],
+  "notes": [
+    "Exporter enforces an auxiliary origin and applies KiCad --use-drill-file-origin; board author must set this origin at PCBWay lower-left per its KiCad guide.",
+    "Native KiCad angles are normalized modulo 360 with no side-specific remapping; provider numeric interpretation is not established by this smoke run.",
+    "No purchase, sourcing, manufacturing, or PCBA approval is implied."
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "schema_version": "ai-topology-downstream-validation.v1",
+  "source_commit": "2de1c9933eae53638846cd93a93345a3f131809f",
+  "suite_sha256": "7ffaaab3a4478d50e9c9cd3ca45434db325b060b89755cb9fd403d276c31254b",
+  "model": {
+    "name": "devstral-small-2:24b",
+    "digest": "24277f07f62db8f9cb68e9dfc679ea1818a7fbac47a50eff0a701d3f645b63c8",
+    "parameter_size": "24.0B",
+    "quantization_level": "Q4_K_M",
+    "ollama_version": "0.40.8"
+  },
+  "accepted_rc_model_response": "raw/rc_lowpass_1khz.json",
+  "accepted_rc_design": "native/ai_rc_lowpass_m2b.json",
+  "mapping_note": "The generated logical port instances VIN, VOUT, and GND map to KiCad single-pin connector instances J1, J2, and J3. The terminal partition and generated R1/C1 values are unchanged.",
+  "native_kicad": {
+    "report": "native/kicad_retry1/kicad_check.json",
+    "status": "PASS",
+    "kicad_version": "10.0.6",
+    "locked_host_qualification": false
+  },
+  "ngspice": {
+    "version": "42",
+    "netlist": "native/rc_lowpass_ac.cir",
+    "raw_samples": "native/rc_lowpass_ac.tsv",
+    "log": "native/ngspice.log",
+    "point_count": 501,
+    "calculated_cutoff_hz": 1061.032953945969,
+    "nearest_minus_3_0103_db_sample_hz": 1071.51931,
+    "nearest_minus_3_0103_db_sample_db": -3.05322125,
+    "relative_difference_pct": 0.9883157742681118
+  },
+  "human_electrical_review": "PENDING",
+  "scope_note": "This validation applies only to the successful RC proposal. The LED proposal passed graph/calculation after one bounded repair but has no native KiCad validation in this record. The 555 proposal failed exact terminal assignment and was not advanced."
+}
