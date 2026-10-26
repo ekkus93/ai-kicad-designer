@@ -38,6 +38,15 @@ REQUIRED_GATE = {
     Phase.MANUFACTURING_REVIEW: "pcb_validated",
     Phase.REVIEW_READY: "package_ready_for_review",
 }
+# Leaving SCHEMATIC also requires joint machine/model visual acceptance of the same revision.
+VISUAL_REVIEW_GATE = "schematic_visual_review"
+ADDITIONAL_REQUIRED_GATES = {Phase.FOOTPRINTS: (VISUAL_REVIEW_GATE,)}
+
+
+class SchematicReviewService(Protocol):
+    """Runs the full generate/check/render/review/edit loop into a new output directory."""
+
+    def review(self, design: Path, output: Path) -> dict: ...
 
 
 class Provider(Protocol):
@@ -84,7 +93,7 @@ ALWAYS = {
 PHASE_TOOLS = {
     Phase.REQUIREMENTS: {"define_requirements"},
     Phase.CIRCUIT_DESIGN: {"edit_circuit_graph", "check_design_calculations"},
-    Phase.SCHEMATIC: {"create_schematic", "inspect_schematic", "run_erc"},
+    Phase.SCHEMATIC: {"create_schematic", "inspect_schematic", "run_erc", "review_schematic"},
     Phase.FOOTPRINTS: {"assign_footprints", "verify_pin_pad_map", "sync_pcb"},
     Phase.PCB_PLACEMENT: {"set_board_profile", "apply_placements", "inspect_board"},
     Phase.PCB_ROUTING: {"route_nets", "run_drc", "verify_board_connectivity"},
@@ -104,6 +113,8 @@ class WorkflowController:
         *,
         operation_budget: int = 100,
         backend: DesignBackend | None = None,
+        schematic_review: SchematicReviewService | None = None,
+        require_visual_schematic_review: bool = True,
     ):
         self.workspace = workspace.resolve()
         self.workspace.mkdir(parents=True, exist_ok=True)
@@ -113,10 +124,14 @@ class WorkflowController:
         self.revisions = RevisionStore(self.workspace / "design-store")
         self.operation_budget = operation_budget
         self.backend = backend
+        self.schematic_review = schematic_review
+        self.require_visual_schematic_review = require_visual_schematic_review
         self.tools: dict[str, Tool] = {}
         self._register_builtin_tools()
         if backend is not None:
             self._attach_backend_tools()
+        if schematic_review is not None:
+            self._attach_schematic_review_tool()
         if not self.state_path.is_file():
             self._save_state(
                 {
@@ -413,6 +428,61 @@ class WorkflowController:
             self._define_requirements,
         )
 
+    def _attach_schematic_review_tool(self) -> None:
+        self.tools["review_schematic"] = Tool(
+            "review_schematic",
+            Phase.SCHEMATIC,
+            True,
+            {
+                "type": "object",
+                "properties": {
+                    "design": {"type": "string"},
+                    "output": {"type": "string"},
+                    "expected_revision": {"type": ["string", "null"]},
+                    "idempotency_key": {"type": "string"},
+                },
+                "required": ["design", "output", "expected_revision", "idempotency_key"],
+                "additionalProperties": False,
+            },
+            self._review_schematic,
+        )
+
+    def _review_schematic(self, request: dict) -> dict:
+        """Run the bounded visual loop and bind its outcome to the current revision."""
+        assert self.schematic_review is not None
+        design = self.confined_path(request["design"], must_exist=True)
+        output = self.confined_path(request["output"])
+        if output.exists():
+            raise ControllerError("review output already exists")
+        revision = self._state()["revision_id"]
+        result = self.schematic_review.review(design, output)
+        accepted = result.get("status") == "ACCEPTED_FOR_REVIEW" and bool(
+            result.get("accepted_schematic")
+        )
+        state = self._state()
+        if state["revision_id"] != revision:
+            raise StaleRevision("schematic review finished after a revision change")
+        gate = {
+            "status": "PASS" if accepted else "FAIL",
+            "revision_id": revision,
+            "review_status": result.get("status"),
+            "accepted_schematic": (
+                str(output / result["accepted_schematic"]) if accepted else None
+            ),
+            "result": str(output / "result.json"),
+        }
+        state["gates"][VISUAL_REVIEW_GATE] = gate
+        if not accepted:
+            state["unresolved_issues"].append(
+                {
+                    "gate": VISUAL_REVIEW_GATE,
+                    "revision_id": revision,
+                    "reason": result.get("reason"),
+                }
+            )
+        self._save_state(state)
+        return {"status": gate["status"], "gate": gate, "review": result}
+
     def _define_requirements(self, request: dict) -> dict:
         assessment = assess_requirements(request["description"])
         if request.get("dry_run", False):
@@ -698,10 +768,13 @@ class WorkflowController:
         if target_index == current_index:
             return {"status": "unchanged", "phase": current}
         if target_index == current_index + 1:
-            required = REQUIRED_GATE[target]
-            gate = state["gates"].get(required)
-            if gate != {"status": "PASS", "revision_id": state["revision_id"]}:
-                raise NotAuthorized(f"transition requires current PASS gate {required}")
+            required_gates = [REQUIRED_GATE[target]]
+            if self.require_visual_schematic_review:
+                required_gates += ADDITIONAL_REQUIRED_GATES.get(target, ())
+            for required in required_gates:
+                gate = state["gates"].get(required) or {}
+                if gate.get("status") != "PASS" or gate.get("revision_id") != state["revision_id"]:
+                    raise NotAuthorized(f"transition requires current PASS gate {required}")
         elif target_index > current_index + 1:
             raise NotAuthorized("phase transitions cannot skip forward")
         if request.get("dry_run"):
@@ -711,6 +784,11 @@ class WorkflowController:
                 required
                 for phase, required in REQUIRED_GATE.items()
                 if PHASES.index(phase) > target_index
+            } | {
+                required
+                for phase, gates in ADDITIONAL_REQUIRED_GATES.items()
+                if PHASES.index(phase) > target_index
+                for required in gates
             }
             state["gates"] = {
                 name: result for name, result in state["gates"].items() if name not in invalidated

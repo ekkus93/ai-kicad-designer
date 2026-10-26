@@ -79,48 +79,70 @@ def repair_design(name: str, launcher: Path, output: Path, budget_seconds: float
     steps.append(
         {"candidate": directory.name, "action": "initial", "checks": initial.report["checks"]}
     )
-    current, applied, blocked = initial, [], set()
-    while pending := [w for w in rail_witnesses(current) if w["net"] not in blocked]:
-        if time.monotonic() - started > budget_seconds:
+
+    def plan(priority: list[str]) -> tuple[object, list[dict]]:
+        current, applied, blocked = initial, [], set()
+        while pending := [w["net"] for w in rail_witnesses(current) if w["net"] not in blocked]:
+            if time.monotonic() - started > budget_seconds:
+                break
+            net = min(pending, key=lambda item: (priority.index(item), item))
+            connected = attempt(current, ConnectRail(operation="connect_rail", net=net))
+            if connected is not None and hard_pass(connected):
+                current = connected
+                applied.append({"operation": "connect_rail", "net": net})
+                continue
+            found = False
+            for reference in owners[net]:
+                for pitch in PITCHES:
+                    for sx, sy in DIRECTIONS:
+                        if found or time.monotonic() - started > budget_seconds:
+                            break
+                        move = MoveSymbols(
+                            operation="move_symbols",
+                            references=[reference],
+                            dx_mm=round(sx * pitch * 1.27, 2),
+                            dy_mm=round(sy * pitch * 1.27, 2),
+                        )
+                        moved = attempt(current, move)
+                        if moved is None or not hard_pass(moved):
+                            continue
+                        connected = attempt(moved, ConnectRail(operation="connect_rail", net=net))
+                        if (
+                            connected is not None
+                            and hard_pass(connected)
+                            and net not in {w["net"] for w in rail_witnesses(connected)}
+                        ):
+                            current, found = connected, True
+                            applied += [
+                                move.model_dump(mode="json"),
+                                {"operation": "connect_rail", "net": net},
+                            ]
+            if not found:
+                blocked.add(net)
+        return current, applied
+
+    # A rail routed first can enclose another rail's terminals. When a net stays blocked,
+    # replan from the initial schematic with the blocked nets first; keep the best plan.
+    failing = sorted({w["net"] for w in rail_witnesses(initial)})
+    orderings, plans, outcomes = [failing], [], []
+    while orderings and time.monotonic() - started <= budget_seconds:
+        priority = orderings.pop(0)
+        final, edits = plan(priority)
+        unresolved = sorted({w["net"] for w in rail_witnesses(final)})
+        plans.append({"priority": priority, "unresolved_nets": unresolved})
+        outcomes.append((final, edits))
+        if not unresolved:
             break
-        net = pending[0]["net"]
-        connected = attempt(current, ConnectRail(operation="connect_rail", net=net))
-        if connected is not None and hard_pass(connected):
-            current = connected
-            applied.append({"operation": "connect_rail", "net": net})
-            continue
-        found = False
-        for reference in owners[net]:
-            for pitch in PITCHES:
-                for sx, sy in DIRECTIONS:
-                    if found or time.monotonic() - started > budget_seconds:
-                        break
-                    move = MoveSymbols(
-                        operation="move_symbols",
-                        references=[reference],
-                        dx_mm=round(sx * pitch * 1.27, 2),
-                        dy_mm=round(sy * pitch * 1.27, 2),
-                    )
-                    moved = attempt(current, move)
-                    if moved is None or not hard_pass(moved):
-                        continue
-                    connected = attempt(moved, ConnectRail(operation="connect_rail", net=net))
-                    if (
-                        connected is not None
-                        and hard_pass(connected)
-                        and net not in {w["net"] for w in rail_witnesses(connected)}
-                    ):
-                        current, found = connected, True
-                        applied += [
-                            move.model_dump(mode="json"),
-                            {"operation": "connect_rail", "net": net},
-                        ]
-        if not found:
-            blocked.add(net)
+        retry = unresolved + [net for net in failing if net not in unresolved]
+        if retry not in [entry["priority"] for entry in plans]:
+            orderings.append(retry)
+    best = min(range(len(plans)), key=lambda index: (len(plans[index]["unresolved_nets"]), index))
+    current, applied = outcomes[best]
     result = {
         "design": name,
         "initial_failing_nets": sorted({w["net"] for w in rail_witnesses(initial)}),
         "applied_edits": applied,
+        "plans": plans,
         "unresolved_nets": sorted({w["net"] for w in rail_witnesses(current)}),
         "final_candidate": str(current.schematic.relative_to(output)),
         "final_checks": current.report["checks"],

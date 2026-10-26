@@ -162,9 +162,12 @@ def execute(
     environment.update({"LC_ALL": "C", "TZ": "UTC", "XDG_CONFIG_HOME": str(output / "config")})
     schematic = workspace / "Reference555LedFlasher.kicad_sch"
     board = workspace / "Reference555LedFlasher.kicad_pcb"
+    # This P0-P4 reference flow predates the visual-review gate and records no visual
+    # acceptance; its evidence makes no claim about schematic readability.
     controller = WorkflowController(
         output / "workflow",
         backend=DirectKiCadBackend(output, cli, environment),
+        require_visual_schematic_review=False,
     )
     native_revision = controller.revisions.commit(
         model,

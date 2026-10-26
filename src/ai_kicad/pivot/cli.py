@@ -13,6 +13,7 @@ from .controller import WorkflowController
 from .direct_backend import DirectKiCadBackend
 from .mcp_server import serve
 from .model import DesignModel, from_legacy_ir
+from .schematic_review_service import NativeSchematicReviewService
 
 
 def _model_from_fixture(fixture: Path) -> DesignModel:
@@ -32,7 +33,14 @@ def run(args: argparse.Namespace) -> int:
         if getattr(args, "kicad_cli", None) is not None
         else None
     )
-    controller = WorkflowController(args.workspace, backend=backend)
+    review = (
+        NativeSchematicReviewService(
+            args.kicad_apprun, args.review_model, review_brief=args.review_brief
+        )
+        if getattr(args, "kicad_apprun", None) is not None
+        else None
+    )
+    controller = WorkflowController(args.workspace, backend=backend, schematic_review=review)
     if args.pivot_command == "create":
         model = _model_from_fixture(args.fixture)
         with controller.revisions.writer("pivot-cli"):
@@ -73,4 +81,11 @@ def add_parser(subparsers: argparse._SubParsersAction) -> None:
             command.add_argument("--fixture", type=Path, required=True)
         if name == "mcp-serve":
             command.add_argument("--kicad-cli", type=Path)
+            command.add_argument(
+                "--kicad-apprun",
+                type=Path,
+                help="enable the SCHEMATIC-phase review_schematic tool with this KiCad launcher",
+            )
+            command.add_argument("--review-model", default="qwen3.5:9b")
+            command.add_argument("--review-brief", type=Path)
     pivot.set_defaults(pivot_handler=run)

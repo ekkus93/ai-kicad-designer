@@ -115,6 +115,9 @@ def test_phase_transitions_require_revision_bound_gate_and_backward_invalidates(
         )
     transition(controller, revision, Phase.CIRCUIT_DESIGN, "requirements_explicit")
     transition(controller, revision, Phase.SCHEMATIC, "circuit_design_validated")
+    with pytest.raises(NotAuthorized, match="schematic_visual_review"):
+        transition(controller, revision, Phase.FOOTPRINTS, "schematic_validated")
+    controller.record_gate("schematic_visual_review", "PASS", revision)
     transition(controller, revision, Phase.FOOTPRINTS, "schematic_validated")
     response = controller.dispatch(
         "request_phase_transition",
@@ -126,6 +129,7 @@ def test_phase_transitions_require_revision_bound_gate_and_backward_invalidates(
     )
     assert response["phase"] == Phase.CIRCUIT_DESIGN
     assert "schematic_validated" not in controller._state()["gates"]
+    assert "schematic_visual_review" not in controller._state()["gates"]
     with pytest.raises(NotAuthorized, match="skip"):
         controller.dispatch(
             "request_phase_transition",

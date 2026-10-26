@@ -51,8 +51,11 @@ def execute(root: Path, experiment_id: str) -> Path:
     environment = dict(os.environ)
     environment.update({"LC_ALL": "C", "TZ": "UTC"})
     cli = Path("/home/phil/Applications/kicad-10.0.6/AppDir/bin/kicad-cli")
+    # Router-import probe only; it predates and makes no claim about visual schematic review.
     controller = WorkflowController(
-        output / "workflow", backend=DirectKiCadBackend(output, cli, environment)
+        output / "workflow",
+        backend=DirectKiCadBackend(output, cli, environment),
+        require_visual_schematic_review=False,
     )
     with controller.revisions.writer("router-import-probe"):
         revision = controller.revisions.commit(
