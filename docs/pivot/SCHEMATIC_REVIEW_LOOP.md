@@ -65,6 +65,20 @@ and the SHA-256 of the schematic it reviewed. It can request:
 - `regenerate_schematic`: rebuild placement and wiring from the intended circuit.
   This can repair missing parts, wrong serialized values, disconnected wires and
   layout corruption while retaining the intended electrical design.
+- `add_wire_path`: route one wire between two named terminals of an asserted
+  power net, around existing wires, symbol bodies, pin stubs, fields and labels.
+- `connect_rail`: wire every disconnected terminal group of one asserted power
+  net. The editor tries terminal-to-terminal and T-junction routes to the nearest
+  existing same-net wire, keeps clear of other nets' terminals, and refuses routes
+  that would exceed the observer's 250 mm net-length limit.
+- `move_symbols`: move one or more references by a 1.27 mm grid-aligned offset.
+  Wiring, labels and junctions used only by the moved pins travel with them;
+  pin-mounted power flags follow their pin; nets shared with unmoved symbols are
+  removed and rerouted with the same obstacle-checked router.
+
+Every wiring or movement edit is re-assessed with KiCad ERC, exact electrical
+equivalence (component/value inventory and terminal partitions), observed layout
+(bodies, text, crossings, net length) and field gates before the next review.
 
 Changes are applied to isolated native candidates. The loop reruns KiCad checks,
 independent comparison, layout observation and image rendering before requesting
@@ -94,10 +108,10 @@ images, native-tool logs and independent reports. `manifest.json` records exact
 source/implementation, toolchain and artifact hashes. Exit status is zero only
 for `ACCEPTED_FOR_REVIEW`.
 
-The initial scope is supported single-sheet M2b circuits. General symbol moves
-with new routing, arbitrary circuit synthesis/part substitution, unsupported
-native constructs and hierarchy stop for additional implementation or a human
-decision. The loop is a direct native backend client; it does not use Ralph Bridge.
+The initial scope is supported single-sheet M2b circuits. Grid-aligned symbol
+group moves with rerouting are supported; rotations, mirroring, arbitrary circuit
+synthesis/part substitution, unsupported native constructs and hierarchy stop for
+additional implementation or a human decision. The loop is a direct native backend client; it does not use Ralph Bridge.
 
 The v5 555 generation prompt was found to contain conflicting LED resistor
 guidance. Its runs remain historical records with this limitation; the corrected

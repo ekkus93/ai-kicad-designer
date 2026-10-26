@@ -19,7 +19,11 @@ from ai_kicad.m2_text_layout import overlaps, property_page_angle, text_extents
 from ai_kicad.m2_compose import compose_with_evidence
 from ai_kicad.m2a_artifacts import emit, observe, verify_serialized_scene
 from ai_kicad.m2b import assets, check_observed_layout, compare, validate
-from ai_kicad.m2_geometry import Reservation, point_on_segment, segment_is_admissible
+from ai_kicad.m2_geometry import (
+    Reservation,
+    label_text_width,
+    point_on_segment,
+)
 from ai_kicad.m2_fragments_types import Point
 from ai_kicad.m2_route_core import _connect
 from ai_kicad.m2_transform import transform_library_point
@@ -30,6 +34,8 @@ from ai_kicad.sexpr import children, one, parse, quote
 from .schematic_review import (
     MoveField,
     AddWirePath,
+    ConnectRail,
+    MoveSymbols,
     RegenerateSchematic,
     SchematicAction,
     SchematicAssessment,
@@ -118,95 +124,22 @@ def edit_schematic_text(
             if terminal_inventory is None:
                 raise ValueError("add_wire_path requires independently observed terminal positions")
             route = resolve_wire_path_points(action, terminal_inventory)
-            route = route_around_existing_wires(text, route)
-            existing = {
-                frozenset(
-                    (float(point[1]), float(point[2])) for point in children(one(node, "pts"), "xy")
-                )
-                for _, _, node in forms
-                if node[0] == "wire"
-            }
-            existing_segments = [
-                (
-                    (round(float(first[1]) * 1_000_000), round(float(first[2]) * 1_000_000)),
-                    (round(float(second[1]) * 1_000_000), round(float(second[2]) * 1_000_000)),
-                )
-                for _, _, node in forms
-                if node[0] == "wire"
-                for first, second in zip(
-                    children(one(node, "pts"), "xy"), children(one(node, "pts"), "xy")[1:]
-                )
-            ]
-            orthogonal = [route[0]]
-            for point in route[1:]:
-                previous = orthogonal[-1]
-                if previous.x_mm != point.x_mm and previous.y_mm != point.y_mm:
-                    orthogonal.append(WirePoint(x_mm=point.x_mm, y_mm=previous.y_mm))
-                orthogonal.append(point)
-            segments = list(zip(orthogonal, orthogonal[1:]))
-            if all(
-                frozenset(((first.x_mm, first.y_mm), (second.x_mm, second.y_mm))) in existing
-                for first, second in segments
-            ):
-                raise ValueError("add_wire_path duplicates existing wire geometry")
-            wires = []
-            for first, second in segments:
-                wires.append(
-                    "\n (wire (pts (xy "
-                    f"{first.x_mm:.6f} {first.y_mm:.6f}) (xy {second.x_mm:.6f} {second.y_mm:.6f})) "
-                    f"(stroke (width 0) (type default)) (uuid {quote(str(uuid4()))}))"
-                )
-            junction_points = {
-                (round(point.x_mm * 1_000_000), round(point.y_mm * 1_000_000))
-                for point in orthogonal
-                if any(
-                    point_on_segment(
-                        (round(point.x_mm * 1_000_000), round(point.y_mm * 1_000_000)),
-                        first,
-                        second,
-                    )
-                    for first, second in existing_segments
-                )
-            }
-            existing_junctions = {
-                (
-                    round(float(one(node, "at")[1]) * 1_000_000),
-                    round(float(one(node, "at")[2]) * 1_000_000),
-                )
-                for _, _, node in forms
-                if node[0] == "junction"
-            }
-            junctions = [
-                "\n (junction (at "
-                f"{x / 1_000_000:.6f} {y / 1_000_000:.6f}) (diameter 0) "
-                f"(color 0 0 0 0) (uuid {quote(str(uuid4()))}))"
-                for x, y in sorted(junction_points - existing_junctions)
-            ]
-            insert = text.rfind(")")
-            if insert < 0:
-                raise ValueError("schematic root form is missing")
-            text = text[:insert] + "".join(wires) + "".join(junctions) + "\n" + text[insert:]
+            text = _insert_wire_route(text, route_around_existing_wires(text, route))
+        elif isinstance(action, ConnectRail):
+            if terminal_inventory is None:
+                raise ValueError("connect_rail requires independently observed terminal positions")
+            text = connect_rail_text(text, action.net, terminal_inventory)
+        elif isinstance(action, MoveSymbols):
+            if terminal_inventory is None:
+                raise ValueError("move_symbols requires independently observed terminal positions")
+            text = move_symbols_text(text, action, terminal_inventory)
         elif isinstance(action, TranslateSheet):
             if action.dx_mm == 0 and action.dy_mm == 0:
                 raise ValueError("translate_sheet made no change; choose nonzero movement")
             for start, end, node in forms:
                 if node[0] not in {"symbol", "wire", "junction", "label", "no_connect", "text"}:
                     continue
-
-                def translate(match: re.Match[str]) -> str:
-                    if match[1] is None:
-                        return match[0]
-                    return (
-                        match[1]
-                        + f"{float(match[2]) + action.dx_mm:.6f} "
-                        + f"{float(match[3]) + action.dy_mm:.6f}"
-                    )
-
-                block = re.sub(
-                    r'"(?:\\.|[^"\\])*"|(\((?:at|xy)\s+)([-+0-9.eE]+)\s+([-+0-9.eE]+)',
-                    translate,
-                    text[start:end],
-                )
+                block = _translate_block(text[start:end], action.dx_mm, action.dy_mm)
                 replacements.append((start, end, block))
         else:
             raise ValueError("regeneration is handled by the compiler adapter")
@@ -244,8 +177,364 @@ def resolve_wire_path_points(
     return route
 
 
-def route_around_existing_wires(text: str, requested: list[WirePoint]) -> list[WirePoint]:
-    """Plan requested legs around wires, symbol bodies and visible symbol fields."""
+def _translate_block(block: str, dx_mm: float, dy_mm: float) -> str:
+    """Translate every `at`/`xy` coordinate in a native form, leaving quoted text intact."""
+
+    def translate(match: re.Match[str]) -> str:
+        if match[1] is None:
+            return match[0]
+        return match[1] + f"{float(match[2]) + dx_mm:.6f} " + f"{float(match[3]) + dy_mm:.6f}"
+
+    return re.sub(
+        r'"(?:\\.|[^"\\])*"|(\((?:at|xy)\s+)([-+0-9.eE]+)\s+([-+0-9.eE]+)', translate, block
+    )
+
+
+def _nm_point(node: list) -> Point:
+    return (round(float(node[1]) * 1_000_000), round(float(node[2]) * 1_000_000))
+
+
+def _wire_point(point: Point) -> WirePoint:
+    return WirePoint(x_mm=point[0] / 1_000_000, y_mm=point[1] / 1_000_000)
+
+
+def _insert_wire_route(text: str, route: list[WirePoint]) -> str:
+    """Append one orthogonal wire route and the T-junctions it creates on existing wires."""
+    forms = _top_level_forms(text)
+    existing = {
+        frozenset((float(point[1]), float(point[2])) for point in children(one(node, "pts"), "xy"))
+        for _, _, node in forms
+        if node[0] == "wire"
+    }
+    existing_segments = [
+        (_nm_point(first), _nm_point(second))
+        for _, _, node in forms
+        if node[0] == "wire"
+        for first, second in zip(
+            children(one(node, "pts"), "xy"), children(one(node, "pts"), "xy")[1:]
+        )
+    ]
+    orthogonal = [route[0]]
+    for point in route[1:]:
+        previous = orthogonal[-1]
+        if previous.x_mm != point.x_mm and previous.y_mm != point.y_mm:
+            orthogonal.append(WirePoint(x_mm=point.x_mm, y_mm=previous.y_mm))
+        orthogonal.append(point)
+    segments = list(zip(orthogonal, orthogonal[1:]))
+    if all(
+        frozenset(((first.x_mm, first.y_mm), (second.x_mm, second.y_mm))) in existing
+        for first, second in segments
+    ):
+        raise ValueError("add_wire_path duplicates existing wire geometry")
+    wires = []
+    for first, second in segments:
+        wires.append(
+            "\n (wire (pts (xy "
+            f"{first.x_mm:.6f} {first.y_mm:.6f}) (xy {second.x_mm:.6f} {second.y_mm:.6f})) "
+            f"(stroke (width 0) (type default)) (uuid {quote(str(uuid4()))}))"
+        )
+    junction_points = {
+        (round(point.x_mm * 1_000_000), round(point.y_mm * 1_000_000))
+        for point in orthogonal
+        if any(
+            point_on_segment(
+                (round(point.x_mm * 1_000_000), round(point.y_mm * 1_000_000)), first, second
+            )
+            for first, second in existing_segments
+        )
+    }
+    existing_junctions = {
+        _nm_point(one(node, "at")) for _, _, node in forms if node[0] == "junction"
+    }
+    junctions = [
+        "\n (junction (at "
+        f"{x / 1_000_000:.6f} {y / 1_000_000:.6f}) (diameter 0) "
+        f"(color 0 0 0 0) (uuid {quote(str(uuid4()))}))"
+        for x, y in sorted(junction_points - existing_junctions)
+    ]
+    insert = text.rfind(")")
+    if insert < 0:
+        raise ValueError("schematic root form is missing")
+    return text[:insert] + "".join(wires) + "".join(junctions) + "\n" + text[insert:]
+
+
+def _wire_trees(tree: list) -> tuple[list[tuple[Point, Point]], list[int], list[int]]:
+    """Return wire segments, each segment's source wire index and its connected-tree id."""
+    segments, owners = [], []
+    for index, wire in enumerate(children(tree, "wire")):
+        points = [_nm_point(point) for point in children(one(wire, "pts"), "xy")]
+        for first, second in zip(points, points[1:]):
+            segments.append((first, second))
+            owners.append(index)
+    parent = list(range(len(segments)))
+
+    def find(item: int) -> int:
+        while parent[item] != item:
+            parent[item] = parent[parent[item]]
+            item = parent[item]
+        return item
+
+    for index, (first, second) in enumerate(segments):
+        for other in range(index + 1, len(segments)):
+            third, fourth = segments[other]
+            if (
+                owners[index] == owners[other]
+                or any(point_on_segment(point, third, fourth) for point in (first, second))
+                or any(point_on_segment(point, first, second) for point in (third, fourth))
+            ):
+                parent[find(index)] = find(other)
+    return segments, owners, [find(index) for index in range(len(segments))]
+
+
+def _point_groups(tree: list, points: list[Point]) -> list[list[int]]:
+    """Group points that native wire geometry joins; labels intentionally add no joins."""
+    return [indexes for indexes, _segments in _point_group_wiring(tree, points)]
+
+
+def _point_group_wiring(
+    tree: list, points: list[Point]
+) -> list[tuple[list[int], list[tuple[Point, Point]]]]:
+    """Return each wire-joined point group with the native wire segments of its trees."""
+    segments, _owners, roots = _wire_trees(tree)
+    groups: dict[object, list[int]] = {}
+    for index, point in enumerate(points):
+        key: object = ("point", point)
+        for segment, root in zip(segments, roots):
+            if point_on_segment(point, *segment):
+                key = ("tree", root)
+                break
+        groups.setdefault(key, []).append(index)
+    return [
+        (
+            indexes,
+            [
+                segment
+                for segment, root in zip(segments, roots)
+                if key[0] == "tree" and root == key[1]
+            ],
+        )
+        for key, indexes in groups.items()
+    ]
+
+
+def _terminal_keepouts(terminal_inventory: list[dict]) -> list[tuple[int, int, int, int]]:
+    return [
+        (
+            round(item["x_mm"] * 1_000_000) - 400_000,
+            round(item["y_mm"] * 1_000_000) - 400_000,
+            round(item["x_mm"] * 1_000_000) + 400_000,
+            round(item["y_mm"] * 1_000_000) + 400_000,
+        )
+        for item in terminal_inventory
+    ]
+
+
+def _grid_projection(point: Point, segment: tuple[Point, Point]) -> Point:
+    """Nearest connection-grid point on an orthogonal wire segment."""
+    (x1, y1), (x2, y2) = segment
+
+    def clamp(value: int, low: int, high: int) -> int:
+        low, high = min(low, high), max(low, high)
+        snapped = round(min(max(value, low), high) / PITCH) * PITCH
+        if snapped < low:
+            snapped += PITCH
+        if snapped > high:
+            snapped -= PITCH
+        return snapped
+
+    return (clamp(point[0], x1, x2), clamp(point[1], y1, y2))
+
+
+def _route_length(route: list[WirePoint]) -> int:
+    return sum(
+        round(abs(first.x_mm - second.x_mm) * 1_000_000)
+        + round(abs(first.y_mm - second.y_mm) * 1_000_000)
+        for first, second in zip(route, route[1:])
+    )
+
+
+# The independent layout observer rejects a net longer than 250 mm.
+MAXIMUM_CONNECTED_NET_LENGTH = 240_000_000
+
+
+def _connect_point_groups(
+    text: str,
+    points: list[Point],
+    keepouts: list[tuple[int, int, int, int]],
+    description: str,
+) -> str:
+    """Join wire-disconnected points with the shortest obstacle-checked route found."""
+    wiring = _point_group_wiring(parse(text), points)
+    while len(wiring) > 1:
+        main = max(wiring, key=lambda item: (len(item[0]), -min(item[0])))
+        existing_length = sum(
+            abs(a[0] - b[0]) + abs(a[1] - b[1]) for _, segments in wiring for a, b in segments
+        )
+        candidates = set()
+        for other in wiring:
+            if other is main:
+                continue
+            for first, first_segments, second, second_segments in (
+                (main[0], main[1], other[0], other[1]),
+                (other[0], other[1], main[0], main[1]),
+            ):
+                for index in first:
+                    start = points[index]
+                    targets = [points[item] for item in second] + [
+                        _grid_projection(start, segment) for segment in second_segments
+                    ]
+                    candidates.update((start, target) for target in targets if target != start)
+        ordered = sorted(
+            candidates,
+            key=lambda pair: (
+                abs(pair[0][0] - pair[1][0]) + abs(pair[0][1] - pair[1][1]),
+                pair,
+            ),
+        )
+        successes = []
+        for start, finish in ordered[:32]:
+            try:
+                route = route_around_existing_wires(
+                    text, [_wire_point(start), _wire_point(finish)], keepouts=keepouts
+                )
+                candidate = _insert_wire_route(text, route)
+            except ValueError:
+                continue
+            if existing_length + _route_length(route) > MAXIMUM_CONNECTED_NET_LENGTH:
+                continue
+            if len(_point_groups(parse(candidate), points)) < len(wiring):
+                successes.append((_route_length(route), len(successes), candidate))
+                if len(successes) == 4:
+                    break
+        if not successes:
+            raise ValueError(
+                f"no obstacle-free native wire route joins the remaining {description} groups"
+            )
+        text = min(successes)[2]
+        wiring = _point_group_wiring(parse(text), points)
+    return text
+
+
+def connect_rail_text(text: str, net: str, terminal_inventory: list[dict]) -> str:
+    """Make every intended terminal of one net reachable through visible native wires."""
+    terminals = [item for item in terminal_inventory if item["net"] == net]
+    if len(terminals) < 2:
+        raise ValueError(f"connect_rail requires at least two observed terminals on {net}")
+    points = list(
+        dict.fromkeys(
+            (round(item["x_mm"] * 1_000_000), round(item["y_mm"] * 1_000_000)) for item in terminals
+        )
+    )
+    if len(_point_groups(parse(text), points)) == 1:
+        raise ValueError(f"connect_rail made no change; {net} terminals are already wire-joined")
+    keepouts = _terminal_keepouts([item for item in terminal_inventory if item["net"] != net])
+    return _connect_point_groups(text, points, keepouts, f"{net} wire")
+
+
+def move_symbols_text(text: str, action: MoveSymbols, terminal_inventory: list[dict]) -> str:
+    """Move a symbol group with its private wiring; reroute nets shared with other symbols."""
+    dx, dy = round(action.dx_mm * 1_000_000), round(action.dy_mm * 1_000_000)
+    if dx % PITCH or dy % PITCH:
+        raise ValueError(f"move_symbols offsets must use the KiCad {PITCH / 1_000_000:g} mm grid")
+    moved = set(action.references)
+    tree = parse(text)
+    found = {
+        prop[2]
+        for symbol in children(tree, "symbol")
+        for prop in children(symbol, "property")
+        if prop[1] == "Reference" and prop[2] in moved
+    }
+    if found != moved:
+        raise ValueError(f"move_symbols references not found: {sorted(moved - found)}")
+
+    def pin_point(item: dict) -> Point:
+        return (round(item["x_mm"] * 1_000_000), round(item["y_mm"] * 1_000_000))
+
+    moved_pins = {pin_point(item) for item in terminal_inventory if item["reference"] in moved}
+    # Pin-mounted decorations such as power flags travel with the pin they mark.
+    pins_by_reference: dict[str, set[Point]] = {}
+    for item in terminal_inventory:
+        pins_by_reference.setdefault(item["reference"], set()).add(pin_point(item))
+    moved |= {
+        reference
+        for reference, pins in pins_by_reference.items()
+        if reference not in moved and pins <= moved_pins
+    }
+    fixed_pins = {pin_point(item) for item in terminal_inventory if item["reference"] not in moved}
+    segments, owners, roots = _wire_trees(tree)
+    labels = [(_nm_point(one(label, "at")), label) for label in children(tree, "label")]
+    junctions = [_nm_point(one(node, "at")) for node in children(tree, "junction")]
+
+    def touches(root: int, point: Point) -> bool:
+        return any(
+            point_on_segment(point, *segment)
+            for segment, other in zip(segments, roots)
+            if other == root
+        )
+
+    carried_wires, removed_wires = set(), set()
+    carried_points: set[Point] = set(moved_pins)
+    removed_points: set[Point] = set()
+    reconnect: list[list[Point]] = []
+    for root in sorted(set(roots)):
+        wire_indexes = {owner for owner, other in zip(owners, roots) if other == root}
+        moving = {point for point in moved_pins if touches(root, point)}
+        fixed = {point for point in fixed_pins if touches(root, point)}
+        if not moving:
+            continue
+        attached_labels = {point for point, _label in labels if touches(root, point)}
+        attached_junctions = {point for point in junctions if touches(root, point)}
+        if not fixed:
+            carried_wires |= wire_indexes
+            carried_points |= attached_labels | attached_junctions
+            continue
+        removed_wires |= wire_indexes
+        removed_points |= attached_junctions
+        reconnect.append(sorted({(x + dx, y + dy) for x, y in moving} | fixed | attached_labels))
+
+    rewritten = []
+    wire_index = -1
+    for start, end, node in _top_level_forms(text):
+        block = text[start:end]
+        if node[0] == "wire":
+            wire_index += 1
+            if wire_index in removed_wires:
+                rewritten.append((start, end, ""))
+            elif wire_index in carried_wires:
+                rewritten.append((start, end, _translate_block(block, action.dx_mm, action.dy_mm)))
+        elif node[0] == "symbol":
+            if any(p[1] == "Reference" and p[2] in moved for p in children(node, "property")):
+                rewritten.append((start, end, _translate_block(block, action.dx_mm, action.dy_mm)))
+        elif node[0] in {"label", "junction", "no_connect"}:
+            point = _nm_point(one(node, "at"))
+            if node[0] == "junction" and point in removed_points:
+                rewritten.append((start, end, ""))
+            elif point in carried_points:
+                rewritten.append((start, end, _translate_block(block, action.dx_mm, action.dy_mm)))
+    for start, end, block in reversed(rewritten):
+        text = text[:start] + block + text[end:]
+    shifted = [
+        dict(item, x_mm=item["x_mm"] + action.dx_mm, y_mm=item["y_mm"] + action.dy_mm)
+        if item["reference"] in moved
+        else item
+        for item in terminal_inventory
+    ]
+    for points in reconnect:
+        point_set = set(points)
+        keepouts = _terminal_keepouts(
+            [item for item in shifted if pin_point(item) not in point_set]
+        )
+        text = _connect_point_groups(text, points, keepouts, "rerouted moved-symbol net")
+    return text
+
+
+def route_around_existing_wires(
+    text: str,
+    requested: list[WirePoint],
+    *,
+    keepouts: list[tuple[int, int, int, int]] = (),
+) -> list[WirePoint]:
+    """Plan requested legs around wires, symbol bodies, visible fields, labels and keepouts."""
     nanometers = 1_000_000
     points: list[Point] = [
         (round(point.x_mm * nanometers), round(point.y_mm * nanometers)) for point in requested
@@ -268,8 +557,18 @@ def route_around_existing_wires(text: str, requested: list[WirePoint]) -> list[W
         for first, second in zip(coordinates, coordinates[1:]):
             wires.append((f"existing-wire-{index}", first, second))
 
-    symbol_boxes = []
+    symbol_boxes = [("keepout", bounds) for bounds in keepouts]
     text_boxes = []
+    for label in children(tree, "label"):
+        (x, y), angle = _nm_point(one(label, "at")), int(float(one(label, "at")[3]))
+        width = label_text_width(label[1])
+        bounds = {
+            0: (x, y - 2_000_000, x + width, y),
+            180: (x - width, y - 2_000_000, x, y),
+            90: (x - 2_000_000, y - width, x, y),
+            270: (x - 2_000_000, y, x, y + width),
+        }.get(angle % 360, (x - width, y - width, x + width, y + width))
+        text_boxes.append((f"label-{label[1]}", bounds))
     for symbol in children(tree, "symbol"):
         reference = next(prop[2] for prop in children(symbol, "property") if prop[1] == "Reference")
         library = library_symbols.get(one(symbol, "lib_id")[1])
@@ -307,7 +606,46 @@ def route_around_existing_wires(text: str, requested: list[WirePoint]) -> list[W
             )
         mirrors = children(symbol, "mirror")
         mirror = mirrors[0][1] if mirrors else None
+        units = children(symbol, "unit")
+        unit = units[0][1] if units else "1"
+        body_points: list[Point] = []
         for body in children(library, "symbol"):
+            body_unit = body[1].rsplit("_", 2)[-2] if body[1].count("_") >= 2 else "0"
+            if body_unit not in {"0", str(unit)}:
+                continue
+            for pin in children(body, "pin"):
+                pin_at, length = one(pin, "at"), _nm(one(pin, "length")[1])
+                direction = {0: (1, 0), 90: (0, 1), 180: (-1, 0), 270: (0, -1)}.get(
+                    int(float(pin_at[3])) % 360
+                )
+                if direction is None or length <= 0:
+                    continue
+                stub = []
+                for x, y in (
+                    (_nm(pin_at[1]), _nm(pin_at[2])),
+                    (
+                        _nm(pin_at[1]) + direction[0] * length,
+                        _nm(pin_at[2]) + direction[1] * length,
+                    ),
+                ):
+                    dx, dy = transform_library_point(x, y, angle, mirror)
+                    stub.append((origin[0] + dx, origin[1] + dy))
+                # The stub stops short of its connection point so wires may still land there.
+                (x1, y1), (x2, y2) = stub
+                step_x = (x2 > x1) - (x2 < x1)
+                step_y = (y2 > y1) - (y2 < y1)
+                x1, y1 = x1 + step_x * 500_000, y1 + step_y * 500_000
+                symbol_boxes.append(
+                    (
+                        reference,
+                        (
+                            min(x1, x2) - 250_000,
+                            min(y1, y2) - 250_000,
+                            max(x1, x2) + 250_000,
+                            max(y1, y2) + 250_000,
+                        ),
+                    )
+                )
             shapes = [(shape, "rectangle") for shape in children(body, "rectangle")]
             shapes.extend((shape, "polyline") for shape in children(body, "polyline"))
             for shape, kind in shapes:
@@ -315,21 +653,22 @@ def route_around_existing_wires(text: str, requested: list[WirePoint]) -> list[W
                     corners = [one(shape, "start"), one(shape, "end")]
                 else:
                     corners = children(one(shape, "pts"), "xy")
-                transformed = []
                 for corner in corners:
                     dx, dy = transform_library_point(_nm(corner[1]), _nm(corner[2]), angle, mirror)
-                    transformed.append((origin[0] + dx, origin[1] + dy))
-                symbol_boxes.append(
+                    body_points.append((origin[0] + dx, origin[1] + dy))
+        # One union box per placed unit, matching the independent layout observer.
+        if body_points:
+            symbol_boxes.append(
+                (
+                    reference,
                     (
-                        reference,
-                        (
-                            min(point[0] for point in transformed) - 250_000,
-                            min(point[1] for point in transformed) - 250_000,
-                            max(point[0] for point in transformed) + 250_000,
-                            max(point[1] for point in transformed) + 250_000,
-                        ),
-                    )
+                        min(point[0] for point in body_points) - 250_000,
+                        min(point[1] for point in body_points) - 250_000,
+                        max(point[0] for point in body_points) + 250_000,
+                        max(point[1] for point in body_points) + 250_000,
+                    ),
                 )
+            )
 
     planned: list[Point] = [points[0]]
     for start, finish in zip(points, points[1:]):
@@ -353,20 +692,14 @@ def route_around_existing_wires(text: str, requested: list[WirePoint]) -> list[W
             if not any(point_on_segment(endpoint, first, second) for endpoint in (start, finish))
         )
         body_obstacles = tuple(
-            Reservation(f"body-{index}", "exclusive", reference, "symbol_body", bounds)
+            Reservation(f"body-{index}", "exclusive", reference, "symbol_body", trimmed)
             for index, (reference, bounds) in enumerate(symbol_boxes)
-            if not any(
-                bounds[0] <= endpoint[0] <= bounds[2] and bounds[1] <= endpoint[1] <= bounds[3]
-                for endpoint in (start, finish)
-            )
+            if (trimmed := _release_endpoints(bounds, (start, finish))) is not None
         )
         text_obstacles = tuple(
-            Reservation(f"text-{index}", "exclusive", reference, "symbol_text", bounds)
+            Reservation(f"text-{index}", "exclusive", reference, "symbol_text", trimmed)
             for index, (reference, bounds) in enumerate(text_boxes)
-            if not any(
-                bounds[0] <= endpoint[0] <= bounds[2] and bounds[1] <= endpoint[1] <= bounds[3]
-                for endpoint in (start, finish)
-            )
+            if (trimmed := _release_endpoints(bounds, (start, finish))) is not None
         )
         obstacles = wire_obstacles + body_obstacles + text_obstacles
         segments, _expansions = _connect(
@@ -393,6 +726,30 @@ def route_around_existing_wires(text: str, requested: list[WirePoint]) -> list[W
     return [WirePoint(x_mm=x / nanometers, y_mm=y / nanometers) for x, y in planned]
 
 
+def _release_endpoints(
+    bounds: tuple[int, int, int, int], endpoints: tuple[Point, ...]
+) -> tuple[int, int, int, int] | None:
+    """Pull a padded body edge off a route endpoint that touches it; drop deep containment."""
+    left, top, right, bottom = bounds
+    edge_band = 400_000
+    for x, y in endpoints:
+        if not (left <= x <= right and top <= y <= bottom):
+            continue
+        if bottom - y <= edge_band:
+            bottom = y - 100_000
+        elif y - top <= edge_band:
+            top = y + 100_000
+        elif right - x <= edge_band:
+            right = x - 100_000
+        elif x - left <= edge_band:
+            left = x + 100_000
+        else:
+            return None
+        if left >= right or top >= bottom:
+            return None
+    return left, top, right, bottom
+
+
 def _grid_route(
     start: Point,
     finish: Point,
@@ -408,6 +765,36 @@ def _grid_route(
 
     def heuristic(point: Point) -> int:
         return (abs(finish[0] - point[0]) + abs(finish[1] - point[1])) // step
+
+    # Rasterize each exclusive obstacle once into the unit grid edges it strictly
+    # intersects; this is the same test segment_is_admissible applies per edge.
+    origin_x, origin_y = start[0] % step, start[1] % step
+
+    def grid_values(low: int, high: int, origin: int) -> range:
+        first = low - ((low - origin) % step) + step
+        return range(first, high, step)
+
+    blocked_horizontal: set[Point] = set()
+    blocked_vertical: set[Point] = set()
+    for reservation in obstacles:
+        if reservation.owner == "new-review-wire":
+            continue
+        left, top, right, bottom = reservation.rect
+        for y in grid_values(top, bottom, origin_y):
+            for x in grid_values(left - step, right, origin_x):
+                blocked_horizontal.add((x, y))
+        for x in grid_values(left, right, origin_x):
+            for y in grid_values(top - step, bottom, origin_y):
+                blocked_vertical.add((x, y))
+
+    def admissible(point: Point, dx: int, dy: int) -> bool:
+        if dx > 0:
+            return point not in blocked_horizontal
+        if dx < 0:
+            return (point[0] - step, point[1]) not in blocked_horizontal
+        if dy > 0:
+            return point not in blocked_vertical
+        return (point[0], point[1] - step) not in blocked_vertical
 
     directions = ((step, 0), (0, step), (-step, 0), (0, -step))
     initial = (start, -1)
@@ -428,14 +815,7 @@ def _grid_route(
         expansions += 1
         for direction, (dx, dy) in enumerate(directions):
             candidate = (point[0] + dx, point[1] + dy)
-            if not inside(candidate) or not segment_is_admissible(
-                point,
-                candidate,
-                obstacles,
-                (),
-                net="review-route",
-                owner="new-review-wire",
-            ):
+            if not inside(candidate) or not admissible(point, dx, dy):
                 continue
             bend_cost = 0.2 if prior_direction not in (-1, direction) else 0.0
             next_state = (candidate, direction)
@@ -925,20 +1305,42 @@ class NativeSchematicEngine:
             raise ValueError("candidate output already exists")
         design = getattr(self, "design", {})
         asserted_nets = {item["net"] for item in design.get("power_assertions", [])}
-        wire_actions = [action for action in actions if isinstance(action, AddWirePath)]
-        if any(action.net not in asserted_nets for action in wire_actions):
+        wire_actions = [
+            action
+            for action in actions
+            if isinstance(action, AddWirePath | ConnectRail | MoveSymbols)
+        ]
+        if any(
+            not isinstance(action, MoveSymbols) and action.net not in asserted_nets
+            for action in wire_actions
+        ):
             raise ValueError(
-                "add_wire_path is limited to explicitly asserted power nets; "
+                "add_wire_path and connect_rail are limited to explicitly asserted power nets; "
                 f"valid nets are {sorted(asserted_nets)}"
             )
+        inventory = None
         if wire_actions:
             netlist = schematic.parent.parent / "reports/netlist.xml"
             if not netlist.is_file():
-                raise ValueError("add_wire_path requires the current assessed netlist")
+                raise ValueError("wire and symbol-move edits require the current assessed netlist")
             observed = observe(schematic, netlist)
             inventory = terminal_inventory_for_design(design, observed)
             for action in wire_actions:
-                resolve_wire_path_points(action, inventory)
+                if isinstance(action, AddWirePath):
+                    resolve_wire_path_points(action, inventory)
+            if any(isinstance(action, MoveSymbols) for action in wire_actions):
+                listed = {(item["reference"], item["pin"]) for item in inventory}
+                inventory += [
+                    {
+                        "net": None,
+                        "reference": reference,
+                        "pin": pin,
+                        "x_mm": point[0] / 1_000_000,
+                        "y_mm": point[1] / 1_000_000,
+                    }
+                    for (reference, pin), point in sorted(observed["pin_positions"].items())
+                    if (reference, pin) not in listed
+                ]
         regenerations = [i for i, a in enumerate(actions) if isinstance(a, RegenerateSchematic)]
         if regenerations and regenerations != [0]:
             raise ValueError("regeneration may occur once, as the first action")
@@ -960,7 +1362,6 @@ class NativeSchematicEngine:
                 project.mkdir()
                 target = project / schematic.name
                 target.write_bytes(schematic.read_bytes())
-            inventory = terminal_inventory_for_design(design, observed) if wire_actions else None
             target.write_text(edit_schematic_text(target.read_text(), actions, inventory))
             relative = target.relative_to(stage)
             stage.rename(directory)

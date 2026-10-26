@@ -49,6 +49,26 @@ class AddWirePath(StrictModel):
         return self
 
 
+class ConnectRail(StrictModel):
+    operation: Literal["connect_rail"]
+    net: str = Field(min_length=1, max_length=64)
+
+
+class MoveSymbols(StrictModel):
+    operation: Literal["move_symbols"]
+    references: list[str] = Field(min_length=1, max_length=12)
+    dx_mm: float = Field(ge=-297, le=297, allow_inf_nan=False)
+    dy_mm: float = Field(ge=-210, le=210, allow_inf_nan=False)
+
+    @model_validator(mode="after")
+    def require_distinct_nonzero_move(self) -> MoveSymbols:
+        if len(set(self.references)) != len(self.references):
+            raise ValueError("move_symbols references must be distinct")
+        if self.dx_mm == 0 and self.dy_mm == 0:
+            raise ValueError("move_symbols made no change; choose nonzero movement")
+        return self
+
+
 class TranslateSheet(StrictModel):
     operation: Literal["translate_sheet"]
     dx_mm: float = Field(ge=-297, le=297, allow_inf_nan=False)
@@ -60,7 +80,7 @@ class RegenerateSchematic(StrictModel):
 
 
 SchematicAction = Annotated[
-    MoveField | AddWirePath | TranslateSheet | RegenerateSchematic,
+    MoveField | AddWirePath | ConnectRail | MoveSymbols | TranslateSheet | RegenerateSchematic,
     Field(discriminator="operation"),
 ]
 
@@ -204,8 +224,14 @@ class OllamaSchematicReviewer:
             "independent checks pass AND the images have no unresolved issues. "
             "For overlapping or distant labels, request move_field with absolute millimetre coordinates using the "
             "field inventory, or regenerate_schematic to recompute placement and wiring. "
-            "For a failed visible_rail_continuity check, add explicit Manhattan wire segments with add_wire_path. "
-            "Submit exactly one add_wire_path that joins two terminals in one route, then wait for rechecks. "
+            "For a failed visible_rail_continuity check, prefer connect_rail with the failing net: "
+            "the native editor wires every disconnected terminal group of that net with "
+            "obstacle-checked routes. If connect_rail reports that no route exists, use "
+            "move_symbols to shift one or more listed references by a grid-aligned offset into "
+            "open space; their private wiring moves with them and shared nets are rerouted. "
+            "Then request connect_rail again. Alternatively, add explicit Manhattan wire segments "
+            "with add_wire_path. "
+            "Submit exactly one action per revision, then wait for rechecks. "
             "Use the listed terminal inventory and exact net witnesses; set from_ref/from_pin and "
             "to_ref/to_pin to identify two listed terminals on the named net. The waypoints field "
             "contains only intermediate coordinates; the editor supplies exact pin endpoints. "
@@ -213,12 +239,14 @@ class OllamaSchematicReviewer:
             "editor plans orthogonal paths around visible symbol bodies, fields and existing wires, "
             "and adds required T-junction markers. Do not reuse a wire segment or invent off-grid points. "
             "Do not request regenerate_schematic or translate_sheet to repair a visible_rail_continuity failure; "
-            "neither operation creates a new explicit rail route. Add one add_wire_path action instead. "
+            "neither operation creates a new explicit rail route. Use connect_rail, move_symbols "
+            "or add_wire_path instead. "
             "The native observer will reject new shorts, changed net partitions, crossings, collisions, "
             "or routes that do not make the asserted rail physically continuous. "
             "For missing parts, wrong values or wiring mismatches, regenerate_schematic "
             "rebuilds the native schematic from the intended circuit, preserving its values "
-            "and connectivity. translate_sheet moves the entire drawing. These are the "
+            "and connectivity. translate_sheet moves the entire drawing. move_symbols offsets "
+            "must be multiples of 1.27 mm. These are the "
             "only supported edits. Do not invent coordinates for missing components. "
             "Use decision=revise with concrete actions when a supported repair is possible. "
             "Use needs_help if essential requirements or repairs are unsupported. "

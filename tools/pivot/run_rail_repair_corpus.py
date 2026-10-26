@@ -1,0 +1,190 @@
+"""Exercise generic rail-connection and symbol-move edits across the M2b corpus.
+
+For each design with asserted power nets, the native compiler output is assessed;
+each net that lacks a visible wire path receives ``connect_rail``. When no safe route
+exists, single grid-aligned ``move_symbols`` edits of that net's terminal owners are
+searched, each followed by a full native reassessment and another ``connect_rail``.
+No fixture-specific coordinates are used. Every candidate is retained.
+"""
+
+from __future__ import annotations
+
+import argparse
+from concurrent.futures import ProcessPoolExecutor
+import json
+from pathlib import Path
+import subprocess
+import time
+
+from ai_kicad.pivot.schematic_review import ConnectRail, MoveSymbols, file_hash, write_json
+from ai_kicad.pivot.schematic_review_native import NativeSchematicEngine
+from tools.pivot.experiment_paths import create_experiment_dir
+
+ROOT = Path(__file__).resolve().parents[2]
+HARD_CHECKS = ("native_tools", "erc", "electrical_equivalence", "observed_layout")
+DESIGNS = (
+    "dual_buffer",
+    "dual_rail_reference",
+    "inverting_gain",
+    "linear_regulator",
+    "noninverting_gain",
+    "rc_to_buffer",
+    "sallen_key",
+    "timer_astable",
+)
+PITCHES = (4, 8, 12, 16)
+DIRECTIONS = ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1))
+
+
+def rail_witnesses(assessment) -> list[dict]:
+    return assessment.report.get("layout", {}).get("observed_power_rail_wire_path_witnesses", [])
+
+
+def hard_pass(assessment) -> bool:
+    return all(assessment.report["checks"].get(name) == "PASS" for name in HARD_CHECKS)
+
+
+def repair_design(name: str, launcher: Path, output: Path, budget_seconds: float) -> dict:
+    design = json.loads((ROOT / "fixtures/m2b" / f"{name}.json").read_text())
+    engine = NativeSchematicEngine(design, launcher)
+    references = {component["id"]: component["refdes"] for component in design["components"]}
+    owners = {
+        net["id"]: sorted({references[component] for component, _pin in net["members"]})
+        for net in design["nets"]
+    }
+    started, counter, steps = time.monotonic(), 0, []
+
+    def next_directory() -> Path:
+        nonlocal counter
+        counter += 1
+        return output / f"{counter:04d}"
+
+    def attempt(assessment, action) -> object | None:
+        directory = next_directory()
+        record = {"candidate": directory.name, "action": action.model_dump(mode="json")}
+        try:
+            schematic = engine.apply(assessment.schematic, directory, [action])
+        except ValueError as error:
+            record["rejected"] = str(error)
+            steps.append(record)
+            return None
+        candidate = engine.assess(schematic, directory)
+        record["checks"] = candidate.report["checks"]
+        record["schematic_sha256"] = file_hash(schematic)
+        steps.append(record)
+        return candidate
+
+    directory = next_directory()
+    initial = engine.assess(engine.initial(directory), directory)
+    steps.append(
+        {"candidate": directory.name, "action": "initial", "checks": initial.report["checks"]}
+    )
+    current, applied, blocked = initial, [], set()
+    while pending := [w for w in rail_witnesses(current) if w["net"] not in blocked]:
+        if time.monotonic() - started > budget_seconds:
+            break
+        net = pending[0]["net"]
+        connected = attempt(current, ConnectRail(operation="connect_rail", net=net))
+        if connected is not None and hard_pass(connected):
+            current = connected
+            applied.append({"operation": "connect_rail", "net": net})
+            continue
+        found = False
+        for reference in owners[net]:
+            for pitch in PITCHES:
+                for sx, sy in DIRECTIONS:
+                    if found or time.monotonic() - started > budget_seconds:
+                        break
+                    move = MoveSymbols(
+                        operation="move_symbols",
+                        references=[reference],
+                        dx_mm=round(sx * pitch * 1.27, 2),
+                        dy_mm=round(sy * pitch * 1.27, 2),
+                    )
+                    moved = attempt(current, move)
+                    if moved is None or not hard_pass(moved):
+                        continue
+                    connected = attempt(moved, ConnectRail(operation="connect_rail", net=net))
+                    if (
+                        connected is not None
+                        and hard_pass(connected)
+                        and net not in {w["net"] for w in rail_witnesses(connected)}
+                    ):
+                        current, found = connected, True
+                        applied += [
+                            move.model_dump(mode="json"),
+                            {"operation": "connect_rail", "net": net},
+                        ]
+        if not found:
+            blocked.add(net)
+    result = {
+        "design": name,
+        "initial_failing_nets": sorted({w["net"] for w in rail_witnesses(initial)}),
+        "applied_edits": applied,
+        "unresolved_nets": sorted({w["net"] for w in rail_witnesses(current)}),
+        "final_candidate": str(current.schematic.relative_to(output)),
+        "final_checks": current.report["checks"],
+        "final_schematic_sha256": file_hash(current.schematic),
+        "final_images": [str(path.relative_to(output)) for path in current.images],
+        "candidates_attempted": counter,
+        "elapsed_seconds": round(time.monotonic() - started, 1),
+        "budget_exhausted": time.monotonic() - started > budget_seconds,
+        "steps": steps,
+    }
+    write_json(output / "result.json", result)
+    return result
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--experiment-id", required=True)
+    parser.add_argument("--kicad-apprun", type=Path, required=True)
+    parser.add_argument("--designs", nargs="*", default=list(DESIGNS))
+    parser.add_argument("--budget-seconds", type=float, default=1800)
+    parser.add_argument("--jobs", type=int, default=4)
+    args = parser.parse_args()
+    root = create_experiment_dir(ROOT, args.experiment_id)
+    commit = subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=True
+    ).stdout.strip()
+    dirty = subprocess.run(
+        ["git", "status", "--porcelain", "--", "src", "tools"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+    with ProcessPoolExecutor(max_workers=args.jobs) as pool:
+        futures = {
+            name: pool.submit(
+                repair_design, name, args.kicad_apprun, root / name, args.budget_seconds
+            )
+            for name in args.designs
+        }
+        results = {name: future.result() for name, future in futures.items()}
+    summary = {
+        "schema_version": "rail-repair-corpus.v1",
+        "source_commit": commit,
+        "source_tree_clean": not dirty,
+        "implementation_sha256": {
+            path: file_hash(ROOT / path)
+            for path in (
+                "src/ai_kicad/pivot/schematic_review.py",
+                "src/ai_kicad/pivot/schematic_review_native.py",
+                "tools/pivot/run_rail_repair_corpus.py",
+            )
+        },
+        "designs": {
+            name: {key: value for key, value in result.items() if key != "steps"}
+            for name, result in results.items()
+        },
+        "locked_host_qualification": False,
+        "human_readability_review": "PENDING",
+    }
+    write_json(root / "summary.json", summary)
+    for name, result in results.items():
+        print(name, result["applied_edits"], "unresolved:", result["unresolved_nets"])
+
+
+if __name__ == "__main__":
+    main()
