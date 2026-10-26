@@ -1,0 +1,78 @@
+{
+  "schema_version": "ai-topology-assessment.v1",
+  "suite_id": "analog-topology-555-terminal-partition-v6",
+  "suite_path": "fixtures/pivot/heldout_topology_suite_v6_555.json",
+  "suite_sha256": "7640b27936cb867666ed556997fb3adfb040102f64b0672cd90e5681f353912e",
+  "model": {
+    "name": "qwen3.5:9b",
+    "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "parameter_size": "9.0B",
+    "quantization_level": "Q4_K_M",
+    "ollama_version": "0.40.8"
+  },
+  "source_commit": "8b959184637cac7b11c210bfe9f81ff16f633382",
+  "host": {
+    "platform": "Linux-6.8.0-87-generic-x86_64-with-glibc2.35",
+    "machine": "x86_64",
+    "python": "3.12.12"
+  },
+  "sampling": {
+    "temperature": 0,
+    "seed": 20261023,
+    "think": false,
+    "maximum_validator_repair_attempts": 3
+  },
+  "task_count": 1,
+  "passed": 0,
+  "failed": 1,
+  "results": [
+    {
+      "task_id": "timer555_astable_4hz",
+      "status": "FAIL",
+      "checks": [
+        {
+          "check": "structured_graph",
+          "status": "FAIL",
+          "detail": "unassigned component terminals: ['R1.B']"
+        }
+      ],
+      "metrics": {},
+      "downstream_gates": {
+        "spice": "NOT_RUN_STRUCTURED_GRAPH_REJECTED",
+        "native_kicad": "NOT_RUN_STRUCTURED_GRAPH_REJECTED",
+        "human_electrical_review": "PENDING"
+      },
+      "raw_output_path": "raw/timer555_astable_4hz.attempt3.json",
+      "raw_output_sha256": "a97287f5c0409b69d0a5bf7300a2c25a0339c0cf0e237a56eb7b9645cd927f9a",
+      "attempts": [
+        {
+          "path": "raw/timer555_astable_4hz.json",
+          "sha256": "bd231cc5925ebd94172042fe98720b87b5b9381ca8b85cf98be36a1787bb7751",
+          "status": "FAIL",
+          "elapsed_s": 12.782
+        },
+        {
+          "path": "raw/timer555_astable_4hz.attempt1.json",
+          "sha256": "cc47e9f106c5b149b5f61672456dc67d9e90704f767004aa897162a5f6b50ea8",
+          "status": "FAIL",
+          "elapsed_s": 10.212
+        },
+        {
+          "path": "raw/timer555_astable_4hz.attempt2.json",
+          "sha256": "3bca9d96a4180a68b8f9aa0338c2286b8b2c2ef8aa79907e507275e3e4face93",
+          "status": "FAIL",
+          "elapsed_s": 9.861
+        },
+        {
+          "path": "raw/timer555_astable_4hz.attempt3.json",
+          "sha256": "a97287f5c0409b69d0a5bf7300a2c25a0339c0cf0e237a56eb7b9645cd927f9a",
+          "status": "FAIL",
+          "elapsed_s": 9.861
+        }
+      ]
+    }
+  ],
+  "human_review": "PENDING",
+  "overall_status": "FAIL",
+  "created_at_utc": "2026-10-26T02:23:54.621235+00:00"
+}
