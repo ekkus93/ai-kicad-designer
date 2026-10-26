@@ -262,3 +262,21 @@ def test_grid_router_matches_exact_segment_admissibility() -> None:
             assert segment_is_admissible(
                 first, second, obstacles, (), net="review-route", owner="new-review-wire"
             ), trial
+
+
+def test_blocked_connect_rail_feedback_names_movable_references() -> None:
+    walls = schematic(
+        wire((20.32, 20.32), (30.48, 20.32)),
+        wire((20.32, 30.48), (30.48, 30.48)),
+        wire((20.32, 20.32), (20.32, 30.48)),
+        wire((30.48, 20.32), (30.48, 30.48)),
+    )
+    inventory = [
+        terminal("VCC", "R1", "1", 25.4, 25.4),
+        terminal("VCC", "R2", "1", 76.2, 25.4),
+        terminal("OUT", "R1", "2", 20.32, 20.32),
+    ]
+    with pytest.raises(ValueError, match=r"move_symbols for one of \['R1', 'R2'\]"):
+        edit_schematic_text(
+            walls, [ConnectRail(operation="connect_rail", net="VCC")], terminal_inventory=inventory
+        )

@@ -428,7 +428,15 @@ def connect_rail_text(text: str, net: str, terminal_inventory: list[dict]) -> st
     if len(_point_groups(parse(text), points)) == 1:
         raise ValueError(f"connect_rail made no change; {net} terminals are already wire-joined")
     keepouts = _terminal_keepouts([item for item in terminal_inventory if item["net"] != net])
-    return _connect_point_groups(text, points, keepouts, f"{net} wire")
+    try:
+        return _connect_point_groups(text, points, keepouts, f"{net} wire")
+    except ValueError as error:
+        references = sorted({item["reference"] for item in terminals})
+        raise ValueError(
+            f"{error}. Repeating connect_rail for {net} will fail again on this revision; "
+            f"first request move_symbols for one of {references} by a grid-aligned offset "
+            "into open space, then request connect_rail again"
+        ) from error
 
 
 def move_symbols_text(text: str, action: MoveSymbols, terminal_inventory: list[dict]) -> str:
