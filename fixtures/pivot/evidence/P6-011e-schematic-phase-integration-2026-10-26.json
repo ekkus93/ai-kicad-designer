@@ -1,0 +1,104 @@
+{
+  "schema_version": "pivot-evidence.v1",
+  "evidence_id": "P6-011e-schematic-phase-integration-2026-10-26",
+  "task_id": "P6-011",
+  "recorded_at_utc": "2026-10-26T03:52:15.647758Z",
+  "source_commit": "5ec4552361cd40745e3cb51d0121ba0e4fcbf541",
+  "revision_kind": "git_commit",
+  "revision_id": "5ec4552361cd40745e3cb51d0121ba0e4fcbf541",
+  "action": {
+    "summary": "Run the review loop as the SCHEMATIC-phase review_schematic MCP tool on the reference 555 v8 canonical revision and request FOOTPRINTS",
+    "command": "PYTHONPATH=src:. .venv/bin/python tools/pivot/run_schematic_phase_demo.py --experiment-id <id> --kicad-apprun /tmp/AppDir/AppRun --model <model>",
+    "backend": "WorkflowController + MCPServer + native KiCad + Ollama",
+    "backend_version": "KiCad 10.0.6; Ollama 0.40.8; qwen3.5:9b; devstral-small-2:24b",
+    "toolchain": "Python 3.12.12; Linux-6.8.0-87"
+  },
+  "status": "INCONCLUSIVE",
+  "artifacts": [
+    {
+      "path": "src/ai_kicad/pivot/controller.py",
+      "sha256": "06c2933ef9da2e49d6dd454b5f656abced92bbe69da81d00bf8190802a21f255",
+      "media_type": "text/x-python",
+      "role": "review_schematic tool, visual gate, revision binding, transition rule"
+    },
+    {
+      "path": "src/ai_kicad/pivot/schematic_review_service.py",
+      "sha256": "aa6b40e090f8eecbeb5ba4ea6cc97194d244ef70e0b173ad420ccd99b821ab80",
+      "media_type": "text/x-python",
+      "role": "native review service"
+    },
+    {
+      "path": "src/ai_kicad/pivot/mcp_server.py",
+      "sha256": "6526d9478cfd5eaccff831e5bff5b441d42379c942b103f5a32b1b5b3f4efef8",
+      "media_type": "text/x-python",
+      "role": "per-tool MCP timeout"
+    },
+    {
+      "path": "tests/pivot/test_schematic_phase_integration.py",
+      "sha256": "5c044c0645e1eac2baea4f9142b7a8a7ae8b927494d9ea6974409802998a6910",
+      "media_type": "text/x-python",
+      "role": "phase-integration tests"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_phase_demo_2026-10-26_run4/summary.json",
+      "sha256": "12e8b74c580bd7c1e1c8a58a18af58a8dcb7eca102237bc1eac5f858be925f7e",
+      "media_type": "application/json",
+      "role": "reference 555 v8 via MCP, Qwen"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_phase_demo_2026-10-26_run5/summary.json",
+      "sha256": "a3f36ff350739ba72e9de0ebfecfa0a12ebc9eb821a2d5adc19be469adaa31f0",
+      "media_type": "application/json",
+      "role": "reference 555 v8 via MCP, Qwen, after recovery feedback"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_phase_demo_2026-10-26_run6/summary.json",
+      "sha256": "29b26c64fb09ed066990321453c982ae8ec53a2f9c9518dd0933cc2ec73b14d0",
+      "media_type": "application/json",
+      "role": "reference 555 v8 via MCP, Devstral, after recovery feedback"
+    }
+  ],
+  "checks": [
+    {
+      "check_id": "phase-tool-runs-whole-loop",
+      "status": "PASS",
+      "independent": true,
+      "evidence_paths": [
+        "fixtures/pivot/experiments/schematic_phase_demo_2026-10-26_run4/summary.json"
+      ],
+      "summary": "One tools/call review_schematic generated, checked, rendered, reviewed, applied connect_rail and re-reviewed the 555 without a person invoking steps."
+    },
+    {
+      "check_id": "transition-requires-current-visual-and-electrical-gates",
+      "status": "PASS",
+      "independent": true,
+      "evidence_paths": [
+        "fixtures/pivot/experiments/schematic_phase_demo_2026-10-26_run4/summary.json",
+        "tests/pivot/test_schematic_phase_integration.py"
+      ],
+      "summary": "The unaccepted 555 loop recorded schematic_visual_review FAIL and FOOTPRINTS was denied (runs 4-6). Tests cover acceptance unlocking the transition, stale-revision gates, backward invalidation, mismatched designs and MCP timeouts."
+    },
+    {
+      "check_id": "real-accepted-transition",
+      "status": "NOT_RUN",
+      "independent": true,
+      "evidence_paths": [
+        "fixtures/pivot/experiments/schematic_phase_demo_2026-10-26_run4/summary.json"
+      ],
+      "summary": "The only fixture with a canonical model (reference 555) is not yet accepted, so no real accepted review has unlocked FOOTPRINTS on a correctly bound revision."
+    }
+  ],
+  "ci_links": [],
+  "blockers": [
+    {
+      "code": "LOOP_NOT_QUALIFIED",
+      "summary": "P6-011e integrates the qualified loop; P6-011b/d qualification remains open.",
+      "next_action": "Complete P6-011b/d and a correctly bound accepted 555 review.",
+      "requires_owner_input": false
+    }
+  ],
+  "notes": [
+    "Runs 1 and 3 reviewed circuits that did not match the controller revision (gate binding flaw, fixed in 5ec45523) and run 2 hit the 30 s MCP timeout (fixed in 4eb2ead6); they are retained as superseded and are not evidence of integration.",
+    "Upstream REQUIREMENTS/CIRCUIT_DESIGN gates in the demo are recorded without evaluation and labeled so."
+  ]
+}

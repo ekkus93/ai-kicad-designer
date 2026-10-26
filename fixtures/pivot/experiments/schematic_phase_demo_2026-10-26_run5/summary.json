@@ -1,0 +1,81 @@
+{
+  "schema_version": "schematic-phase-demo.v1",
+  "source_commit": "69694491e2d66876be5e511f191efb377d338a15",
+  "controller_sha256": "06c2933ef9da2e49d6dd454b5f656abced92bbe69da81d00bf8190802a21f255",
+  "service_sha256": "aa6b40e090f8eecbeb5ba4ea6cc97194d244ef70e0b173ad420ccd99b821ab80",
+  "model": "qwen3.5:9b",
+  "review_brief": "fixtures/pivot/schematic_review_brief_v2.json",
+  "results": [
+    {
+      "design": "reference_555_led_flasher_v8",
+      "revision_id": "sha256:2d95a698d615a75b2e527c7b33e995a8e717bec50b44a4fccc3329bc99a74456",
+      "review_schematic_listed_in_schematic_phase": true,
+      "mcp_review_error": null,
+      "loop_status": "NO_PROGRESS",
+      "loop_reason": "model repeated an invalid review: no obstacle-free native wire route joins the remaining VCC wire groups. Repeating connect_rail for VCC will fail again on this revision; first request move_symbols for one of ['J1', 'R1', 'R3', 'U1'] by a grid-aligned offset into open space, then request connect_rail again",
+      "reviews": 4,
+      "model_tokens": 56675,
+      "visual_gate": {
+        "status": "FAIL",
+        "revision_id": "sha256:2d95a698d615a75b2e527c7b33e995a8e717bec50b44a4fccc3329bc99a74456",
+        "review_status": "NO_PROGRESS",
+        "accepted_schematic": null,
+        "result": "/home/jovyan/work/ai-kicad-designer/fixtures/pivot/experiments/schematic_phase_demo_2026-10-26_run5/reference_555_led_flasher_v8/schematic-review/result.json"
+      },
+      "electrical_checks_of_accepted_candidate": null,
+      "footprints_transition": {
+        "status": "DENIED",
+        "reason": "transition requires current PASS gate schematic_validated"
+      },
+      "final_phase": "SCHEMATIC",
+      "upstream_log": [
+        {
+          "upstream_gate_recorded_without_evaluation": "requirements_explicit",
+          "transition": {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "result": {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "{\"mutation_occurred\": true, \"phase\": \"CIRCUIT_DESIGN\", \"status\": \"applied\", \"trace_id\": \"9f1ec8a5beb7e6b9ee563a9e\"}"
+                }
+              ],
+              "structuredContent": {
+                "status": "applied",
+                "phase": "CIRCUIT_DESIGN",
+                "trace_id": "9f1ec8a5beb7e6b9ee563a9e",
+                "mutation_occurred": true
+              },
+              "isError": false
+            }
+          }
+        },
+        {
+          "upstream_gate_recorded_without_evaluation": "circuit_design_validated",
+          "transition": {
+            "jsonrpc": "2.0",
+            "id": 2,
+            "result": {
+              "content": [
+                {
+                  "type": "text",
+                  "text": "{\"mutation_occurred\": true, \"phase\": \"SCHEMATIC\", \"status\": \"applied\", \"trace_id\": \"ed6f084529845173c017d905\"}"
+                }
+              ],
+              "structuredContent": {
+                "status": "applied",
+                "phase": "SCHEMATIC",
+                "trace_id": "ed6f084529845173c017d905",
+                "mutation_occurred": true
+              },
+              "isError": false
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "locked_host_qualification": false,
+  "human_readability_review": "PENDING"
+}

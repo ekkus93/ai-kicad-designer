@@ -1,0 +1,97 @@
+{
+  "schema_version": "pivot-evidence.v1",
+  "evidence_id": "P6-011d-recovery-and-stopping-2026-10-26",
+  "task_id": "P6-011",
+  "recorded_at_utc": "2026-10-26T03:52:15.648266Z",
+  "source_commit": "69694491e2d66876be5e511f191efb377d338a15",
+  "revision_kind": "git_commit",
+  "revision_id": "69694491e2d66876be5e511f191efb377d338a15",
+  "action": {
+    "summary": "Observe model critique, recovery from rejected edits, and stopping on the blocked reference 555 VCC rail with Qwen and Devstral",
+    "command": "PYTHONPATH=src:. .venv/bin/python tools/pivot/run_schematic_phase_demo.py --experiment-id <id> --kicad-apprun /tmp/AppDir/AppRun --model <model>",
+    "backend": "WorkflowController + MCPServer + native KiCad + Ollama",
+    "backend_version": "KiCad 10.0.6; Ollama 0.40.8; qwen3.5:9b; devstral-small-2:24b",
+    "toolchain": "Python 3.12.12; Linux-6.8.0-87"
+  },
+  "status": "INCONCLUSIVE",
+  "artifacts": [
+    {
+      "path": "fixtures/pivot/experiments/schematic_phase_demo_2026-10-26_run4/summary.json",
+      "sha256": "12e8b74c580bd7c1e1c8a58a18af58a8dcb7eca102237bc1eac5f858be925f7e",
+      "media_type": "application/json",
+      "role": "Qwen before recovery feedback"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_phase_demo_2026-10-26_run5/summary.json",
+      "sha256": "a3f36ff350739ba72e9de0ebfecfa0a12ebc9eb821a2d5adc19be469adaa31f0",
+      "media_type": "application/json",
+      "role": "Qwen after recovery feedback"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_phase_demo_2026-10-26_run6/summary.json",
+      "sha256": "29b26c64fb09ed066990321453c982ae8ec53a2f9c9518dd0933cc2ec73b14d0",
+      "media_type": "application/json",
+      "role": "Devstral after recovery feedback"
+    },
+    {
+      "path": "src/ai_kicad/pivot/schematic_review_native.py",
+      "sha256": "77be4d33564d32253c97235096190230e19efbcedb2005d6be2233c132d6f08e",
+      "media_type": "text/x-python",
+      "role": "blocked-route feedback"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_phase_demo_2026-10-26_run4/reference_555_led_flasher_v8/schematic-review/result.json",
+      "sha256": "9c1235a95cb1b35ab9fc308a94a7096fd8b79410e13a61ebd82590d1f99411c1",
+      "media_type": "application/json",
+      "role": "loop result with every request, rejection and candidate"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_phase_demo_2026-10-26_run5/reference_555_led_flasher_v8/schematic-review/result.json",
+      "sha256": "c576cbfca2c5aa0d34c26c710820dd1b8a904ac0a98d9a36dce3cf0cb535a5f5",
+      "media_type": "application/json",
+      "role": "loop result with every request, rejection and candidate"
+    },
+    {
+      "path": "fixtures/pivot/experiments/schematic_phase_demo_2026-10-26_run6/reference_555_led_flasher_v8/schematic-review/result.json",
+      "sha256": "54e288e9fda0914a2a935c805d223ac7ca1dba3775a0fd77e0deb960f95d8c66",
+      "media_type": "application/json",
+      "role": "loop result with every request, rejection and candidate"
+    }
+  ],
+  "checks": [
+    {
+      "check_id": "recover-from-rejected-edit",
+      "status": "FAIL",
+      "independent": true,
+      "evidence_paths": [
+        "fixtures/pivot/experiments/schematic_phase_demo_2026-10-26_run5/summary.json",
+        "fixtures/pivot/experiments/schematic_phase_demo_2026-10-26_run6/summary.json"
+      ],
+      "summary": "Before the feedback change Qwen repeated a rejected connect_rail. After it, both models switched to move_symbols (Qwen J1 +12.7 mm; Devstral R1 +25.4 mm) but the moves did not open a VCC route; no run recovered to an accepted revision."
+    },
+    {
+      "check_id": "stop-without-false-acceptance",
+      "status": "PASS",
+      "independent": true,
+      "evidence_paths": [
+        "fixtures/pivot/experiments/schematic_phase_demo_2026-10-26_run4/summary.json",
+        "fixtures/pivot/experiments/schematic_phase_demo_2026-10-26_run5/summary.json",
+        "fixtures/pivot/experiments/schematic_phase_demo_2026-10-26_run6/summary.json"
+      ],
+      "summary": "Repeated failures and an unsupported request (Devstral connect_rail on non-asserted net DISCH) stopped as NO_PROGRESS with rejections and diagnostics retained; no candidate was accepted (42-60k model tokens)."
+    }
+  ],
+  "ci_links": [],
+  "blockers": [
+    {
+      "code": "RECOVERY_NOT_DEMONSTRATED",
+      "summary": "Models change strategy but do not find a successful recovery; regressions and output truncation were not re-exercised in this round.",
+      "next_action": "Broaden recovery cases across circuits and models.",
+      "requires_owner_input": false
+    }
+  ],
+  "notes": [
+    "One circuit (reference 555) and two models; exploratory, not qualification.",
+    "Not locked-host qualification."
+  ]
+}
