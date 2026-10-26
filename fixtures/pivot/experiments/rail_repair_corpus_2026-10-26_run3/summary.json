@@ -1,0 +1,127 @@
+{
+  "schema_version": "rail-repair-corpus.v1",
+  "source_commit": "b3a36cb8c384fc70ffa689906a5492fc5d0cb731",
+  "source_tree_clean": true,
+  "implementation_sha256": {
+    "src/ai_kicad/pivot/schematic_review.py": "939eadaece0a00540f741a1fa46dc27278e3cb621c63e648a97f8392daacec78",
+    "src/ai_kicad/pivot/schematic_review_native.py": "b0e092d67a6545aa6aaa34ef818766fb8ce1f1e3f9a52d147e15a6ad2662cd53",
+    "tools/pivot/run_rail_repair_corpus.py": "f8bce93d6c3ebb8e8aa72e8287a55eecfe60f56c628cfa9cf99e7ac73fcf9aa4"
+  },
+  "designs": {
+    "sallen_key": {
+      "design": "sallen_key",
+      "initial_failing_nets": [
+        "REF",
+        "VMINUS",
+        "VPLUS"
+      ],
+      "applied_edits": [
+        {
+          "operation": "move_symbols",
+          "references": [
+            "J1"
+          ],
+          "dx_mm": 5.08,
+          "dy_mm": 0.0
+        },
+        {
+          "operation": "connect_rail",
+          "net": "VPLUS"
+        }
+      ],
+      "plans": [
+        {
+          "priority": [
+            "REF",
+            "VMINUS",
+            "VPLUS"
+          ],
+          "unresolved_nets": [
+            "REF",
+            "VMINUS"
+          ]
+        }
+      ],
+      "unresolved_nets": [
+        "REF",
+        "VMINUS"
+      ],
+      "final_candidate": "0386/project/SallenKey.kicad_sch",
+      "final_checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "visible_rail_continuity": "FAIL",
+        "field_separation": "PASS",
+        "field_locality": "PASS",
+        "field_owner_association": "FAIL"
+      },
+      "final_schematic_sha256": "087b40ba4cccdbb2fd2479b7674cf2976f910d4a5ae0ab0bb52e46adf126c107",
+      "final_images": [
+        "0386/review-images/page.png",
+        "0386/review-images/drawing.png"
+      ],
+      "candidates_attempted": 386,
+      "elapsed_seconds": 562.9,
+      "budget_exhausted": false
+    },
+    "timer_astable": {
+      "design": "timer_astable",
+      "initial_failing_nets": [
+        "REF",
+        "VCC"
+      ],
+      "applied_edits": [
+        {
+          "operation": "connect_rail",
+          "net": "REF"
+        }
+      ],
+      "plans": [
+        {
+          "priority": [
+            "REF",
+            "VCC"
+          ],
+          "unresolved_nets": [
+            "VCC"
+          ]
+        },
+        {
+          "priority": [
+            "VCC",
+            "REF"
+          ],
+          "unresolved_nets": [
+            "REF"
+          ]
+        }
+      ],
+      "unresolved_nets": [
+        "VCC"
+      ],
+      "final_candidate": "0002/project/TimerAstable.kicad_sch",
+      "final_checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "visible_rail_continuity": "FAIL",
+        "field_separation": "PASS",
+        "field_locality": "PASS",
+        "field_owner_association": "PASS"
+      },
+      "final_schematic_sha256": "07b1fa3c932709508757abca2f9cf90ecdfcc4532b9e55bd074ee1aecc0df062",
+      "final_images": [
+        "0002/review-images/page.png",
+        "0002/review-images/drawing.png"
+      ],
+      "candidates_attempted": 364,
+      "elapsed_seconds": 688.0,
+      "budget_exhausted": false
+    }
+  },
+  "locked_host_qualification": false,
+  "human_readability_review": "PENDING"
+}
