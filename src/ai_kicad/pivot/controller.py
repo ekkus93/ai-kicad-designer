@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Callable, Protocol
 
 from .backend import DIRECT_PILOT_MANIFEST, DesignBackend
+from .model import DesignModel
 from .revisions import RevisionStore, StaleRevision
 from .requirements import assess_requirements
 
@@ -460,6 +461,7 @@ class WorkflowController:
         if output.exists():
             raise ControllerError("review output already exists")
         revision = self._state()["revision_id"]
+        self._require_design_matches_revision(design, revision)
         result = self.schematic_review.review(design, output)
         accepted = result.get("status") == "ACCEPTED_FOR_REVIEW" and bool(
             result.get("accepted_schematic")
@@ -487,6 +489,33 @@ class WorkflowController:
             )
         self._save_state(state)
         return {"status": gate["status"], "gate": gate, "review": result}
+
+    def _require_design_matches_revision(self, design: Path, revision: str) -> None:
+        """The reviewed circuit must be the current revision's canonical circuit."""
+        model = DesignModel.model_validate_json(
+            (self.revisions.revision_path(revision) / "design.json").read_text()
+        )
+        canonical_refs = {item.component_id: item.reference for item in model.components}
+        legacy = json.loads(design.read_text())
+        legacy_refs = {item["id"]: item["refdes"] for item in legacy["components"]}
+        canonical = (
+            {item.reference: item.value for item in model.components},
+            {
+                frozenset(f"{canonical_refs[t.component_id]}.{t.pin}" for t in net.terminals)
+                for net in model.nets
+            },
+        )
+        reviewed = (
+            {item["refdes"]: item["value"] for item in legacy["components"]},
+            {
+                frozenset(f"{legacy_refs[component]}.{pin}" for component, pin in net["members"])
+                for net in legacy["nets"]
+            },
+        )
+        if reviewed != canonical:
+            raise ControllerError(
+                "review design does not match the current revision's components, values or nets"
+            )
 
     def _define_requirements(self, request: dict) -> dict:
         assessment = assess_requirements(request["description"])

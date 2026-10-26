@@ -1,7 +1,8 @@
 """Demonstrate the visual review loop as the controller's SCHEMATIC-phase tool over MCP.
 
-For each design, a fresh controller workspace is advanced to SCHEMATIC, the loop runs
-through ``tools/call review_schematic`` with the native KiCad engine and a local vision
+For each pivot fixture, a fresh controller workspace commits the fixture's canonical model,
+is advanced to SCHEMATIC, and the loop reviews that same revision's circuit
+via ``tools/call review_schematic`` with the native KiCad engine and a local vision
 model, and the FOOTPRINTS transition is requested. ``schematic_validated`` is recorded
 only from the accepted candidate's own independent ERC/electrical-equivalence results.
 Upstream REQUIREMENTS/CIRCUIT_DESIGN gates are recorded by this harness without
@@ -24,7 +25,6 @@ from ai_kicad.pivot.schematic_review_service import NativeSchematicReviewService
 from tools.pivot.experiment_paths import create_experiment_dir
 
 ROOT = Path(__file__).resolve().parents[2]
-FIXTURE = ROOT / "fixtures/pivot/reference_555_led_flasher_v1"
 
 
 def call(server: MCPServer, name: str, arguments: dict, request_id: int) -> dict:
@@ -38,10 +38,11 @@ def call(server: MCPServer, name: str, arguments: dict, request_id: int) -> dict
     )
 
 
-def demonstrate(design_name: str, service: NativeSchematicReviewService, root: Path) -> dict:
+def demonstrate(fixture: Path, service: NativeSchematicReviewService, root: Path) -> dict:
+    design_name = fixture.name
     workspace = root / design_name
     controller = WorkflowController(workspace, schematic_review=service)
-    model = _model_from_fixture(FIXTURE)
+    model = _model_from_fixture(fixture)
     revision = controller.revisions.commit(
         model, {}, expected_revision=None, idempotency_key="demo-initialize"
     )
@@ -68,7 +69,7 @@ def demonstrate(design_name: str, service: NativeSchematicReviewService, root: P
                 ),
             }
         )
-    shutil.copy2(ROOT / "fixtures/m2b" / f"{design_name}.json", workspace / "design.json")
+    shutil.copy2(fixture / "design.json", workspace / "design.json")
     listed = server.handle({"jsonrpc": "2.0", "id": 90, "method": "tools/list"})
     review = call(
         server,
@@ -127,7 +128,12 @@ def main() -> None:
     parser.add_argument("--experiment-id", required=True)
     parser.add_argument("--kicad-apprun", type=Path, required=True)
     parser.add_argument("--model", default="qwen3.5:9b")
-    parser.add_argument("--designs", nargs="+", default=["rc_lowpass", "linear_regulator"])
+    parser.add_argument(
+        "--fixtures",
+        nargs="+",
+        type=Path,
+        default=[ROOT / "fixtures/pivot/reference_555_led_flasher_v8"],
+    )
     parser.add_argument(
         "--review-brief", type=Path, default=ROOT / "fixtures/pivot/schematic_review_brief_v2.json"
     )
@@ -136,7 +142,7 @@ def main() -> None:
     service = NativeSchematicReviewService(
         args.kicad_apprun, args.model, review_brief=args.review_brief
     )
-    results = [demonstrate(name, service, root) for name in args.designs]
+    results = [demonstrate(fixture.resolve(), service, root) for fixture in args.fixtures]
     summary = {
         "schema_version": "schematic-phase-demo.v1",
         "source_commit": subprocess.run(

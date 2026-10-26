@@ -42,7 +42,7 @@ def controller_in_schematic(tmp_path, service) -> tuple[WorkflowController, str]
     state = controller._state()
     state["phase"] = Phase.SCHEMATIC
     controller._save_state(state)
-    (controller.workspace / "design.json").write_text("{}")
+    (controller.workspace / "design.json").write_text((FIXTURE / "design.json").read_text())
     return controller, revision
 
 
@@ -192,3 +192,15 @@ def test_mcp_transport_waits_for_a_review_longer_than_the_default_call_timeout(t
     )
     assert "error" not in called
     assert not (controller.revisions.root / ".writer-lease").exists()
+
+
+def test_review_rejects_a_design_that_is_not_the_current_revision(tmp_path):
+    service = FakeReview("ACCEPTED_FOR_REVIEW", "candidates/000/project/Design.kicad_sch")
+    controller, revision = controller_in_schematic(tmp_path, service)
+    (controller.workspace / "design.json").write_text(
+        (ROOT / "fixtures/m2b/rc_lowpass.json").read_text()
+    )
+    with pytest.raises(Exception, match="does not match the current revision"):
+        review(controller, revision)
+    assert service.calls == []
+    assert "schematic_visual_review" not in controller._state()["gates"]
