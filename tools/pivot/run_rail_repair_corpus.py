@@ -68,7 +68,12 @@ def repair_design(name: str, launcher: Path, output: Path, budget_seconds: float
             record["rejected"] = str(error)
             steps.append(record)
             return None
-        candidate = engine.assess(schematic, directory)
+        try:
+            candidate = engine.assess(schematic, directory)
+        except (OSError, RuntimeError, ValueError, KeyError) as error:
+            record["assessment_error"] = str(error)
+            steps.append(record)
+            return None
         record["checks"] = candidate.report["checks"]
         record["schematic_sha256"] = file_hash(schematic)
         steps.append(record)
