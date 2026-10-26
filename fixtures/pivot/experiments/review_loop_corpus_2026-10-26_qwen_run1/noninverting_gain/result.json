@@ -1,0 +1,137 @@
+{
+  "schema_version": "schematic-review-loop.v1",
+  "status": "NO_PROGRESS",
+  "reason": "model repeated an invalid review: 1 validation error for SchematicReview\nactions.0.move_symbols\n  Value error, move_symbols made no change; choose nonzero movement [type=value_error, input_value={'operation': 'move_symbo... 'dx_mm': 0, 'dy_mm': 0}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/value_error",
+  "accepted_schematic": null,
+  "best_passing_schematic": null,
+  "reviewer": {
+    "model": "qwen3.5:9b",
+    "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "ollama_version": "0.40.8",
+    "capabilities": [
+      "completion",
+      "vision",
+      "tools",
+      "thinking"
+    ],
+    "options": {
+      "temperature": 0,
+      "seed": 20261025,
+      "num_ctx": 16384,
+      "num_predict": 2048
+    },
+    "think": false
+  },
+  "iterations": [
+    {
+      "iteration": 0,
+      "revision": "sha256:cbde0c9b4846e7228ba4a743a6848885487467d496f5fb699e35901268a183c9",
+      "schematic": "candidates/000/project/NoninvertingGain.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:cbde0c9b4846e7228ba4a743a6848885487467d496f5fb699e35901268a183c9",
+        "decision": "revise",
+        "issues": [
+          "visible_rail_continuity: No continuous wire path exists between terminals for nets VPLUS, VMINUS, and REF. The schematic relies on implicit connections or label-only joins which fail the visual rubric.",
+          "field_owner_association: Fields for U1 (unit 3) are closer to C2 than to their own symbol, violating the owner-association heuristic."
+        ],
+        "actions": [
+          {
+            "operation": "connect_rail",
+            "net": "VPLUS"
+          }
+        ],
+        "rationale": "The visible_rail_continuity check failed because there is no explicit wire path connecting the VPLUS terminals (U1 pin 8, C1 pin 1, J1 pin 3). The connect_rail operation will generate an orthogonal wire path around obstacles to make this connection physically continuous. This addresses the primary visual continuity failure."
+      }
+    },
+    {
+      "iteration": 1,
+      "revision": "sha256:dcdae549fb4c697c436fd91bba837c9c302852d102df0d34b91ec9eab29b0248",
+      "schematic": "candidates/001/project/NoninvertingGain.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:dcdae549fb4c697c436fd91bba837c9c302852d102df0d34b91ec9eab29b0248",
+        "decision": "revise",
+        "issues": [
+          "visible_rail_continuity: No continuous visible wire path exists between terminals for nets VMINUS and REF as listed in diagnostics.",
+          "field_owner_association: Fields for U1 unit 3 are closer to C2 than to their own symbol, violating the 5.08 mm owner-advantage heuristic."
+        ],
+        "actions": [
+          {
+            "operation": "connect_rail",
+            "net": "VMINUS"
+          }
+        ],
+        "rationale": "The visible_rail_continuity check failed for net VMINUS (and others). The native editor must be instructed to wire the disconnected terminal groups of this net with obstacle-checked routes. This addresses the primary visual continuity failure before addressing field association issues which may resolve or require separate moves if the rail routing changes symbol positions."
+      }
+    },
+    {
+      "iteration": 2,
+      "revision": "sha256:10cccf29eeba25da8e3d54d39b48bfa31f7e547bf733c4d51a04196cf39f67c9",
+      "schematic": "candidates/002/project/NoninvertingGain.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:10cccf29eeba25da8e3d54d39b48bfa31f7e547bf733c4d51a04196cf39f67c9",
+        "decision": "revise",
+        "issues": [
+          "visible_rail_continuity: The REF net lacks a continuous visible wire path between terminals (U1, C2, C1, J1, R2).",
+          "field_owner_association: Fields for U1 unit 3 are closer to C2 than their own symbol, violating the 5.08 mm owner-advantage heuristic."
+        ],
+        "actions": [
+          {
+            "operation": "connect_rail",
+            "net": "REF"
+          }
+        ],
+        "rationale": "The visible_rail_continuity check failed because the native wire geometry does not show a continuous path for the REF net between all its terminals. The field_owner_association check also failed for U1 unit 3, indicating fields are visually associated with the wrong symbol. The connect_rail operation will add explicit orthogonal paths around obstacles to ensure visual continuity for the REF net."
+      }
+    },
+    {
+      "iteration": 3,
+      "revision": "sha256:94918ed34ff43b217a8a7efc8d64d22a5ecc6fc425e0e3bbaeadfc930194d9aa",
+      "schematic": "candidates/003/project/NoninvertingGain.kicad_sch",
+      "independent_checks_pass": false,
+      "rejected_response": "1 validation error for SchematicReview\nactions.0.move_symbols\n  Value error, move_symbols made no change; choose nonzero movement [type=value_error, input_value={'operation': 'move_symbo... 'dx_mm': 0, 'dy_mm': 0}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/value_error"
+    },
+    {
+      "iteration": 4,
+      "revision": "sha256:94918ed34ff43b217a8a7efc8d64d22a5ecc6fc425e0e3bbaeadfc930194d9aa",
+      "schematic": "candidates/003/project/NoninvertingGain.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:94918ed34ff43b217a8a7efc8d64d22a5ecc6fc425e0e3bbaeadfc930194d9aa",
+        "decision": "revise",
+        "issues": [
+          "field_owner_association: FAIL - Reference and Value fields for U1 unit 3 are closer to C2 than to their own symbol, violating the 5.08 mm owner-advantage heuristic."
+        ],
+        "actions": [
+          {
+            "operation": "move_symbols",
+            "references": [
+              "U1"
+            ],
+            "dx_mm": 0.0,
+            "dy_mm": 1.27
+          }
+        ],
+        "rationale": "The independent check reports that the Reference and Value fields for U1 unit 3 are visually associated with C2 rather than their own symbol (owner_advantage < 5.08 mm). This is a geometric defect in label placement. Moving U1 by one grid step (1.27 mm) vertically will shift its private wiring and fields, increasing the distance to C2 and restoring clear owner association without altering electrical connectivity."
+      }
+    },
+    {
+      "iteration": 5,
+      "revision": "sha256:4442d1e656835e41fe2ee6888b0b7574a8ebc6d3d6649f457da26ffe34f6b149",
+      "schematic": "candidates/005/project/NoninvertingGain.kicad_sch",
+      "independent_checks_pass": false,
+      "rejected_response": "1 validation error for SchematicReview\nactions.0.move_symbols\n  Value error, move_symbols made no change; choose nonzero movement [type=value_error, input_value={'operation': 'move_symbo... 'dx_mm': 0, 'dy_mm': 0}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/value_error"
+    }
+  ],
+  "model_tokens": 81587,
+  "elapsed_seconds": 57.625,
+  "budgets": {
+    "max_reviews": 8,
+    "max_seconds": 1800,
+    "max_model_tokens": 120000
+  },
+  "human_electrical_review": "PENDING",
+  "locked_host_qualification": false
+}

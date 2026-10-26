@@ -1,0 +1,101 @@
+{
+  "schema_version": "schematic-review-loop.v1",
+  "status": "NO_PROGRESS",
+  "reason": "model repeated an invalid review: stale model review: base_revision does not match image revision",
+  "accepted_schematic": null,
+  "best_passing_schematic": null,
+  "reviewer": {
+    "model": "qwen3.5:9b",
+    "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "ollama_version": "0.40.8",
+    "capabilities": [
+      "completion",
+      "vision",
+      "tools",
+      "thinking"
+    ],
+    "options": {
+      "temperature": 0,
+      "seed": 20261025,
+      "num_ctx": 16384,
+      "num_predict": 2048
+    },
+    "think": false
+  },
+  "iterations": [
+    {
+      "iteration": 0,
+      "revision": "sha256:4d811114f2b9d5b56a4c2b8f75b022d1de6b9cbeae6bfcd0bdcfbf4911da625a",
+      "schematic": "candidates/000/project/LinearRegulator.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:4d811114f2b9d5b56a4c2b8f75b022d1de6b9cbeae6bfcd0bdcfbf4911da625a",
+        "decision": "revise",
+        "issues": [
+          "visible_rail_continuity: The schematic lacks explicit wire paths connecting terminals on the same net (VIN, REF). While electrically equivalent, the visual representation relies on implicit connections or label-only joins which fails the visible_rail_continuity check. Specifically, no continuous native wire path exists between C1 and J1 for VIN, nor between C1/C2/J3/U1 for REF.",
+          "action_plan_01_connect_rail_VIN",
+          "action_plan_02_connect_rail_REF"
+        ],
+        "actions": [
+          {
+            "operation": "connect_rail",
+            "net": "VIN"
+          }
+        ],
+        "rationale": "The visible_rail_continuity check failed because there is no continuous native wire path between terminals of the same net (e.g., C1 pin 1 to J1 pin 1 for VIN). The connect_rail operation will generate explicit orthogonal wire paths around obstacles, ensuring visual continuity while preserving electrical connectivity. This addresses the requirement that 'Where local REF/VCC routing is feasible, show continuous visible wires from the relevant terminals to a shared rail'."
+      }
+    },
+    {
+      "iteration": 1,
+      "revision": "sha256:f0f73ad605f0da0743ba5fe1ac4739435a98f044fa4e5a1b2d67a4336066656a",
+      "schematic": "candidates/001/project/LinearRegulator.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:f0f73ad605f0da0743ba5fe1ac4739435a98f044fa4e5a1b2d67a433606656a6",
+        "decision": "revise",
+        "issues": [
+          "visible_rail_continuity: The 'REF' net lacks a continuous visible wire path between terminals C1-2, C2-2, J3-1, and U1-2. The schematic relies on implicit connections or label-only joins which violates the visual rubric for power rails.",
+          "action_plan_summary"
+        ],
+        "actions": [
+          {
+            "operation": "connect_rail",
+            "net": "REF"
+          }
+        ],
+        "rationale": "The independent check 'visible_rail_continuity' failed because there is no continuous native wire path between the terminals of the 'REF' net (C1-2, C2-2, J3-1, U1-2). The current layout uses orthogonal wires that do not form a single continuous trunk for the ground/reference rail. The connect_rail operation will generate explicit orthogonal paths around existing symbols and fields to create a unified visual rail for the 'REF' net, satisfying the visible_rail_continuity criterion."
+      },
+      "rejected_response": "stale model review: base_revision does not match image revision"
+    },
+    {
+      "iteration": 2,
+      "revision": "sha256:f0f73ad605f0da0743ba5fe1ac4739435a98f044fa4e5a1b2d67a4336066656a",
+      "schematic": "candidates/001/project/LinearRegulator.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:f0f73ad605f0da0743ba5fe1ac4739435a98f044fa4e5a1b2d67a433606656a6",
+        "decision": "revise",
+        "issues": [
+          "visible_rail_continuity"
+        ],
+        "actions": [
+          {
+            "operation": "connect_rail",
+            "net": "REF"
+          }
+        ],
+        "rationale": "The visible_rail_continuity check failed because the native wire geometry does not show a continuous path between all terminals of the 'REF' net (C1-2, C2-2, J3-1, U1-2). The machine report indicates 'no continuous native wire path'. To satisfy the visual rubric, I must use connect_rail to generate explicit orthogonal paths around obstacles for this net. This will create the required visible wire trunk and branches."
+      },
+      "rejected_response": "stale model review: base_revision does not match image revision"
+    }
+  ],
+  "model_tokens": 34029,
+  "elapsed_seconds": 19.609,
+  "budgets": {
+    "max_reviews": 8,
+    "max_seconds": 1800,
+    "max_model_tokens": 120000
+  },
+  "human_electrical_review": "PENDING",
+  "locked_host_qualification": false
+}

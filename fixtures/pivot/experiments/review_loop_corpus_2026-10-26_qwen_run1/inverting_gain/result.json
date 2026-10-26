@@ -1,0 +1,141 @@
+{
+  "schema_version": "schematic-review-loop.v1",
+  "status": "NO_PROGRESS",
+  "reason": "model repeated an invalid review: move_symbols references not found: ['3', 'unit']",
+  "accepted_schematic": null,
+  "best_passing_schematic": null,
+  "reviewer": {
+    "model": "qwen3.5:9b",
+    "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "ollama_version": "0.40.8",
+    "capabilities": [
+      "completion",
+      "vision",
+      "tools",
+      "thinking"
+    ],
+    "options": {
+      "temperature": 0,
+      "seed": 20261025,
+      "num_ctx": 16384,
+      "num_predict": 2048
+    },
+    "think": false
+  },
+  "iterations": [
+    {
+      "iteration": 0,
+      "revision": "sha256:1813abca040a783a67c80e22a9f609b0eb8c91f8b28b8d9f7d9b501a7339df56",
+      "schematic": "candidates/000/project/InvertingGain.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:1813abca040a783a67c80e22a9f609b0eb8c91f8b28b8d9f7d9b501a7339df56",
+        "decision": "revise",
+        "issues": [
+          "visible_rail_continuity: The VPLUS and VMINUS nets lack continuous visible wire paths between their terminals (U1 pins 8/4 and J1 pins 3/4).",
+          "field_owner_association: Fields for U1 unit 3 are visually closer to neighboring symbols (R1, C2) than to their own symbol, violating the owner-association heuristic."
+        ],
+        "actions": [
+          {
+            "operation": "connect_rail",
+            "net": "VPLUS"
+          }
+        ],
+        "rationale": "The visible_rail_continuity check failed for the VPLUS net. The native editor must be instructed to wire the disconnected terminal groups of this net with obstacle-checked routes. This action will create explicit conductor geometry between U1 pin 8 and J1 pin 3, resolving the continuity failure."
+      }
+    },
+    {
+      "iteration": 1,
+      "revision": "sha256:b9cdc45774433be00e41fd5147d7ed759b59c94eb71beb38eaf3b394479bb768",
+      "schematic": "candidates/001/project/InvertingGain.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:b9cdc45774433be00e41fd5147d7ed759b59c94eb71beb38eaf3b394479bb768",
+        "decision": "revise",
+        "issues": [
+          "field_owner_association: U1 unit 3 Reference field is closer to R1 than its own symbol (owner_advantage_mm: 8.88 < 5.08)",
+          "field_owner_association: U1 unit 3 Value field is closer to C2 than its own symbol (owner_advantage_mm: 5.48 < 5.08)",
+          "visible_rail_continuity: No continuous visible wire path between VMINUS terminals (U1 pin 4 and J1 pin 4)"
+        ],
+        "actions": [
+          {
+            "operation": "move_symbols",
+            "references": [
+              "U1"
+            ],
+            "dx_mm": 0.0,
+            "dy_mm": -2.54
+          }
+        ],
+        "rationale": "Shift U1 down by one grid unit (2.54 mm) to increase owner_advantage for its fields relative to neighbors R1 and C2, resolving field_owner_association failures. Re-run connect_rail after placement change to verify visible_rail_continuity for VMINUS."
+      }
+    },
+    {
+      "iteration": 2,
+      "revision": "sha256:9c022f74223d7aab84e71da487918902a7492a103836e7feb10cd2d62385cfab",
+      "schematic": "candidates/002/project/InvertingGain.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:9c022f74223d7aab84e71da487918902a7492a103836e7feb10cd2d62385cfab",
+        "decision": "revise",
+        "issues": [
+          "field_owner_association: U1 unit 3 Reference/Value fields are too close to R1 (owner_advantage < 5.08mm)",
+          "visible_rail_continuity: Power rails for VPLUS, VMINUS, and REF lack explicit continuous wire trunks connecting all terminals",
+          "label_association: Fields for U1 unit 3 are visually ambiguous due to proximity to R1"
+        ],
+        "actions": [
+          {
+            "operation": "move_symbols",
+            "references": [
+              "U1",
+              "unit",
+              "3"
+            ],
+            "dx_mm": 0.0,
+            "dy_mm": 2.54
+          }
+        ],
+        "rationale": "Shift U1 unit 3 down by one grid (2.54mm) to increase owner_advantage for its Reference and Value fields relative to R1, resolving the field_owner_association failure. After moving symbols, re-run connect_rail to establish explicit wire trunks for power rails."
+      },
+      "rejected_response": "move_symbols references not found: ['3', 'unit']"
+    },
+    {
+      "iteration": 3,
+      "revision": "sha256:9c022f74223d7aab84e71da487918902a7492a103836e7feb10cd2d62385cfab",
+      "schematic": "candidates/002/project/InvertingGain.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:9c022f74223d7aab84e71da487918902a7492a103836e7feb10cd2d62385cfab",
+        "decision": "revise",
+        "issues": [
+          "field_owner_association: U1 unit 3 Reference/Value fields are too close to R1 (owner_advantage < 5.08mm)",
+          "visible_rail_continuity: Power rails for VPLUS, VMINUS, and REF lack explicit continuous wire trunks connecting all terminals",
+          "label_association: Fields for U1 unit 3 are visually ambiguous due to proximity to R1"
+        ],
+        "actions": [
+          {
+            "operation": "move_symbols",
+            "references": [
+              "U1",
+              "unit",
+              "3"
+            ],
+            "dx_mm": 0.0,
+            "dy_mm": 2.54
+          }
+        ],
+        "rationale": "Shift U1 unit 3 vertically by one grid step (2.54 mm) to increase owner_advantage for its Reference and Value fields relative to R1, resolving the field_owner_association failure. This also improves visual separation from the feedback resistor R1. After moving symbols, re-run connect_rail to establish explicit wire trunks for power rails if gaps remain."
+      },
+      "rejected_response": "move_symbols references not found: ['3', 'unit']"
+    }
+  ],
+  "model_tokens": 53080,
+  "elapsed_seconds": 36.337,
+  "budgets": {
+    "max_reviews": 8,
+    "max_seconds": 1800,
+    "max_model_tokens": 120000
+  },
+  "human_electrical_review": "PENDING",
+  "locked_host_qualification": false
+}
