@@ -1,0 +1,111 @@
+{
+  "schema_version": "schematic-review-loop.v1",
+  "status": "LIMIT_REACHED",
+  "reason": "wall-clock or model-token budget exhausted",
+  "accepted_schematic": null,
+  "best_passing_schematic": null,
+  "reviewer": {
+    "model": "qwen3.5:9b",
+    "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "ollama_version": "0.40.8",
+    "capabilities": [
+      "completion",
+      "vision",
+      "tools",
+      "thinking"
+    ],
+    "options": {
+      "temperature": 0,
+      "seed": 20261025,
+      "num_ctx": 16384,
+      "num_predict": 2048
+    },
+    "think": false
+  },
+  "iterations": [
+    {
+      "iteration": 0,
+      "revision": "sha256:63540b7f1979c8c129b5431d681ab677442607a26158db2c1290f27c97df4c15",
+      "schematic": "candidates/000/project/distant_value_rc.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:63540b7f1979c8c129b5431d681ab677442607a26158db2c1290f27c97df4c15",
+        "decision": "revise",
+        "issues": [
+          "Field 'C1 Value' is too distant from its symbol (77.37 mm > 25.4 mm limit)."
+        ],
+        "actions": [
+          {
+            "operation": "move_field",
+            "reference": "C1",
+            "unit": 1,
+            "field": "Value",
+            "x_mm": 89.0,
+            "y_mm": 62.0,
+            "angle": 0
+          }
+        ],
+        "rationale": "The 'C1 Value' field is located at (150.0, 100.0) mm, which is 77.37 mm from the component symbol center, exceeding the 25.4 mm locality limit. Moving it to approximately (89.0, 62.0) mm places it within the acceptable range while maintaining clear association with the capacitor symbol."
+      }
+    },
+    {
+      "iteration": 1,
+      "revision": "sha256:9f84bdc78571692dffb5f25f2a74816ceb8e04236b83478163b7fc700b56bc89",
+      "schematic": "candidates/001/project/distant_value_rc.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:9f84bdc78571692dffb5f25f2a74816ceb8e04236b83478163b7fc700b56bc89",
+        "decision": "revise",
+        "issues": [
+          "Field collision detected: C1 Reference and Value fields overlap (x=88.9/89.0, y=62.23/62.0)."
+        ],
+        "actions": [
+          {
+            "operation": "move_field",
+            "reference": "C1",
+            "unit": 1,
+            "field": "Value",
+            "x_mm": 89.5,
+            "y_mm": 62.0,
+            "angle": 0
+          }
+        ],
+        "rationale": "The independent check reports a FAIL for field_separation due to overlapping fields for C1:Reference and C1:Value. The diagnostics explicitly list 'overlapping reference/value fields: [['C1:1.Reference', 'C1:1.Value']]'. Although the distance between them is small (~0.2mm), they are visually overlapping or too close, violating the requirement for clear association. Moving the Value field slightly to the right (from x=89.0 to x=89.5) will resolve the overlap while maintaining legibility and association."
+      }
+    },
+    {
+      "iteration": 2,
+      "revision": "sha256:1d167ecb2e6cbea8f25acd91fdc6e255e62c3237af4a9412d0adfe194ec42ce3",
+      "schematic": "candidates/002/project/distant_value_rc.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:1d167ecb2e6cbea8f25acd91fdc6e255e62c3237af4a9412d0adfe194ec42ce3",
+        "decision": "revise",
+        "issues": [
+          "Field collision detected between C1 Reference and Value labels at coordinates (88.9, 62.23) and (89.5, 62.0)."
+        ],
+        "actions": [
+          {
+            "operation": "move_field",
+            "reference": "C1:1.Value",
+            "unit": 1,
+            "field": "Value",
+            "x_mm": 94.5,
+            "y_mm": 62.0,
+            "angle": 0
+          }
+        ],
+        "rationale": "The independent assessment reports a field_separation failure due to overlapping fields for C1's reference and value. The provided images confirm this overlap visually in the close-up view. To resolve this, the 'Value' field for capacitor C1 is moved horizontally by 5mm to clear the 'Reference' field, ensuring distinct legibility as required by the label_association criterion."
+      }
+    }
+  ],
+  "model_tokens": 25534,
+  "elapsed_seconds": 31.496,
+  "budgets": {
+    "max_reviews": 4,
+    "max_seconds": 180.0,
+    "max_model_tokens": 24000
+  },
+  "human_electrical_review": "PENDING",
+  "locked_host_qualification": false
+}

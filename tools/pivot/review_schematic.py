@@ -14,6 +14,7 @@ from ai_kicad.pivot.schematic_review import (
     run_schematic_review,
     write_json,
 )
+from ai_kicad.pivot.schematic_review_brief import resolve_review_brief
 from ai_kicad.pivot.schematic_review_native import NativeSchematicEngine
 
 
@@ -32,13 +33,28 @@ def main() -> int:
     parser.add_argument("--max-model-tokens", type=int, default=60000)
     parser.add_argument("--think", action="store_true")
     parser.add_argument(
-        "--review-brief", type=Path, help="text file with visual review requirements"
+        "--review-brief",
+        type=Path,
+        help="text criteria file or a versioned schematic-review-brief JSON",
     )
-    parser.add_argument("--max-field-distance-mm", type=float, default=25.4)
+    parser.add_argument("--max-field-distance-mm", type=float)
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2]
+    try:
+        max_field_distance_mm, review_brief_text = resolve_review_brief(
+            args.review_brief, args.max_field_distance_mm
+        )
+    except ValueError as error:
+        parser.error(str(error))
     implementation_paths = (
         Path(__file__).resolve(),
+        root / "src/ai_kicad/m2b_observation.py",
+        root / "src/ai_kicad/m2_geometry.py",
+        root / "src/ai_kicad/m2a_core.py",
+        root / "src/ai_kicad/m2a_constants.py",
+        root / "src/ai_kicad/m2_transform.py",
+        root / "src/ai_kicad/m2_route_core.py",
+        root / "src/ai_kicad/pivot/schematic_review_brief.py",
         root / "src/ai_kicad/pivot/schematic_review.py",
         root / "src/ai_kicad/pivot/schematic_review_native.py",
         root / "src/ai_kicad/pivot/schematic_fields.py",
@@ -54,14 +70,14 @@ def main() -> int:
         design,
         args.kicad_apprun,
         source=args.source,
-        maximum_field_distance_mm=args.max_field_distance_mm,
+        maximum_field_distance_mm=max_field_distance_mm,
     )
     reviewer = OllamaSchematicReviewer(
         args.model,
         endpoint=args.ollama_url,
         think=args.think,
         output_tokens=4096 if args.think else 2048,
-        **({"review_brief": args.review_brief.read_text()} if args.review_brief else {}),
+        **({"review_brief": review_brief_text} if review_brief_text else {}),
     )
     output = args.output.resolve()
     result = run_schematic_review(

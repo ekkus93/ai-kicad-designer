@@ -19,6 +19,45 @@ from .m2b_layout import _turn
 from .sexpr import children, one, parse
 
 
+def _power_rail_wire_path_witnesses(
+    design: dict,
+    pin_positions: dict,
+    pin_to_net: dict,
+    conductor_trees: dict,
+) -> list[dict]:
+    """Find asserted-net terminals that lack explicit wire geometry to a peer."""
+    component_refs = {component["id"]: component["refdes"] for component in design["components"]}
+    nets_by_id = {net["id"]: net for net in design["nets"]}
+    witnesses = []
+    for assertion in design.get("power_assertions", []):
+        net_id = assertion["net"]
+        terminals = [
+            (component_refs[component_id], pin)
+            for component_id, pin in nets_by_id[net_id]["members"]
+        ]
+        if len(terminals) < 2:
+            continue
+        root = terminals[0]
+        for terminal in terminals[1:]:
+            net_name = pin_to_net.get(root)
+            if (
+                net_name != pin_to_net.get(terminal)
+                or net_name not in conductor_trees
+                or not conductor_reachable(
+                    conductor_trees[net_name], pin_positions[root], pin_positions[terminal]
+                )
+            ):
+                witnesses.append(
+                    {
+                        "net": net_id,
+                        "from_terminal": list(root),
+                        "to_terminal": list(terminal),
+                        "reason": "no continuous native wire path between same-net terminals",
+                    }
+                )
+    return witnesses
+
+
 @lru_cache(maxsize=64)
 def _local_pin_number_rectangles(definition: str, unit: int) -> tuple:
     """Conservative visible-number keepouts from actual embedded pin geometry."""
@@ -669,6 +708,9 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
     bends = sum(tree.bends for tree in conductor_trees.values())
     if bends > max(16, len(wires) * 3):
         raise InputError("observed excessive bends")
+    power_rail_wire_path_witnesses = _power_rail_wire_path_witnesses(
+        design, pin_positions, pin_to_net, conductor_trees
+    )
     return {
         "observed_body_overlap_count": 0,
         "observed_wire_through_body_count": 0,
@@ -704,4 +746,5 @@ def check_observed_layout(schematic: Path, observed: dict, design: dict) -> dict
         "observed_text_wire_clearance_mm": (
             None if minimum_text_clearance is None else minimum_text_clearance / 1_000_000
         ),
+        "observed_power_rail_wire_path_witnesses": power_rail_wire_path_witnesses,
     }

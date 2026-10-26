@@ -12,7 +12,7 @@ from typing import Annotated, Literal, Protocol
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
-from pydantic import Field, ValidationError
+from pydantic import Field, ValidationError, model_validator
 
 from .evidence import StrictModel
 
@@ -27,6 +27,28 @@ class MoveField(StrictModel):
     angle: Literal[0, 90, 180, 270]
 
 
+class WirePoint(StrictModel):
+    x_mm: float = Field(ge=0, le=297, allow_inf_nan=False)
+    y_mm: float = Field(ge=0, le=210, allow_inf_nan=False)
+
+
+class AddWirePath(StrictModel):
+    operation: Literal["add_wire_path"]
+    net: str = Field(min_length=1, max_length=64)
+    from_ref: str = Field(min_length=1, max_length=64)
+    from_pin: str = Field(min_length=1, max_length=16)
+    to_ref: str = Field(min_length=1, max_length=64)
+    to_pin: str = Field(min_length=1, max_length=16)
+    waypoints: list[WirePoint] = Field(default_factory=list, max_length=22)
+
+    @model_validator(mode="after")
+    def require_distinct_waypoints(self) -> AddWirePath:
+        for first, second in zip(self.waypoints, self.waypoints[1:]):
+            if first == second:
+                raise ValueError("wire path must contain nonzero segments")
+        return self
+
+
 class TranslateSheet(StrictModel):
     operation: Literal["translate_sheet"]
     dx_mm: float = Field(ge=-297, le=297, allow_inf_nan=False)
@@ -38,7 +60,8 @@ class RegenerateSchematic(StrictModel):
 
 
 SchematicAction = Annotated[
-    MoveField | TranslateSheet | RegenerateSchematic, Field(discriminator="operation")
+    MoveField | AddWirePath | TranslateSheet | RegenerateSchematic,
+    Field(discriminator="operation"),
 ]
 
 
@@ -46,7 +69,7 @@ class SchematicReview(StrictModel):
     base_revision: str = Field(pattern=r"^sha256:[0-9a-f]{64}$")
     decision: Literal["accept", "revise", "needs_help"]
     issues: list[str] = Field(max_length=32)
-    actions: list[SchematicAction] = Field(max_length=32)
+    actions: list[SchematicAction] = Field(max_length=1)
     rationale: str = Field(min_length=1, max_length=4000)
 
 
@@ -181,6 +204,18 @@ class OllamaSchematicReviewer:
             "independent checks pass AND the images have no unresolved issues. "
             "For overlapping or distant labels, request move_field with absolute millimetre coordinates using the "
             "field inventory, or regenerate_schematic to recompute placement and wiring. "
+            "For a failed visible_rail_continuity check, add explicit Manhattan wire segments with add_wire_path. "
+            "Submit exactly one add_wire_path that joins two terminals in one route, then wait for rechecks. "
+            "Use the listed terminal inventory and exact net witnesses; set from_ref/from_pin and "
+            "to_ref/to_pin to identify two listed terminals on the named net. The waypoints field "
+            "contains only intermediate coordinates; the editor supplies exact pin endpoints. "
+            "All waypoint coordinates must align to KiCad's 1.27 mm connection grid. The native "
+            "editor plans orthogonal paths around visible symbol bodies, fields and existing wires, "
+            "and adds required T-junction markers. Do not reuse a wire segment or invent off-grid points. "
+            "Do not request regenerate_schematic or translate_sheet to repair a visible_rail_continuity failure; "
+            "neither operation creates a new explicit rail route. Add one add_wire_path action instead. "
+            "The native observer will reject new shorts, changed net partitions, crossings, collisions, "
+            "or routes that do not make the asserted rail physically continuous. "
             "For missing parts, wrong values or wiring mismatches, regenerate_schematic "
             "rebuilds the native schematic from the intended circuit, preserving its values "
             "and connectivity. translate_sheet moves the entire drawing. These are the "

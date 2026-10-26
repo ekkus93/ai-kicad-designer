@@ -1,0 +1,106 @@
+{
+  "profile": "m2b.1",
+  "id": "devstral_v4_rc_lowpass_1khz",
+  "name": "DevstralV4RcLowpass1kHz",
+  "components": [
+    {
+      "id": "filter_c",
+      "refdes": "C1",
+      "asset": "Device:C",
+      "value": "15n"
+    },
+    {
+      "id": "filter_r",
+      "refdes": "R1",
+      "asset": "Device:R",
+      "value": "10k"
+    },
+    {
+      "id": "input",
+      "refdes": "J1",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Input"
+    },
+    {
+      "id": "output",
+      "refdes": "J2",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Output"
+    },
+    {
+      "id": "return",
+      "refdes": "J3",
+      "asset": "Connector_Generic:Conn_01x01",
+      "value": "Return"
+    }
+  ],
+  "nets": [
+    {
+      "id": "IN",
+      "members": [
+        [
+          "filter_r",
+          "1"
+        ],
+        [
+          "input",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "OUT",
+      "members": [
+        [
+          "filter_c",
+          "1"
+        ],
+        [
+          "filter_r",
+          "2"
+        ],
+        [
+          "output",
+          "1"
+        ]
+      ]
+    },
+    {
+      "id": "REF",
+      "members": [
+        [
+          "filter_c",
+          "2"
+        ],
+        [
+          "return",
+          "1"
+        ]
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "flow",
+      "kind": "signal_flow",
+      "input": "IN",
+      "output": "OUT"
+    },
+    {
+      "id": "series",
+      "kind": "series",
+      "component": "filter_r",
+      "input": "IN",
+      "output": "OUT"
+    },
+    {
+      "id": "shunt",
+      "kind": "shunt",
+      "component": "filter_c",
+      "node": "OUT",
+      "reference": "REF"
+    }
+  ],
+  "no_connects": [],
+  "power_assertions": []
+}

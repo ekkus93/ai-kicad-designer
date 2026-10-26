@@ -1,0 +1,125 @@
+{
+  "schema_version": "schematic-review-loop.v1",
+  "status": "LIMIT_REACHED",
+  "reason": "wall-clock or model-token budget exhausted",
+  "accepted_schematic": null,
+  "best_passing_schematic": "candidates/003/project/wrong_association_rc_v2.kicad_sch",
+  "reviewer": {
+    "model": "qwen3.5:9b",
+    "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "ollama_version": "0.40.8",
+    "capabilities": [
+      "completion",
+      "vision",
+      "tools",
+      "thinking"
+    ],
+    "options": {
+      "temperature": 0,
+      "seed": 20261025,
+      "num_ctx": 16384,
+      "num_predict": 2048
+    },
+    "think": false
+  },
+  "iterations": [
+    {
+      "iteration": 0,
+      "revision": "sha256:4fad3b1cb562c9c3431bf43f820c3d342137511e81aae5293441f0f7179e3c21",
+      "schematic": "candidates/000/project/wrong_association_rc_v2.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:4fad3b1cb562c9c3431bf43f820c3d342137511e81aae5293441f0f7179e3c21",
+        "decision": "revise",
+        "issues": [
+          "C1 Value field is visually closer to J2 than its own symbol, violating owner-association heuristic"
+        ],
+        "actions": [
+          {
+            "operation": "move_field",
+            "reference": "C1",
+            "unit": 1,
+            "field": "Value",
+            "x_mm": 99.0,
+            "y_mm": 47.5,
+            "angle": 0
+          }
+        ],
+        "rationale": "The C1 Value field is located at (99.0, 47.5) and its nearest neighbor is J2 at a distance of 5.71 mm, while the distance to its own owner edge is 24.59 mm. This violates the 5.08 mm owner-advantage heuristic. The field must be moved closer to C1 to ensure clear visual association."
+      },
+      "rejected_response": "move_field for C1.Value made no change; choose a different position"
+    },
+    {
+      "iteration": 1,
+      "revision": "sha256:4fad3b1cb562c9c3431bf43f820c3d342137511e81aae5293441f0f7179e3c21",
+      "schematic": "candidates/000/project/wrong_association_rc_v2.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:4fad3b1cb562c9c3431bf43f820c3d342137511e81aae5293441f0f7179e3c21",
+        "decision": "revise",
+        "issues": [
+          "C1.Value field is visually closer to J2 than to C1, violating owner-association heuristic"
+        ],
+        "actions": [
+          {
+            "operation": "move_field",
+            "reference": "C1",
+            "unit": 1,
+            "field": "Value",
+            "x_mm": 88.9,
+            "y_mm": 62.23,
+            "angle": 0
+          }
+        ],
+        "rationale": "The independent check identified that the 'Value' field for component C1 (text '15n') is located at a distance of 24.59 mm from its owner edge, while being only 5.71 mm from the nearest other reference (J2). This results in an owner_advantage_mm of 18.88, which fails the <= 5.08 mm requirement for clear visual association. The field must be moved closer to the capacitor symbol C1 to ensure it is visually associated with its own component and not a neighboring one."
+      }
+    },
+    {
+      "iteration": 2,
+      "revision": "sha256:5076ef4658d45247195c4952a9665f6999156f9f336906b792e82d49fcddaba8",
+      "schematic": "candidates/002/project/wrong_association_rc_v2.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:5076ef4658d45247195c4952a9665f6999156f9f336906b792e82d49fcddaba8",
+        "decision": "revise",
+        "issues": [
+          "Field overlap: C1 Reference and Value fields are overlapping (field_separation check failed)."
+        ],
+        "actions": [
+          {
+            "operation": "move_field",
+            "reference": "C1",
+            "unit": 1,
+            "field": "Value",
+            "x_mm": 95.0,
+            "y_mm": 62.23,
+            "angle": 0
+          }
+        ],
+        "rationale": "The independent check 'field_separation' failed with a witness for overlapping fields [['C1:1.Reference', 'C1:1.Value']]. Visual inspection of the detail image confirms the text '15n' is positioned directly over or extremely close to the reference 'C1'. To satisfy the label_association requirement (<= 25.4 mm locality and == 0 overlap), the Value field for C1 must be moved horizontally away from the Reference field."
+      }
+    },
+    {
+      "iteration": 3,
+      "revision": "sha256:2aa369951233cfa2b45902589ad91e6f78c2adde47691f314022381e5ee1fe59",
+      "schematic": "candidates/003/project/wrong_association_rc_v2.kicad_sch",
+      "independent_checks_pass": true,
+      "review": {
+        "base_revision": "sha256:2aa369951233cfa2b45902589ad91e6f78c2adde47691f314022381e5ee1fe59",
+        "decision": "accept",
+        "issues": [],
+        "actions": [],
+        "rationale": "All independent checks pass. Visual inspection confirms legible labels, correct associations, balanced page composition, and clear wiring without unresolved issues."
+      }
+    }
+  ],
+  "model_tokens": 38145,
+  "elapsed_seconds": 30.143,
+  "budgets": {
+    "max_reviews": 4,
+    "max_seconds": 180.0,
+    "max_model_tokens": 30000
+  },
+  "human_electrical_review": "PENDING",
+  "locked_host_qualification": false
+}

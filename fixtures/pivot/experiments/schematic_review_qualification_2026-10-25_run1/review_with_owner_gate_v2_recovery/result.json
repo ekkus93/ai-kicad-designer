@@ -1,0 +1,61 @@
+{
+  "schema_version": "schematic-review-loop.v1",
+  "status": "NO_PROGRESS",
+  "reason": "candidate repeats an earlier revision",
+  "accepted_schematic": null,
+  "best_passing_schematic": null,
+  "reviewer": {
+    "model": "qwen3.5:9b",
+    "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "ollama_version": "0.40.8",
+    "capabilities": [
+      "completion",
+      "vision",
+      "tools",
+      "thinking"
+    ],
+    "options": {
+      "temperature": 0,
+      "seed": 20261025,
+      "num_ctx": 16384,
+      "num_predict": 2048
+    },
+    "think": false
+  },
+  "iterations": [
+    {
+      "iteration": 0,
+      "revision": "sha256:4fad3b1cb562c9c3431bf43f820c3d342137511e81aae5293441f0f7179e3c21",
+      "schematic": "candidates/000/project/wrong_association_rc_v2.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:4fad3b1cb562c9c3431bf43f820c3d342137511e81aae5293441f0f7179e3c21",
+        "decision": "revise",
+        "issues": [
+          "C1 Value field is visually closer to J2 than its own symbol, violating owner-association heuristic"
+        ],
+        "actions": [
+          {
+            "operation": "move_field",
+            "reference": "C1",
+            "unit": 1,
+            "field": "Value",
+            "x_mm": 99.0,
+            "y_mm": 47.5,
+            "angle": 0
+          }
+        ],
+        "rationale": "The C1 Value field is located at (99.0, 47.5) and is only 5.71mm from J2's edge while being 24.59mm from its own owner C1. This violates the 5.08mm owner-advantage heuristic. The move_field operation will reposition this field to restore clear visual association with C1."
+      }
+    }
+  ],
+  "model_tokens": 9646,
+  "elapsed_seconds": 10.331,
+  "budgets": {
+    "max_reviews": 3,
+    "max_seconds": 180.0,
+    "max_model_tokens": 30000
+  },
+  "human_electrical_review": "PENDING",
+  "locked_host_qualification": false
+}

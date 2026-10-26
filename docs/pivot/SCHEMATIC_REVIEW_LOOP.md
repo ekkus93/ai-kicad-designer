@@ -24,11 +24,24 @@ schematic against the intended circuit supplied by `--design`. Output must be a
 new directory. Original source files are never overwritten. The intended circuit
 uses the repository's supported M2b IR and locked symbol assets.
 
-Use `--review-brief /path/to/readability-requirements.txt` to provide the user's
-visual criteria, such as connecting nearby return terminals with visible wires
-or keeping component labels close to their symbols. The brief is included in the
-logged model instructions. When the independent gates already pass, the model
-can still request supported visual edits to satisfy that brief.
+Use `--review-brief /path/to/readability-requirements.txt` to provide additional
+freeform user criteria. The versioned owner criteria are in
+`fixtures/pivot/schematic_review_brief_v2.json`; pass that JSON file with the
+same option to include its measurable checks and visual rubric in the logged
+model instructions. The JSON brief controls the field-locality threshold, and a
+conflicting `--max-field-distance-mm` override is rejected. When independent
+gates already pass, the model can still request supported visual edits to
+satisfy the brief.
+
+Brief v2 adds independent gates for gross field-owner mismatches and explicit
+wire paths on asserted power nets. It flags a visible reference/value field
+when its envelope is more than 5.08 mm closer to another symbol anchor than to
+its owner. For each asserted REF/VCC net, it checks that every component
+terminal can be reached from the other terminals through native wire geometry;
+KiCad netlist joins from repeated labels do not count as visible wire paths.
+These checks catch specific geometric defects but do not prove human
+readability, and all candidates still need image review. Brief v1 remains
+available as the original P6-011a contract.
 
 The independent field-locality gate limits the distance between a visible field
 envelope and its own symbol anchor to 25.4 mm by default. Change this explicit

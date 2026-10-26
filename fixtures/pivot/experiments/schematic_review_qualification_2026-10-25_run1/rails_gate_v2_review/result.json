@@ -1,0 +1,63 @@
+{
+  "schema_version": "schematic-review-loop.v1",
+  "status": "LIMIT_REACHED",
+  "reason": "review budget exhausted before edit and re-review",
+  "accepted_schematic": null,
+  "best_passing_schematic": null,
+  "reviewer": {
+    "model": "qwen3.5:9b",
+    "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "ollama_version": "0.40.8",
+    "capabilities": [
+      "completion",
+      "vision",
+      "tools",
+      "thinking"
+    ],
+    "options": {
+      "temperature": 0,
+      "seed": 20261025,
+      "num_ctx": 16384,
+      "num_predict": 2048
+    },
+    "think": false
+  },
+  "iterations": [
+    {
+      "iteration": 0,
+      "revision": "sha256:1f603f2c3c81d3990f954045ba62d8a6e2d4bfcb714952714030a3cac4bc27e8",
+      "schematic": "candidates/000/project/timer_label_join_candidate.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:1f603f2c3c81d3990f954045ba62d8a6e2d4bfcb714952714030a3cac4bc27e8",
+        "decision": "revise",
+        "issues": [
+          "visible_rail_continuity: FAIL - Power nets (VCC, REF) lack continuous visible wire paths between terminals; rely on labels only.",
+          "label_association: PASS - All component references and values are legible and associated with their symbols.",
+          "page_composition: PASS - Page layout is balanced with clear functional grouping and sufficient space.",
+          "visible_local_rails: FAIL - Power rails (VCC, REF) are not visually continuous; wires are missing or rely on label-only joins."
+        ],
+        "actions": [
+          {
+            "operation": "regenerate_schematic"
+          },
+          {
+            "operation": "translate_sheet",
+            "dx_mm": 0.0,
+            "dy_mm": 0.0
+          }
+        ],
+        "rationale": "The schematic fails the visible_rail_continuity check. Power nets (VCC and REF) do not have continuous visible wire paths between their terminals; they rely on label-only joins or apparent gaps. This violates the requirement for explicit conductor geometry between asserted-net terminals. Regenerating the schematic from the intended circuit will rebuild native wiring, ensuring continuous power rails while preserving component references, values, and electrical connectivity."
+      }
+    }
+  ],
+  "model_tokens": 13088,
+  "elapsed_seconds": 11.017,
+  "budgets": {
+    "max_reviews": 1,
+    "max_seconds": 120.0,
+    "max_model_tokens": 16000
+  },
+  "human_electrical_review": "PENDING",
+  "locked_host_qualification": false
+}

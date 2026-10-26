@@ -1,0 +1,104 @@
+{
+  "schema_version": "P6-011c-obstacle-route-probe.v1",
+  "date": "2026-10-25",
+  "status": "PARTIAL_PASS",
+  "source_commit": "e4a92b975cbf87884ada33e9bbee74539e8a6273",
+  "implementation_sha256": "cf639b9d50f4f5f1f99e578331368885b36be2d18b400435be286ccc2811e7ea",
+  "input_schematic": "fixtures/pivot/experiments/schematic_review_qualification_2026-10-25_run1/rails_wire_edit_probe_v9/candidates/000/project/timer_label_join_candidate.kicad_sch",
+  "input_sha256": "1f603f2c3c81d3990f954045ba62d8a6e2d4bfcb714952714030a3cac4bc27e8",
+  "candidate_schematic": "fixtures/pivot/experiments/obstacle_aware_rail_route_2026-10-25_run1/candidate/project/timer_label_join_candidate.kicad_sch",
+  "candidate_sha256": "b1e63f319ece8885b5d7cb4f490c4edb97dbeaf2fea0e01aba9aae8f18a66f69",
+  "edit": {
+    "operation": "add_wire_path",
+    "net": "REF",
+    "from_ref": "C2",
+    "from_pin": "2",
+    "to_ref": "J3",
+    "to_pin": "1"
+  },
+  "checks": {
+    "native_tools": "PASS",
+    "erc": "PASS",
+    "electrical_equivalence": "PASS",
+    "observed_layout": "PASS",
+    "visible_rail_continuity": "FAIL",
+    "field_separation": "PASS",
+    "field_locality": "PASS",
+    "field_owner_association": "PASS"
+  },
+  "diagnostics": [
+    "asserted power-net terminals lack a continuous visible wire path: [{'net': 'REF', 'from_terminal': ['C2', '2'], 'to_terminal': ['C1', '2'], 'reason': 'no continuous native wire path between same-net terminals'}, {'net': 'VCC', 'from_terminal': ['R1', '1'], 'to_terminal': ['R3', '1'], 'reason': 'no continuous native wire path between same-net terminals'}, {'net': 'VCC', 'from_terminal': ['R1', '1'], 'to_terminal': ['J1', '1'], 'reason': 'no continuous native wire path between same-net terminals'}, {'net': 'VCC', 'from_terminal': ['R1', '1'], 'to_terminal': ['U1', '4'], 'reason': 'no continuous native wire path between same-net terminals'}, {'net': 'VCC', 'from_terminal': ['R1', '1'], 'to_terminal': ['U1', '8'], 'reason': 'no continuous native wire path between same-net terminals'}]"
+  ],
+  "remaining": [
+    {
+      "net": "REF",
+      "from_terminal": [
+        "C2",
+        "2"
+      ],
+      "to_terminal": [
+        "C1",
+        "2"
+      ],
+      "reason": "no continuous native wire path between same-net terminals"
+    },
+    {
+      "net": "VCC",
+      "from_terminal": [
+        "R1",
+        "1"
+      ],
+      "to_terminal": [
+        "R3",
+        "1"
+      ],
+      "reason": "no continuous native wire path between same-net terminals"
+    },
+    {
+      "net": "VCC",
+      "from_terminal": [
+        "R1",
+        "1"
+      ],
+      "to_terminal": [
+        "J1",
+        "1"
+      ],
+      "reason": "no continuous native wire path between same-net terminals"
+    },
+    {
+      "net": "VCC",
+      "from_terminal": [
+        "R1",
+        "1"
+      ],
+      "to_terminal": [
+        "U1",
+        "4"
+      ],
+      "reason": "no continuous native wire path between same-net terminals"
+    },
+    {
+      "net": "VCC",
+      "from_terminal": [
+        "R1",
+        "1"
+      ],
+      "to_terminal": [
+        "U1",
+        "8"
+      ],
+      "reason": "no continuous native wire path between same-net terminals"
+    }
+  ],
+  "toolchain": {
+    "kicad_version": "10.0.6",
+    "launcher_sha256": "5587d7de2c45df07c3de73f4679dba77f73020a30d8e8a651a0779ceb08d86de",
+    "cli_sha256": "1108ea3589e75aa274adad754275709da326f89614a9c6ce6fc456a430ef1a4b",
+    "render_backend": "ffmpeg-librsvg",
+    "renderer_version": "ffmpeg version 4.4.2-0ubuntu0.22.04.1 Copyright (c) 2000-2021 the FFmpeg developers",
+    "convert_version": "handled by ffmpeg",
+    "locked_host_qualification": false
+  },
+  "note": "This exact single-route candidate preserves ERC, intended net partitions, observed layout and field checks. Other asserted REF/VCC terminal branches remain visibly disconnected. Additional VCC routes currently have no safe on-grid path under the current obstacle constraints; off-grid points are rejected. No complete 555 acceptance is claimed."
+}

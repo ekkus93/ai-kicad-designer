@@ -1,0 +1,116 @@
+{
+  "schema_version": "schematic-review-loop.v1",
+  "status": "LIMIT_REACHED",
+  "reason": "wall-clock or model-token budget exhausted",
+  "accepted_schematic": null,
+  "best_passing_schematic": null,
+  "reviewer": {
+    "model": "qwen3.5:9b",
+    "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "ollama_version": "0.40.8",
+    "capabilities": [
+      "completion",
+      "vision",
+      "tools",
+      "thinking"
+    ],
+    "options": {
+      "temperature": 0,
+      "seed": 20261025,
+      "num_ctx": 16384,
+      "num_predict": 2048
+    },
+    "think": false
+  },
+  "iterations": [
+    {
+      "iteration": 0,
+      "revision": "sha256:1f603f2c3c81d3990f954045ba62d8a6e2d4bfcb714952714030a3cac4bc27e8",
+      "schematic": "candidates/000/project/timer_label_join_candidate.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:1f603f2c3c81d3990f954045ba62d8a6e2d4bfcb714952714030a3cac4bc27e8",
+        "decision": "revise",
+        "issues": [
+          "visible_rail_continuity: FAIL - No continuous visible wire path exists between terminals on the same net (REF and VCC). The schematic relies on implicit connections or label-only joins which violates the visual rubric for explicit rail continuity.",
+          "label_association: PASS - All component references and values are legible and associated with their symbols within acceptable distances.",
+          "page_composition: PASS - The page layout is balanced, functional groups are clear, and there is sufficient space to follow the circuit without crowding.",
+          "visible_local_rails: FAIL - Power nets (REF, VCC) lack explicit continuous wire paths connecting terminals as required by the visual rubric."
+        ],
+        "actions": [
+          {
+            "operation": "add_wire_path",
+            "net": "REF",
+            "from_ref": "C2",
+            "from_pin": "2",
+            "to_ref": "J3",
+            "to_pin": "1",
+            "waypoints": []
+          }
+        ],
+        "rationale": "The visible_rail_continuity check failed because there is no explicit wire path connecting the terminals on the REF net (specifically between C2 pin 2 and J3 pin 1). The add_wire_path action will create a continuous orthogonal route to satisfy this requirement. Other nets like VCC also show similar issues, but addressing one critical path demonstrates the repair capability; subsequent rechecks or additional actions may be needed for full compliance if other paths remain unresolved after regeneration or further edits."
+      }
+    },
+    {
+      "iteration": 1,
+      "revision": "sha256:e7f3eb65ed9c7af0e732ee7b06b02772729fd467f723cc571f029c1239a03f8e",
+      "schematic": "candidates/001/project/timer_label_join_candidate.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:e7f3eb65ed9c7af0e732ee7b06b02772729fd467f723cc571f029c1239a03f8e",
+        "decision": "revise",
+        "issues": [
+          "visible_rail_continuity: FAIL - No continuous visible wire path exists between terminals on the same net (VCC and REF nets are fragmented into label-only connections)."
+        ],
+        "actions": [
+          {
+            "operation": "add_wire_path",
+            "net": "VCC",
+            "from_ref": "R1",
+            "from_pin": "1",
+            "to_ref": "U1",
+            "to_pin": "4",
+            "waypoints": []
+          }
+        ],
+        "rationale": "The visible_rail_continuity check failed because the VCC net is not visually continuous between R1 and U1 (pin 4). The machine report confirms no native wire path exists. An explicit add_wire_path action is required to join these terminals with a Manhattan route aligned to the 1.27mm grid, avoiding symbol bodies and existing wires."
+      }
+    },
+    {
+      "iteration": 2,
+      "revision": "sha256:bb56c4dd465dbd7a94fc898683ec2568e4ef3d180180cb5041c5a4e703d20d50",
+      "schematic": "candidates/002/project/timer_label_join_candidate.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:bb56c4dd465dbd7a94fc898683ec2568e4ef3d180180cb5041c5a4e703d20d50",
+        "decision": "revise",
+        "issues": [
+          "visible_rail_continuity: The schematic lacks explicit wire paths connecting terminals on the same net (VCC and REF). The machine checks report 'no continuous native wire path' for multiple VCC and REF connections, indicating that connectivity is implied by labels or inferred geometry rather than drawn wires. This violates the visible_rail_continuity criterion which requires a continuous visible wire trunk between power terminals.",
+          "visible_local_rails: Power nets (VCC, REF) rely on label-only joins or apparent gaps instead of continuous visible wires from relevant terminals to a shared rail. The diagnostics list specific terminal pairs (e.g., R1-1 to U1-8, C2-2 to C1-2) that lack a continuous wire path.",
+          "page_composition: While the page utilization is low (0.139), the layout relies on implicit connections rather than explicit wiring, which may hinder readability and signal-flow tracing for complex circuits."
+        ],
+        "actions": [
+          {
+            "operation": "add_wire_path",
+            "net": "VCC",
+            "from_ref": "R1",
+            "from_pin": "1",
+            "to_ref": "U1",
+            "to_pin": "8",
+            "waypoints": []
+          }
+        ],
+        "rationale": "The visible_rail_continuity check failed for the VCC net between R1-1 and U1-8. An explicit wire path must be added to join these terminals on the same net. The add_wire_path action creates a single route with orthogonal segments aligned to the 1.27 mm grid, avoiding collisions and respecting existing geometry. This repair is supported by the toolchain; regenerate_schematic or translate_sheet are not used as they do not create explicit rail routes."
+      }
+    }
+  ],
+  "model_tokens": 42450,
+  "elapsed_seconds": 30.966,
+  "budgets": {
+    "max_reviews": 4,
+    "max_seconds": 600.0,
+    "max_model_tokens": 30000
+  },
+  "human_electrical_review": "PENDING",
+  "locked_host_qualification": false
+}

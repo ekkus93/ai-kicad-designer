@@ -1,0 +1,260 @@
+{
+  "schema_version": "schematic-review-qualification-evidence.v1",
+  "date": "2026-10-25",
+  "scope": "One RC value-association defect repaired after feedback, plus a separate 555 asserted-rail false-acceptance case caught by an independent native wire-path gate. Not broad model-vision qualification.",
+  "model_false_acceptance": {
+    "model": "qwen3.5:9b",
+    "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "source_result": "fixtures/pivot/experiments/schematic_review_qualification_2026-10-25_run1/misassociated_review/result.json",
+    "schematic_sha256": "4fad3b1cb562c9c3431bf43f820c3d342137511e81aae5293441f0f7179e3c21",
+    "decision": "accept",
+    "rationale": "All independent checks pass. Visual inspection confirms readable labels, correct associations, balanced page composition, and unambiguous wiring. No unresolved issues found.",
+    "field": "C1.Value",
+    "visually_nearest_other_symbol": "J2"
+  },
+  "independent_owner_gate_reassessment": {
+    "source": "fixtures/pivot/experiments/schematic_review_qualification_2026-10-25_run1/inputs/wrong_association_rc_v2.kicad_sch",
+    "assessment": "fixtures/pivot/experiments/schematic_review_qualification_2026-10-25_run1/machine_gate_v2_exact/assessment.json",
+    "checks": {
+      "native_tools": "PASS",
+      "erc": "PASS",
+      "electrical_equivalence": "PASS",
+      "observed_layout": "PASS",
+      "field_separation": "PASS",
+      "field_locality": "PASS",
+      "field_owner_association": "FAIL"
+    },
+    "witnesses": [
+      {
+        "reference": "C1",
+        "unit": 1,
+        "field": "Value",
+        "owner_edge_distance_mm": 24.59479,
+        "nearest_other_reference": "J2",
+        "nearest_other_unit": 1,
+        "nearest_other_edge_distance_mm": 5.713942,
+        "owner_advantage_mm": 18.880848,
+        "within_limit": false
+      }
+    ],
+    "images": {
+      "drawing.png": "d0df0e7e6b2b95d507346989d9ae722dd3cd899503e904fee4038f521eb6f1a3",
+      "page.png": "3d962b57f53cb9c873f0e3b1e2319850221d962de697a9bcc77858f8181dbec5"
+    }
+  },
+  "brief_v2_replay": {
+    "brief": "fixtures/pivot/schematic_review_brief_v2.json",
+    "result": "fixtures/pivot/experiments/schematic_review_qualification_2026-10-25_run1/review_with_owner_gate_v2/result.json",
+    "status": "LIMIT_REACHED",
+    "accepted_schematic": null,
+    "review_decision": "revise",
+    "issues": [
+      "C1 Value field is visually closer to J2 than its own symbol, violating owner-association heuristic"
+    ],
+    "actions": [
+      {
+        "operation": "move_field",
+        "reference": "C1",
+        "unit": 1,
+        "field": "Value",
+        "x_mm": 99.0,
+        "y_mm": 47.5,
+        "angle": 0
+      }
+    ]
+  },
+  "bounded_recovery": {
+    "result": "fixtures/pivot/experiments/schematic_review_qualification_2026-10-25_run1/review_with_owner_gate_v2_recovered/result.json",
+    "status": "ACCEPTED_FOR_REVIEW",
+    "accepted_schematic": "candidates/002/project/wrong_association_rc_v2.kicad_sch",
+    "reviews": 3,
+    "model_tokens": 28634,
+    "final_checks": {
+      "native_tools": "PASS",
+      "erc": "PASS",
+      "electrical_equivalence": "PASS",
+      "observed_layout": "PASS",
+      "field_separation": "PASS",
+      "field_locality": "PASS",
+      "field_owner_association": "PASS"
+    },
+    "corrective_action": {
+      "operation": "move_field",
+      "reference": "C1",
+      "unit": 1,
+      "field": "Value",
+      "x_mm": 88.9,
+      "y_mm": 47.5,
+      "angle": 0
+    },
+    "note": "First no-op was rejected; after feedback Qwen moved C1.Value and resolved the association failure. The final exact revision passed all independent checks and was reviewed again before acceptance."
+  },
+  "limitations": [
+    "The owner-association gate detects gross geometric mismatch, not semantic or human readability in general.",
+    "The asserted-rail gate checks continuous native wire paths between REF/VCC terminals; image review still judges layout clarity.",
+    "The visual recovery evidence covers one repaired RC association defect and one 555 rail defect for one model/version.",
+    "The existing generator and current model-generated wire edits cannot yet repair the 555 label-joined rail case safely.",
+    "A deterministic obstacle-aware routing strategy and symbol/group movement support remain P6-011c work.",
+    "Page composition and broader readability remain unqualified.",
+    "No locked-host qualification or human electrical approval is claimed."
+  ],
+  "no_op_feedback_cycle": {
+    "result": "fixtures/pivot/experiments/schematic_review_qualification_2026-10-25_run1/review_with_owner_gate_v2_feedback/result.json",
+    "status": "LIMIT_REACHED",
+    "reviews": 4,
+    "model_tokens": 38145,
+    "note": "The exact no-op action was rejected with feedback; the next review moved C1.Value and corrected a field collision. The run exceeded its token budget before final acceptance."
+  },
+  "asserted_rail_case": {
+    "source": "fixtures/pivot/experiments/schematic_review_qualification_2026-10-25_run1/inputs/timer_label_join_candidate.kicad_sch",
+    "original_v1_review": "fixtures/pivot/experiments/schematic_review_qualification_2026-10-25_run1/timer_labeled_rails/result.json",
+    "original_model_decision": "accept",
+    "original_false_accept_rationale": "The schematic meets all visual and electrical criteria. Component references and values are legible and associated with their symbols within the 25.4 mm locality limit. Page composition is balanced with clear signal flow and sufficient spacing (utilization ~13.9%). Visible wiring for power rails (VCC, REF) is continuous and unambiguous. No overlapping fields or unresolved connectivity issues were found. The intended circuit matches the observed layout.",
+    "v2_assessment": "fixtures/pivot/experiments/schematic_review_qualification_2026-10-25_run1/rails_gate_v2_review/candidates/000/assessment.json",
+    "checks": {
+      "native_tools": "PASS",
+      "erc": "PASS",
+      "electrical_equivalence": "PASS",
+      "observed_layout": "PASS",
+      "visible_rail_continuity": "FAIL",
+      "field_separation": "PASS",
+      "field_locality": "PASS",
+      "field_owner_association": "PASS"
+    },
+    "wire_path_witnesses": [
+      {
+        "net": "REF",
+        "from_terminal": [
+          "C2",
+          "2"
+        ],
+        "to_terminal": [
+          "J3",
+          "1"
+        ],
+        "reason": "no continuous native wire path between same-net terminals"
+      },
+      {
+        "net": "REF",
+        "from_terminal": [
+          "C2",
+          "2"
+        ],
+        "to_terminal": [
+          "U1",
+          "1"
+        ],
+        "reason": "no continuous native wire path between same-net terminals"
+      },
+      {
+        "net": "REF",
+        "from_terminal": [
+          "C2",
+          "2"
+        ],
+        "to_terminal": [
+          "C1",
+          "2"
+        ],
+        "reason": "no continuous native wire path between same-net terminals"
+      },
+      {
+        "net": "VCC",
+        "from_terminal": [
+          "R1",
+          "1"
+        ],
+        "to_terminal": [
+          "R3",
+          "1"
+        ],
+        "reason": "no continuous native wire path between same-net terminals"
+      },
+      {
+        "net": "VCC",
+        "from_terminal": [
+          "R1",
+          "1"
+        ],
+        "to_terminal": [
+          "J1",
+          "1"
+        ],
+        "reason": "no continuous native wire path between same-net terminals"
+      },
+      {
+        "net": "VCC",
+        "from_terminal": [
+          "R1",
+          "1"
+        ],
+        "to_terminal": [
+          "U1",
+          "4"
+        ],
+        "reason": "no continuous native wire path between same-net terminals"
+      },
+      {
+        "net": "VCC",
+        "from_terminal": [
+          "R1",
+          "1"
+        ],
+        "to_terminal": [
+          "U1",
+          "8"
+        ],
+        "reason": "no continuous native wire path between same-net terminals"
+      }
+    ],
+    "v2_review_result": "fixtures/pivot/experiments/schematic_review_qualification_2026-10-25_run1/rails_gate_v2_review/result.json",
+    "v2_model_decision": "revise",
+    "v2_issues": [
+      "visible_rail_continuity: FAIL - Power nets (VCC, REF) lack continuous visible wire paths between terminals; rely on labels only.",
+      "label_association: PASS - All component references and values are legible and associated with their symbols.",
+      "page_composition: PASS - Page layout is balanced with clear functional grouping and sufficient space.",
+      "visible_local_rails: FAIL - Power rails (VCC, REF) are not visually continuous; wires are missing or rely on label-only joins."
+    ],
+    "v2_rationale": "The schematic fails the visible_rail_continuity check. Power nets (VCC and REF) do not have continuous visible wire paths between their terminals; they rely on label-only joins or apparent gaps. This violates the requirement for explicit conductor geometry between asserted-net terminals. Regenerating the schematic from the intended circuit will rebuild native wiring, ensuring continuous power rails while preserving component references, values, and electrical connectivity.",
+    "accepted_schematic": null
+  },
+  "regeneration_probe": {
+    "result": "fixtures/pivot/experiments/schematic_review_qualification_2026-10-25_run1/rails_gate_v2_recovery/result.json",
+    "status": "NO_PROGRESS",
+    "reason": "candidate repeats an earlier revision",
+    "requested_action": [
+      {
+        "operation": "regenerate_schematic"
+      }
+    ],
+    "initial_revision": "sha256:1f603f2c3c81d3990f954045ba62d8a6e2d4bfcb714952714030a3cac4bc27e8",
+    "regenerated_revision": null,
+    "note": "The isolated regenerate_schematic candidate repeated the original source revision; the loop stopped without acceptance.",
+    "regenerated_revision_sha256": "1f603f2c3c81d3990f954045ba62d8a6e2d4bfcb714952714030a3cac4bc27e8",
+    "revision_matches_input": true
+  },
+  "bounded_wire_edit_probe": {
+    "result": "fixtures/pivot/experiments/schematic_review_qualification_2026-10-25_run1/rails_wire_edit_probe_v9/result.json",
+    "manifest": "fixtures/pivot/experiments/schematic_review_qualification_2026-10-25_run1/rails_wire_edit_probe_v9/manifest.json",
+    "status": "NO_PROGRESS",
+    "reason": "model repeated an invalid review: add_wire_path is limited to explicitly asserted power nets; valid nets are ['REF', 'VCC']",
+    "reviews": 7,
+    "model_tokens": 96845,
+    "accepted_schematic": null,
+    "first_wire_candidate_assessment": "fixtures/pivot/experiments/schematic_review_qualification_2026-10-25_run1/rails_wire_edit_probe_v9/candidates/001/assessment.json",
+    "first_candidate_checks": {
+      "native_tools": "PASS",
+      "erc": "PASS",
+      "electrical_equivalence": "PASS",
+      "observed_layout": "FAIL",
+      "visible_rail_continuity": "FAIL",
+      "field_separation": "PASS",
+      "field_locality": "PASS",
+      "field_owner_association": "PASS"
+    },
+    "first_candidate_diagnostics": [
+      "observed unrelated wire crossing"
+    ],
+    "limitation": "Named-terminal add_wire_path created a candidate, but it crossed unrelated existing geometry; later model replies repeated off-grid waypoints or requested unsupported nets. No candidate was accepted."
+  }
+}

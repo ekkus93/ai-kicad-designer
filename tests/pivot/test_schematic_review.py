@@ -223,6 +223,14 @@ def test_field_edit_preserves_library_and_electrical_geometry():
         )
 
 
+def test_translate_sheet_rejects_noop_with_feedback():
+    with pytest.raises(ValueError, match="made no change; choose nonzero movement"):
+        edit_schematic_text(
+            SCHEMATIC,
+            [TranslateSheet(operation="translate_sheet", dx_mm=0, dy_mm=0)],
+        )
+
+
 def test_invalid_native_edit_is_atomic(tmp_path):
     source = tmp_path / "source.kicad_sch"
     source.write_text(SCHEMATIC)

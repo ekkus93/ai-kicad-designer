@@ -1,0 +1,68 @@
+{
+  "schema_version": "schematic-review-loop.v1",
+  "status": "LIMIT_REACHED",
+  "reason": "wall-clock or model-token budget exhausted",
+  "accepted_schematic": null,
+  "best_passing_schematic": "candidates/001/project/Reference555LedFlasher.kicad_sch",
+  "reviewer": {
+    "model": "qwen3.5:9b",
+    "digest": "56671c2ab9385f9cfcb404638e32cd62d88e3501d44822208363c010179a3c90",
+    "ollama_version": "0.40.8",
+    "capabilities": [
+      "completion",
+      "vision",
+      "tools",
+      "thinking"
+    ],
+    "options": {
+      "temperature": 0,
+      "seed": 20261025,
+      "num_ctx": 16384,
+      "num_predict": 2048
+    },
+    "think": false
+  },
+  "iterations": [
+    {
+      "iteration": 0,
+      "revision": "sha256:56b1c6e71994c4110668890947d01d17f13275a16ab656c81cf17faea59a0261",
+      "schematic": "candidates/000/project/Reference555LedFlasher.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:56b1c6e71994c4110668890947d01d17f13275a16ab656c81cf17faea59a0261",
+        "decision": "revise",
+        "issues": [
+          "observed unrelated wire crossing"
+        ],
+        "actions": [
+          {
+            "operation": "regenerate_schematic"
+          }
+        ],
+        "rationale": "The independent assessment reports a FAIL for 'observed_layout' with the diagnostic 'observed unrelated wire crossing'. Visual inspection of the provided images confirms that the green wire connecting the top of R1 to the VCC rail crosses over the vertical wire segment between C2 and U1 pin 5 without a visible junction dot, creating an ambiguous visual representation. Although the electrical equivalence check passes (implying the netlist is correct), the visual rubric for 'visible_local_rails' requires unambiguous wiring. The current drawing relies on implicit crossing rules rather than explicit dots or routed paths to avoid confusion. Regenerating the schematic from the intended circuit will resolve this by ensuring all crossings are handled correctly according to KiCad's native layout engine, satisfying the visual legibility requirement."
+      }
+    },
+    {
+      "iteration": 1,
+      "revision": "sha256:1f603f2c3c81d3990f954045ba62d8a6e2d4bfcb714952714030a3cac4bc27e8",
+      "schematic": "candidates/001/project/Reference555LedFlasher.kicad_sch",
+      "independent_checks_pass": true,
+      "review": {
+        "base_revision": "sha256:1f603f2c3c81d3990f954045ba62d8a6e2d4bfcb714952714030a3cac4bc27e8",
+        "decision": "accept",
+        "issues": [],
+        "actions": [],
+        "rationale": "The schematic meets all visual and electrical criteria. Component references and values are legible and associated with their symbols within the 25.4 mm locality limit. Page composition is balanced with clear signal flow and sufficient spacing (utilization ~13.9%). Visible wiring for power rails (VCC, REF) is continuous and unambiguous. No overlapping fields or unresolved connectivity issues were found. The intended circuit matches the observed layout."
+      }
+    }
+  ],
+  "model_tokens": 20491,
+  "elapsed_seconds": 23.864,
+  "budgets": {
+    "max_reviews": 2,
+    "max_seconds": 120.0,
+    "max_model_tokens": 16000
+  },
+  "human_electrical_review": "PENDING",
+  "locked_host_qualification": false
+}
