@@ -15,6 +15,8 @@ FIXTURE = ROOT / "fixtures/pivot/reference_555_led_flasher_v1"
 
 
 class FakeReview:
+    timeout_seconds = 5.0
+
     def __init__(self, status: str, accepted: str | None = None):
         self.status, self.accepted, self.calls = status, accepted, []
 
@@ -157,3 +159,36 @@ def test_review_tool_is_listed_and_callable_through_mcp(tmp_path):
     )
     assert "error" not in called
     assert controller._state()["gates"]["schematic_visual_review"]["status"] == "PASS"
+
+
+def test_mcp_transport_waits_for_a_review_longer_than_the_default_call_timeout(tmp_path):
+    import time
+
+    class SlowReview(FakeReview):
+        timeout_seconds = 5.0
+
+        def review(self, design: Path, output: Path) -> dict:
+            time.sleep(0.5)
+            return super().review(design, output)
+
+    service = SlowReview("ACCEPTED_FOR_REVIEW", "candidates/000/project/Design.kicad_sch")
+    controller, revision = controller_in_schematic(tmp_path, service)
+    server = MCPServer(controller, call_timeout_seconds=0.1)
+    called = server.handle(
+        {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "tools/call",
+            "params": {
+                "name": "review_schematic",
+                "arguments": {
+                    "design": "design.json",
+                    "output": "review-slow",
+                    "expected_revision": revision,
+                    "idempotency_key": "review-slow",
+                },
+            },
+        }
+    )
+    assert "error" not in called
+    assert not (controller.revisions.root / ".writer-lease").exists()

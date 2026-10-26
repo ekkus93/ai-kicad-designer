@@ -46,6 +46,8 @@ ADDITIONAL_REQUIRED_GATES = {Phase.FOOTPRINTS: (VISUAL_REVIEW_GATE,)}
 class SchematicReviewService(Protocol):
     """Runs the full generate/check/render/review/edit loop into a new output directory."""
 
+    timeout_seconds: float
+
     def review(self, design: Path, output: Path) -> dict: ...
 
 
@@ -79,6 +81,8 @@ class Tool:
     schema: dict
     handler: Callable[[dict], dict]
     implemented: bool = True
+    # Long-running tools (a complete review loop) declare their own transport timeout.
+    timeout_seconds: float | None = None
 
 
 ALWAYS = {
@@ -445,6 +449,7 @@ class WorkflowController:
                 "additionalProperties": False,
             },
             self._review_schematic,
+            timeout_seconds=self.schematic_review.timeout_seconds,
         )
 
     def _review_schematic(self, request: dict) -> dict:

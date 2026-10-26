@@ -26,6 +26,9 @@ class NativeSchematicReviewService:
         self.launcher = launcher
         self.model = model
         self.max_field_distance_mm, self.brief_text = resolve_review_brief(review_brief, None)
+        # The loop checks its wall-clock budget between operations; one KiCad or model call
+        # may still be running when it expires.
+        self.timeout_seconds = max_seconds + 600
         self.budgets = {
             "max_reviews": max_reviews,
             "max_seconds": max_seconds,

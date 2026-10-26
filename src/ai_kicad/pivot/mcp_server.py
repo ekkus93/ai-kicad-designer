@@ -119,7 +119,9 @@ class MCPServer:
             executor = ThreadPoolExecutor(max_workers=1)
             future = executor.submit(self.controller.dispatch, name, arguments)
             try:
-                result = future.result(timeout=self.call_timeout_seconds)
+                result = future.result(
+                    timeout=max(self.call_timeout_seconds, tool.timeout_seconds or 0)
+                )
             finally:
                 executor.shutdown(wait=False, cancel_futures=True)
             return {
