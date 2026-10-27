@@ -87,7 +87,7 @@ def edit_schematic_text(
     text: str,
     actions: list[SchematicAction],
     terminal_inventory: list[dict] | None = None,
-    power_flags: dict[str, list[Point]] | None = None,
+    rail_context: dict[str, dict] | None = None,
 ) -> str:
     """Apply bounded visual edits without changing symbols or electrical net assignments."""
     for action in actions:
@@ -144,12 +144,17 @@ def edit_schematic_text(
                 raise ValueError("move_symbols requires independently observed terminal positions")
             text = move_symbols_text(text, action, terminal_inventory)
         elif isinstance(action, UsePowerSymbols):
-            if terminal_inventory is None or power_flags is None:
+            if terminal_inventory is None or rail_context is None:
                 raise ValueError(
                     "use_power_symbols requires independently observed terminal positions"
                 )
+            context = rail_context.get(action.net, {})
             text = use_power_symbols_text(
-                text, action.net, terminal_inventory, power_flags.get(action.net, [])
+                text,
+                action.net,
+                terminal_inventory,
+                context.get("flags", []),
+                context.get("local_pairs", []),
             )
         elif isinstance(action, TranslateSheet):
             if action.dx_mm == 0 and action.dy_mm == 0:
@@ -897,6 +902,37 @@ def terminal_inventory_for_design(design: dict, observed: dict) -> list[dict]:
     ]
 
 
+def rail_context_for_design(design: dict, observed: dict) -> dict[str, dict]:
+    """Per rail: power-flag pins, and terminal pairs the design wires locally."""
+    references = {component["id"]: component["refdes"] for component in design["components"]}
+    pin_net = {
+        (references[component], pin): net["id"]
+        for net in design["nets"]
+        for component, pin in net["members"]
+    }
+    positions = observed["pin_positions"]
+    context: dict[str, dict] = {}
+    for assertion in design.get("power_assertions", []):
+        entry = context.setdefault(assertion["net"], {"flags": [], "local_pairs": []})
+        entry["flags"].append(positions[(assertion["refdes"], "1")])
+    for relation in design.get("relationships", []):
+        if relation["kind"] != "decoupling":
+            continue
+        consumer = (references[relation["consumer"][0]], relation["consumer"][1])
+        net = pin_net.get(consumer)
+        capacitor = next(
+            (
+                (references[relation["component"]], number)
+                for number in ("1", "2")
+                if pin_net.get((references[relation["component"]], number)) == net
+            ),
+            None,
+        )
+        if net in context and capacitor and consumer in positions and capacitor in positions:
+            context[net]["local_pairs"].append((positions[consumer], positions[capacitor]))
+    return context
+
+
 def field_collision_witnesses(tree: list) -> list[list[str]]:
     """Measure visible property envelopes, including fields on the same symbol."""
     boxes = []
@@ -1409,18 +1445,14 @@ class NativeSchematicEngine:
                 "add_wire_path, connect_rail and use_power_symbols are limited to explicitly "
                 f"asserted power nets; valid nets are {sorted(asserted_nets)}"
             )
-        inventory, power_flags = None, None
+        inventory, rail_context = None, None
         if wire_actions:
             netlist = schematic.parent.parent / "reports/netlist.xml"
             if not netlist.is_file():
                 raise ValueError("wire and symbol-move edits require the current assessed netlist")
             observed = observe(schematic, netlist)
             inventory = terminal_inventory_for_design(design, observed)
-            power_flags = {}
-            for assertion in design.get("power_assertions", []):
-                power_flags.setdefault(assertion["net"], []).append(
-                    observed["pin_positions"][(assertion["refdes"], "1")]
-                )
+            rail_context = rail_context_for_design(design, observed)
             for action in wire_actions:
                 if isinstance(action, AddWirePath):
                     resolve_wire_path_points(action, inventory)
@@ -1459,7 +1491,7 @@ class NativeSchematicEngine:
                 target = project / schematic.name
                 target.write_bytes(schematic.read_bytes())
             target.write_text(
-                edit_schematic_text(target.read_text(), actions, inventory, power_flags)
+                edit_schematic_text(target.read_text(), actions, inventory, rail_context)
             )
             relative = target.relative_to(stage)
             stage.rename(directory)

@@ -28,6 +28,7 @@ from ai_kicad.pivot.schematic_review_brief import (
 )
 from ai_kicad.pivot.schematic_review_native import (
     NativeSchematicEngine,
+    rail_context_for_design,
     terminal_inventory_for_design,
 )
 from ai_kicad.sexpr import children, one, parse
@@ -39,27 +40,34 @@ SCHEMA_V3 = ROOT / "fixtures/pivot/schematic_review_brief.v3.schema.json"
 RAILS = ["REF", "VCC"]
 
 
-@pytest.fixture(scope="module")
-def timer(tmp_path_factory) -> tuple[dict, str, list[dict], dict[str, list]]:
-    """Compiler output for the 555 astable, with observed terminal positions."""
+def compiled(name: str, directory: Path) -> tuple[dict, str, list[dict], dict[str, dict]]:
+    """Native compiler output for a corpus design, with observed terminal positions."""
     resolved = assets()
-    design = validate(json.loads((ROOT / "fixtures/m2b/timer_astable.json").read_text()), resolved)
+    design = validate(json.loads((ROOT / "fixtures/m2b" / f"{name}.json").read_text()), resolved)
     scene, _composition = compose_with_evidence(design, resolved)
-    schematic = emit(design, resolved, scene, tmp_path_factory.mktemp("timer"))
+    schematic = emit(design, resolved, scene, directory)
+    # Pin positions come from the schematic itself; connectivity is not needed here.
     netlist = schematic.parent / "empty-netlist.xml"
     netlist.write_text("<export><components/><nets/></export>")
     observed = observe(schematic, netlist)
-    flags: dict[str, list] = {}
-    for assertion in design["power_assertions"]:
-        flags.setdefault(assertion["net"], []).append(
-            observed["pin_positions"][(assertion["refdes"], "1")]
-        )
-    return design, schematic.read_text(), terminal_inventory_for_design(design, observed), flags
+    return (
+        design,
+        schematic.read_text(),
+        terminal_inventory_for_design(design, observed),
+        rail_context_for_design(design, observed),
+    )
 
 
-def convert(text: str, inventory: list[dict], flags: dict, order: list[str]) -> str:
+@pytest.fixture(scope="module")
+def timer(tmp_path_factory) -> tuple[dict, str, list[dict], dict[str, dict]]:
+    return compiled("timer_astable", tmp_path_factory.mktemp("timer"))
+
+
+def convert(text: str, inventory: list[dict], context: dict, order: list[str]) -> str:
     for net in order:
-        text = use_power_symbols_text(text, net, inventory, flags[net])
+        text = use_power_symbols_text(
+            text, net, inventory, context[net]["flags"], context[net]["local_pairs"]
+        )
     return text
 
 
@@ -127,6 +135,19 @@ def test_conversion_leaves_no_dangling_wire_end(timer, order):
                 for other_index, other in enumerate(segments)
                 if other_index != index
             ), f"dangling wire end {end}"
+
+
+def test_decoupling_wire_survives_power_symbol_conversion(tmp_path):
+    from ai_kicad.pivot.schematic_review_native import _point_groups
+
+    _design, text, inventory, context = compiled("dual_buffer", tmp_path)
+    pairs = context["VMINUS"]["local_pairs"]
+    assert pairs, "dual_buffer declares a VMINUS decoupling capacitor"
+    before = parse(text)
+    assert all(len(_point_groups(before, list(pair))) == 1 for pair in pairs)
+    after = parse(convert(text, inventory, context, ["VMINUS"]))
+    assert all(len(_point_groups(after, list(pair))) == 1 for pair in pairs)
+    assert rail_presentation(after, inventory, ["VMINUS"]) == []
 
 
 def test_label_view_restores_the_compiler_label_form(timer):

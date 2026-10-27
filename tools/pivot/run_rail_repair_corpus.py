@@ -100,7 +100,19 @@ def repair_design(
         return candidate
 
     directory = next_directory()
-    initial = engine.assess(engine.initial(directory), directory)
+    try:
+        initial = engine.assess(engine.initial(directory), directory)
+    except (OSError, RuntimeError, ValueError, KeyError) as error:
+        result = {
+            "design": name,
+            "status": "TOOL_ERROR",
+            "reason": str(error),
+            "applied_edits": [],
+            "unresolved_nets": ["(initial assessment failed)"],
+            "elapsed_seconds": round(time.monotonic() - started, 1),
+        }
+        write_json(output / "result.json", result)
+        return result
     steps.append(
         {"candidate": directory.name, "action": "initial", "checks": initial.report["checks"]}
     )

@@ -410,12 +410,18 @@ def _flag_paths(
 
 
 def use_power_symbols_text(
-    text: str, net: str, terminal_inventory: list[dict], flag_points: list[Point]
+    text: str,
+    net: str,
+    terminal_inventory: list[dict],
+    flag_points: list[Point],
+    local_pairs: list[tuple[Point, Point]] = (),
 ) -> str:
     """Present one rail conventionally: a power symbol at each terminal, no rail wiring.
 
-    The rail's labels and the wires joining its terminals are removed; only the shortest
-    wire from each power flag to its nearest rail terminal is kept. Each resulting wire
+    The rail's labels and the wires joining its terminals are removed. Kept are the
+    shortest existing wire from each power flag to its nearest rail terminal, and between
+    each pair of terminals the design wires locally (such as a decoupling capacitor and
+    the supply pin it serves). Each resulting wire
     group then receives one power symbol, placed where it touches no other drawing item
     when such a position exists (otherwise the clearance check reports the conflict).
     """
@@ -453,6 +459,13 @@ def use_power_symbols_text(
         for flag in flag_points:
             if any(point_on_segment(flag, *segment) for segment in tree_segments):
                 kept.extend(_flag_paths(tree_segments, flag, set(terminals)))
+        for first, second in local_pairs:
+            if all(
+                any(point_on_segment(point, *segment) for segment in tree_segments)
+                for point in (first, second)
+            ):
+                kept.extend(_flag_paths(tree_segments, first, {second}))
+    kept = sorted({tuple(sorted(edge)) for edge in kept})
     removed_wires = {owner for owner, root in zip(owners, roots) if root in rail_roots}
     rail_segment_points = {
         point for segment, root in zip(segments, roots) if root in rail_roots for point in segment
@@ -480,7 +493,17 @@ def use_power_symbols_text(
             cursor = end
     pieces.append(text[cursor:])
     text = "".join(pieces)
-    additions = [
+    degree: dict[Point, int] = {}
+    for edge in kept:
+        for point in edge:
+            degree[point] = degree.get(point, 0) + 1
+    junctions = [
+        f"(junction (at {_mm(point)}) (diameter 0) (color 0 0 0 0) "
+        f"(uuid {quote(str(uuid.uuid5(uuid.NAMESPACE_URL, f'ai-kicad-kept-junction:{net}:{_mm(point)}')))}))"
+        for point, count in sorted(degree.items())
+        if count >= 3
+    ]
+    additions = junctions + [
         f"(wire (pts (xy {_mm(first)}) (xy {_mm(second)})) (stroke (width 0) (type default)) "
         f"(uuid {quote(str(uuid.uuid5(uuid.NAMESPACE_URL, f'ai-kicad-flag-path:{net}:{_mm(first)}:{_mm(second)}')))}))"
         for first, second in kept
