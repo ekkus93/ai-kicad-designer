@@ -1,0 +1,56 @@
+{
+  "schema_version": "review-loop-corpus.v1",
+  "source_commit": "5250ee3e2148fc651b236cb51dc5f4d3bf39b855",
+  "implementation_sha256": {
+    "src/ai_kicad/pivot/schematic_review.py": "ddc25c0bddb3d0174fcca6e9ef255fa97afb81d21f85cc57223d380b893642f2",
+    "src/ai_kicad/pivot/schematic_review_native.py": "f51a728c5ea55de60c7a6de0bcd854d8b3ffbe2ab7d1e9f807bc70f97ffe3206",
+    "src/ai_kicad/pivot/schematic_review_service.py": "0348c94137f0e430bff84528df9ea8f90061cf12f7942d44d973843e08469a7f"
+  },
+  "model": "qwen35-256k:latest",
+  "context_tokens": 262144,
+  "model_timeout_seconds": 600.0,
+  "review_brief": "fixtures/pivot/schematic_review_brief_v3.json",
+  "budgets": {
+    "max_reviews": 8,
+    "max_seconds": 1800,
+    "max_model_tokens": 120000
+  },
+  "results": {
+    "timer_astable": {
+      "design": "fixtures/m2b/timer_astable.json",
+      "status": "NO_PROGRESS",
+      "reason": "model repeated an invalid review: no obstacle-free native wire route joins the remaining VCC wire groups. Repeating connect_rail for VCC will fail again on this revision; request use_power_symbols for VCC to draw it with power symbols instead",
+      "reviews": 4,
+      "model_tokens": 53134,
+      "requested_edits": [
+        "connect_rail",
+        "connect_rail",
+        "use_power_symbols",
+        "connect_rail"
+      ],
+      "rejected_replies": 2,
+      "accepted_schematic": null,
+      "best_passing_schematic": "candidates/003/project/TimerAstable.kicad_sch"
+    },
+    "reference_555_led_flasher_v8": {
+      "design": "fixtures/pivot/reference_555_led_flasher_v8/design.json",
+      "status": "NO_PROGRESS",
+      "reason": "model repeated an invalid review: no obstacle-free native wire route joins the remaining VCC wire groups. Repeating connect_rail for VCC will fail again on this revision; request use_power_symbols for VCC to draw it with power symbols instead",
+      "reviews": 4,
+      "model_tokens": 58601,
+      "requested_edits": [
+        "connect_rail",
+        "use_power_symbols",
+        "connect_rail",
+        "connect_rail"
+      ],
+      "rejected_replies": 2,
+      "accepted_schematic": null,
+      "best_passing_schematic": "candidates/003/project/Reference555LedFlasher.kicad_sch"
+    }
+  },
+  "accepted": [],
+  "locked_host_qualification": false,
+  "independent_readability_assessment": "PENDING",
+  "human_electrical_review": "PENDING"
+}
