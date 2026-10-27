@@ -1,0 +1,529 @@
+{
+  "schema_version": "rail-repair-corpus.v1",
+  "source_commit": "05a9cafbd7a6b4437b4c65db37219dae223f78a9",
+  "source_tree_clean": true,
+  "implementation_sha256": {
+    "src/ai_kicad/pivot/schematic_review.py": "e1674ff105cc46db03f8e7f5c6cfd1686bd6a3a863f6f11eac86e2b19a763d66",
+    "src/ai_kicad/pivot/schematic_review_native.py": "d754ae2e20c338475e7d36b52f93b6aa35bd5c55e92dc082d059c9455853d957",
+    "src/ai_kicad/pivot/power_symbols.py": "cf1dea42882e45d221566f8115315351e6e22610db49543d4a1ff522ff642b50",
+    "tools/pivot/run_rail_repair_corpus.py": "9899d9cf01fa152c761eef5e12ea70005b9abc601d31c7eb901d3b9305d0ce6e"
+  },
+  "rail_policy": "wire_or_power_symbols (brief v3)",
+  "designs": {
+    "dual_buffer": {
+      "design": "dual_buffer",
+      "initial_failing_nets": [
+        "VMINUS",
+        "VPLUS"
+      ],
+      "applied_edits": [
+        {
+          "operation": "connect_rail",
+          "net": "VPLUS"
+        }
+      ],
+      "plans": [
+        {
+          "priority": [
+            "VMINUS",
+            "VPLUS"
+          ],
+          "style": "wire",
+          "unresolved_nets": [
+            "VMINUS"
+          ]
+        },
+        {
+          "priority": [
+            "VMINUS",
+            "VPLUS"
+          ],
+          "style": "power",
+          "unresolved_nets": [
+            "VMINUS"
+          ]
+        }
+      ],
+      "unresolved_nets": [
+        "VMINUS"
+      ],
+      "final_candidate": "0004/project/DualBufferM2b.kicad_sch",
+      "final_checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "rail_presentation": "FAIL",
+        "power_symbol_clearance": "PASS",
+        "field_separation": "PASS",
+        "field_locality": "PASS",
+        "field_owner_association": "FAIL"
+      },
+      "final_schematic_sha256": "913458afd7d69ccc8b9d0e6e1fc2e7b33c82cea0b187085529c9201a4b2d0cfa",
+      "final_images": [
+        "0004/review-images/page.png",
+        "0004/review-images/drawing.png"
+      ],
+      "candidates_attempted": 6,
+      "elapsed_seconds": 11.3,
+      "budget_exhausted": false
+    },
+    "dual_rail_reference": {
+      "design": "dual_rail_reference",
+      "initial_failing_nets": [
+        "VMINUS",
+        "VPLUS"
+      ],
+      "applied_edits": [
+        {
+          "operation": "connect_rail",
+          "net": "VPLUS"
+        }
+      ],
+      "plans": [
+        {
+          "priority": [
+            "VMINUS",
+            "VPLUS"
+          ],
+          "style": "wire",
+          "unresolved_nets": [
+            "VMINUS"
+          ]
+        },
+        {
+          "priority": [
+            "VMINUS",
+            "VPLUS"
+          ],
+          "style": "power",
+          "unresolved_nets": [
+            "VMINUS"
+          ]
+        }
+      ],
+      "unresolved_nets": [
+        "VMINUS"
+      ],
+      "final_candidate": "0004/project/DualRailReference.kicad_sch",
+      "final_checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "rail_presentation": "FAIL",
+        "power_symbol_clearance": "PASS",
+        "field_separation": "PASS",
+        "field_locality": "PASS",
+        "field_owner_association": "FAIL"
+      },
+      "final_schematic_sha256": "79d3502b096544c86eb88beee80662656e188e25bf3a6b3b6aaf36d7d2a00a54",
+      "final_images": [
+        "0004/review-images/page.png",
+        "0004/review-images/drawing.png"
+      ],
+      "candidates_attempted": 6,
+      "elapsed_seconds": 14.2,
+      "budget_exhausted": false
+    },
+    "inverting_gain": {
+      "design": "inverting_gain",
+      "initial_failing_nets": [
+        "VMINUS",
+        "VPLUS"
+      ],
+      "applied_edits": [
+        {
+          "operation": "connect_rail",
+          "net": "VPLUS"
+        }
+      ],
+      "plans": [
+        {
+          "priority": [
+            "VMINUS",
+            "VPLUS"
+          ],
+          "style": "wire",
+          "unresolved_nets": [
+            "VMINUS"
+          ]
+        },
+        {
+          "priority": [
+            "VMINUS",
+            "VPLUS"
+          ],
+          "style": "power",
+          "unresolved_nets": [
+            "VMINUS"
+          ]
+        }
+      ],
+      "unresolved_nets": [
+        "VMINUS"
+      ],
+      "final_candidate": "0004/project/InvertingGain.kicad_sch",
+      "final_checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "rail_presentation": "FAIL",
+        "power_symbol_clearance": "PASS",
+        "field_separation": "PASS",
+        "field_locality": "PASS",
+        "field_owner_association": "FAIL"
+      },
+      "final_schematic_sha256": "26a50967e92fb94a99f4e6def78e4b087aba9b4921df602d1e2b541e41464341",
+      "final_images": [
+        "0004/review-images/page.png",
+        "0004/review-images/drawing.png"
+      ],
+      "candidates_attempted": 6,
+      "elapsed_seconds": 13.6,
+      "budget_exhausted": false
+    },
+    "linear_regulator": {
+      "design": "linear_regulator",
+      "initial_failing_nets": [
+        "REF",
+        "VIN"
+      ],
+      "applied_edits": [
+        {
+          "operation": "connect_rail",
+          "net": "REF"
+        },
+        {
+          "operation": "connect_rail",
+          "net": "VIN"
+        }
+      ],
+      "plans": [
+        {
+          "priority": [
+            "REF",
+            "VIN"
+          ],
+          "style": "wire",
+          "unresolved_nets": []
+        }
+      ],
+      "unresolved_nets": [],
+      "final_candidate": "0003/project/LinearRegulator.kicad_sch",
+      "final_checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "rail_presentation": "PASS",
+        "power_symbol_clearance": "PASS",
+        "field_separation": "PASS",
+        "field_locality": "PASS",
+        "field_owner_association": "PASS"
+      },
+      "final_schematic_sha256": "5bda4d14a48657c7fda62d8afa2f66265e51e5605149d7601812ce8bcff141e1",
+      "final_images": [
+        "0003/review-images/page.png",
+        "0003/review-images/drawing.png"
+      ],
+      "candidates_attempted": 3,
+      "elapsed_seconds": 3.7,
+      "budget_exhausted": false
+    },
+    "noninverting_gain": {
+      "design": "noninverting_gain",
+      "initial_failing_nets": [
+        "REF",
+        "VMINUS",
+        "VPLUS"
+      ],
+      "applied_edits": [
+        {
+          "operation": "connect_rail",
+          "net": "VPLUS"
+        },
+        {
+          "operation": "connect_rail",
+          "net": "REF"
+        },
+        {
+          "operation": "connect_rail",
+          "net": "VMINUS"
+        }
+      ],
+      "plans": [
+        {
+          "priority": [
+            "REF",
+            "VMINUS",
+            "VPLUS"
+          ],
+          "style": "wire",
+          "unresolved_nets": [
+            "VPLUS"
+          ]
+        },
+        {
+          "priority": [
+            "VPLUS",
+            "REF",
+            "VMINUS"
+          ],
+          "style": "wire",
+          "unresolved_nets": []
+        }
+      ],
+      "unresolved_nets": [],
+      "final_candidate": "0008/project/NoninvertingGain.kicad_sch",
+      "final_checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "rail_presentation": "PASS",
+        "power_symbol_clearance": "PASS",
+        "field_separation": "PASS",
+        "field_locality": "PASS",
+        "field_owner_association": "FAIL"
+      },
+      "final_schematic_sha256": "6f24594144e614125737507590fb00887dd465b3076a1c587fc93a6166b581b6",
+      "final_images": [
+        "0008/review-images/page.png",
+        "0008/review-images/drawing.png"
+      ],
+      "candidates_attempted": 8,
+      "elapsed_seconds": 18.9,
+      "budget_exhausted": false
+    },
+    "rc_to_buffer": {
+      "design": "rc_to_buffer",
+      "initial_failing_nets": [
+        "VMINUS",
+        "VPLUS"
+      ],
+      "applied_edits": [
+        {
+          "operation": "connect_rail",
+          "net": "VPLUS"
+        }
+      ],
+      "plans": [
+        {
+          "priority": [
+            "VMINUS",
+            "VPLUS"
+          ],
+          "style": "wire",
+          "unresolved_nets": [
+            "VMINUS"
+          ]
+        },
+        {
+          "priority": [
+            "VMINUS",
+            "VPLUS"
+          ],
+          "style": "power",
+          "unresolved_nets": [
+            "VMINUS"
+          ]
+        }
+      ],
+      "unresolved_nets": [
+        "VMINUS"
+      ],
+      "final_candidate": "0004/project/RcToBuffer.kicad_sch",
+      "final_checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "rail_presentation": "FAIL",
+        "power_symbol_clearance": "PASS",
+        "field_separation": "PASS",
+        "field_locality": "PASS",
+        "field_owner_association": "FAIL"
+      },
+      "final_schematic_sha256": "fbf06fb9d675a9352ba6225cc9f0005a2c6e7baf4caa66fb02d808e7bd7af8a2",
+      "final_images": [
+        "0004/review-images/page.png",
+        "0004/review-images/drawing.png"
+      ],
+      "candidates_attempted": 6,
+      "elapsed_seconds": 23.0,
+      "budget_exhausted": false
+    },
+    "sallen_key": {
+      "design": "sallen_key",
+      "initial_failing_nets": [
+        "REF",
+        "VMINUS",
+        "VPLUS"
+      ],
+      "applied_edits": [],
+      "plans": [
+        {
+          "priority": [
+            "REF",
+            "VMINUS",
+            "VPLUS"
+          ],
+          "style": "wire",
+          "unresolved_nets": [
+            "REF",
+            "VMINUS",
+            "VPLUS"
+          ]
+        },
+        {
+          "priority": [
+            "REF",
+            "VMINUS",
+            "VPLUS"
+          ],
+          "style": "power",
+          "unresolved_nets": [
+            "REF",
+            "VMINUS",
+            "VPLUS"
+          ]
+        }
+      ],
+      "unresolved_nets": [
+        "REF",
+        "VMINUS",
+        "VPLUS"
+      ],
+      "final_candidate": "0001/project/SallenKey.kicad_sch",
+      "final_checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "rail_presentation": "FAIL",
+        "power_symbol_clearance": "PASS",
+        "field_separation": "PASS",
+        "field_locality": "PASS",
+        "field_owner_association": "FAIL"
+      },
+      "final_schematic_sha256": "5a8cd9024cdd91a03a9730754a8270499c62dfad2d88a80156b9e37e35c63fb7",
+      "final_images": [
+        "0001/review-images/page.png",
+        "0001/review-images/drawing.png"
+      ],
+      "candidates_attempted": 10,
+      "elapsed_seconds": 16.5,
+      "budget_exhausted": false
+    },
+    "timer_astable": {
+      "design": "timer_astable",
+      "initial_failing_nets": [
+        "REF",
+        "VCC"
+      ],
+      "applied_edits": [
+        {
+          "operation": "connect_rail",
+          "net": "REF"
+        },
+        {
+          "operation": "use_power_symbols",
+          "net": "VCC"
+        }
+      ],
+      "plans": [
+        {
+          "priority": [
+            "REF",
+            "VCC"
+          ],
+          "style": "wire",
+          "unresolved_nets": []
+        }
+      ],
+      "unresolved_nets": [],
+      "final_candidate": "0004/project/TimerAstable.kicad_sch",
+      "final_checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "rail_presentation": "PASS",
+        "power_symbol_clearance": "PASS",
+        "field_separation": "PASS",
+        "field_locality": "PASS",
+        "field_owner_association": "PASS"
+      },
+      "final_schematic_sha256": "9f971fe7a3bd6d5f58dde2f8c90a83b08b14190ec83dc700b5377d8b10039835",
+      "final_images": [
+        "0004/review-images/page.png",
+        "0004/review-images/drawing.png"
+      ],
+      "candidates_attempted": 4,
+      "elapsed_seconds": 10.2,
+      "budget_exhausted": false
+    },
+    "reference_555_led_flasher_v8": {
+      "design": "reference_555_led_flasher_v8",
+      "initial_failing_nets": [
+        "REF",
+        "VCC"
+      ],
+      "applied_edits": [
+        {
+          "operation": "use_power_symbols",
+          "net": "VCC"
+        },
+        {
+          "operation": "connect_rail",
+          "net": "REF"
+        }
+      ],
+      "plans": [
+        {
+          "priority": [
+            "REF",
+            "VCC"
+          ],
+          "style": "wire",
+          "unresolved_nets": [
+            "VCC"
+          ]
+        },
+        {
+          "priority": [
+            "VCC",
+            "REF"
+          ],
+          "style": "wire",
+          "unresolved_nets": []
+        }
+      ],
+      "unresolved_nets": [],
+      "final_candidate": "0007/project/Reference555LedFlasher.kicad_sch",
+      "final_checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "rail_presentation": "PASS",
+        "power_symbol_clearance": "PASS",
+        "field_separation": "PASS",
+        "field_locality": "PASS",
+        "field_owner_association": "PASS"
+      },
+      "final_schematic_sha256": "49afb66728acb0e2c72c2362938f54759fc5f48ffa697a8eabf2261b69f0e7f8",
+      "final_images": [
+        "0007/review-images/page.png",
+        "0007/review-images/drawing.png"
+      ],
+      "candidates_attempted": 7,
+      "elapsed_seconds": 23.4,
+      "budget_exhausted": false
+    }
+  },
+  "locked_host_qualification": false,
+  "human_readability_review": "PENDING"
+}

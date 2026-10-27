@@ -1,0 +1,119 @@
+{
+  "design": "inverting_gain",
+  "initial_failing_nets": [
+    "VMINUS",
+    "VPLUS"
+  ],
+  "applied_edits": [
+    {
+      "operation": "use_power_symbols",
+      "net": "VMINUS"
+    },
+    {
+      "operation": "use_power_symbols",
+      "net": "VPLUS"
+    }
+  ],
+  "plans": [
+    {
+      "priority": [
+        "VMINUS",
+        "VPLUS"
+      ],
+      "style": "wire",
+      "unresolved_nets": []
+    }
+  ],
+  "unresolved_nets": [],
+  "final_candidate": "0005/project/InvertingGain.kicad_sch",
+  "final_checks": {
+    "native_tools": "PASS",
+    "erc": "PASS",
+    "electrical_equivalence": "PASS",
+    "observed_layout": "PASS",
+    "rail_presentation": "PASS",
+    "power_symbol_clearance": "PASS",
+    "field_separation": "PASS",
+    "field_locality": "PASS",
+    "field_owner_association": "FAIL"
+  },
+  "final_schematic_sha256": "a0ac783ec1b822de231a46830e24683124ea322d58f12940dcc5af234041e8c9",
+  "final_images": [
+    "0005/review-images/page.png",
+    "0005/review-images/drawing.png"
+  ],
+  "candidates_attempted": 5,
+  "elapsed_seconds": 10.8,
+  "budget_exhausted": false,
+  "steps": [
+    {
+      "candidate": "0001",
+      "action": "initial",
+      "checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "rail_presentation": "FAIL",
+        "power_symbol_clearance": "PASS",
+        "field_separation": "PASS",
+        "field_locality": "PASS",
+        "field_owner_association": "FAIL"
+      }
+    },
+    {
+      "candidate": "0002",
+      "action": {
+        "operation": "connect_rail",
+        "net": "VMINUS"
+      },
+      "rejected": "no obstacle-free native wire route joins the remaining VMINUS wire groups. Repeating connect_rail for VMINUS will fail again on this revision; first request move_symbols for one of ['C2', 'J1', 'U1'] by a grid-aligned offset into open space, then request connect_rail again"
+    },
+    {
+      "candidate": "0003",
+      "action": {
+        "operation": "use_power_symbols",
+        "net": "VMINUS"
+      },
+      "checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "rail_presentation": "FAIL",
+        "power_symbol_clearance": "PASS",
+        "field_separation": "PASS",
+        "field_locality": "PASS",
+        "field_owner_association": "FAIL"
+      },
+      "schematic_sha256": "6eced7179217bddd02111444ead76b259659382d89d30706781572b1de9f6316"
+    },
+    {
+      "candidate": "0004",
+      "action": {
+        "operation": "connect_rail",
+        "net": "VPLUS"
+      },
+      "rejected": "no obstacle-free native wire route joins the remaining VPLUS wire groups. Repeating connect_rail for VPLUS will fail again on this revision; first request move_symbols for one of ['C1', 'J1', 'U1'] by a grid-aligned offset into open space, then request connect_rail again"
+    },
+    {
+      "candidate": "0005",
+      "action": {
+        "operation": "use_power_symbols",
+        "net": "VPLUS"
+      },
+      "checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "rail_presentation": "PASS",
+        "power_symbol_clearance": "PASS",
+        "field_separation": "PASS",
+        "field_locality": "PASS",
+        "field_owner_association": "FAIL"
+      },
+      "schematic_sha256": "a0ac783ec1b822de231a46830e24683124ea322d58f12940dcc5af234041e8c9"
+    }
+  ]
+}

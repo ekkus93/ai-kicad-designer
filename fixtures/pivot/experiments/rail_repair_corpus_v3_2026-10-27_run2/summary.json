@@ -1,0 +1,74 @@
+{
+  "schema_version": "rail-repair-corpus.v1",
+  "source_commit": "03aa4b4eb0c98dd2735e808e7ae453869296afa6",
+  "source_tree_clean": true,
+  "implementation_sha256": {
+    "src/ai_kicad/pivot/schematic_review.py": "e1674ff105cc46db03f8e7f5c6cfd1686bd6a3a863f6f11eac86e2b19a763d66",
+    "src/ai_kicad/pivot/schematic_review_native.py": "69e314b7371c53f576b05705fb2c8ac7cb447c03714dbc1e0de1a112cede9538",
+    "src/ai_kicad/pivot/power_symbols.py": "8d498fa43b411c5a13ff49147683620f4928b307d4caab9db328cb3b191fcb98",
+    "tools/pivot/run_rail_repair_corpus.py": "a3f18dec7115f7a39ce5db961b29d34b468ebb0e4d50c22335b230001f7f1c10"
+  },
+  "rail_policy": "wire_or_power_symbols (brief v3)",
+  "designs": {
+    "dual_buffer": {
+      "design": "dual_buffer",
+      "initial_failing_nets": [
+        "VMINUS",
+        "VPLUS"
+      ],
+      "applied_edits": [
+        {
+          "operation": "connect_rail",
+          "net": "VPLUS"
+        }
+      ],
+      "plans": [
+        {
+          "priority": [
+            "VMINUS",
+            "VPLUS"
+          ],
+          "style": "wire",
+          "unresolved_nets": [
+            "VMINUS"
+          ]
+        },
+        {
+          "priority": [
+            "VMINUS",
+            "VPLUS"
+          ],
+          "style": "power",
+          "unresolved_nets": [
+            "VMINUS"
+          ]
+        }
+      ],
+      "unresolved_nets": [
+        "VMINUS"
+      ],
+      "final_candidate": "0004/project/DualBufferM2b.kicad_sch",
+      "final_checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "rail_presentation": "FAIL",
+        "power_symbol_clearance": "PASS",
+        "field_separation": "PASS",
+        "field_locality": "PASS",
+        "field_owner_association": "FAIL"
+      },
+      "final_schematic_sha256": "d2a1fc01244dff91bff977b6ddfd1d6c384cf1f3ed45233ac32f24931d19121c",
+      "final_images": [
+        "0004/review-images/page.png",
+        "0004/review-images/drawing.png"
+      ],
+      "candidates_attempted": 6,
+      "elapsed_seconds": 11.3,
+      "budget_exhausted": false
+    }
+  },
+  "locked_host_qualification": false,
+  "human_readability_review": "PENDING"
+}

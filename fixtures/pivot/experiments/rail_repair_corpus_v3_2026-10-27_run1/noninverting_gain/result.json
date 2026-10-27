@@ -1,0 +1,204 @@
+{
+  "design": "noninverting_gain",
+  "initial_failing_nets": [
+    "REF",
+    "VMINUS",
+    "VPLUS"
+  ],
+  "applied_edits": [
+    {
+      "operation": "connect_rail",
+      "net": "VPLUS"
+    },
+    {
+      "operation": "connect_rail",
+      "net": "REF"
+    },
+    {
+      "operation": "connect_rail",
+      "net": "VMINUS"
+    }
+  ],
+  "plans": [
+    {
+      "priority": [
+        "REF",
+        "VMINUS",
+        "VPLUS"
+      ],
+      "style": "wire",
+      "unresolved_nets": [
+        "VPLUS"
+      ]
+    },
+    {
+      "priority": [
+        "VPLUS",
+        "REF",
+        "VMINUS"
+      ],
+      "style": "wire",
+      "unresolved_nets": []
+    }
+  ],
+  "unresolved_nets": [],
+  "final_candidate": "0008/project/NoninvertingGain.kicad_sch",
+  "final_checks": {
+    "native_tools": "PASS",
+    "erc": "PASS",
+    "electrical_equivalence": "PASS",
+    "observed_layout": "PASS",
+    "rail_presentation": "PASS",
+    "power_symbol_clearance": "PASS",
+    "field_separation": "PASS",
+    "field_locality": "PASS",
+    "field_owner_association": "FAIL"
+  },
+  "final_schematic_sha256": "6831601cd8a882be1e6ca606c76d759ec7fca71b4d236d3b2a07e78efbdd388b",
+  "final_images": [
+    "0008/review-images/page.png",
+    "0008/review-images/drawing.png"
+  ],
+  "candidates_attempted": 8,
+  "elapsed_seconds": 19.4,
+  "budget_exhausted": false,
+  "steps": [
+    {
+      "candidate": "0001",
+      "action": "initial",
+      "checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "rail_presentation": "FAIL",
+        "power_symbol_clearance": "PASS",
+        "field_separation": "PASS",
+        "field_locality": "PASS",
+        "field_owner_association": "FAIL"
+      }
+    },
+    {
+      "candidate": "0002",
+      "action": {
+        "operation": "connect_rail",
+        "net": "REF"
+      },
+      "checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "rail_presentation": "FAIL",
+        "power_symbol_clearance": "PASS",
+        "field_separation": "PASS",
+        "field_locality": "PASS",
+        "field_owner_association": "FAIL"
+      },
+      "schematic_sha256": "62cbaf26b6d8b2d62773be495c7ad74792a8efa78bacec0105fe322b29781071"
+    },
+    {
+      "candidate": "0003",
+      "action": {
+        "operation": "connect_rail",
+        "net": "VMINUS"
+      },
+      "checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "rail_presentation": "FAIL",
+        "power_symbol_clearance": "PASS",
+        "field_separation": "PASS",
+        "field_locality": "PASS",
+        "field_owner_association": "FAIL"
+      },
+      "schematic_sha256": "391b2fdebdd09beb1991d60c8fbbf0f7e4be14fb41f99d0845a7caf668a2030b"
+    },
+    {
+      "candidate": "0004",
+      "action": {
+        "operation": "connect_rail",
+        "net": "VPLUS"
+      },
+      "rejected": "no obstacle-free native wire route joins the remaining VPLUS wire groups. Repeating connect_rail for VPLUS will fail again on this revision; first request move_symbols for one of ['C1', 'J1', 'U1'] by a grid-aligned offset into open space, then request connect_rail again"
+    },
+    {
+      "candidate": "0005",
+      "action": {
+        "operation": "use_power_symbols",
+        "net": "VPLUS"
+      },
+      "checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "rail_presentation": "PASS",
+        "power_symbol_clearance": "FAIL",
+        "field_separation": "PASS",
+        "field_locality": "PASS",
+        "field_owner_association": "FAIL"
+      },
+      "schematic_sha256": "1feb01ab4038990da47ee5530912c9d4753d70569fc9bc7510d3af8d993d8e93"
+    },
+    {
+      "candidate": "0006",
+      "action": {
+        "operation": "connect_rail",
+        "net": "VPLUS"
+      },
+      "checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "rail_presentation": "FAIL",
+        "power_symbol_clearance": "PASS",
+        "field_separation": "PASS",
+        "field_locality": "PASS",
+        "field_owner_association": "FAIL"
+      },
+      "schematic_sha256": "44b46e51b7e7acbb5f3b87b295478668af5a4401d00910bf186337e754872541"
+    },
+    {
+      "candidate": "0007",
+      "action": {
+        "operation": "connect_rail",
+        "net": "REF"
+      },
+      "checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "rail_presentation": "FAIL",
+        "power_symbol_clearance": "PASS",
+        "field_separation": "PASS",
+        "field_locality": "PASS",
+        "field_owner_association": "FAIL"
+      },
+      "schematic_sha256": "2e27dc71a8799b55eb15ed60edeefd1b0bd8ba7033e194c7fabd610ffe716354"
+    },
+    {
+      "candidate": "0008",
+      "action": {
+        "operation": "connect_rail",
+        "net": "VMINUS"
+      },
+      "checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "rail_presentation": "PASS",
+        "power_symbol_clearance": "PASS",
+        "field_separation": "PASS",
+        "field_locality": "PASS",
+        "field_owner_association": "FAIL"
+      },
+      "schematic_sha256": "6831601cd8a882be1e6ca606c76d759ec7fca71b4d236d3b2a07e78efbdd388b"
+    }
+  ]
+}

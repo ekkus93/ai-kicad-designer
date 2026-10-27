@@ -1,0 +1,111 @@
+{
+  "design": "timer_astable",
+  "initial_failing_nets": [
+    "REF",
+    "VCC"
+  ],
+  "applied_edits": [
+    {
+      "operation": "connect_rail",
+      "net": "REF"
+    },
+    {
+      "operation": "use_power_symbols",
+      "net": "VCC"
+    }
+  ],
+  "plans": [
+    {
+      "priority": [
+        "REF",
+        "VCC"
+      ],
+      "style": "wire",
+      "unresolved_nets": []
+    }
+  ],
+  "unresolved_nets": [],
+  "final_candidate": "0004/project/TimerAstable.kicad_sch",
+  "final_checks": {
+    "native_tools": "PASS",
+    "erc": "PASS",
+    "electrical_equivalence": "PASS",
+    "observed_layout": "PASS",
+    "rail_presentation": "PASS",
+    "power_symbol_clearance": "PASS",
+    "field_separation": "PASS",
+    "field_locality": "PASS",
+    "field_owner_association": "PASS"
+  },
+  "final_schematic_sha256": "f90fcbb006c74a81da3f6c659c277e1381f30f639cb1941f14f81c216befb3f8",
+  "final_images": [
+    "0004/review-images/page.png",
+    "0004/review-images/drawing.png"
+  ],
+  "candidates_attempted": 4,
+  "elapsed_seconds": 10.7,
+  "budget_exhausted": false,
+  "steps": [
+    {
+      "candidate": "0001",
+      "action": "initial",
+      "checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "rail_presentation": "FAIL",
+        "power_symbol_clearance": "PASS",
+        "field_separation": "PASS",
+        "field_locality": "PASS",
+        "field_owner_association": "PASS"
+      }
+    },
+    {
+      "candidate": "0002",
+      "action": {
+        "operation": "connect_rail",
+        "net": "REF"
+      },
+      "checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "rail_presentation": "FAIL",
+        "power_symbol_clearance": "PASS",
+        "field_separation": "PASS",
+        "field_locality": "PASS",
+        "field_owner_association": "PASS"
+      },
+      "schematic_sha256": "0072f7fbcb360b7ca394c6e45e2c2b66e273addff25fe7bd76fc159d4503c7d9"
+    },
+    {
+      "candidate": "0003",
+      "action": {
+        "operation": "connect_rail",
+        "net": "VCC"
+      },
+      "rejected": "no obstacle-free native wire route joins the remaining VCC wire groups. Repeating connect_rail for VCC will fail again on this revision; first request move_symbols for one of ['J1', 'R1', 'U1'] by a grid-aligned offset into open space, then request connect_rail again"
+    },
+    {
+      "candidate": "0004",
+      "action": {
+        "operation": "use_power_symbols",
+        "net": "VCC"
+      },
+      "checks": {
+        "native_tools": "PASS",
+        "erc": "PASS",
+        "electrical_equivalence": "PASS",
+        "observed_layout": "PASS",
+        "rail_presentation": "PASS",
+        "power_symbol_clearance": "PASS",
+        "field_separation": "PASS",
+        "field_locality": "PASS",
+        "field_owner_association": "PASS"
+      },
+      "schematic_sha256": "f90fcbb006c74a81da3f6c659c277e1381f30f639cb1941f14f81c216befb3f8"
+    }
+  ]
+}
