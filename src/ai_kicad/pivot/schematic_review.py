@@ -69,6 +69,13 @@ class MoveSymbols(StrictModel):
         return self
 
 
+class UsePowerSymbols(StrictModel):
+    """Draw one asserted rail conventionally, with a power symbol at each terminal group."""
+
+    operation: Literal["use_power_symbols"]
+    net: str = Field(min_length=1, max_length=64)
+
+
 class TranslateSheet(StrictModel):
     operation: Literal["translate_sheet"]
     dx_mm: float = Field(ge=-297, le=297, allow_inf_nan=False)
@@ -80,7 +87,13 @@ class RegenerateSchematic(StrictModel):
 
 
 SchematicAction = Annotated[
-    MoveField | AddWirePath | ConnectRail | MoveSymbols | TranslateSheet | RegenerateSchematic,
+    MoveField
+    | AddWirePath
+    | ConnectRail
+    | MoveSymbols
+    | UsePowerSymbols
+    | TranslateSheet
+    | RegenerateSchematic,
     Field(discriminator="operation"),
 ]
 
@@ -231,6 +244,13 @@ class OllamaSchematicReviewer:
             "open space; their private wiring moves with them and shared nets are rerouted. "
             "Then request connect_rail again. Alternatively, add explicit Manhattan wire segments "
             "with add_wire_path. "
+            "When the checks list rail_presentation instead of visible_rail_continuity, a rail "
+            "may also be drawn the conventional way: use_power_symbols with the failing net "
+            "replaces that rail's labels and terminal-to-terminal rail wiring with a matching "
+            "power symbol at each terminal (a ground glyph for REF/GND, a supply arrow "
+            "otherwise), placed clear of other drawing items. Prefer it when connect_rail "
+            "reports that no route exists, and for a rail whose wiring crowds the drawing. "
+            "use_power_symbols is unavailable when visible_rail_continuity is listed. "
             "Submit exactly one action per revision, then wait for rechecks. "
             "Use the listed terminal inventory and exact net witnesses; set from_ref/from_pin and "
             "to_ref/to_pin to identify two listed terminals on the named net. The waypoints field "

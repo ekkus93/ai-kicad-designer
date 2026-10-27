@@ -76,18 +76,50 @@ class SchematicReviewBriefV2(SchematicReviewBrief):
         return self
 
 
-def load_review_brief(path: Path) -> SchematicReviewBrief | SchematicReviewBriefV2:
+class SchematicReviewBriefV3(SchematicReviewBrief):
+    """Owner brief that accepts conventional power symbols as rail presentation."""
+
+    schema_version: Literal["schematic-review-brief.v3"]
+    brief_id: Literal["owner-readability.v3"]
+
+    @model_validator(mode="after")
+    def require_rail_presentation_gates(self) -> SchematicReviewBriefV3:
+        labels = next(item for item in self.criteria if item.criterion_id == "label_association")
+        required = {"field_locality", "field_separation", "field_owner_association"}
+        if not required.issubset({measurement.check_id for measurement in labels.measurements}):
+            raise ValueError("v3 label association requires locality, separation, and owner checks")
+        rails = next(item for item in self.criteria if item.criterion_id == "visible_local_rails")
+        if not {"rail_presentation", "power_symbol_clearance"}.issubset(
+            {measurement.check_id for measurement in rails.measurements}
+        ):
+            raise ValueError(
+                "v3 rails require independent rail-presentation and power-symbol clearance checks"
+            )
+        return self
+
+
+BRIEF_MODELS = {
+    "schematic-review-brief.v2": SchematicReviewBriefV2,
+    "schematic-review-brief.v3": SchematicReviewBriefV3,
+}
+ReviewBrief = SchematicReviewBrief | SchematicReviewBriefV2 | SchematicReviewBriefV3
+
+
+def load_review_brief(path: Path) -> ReviewBrief:
     """Parse a JSON brief and reject unknown or incomplete criteria."""
     data = path.read_text()
-    model = (
-        SchematicReviewBriefV2
-        if json.loads(data).get("schema_version") == "schematic-review-brief.v2"
-        else SchematicReviewBrief
-    )
+    model = BRIEF_MODELS.get(json.loads(data).get("schema_version"), SchematicReviewBrief)
     return model.model_validate_json(data)
 
 
-def format_review_brief(brief: SchematicReviewBrief | SchematicReviewBriefV2) -> str:
+def brief_allows_power_symbol_rails(path: Path | None) -> bool:
+    """Whether the versioned brief accepts power symbols in place of rail wiring."""
+    if path is None or path.suffix.lower() != ".json":
+        return False
+    return isinstance(load_review_brief(path), SchematicReviewBriefV3)
+
+
+def format_review_brief(brief: ReviewBrief) -> str:
     """Render a stable review prompt without presenting rubric judgment as a hard gate."""
     lines = [
         f"Review brief {brief.brief_id} ({brief.schema_version}).",

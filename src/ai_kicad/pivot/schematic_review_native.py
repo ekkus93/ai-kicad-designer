@@ -40,9 +40,18 @@ from .schematic_review import (
     SchematicAction,
     SchematicAssessment,
     TranslateSheet,
+    UsePowerSymbols,
     WirePoint,
     file_hash,
     write_json,
+)
+from .power_symbols import (
+    label_view_text,
+    use_power_symbols_text,
+    power_symbol_collisions,
+    power_symbol_definitions,
+    power_symbols,
+    rail_presentation,
 )
 from .schematic_fields import measure_field_association, measure_field_locality
 
@@ -78,6 +87,7 @@ def edit_schematic_text(
     text: str,
     actions: list[SchematicAction],
     terminal_inventory: list[dict] | None = None,
+    power_flags: dict[str, list[Point]] | None = None,
 ) -> str:
     """Apply bounded visual edits without changing symbols or electrical net assignments."""
     for action in actions:
@@ -133,6 +143,14 @@ def edit_schematic_text(
             if terminal_inventory is None:
                 raise ValueError("move_symbols requires independently observed terminal positions")
             text = move_symbols_text(text, action, terminal_inventory)
+        elif isinstance(action, UsePowerSymbols):
+            if terminal_inventory is None or power_flags is None:
+                raise ValueError(
+                    "use_power_symbols requires independently observed terminal positions"
+                )
+            text = use_power_symbols_text(
+                text, action.net, terminal_inventory, power_flags.get(action.net, [])
+            )
         elif isinstance(action, TranslateSheet):
             if action.dx_mm == 0 and action.dy_mm == 0:
                 raise ValueError("translate_sheet made no change; choose nonzero movement")
@@ -536,37 +554,14 @@ def move_symbols_text(text: str, action: MoveSymbols, terminal_inventory: list[d
     return text
 
 
-def route_around_existing_wires(
-    text: str,
-    requested: list[WirePoint],
-    *,
-    keepouts: list[tuple[int, int, int, int]] = (),
-) -> list[WirePoint]:
-    """Plan requested legs around wires, symbol bodies, visible fields, labels and keepouts."""
-    nanometers = 1_000_000
-    points: list[Point] = [
-        (round(point.x_mm * nanometers), round(point.y_mm * nanometers)) for point in requested
-    ]
-    if len(points) < 2:
-        raise ValueError("wire route requires two distinct terminals")
-    if any(first == second for first, second in zip(points, points[1:])):
-        raise ValueError("wire route contains a zero-length leg")
-    if any(x % PITCH or y % PITCH for x, y in points):
-        raise ValueError(f"wire route points must use the KiCad {PITCH / 1_000_000:g} mm grid")
+Box = tuple[int, int, int, int]
 
-    tree = parse(text)
+
+def _drawn_boxes(tree: list) -> tuple[list[tuple[str, Box]], list[tuple[str, Box]]]:
+    """Padded symbol body/pin-stub boxes and visible field/label text boxes of a sheet."""
     library_symbols = {item[1]: item for item in children(one(tree, "lib_symbols"), "symbol")}
-    wires = []
-    for index, wire in enumerate(children(tree, "wire")):
-        coordinates = [
-            (round(float(point[1]) * nanometers), round(float(point[2]) * nanometers))
-            for point in children(one(wire, "pts"), "xy")
-        ]
-        for first, second in zip(coordinates, coordinates[1:]):
-            wires.append((f"existing-wire-{index}", first, second))
-
-    symbol_boxes = [("keepout", bounds) for bounds in keepouts]
-    text_boxes = []
+    symbol_boxes: list[tuple[str, Box]] = []
+    text_boxes: list[tuple[str, Box]] = []
     for label in children(tree, "label"):
         (x, y), angle = _nm_point(one(label, "at")), int(float(one(label, "at")[3]))
         width = label_text_width(label[1])
@@ -677,6 +672,40 @@ def route_around_existing_wires(
                     ),
                 )
             )
+
+    return symbol_boxes, text_boxes
+
+
+def route_around_existing_wires(
+    text: str,
+    requested: list[WirePoint],
+    *,
+    keepouts: list[tuple[int, int, int, int]] = (),
+) -> list[WirePoint]:
+    """Plan requested legs around wires, symbol bodies, visible fields, labels and keepouts."""
+    nanometers = 1_000_000
+    points: list[Point] = [
+        (round(point.x_mm * nanometers), round(point.y_mm * nanometers)) for point in requested
+    ]
+    if len(points) < 2:
+        raise ValueError("wire route requires two distinct terminals")
+    if any(first == second for first, second in zip(points, points[1:])):
+        raise ValueError("wire route contains a zero-length leg")
+    if any(x % PITCH or y % PITCH for x, y in points):
+        raise ValueError(f"wire route points must use the KiCad {PITCH / 1_000_000:g} mm grid")
+
+    tree = parse(text)
+    wires = []
+    for index, wire in enumerate(children(tree, "wire")):
+        coordinates = [
+            (round(float(point[1]) * nanometers), round(float(point[2]) * nanometers))
+            for point in children(one(wire, "pts"), "xy")
+        ]
+        for first, second in zip(coordinates, coordinates[1:]):
+            wires.append((f"existing-wire-{index}", first, second))
+
+    symbol_boxes, text_boxes = _drawn_boxes(tree)
+    symbol_boxes = [("keepout", bounds) for bounds in keepouts] + symbol_boxes
 
     planned: list[Point] = [points[0]]
     for start, finish in zip(points, points[1:]):
@@ -914,13 +943,16 @@ def parse_ffmpeg_bbox(stderr: str) -> tuple[int, int, int, int]:
     return tuple(map(int, matches[-1]))
 
 
-def write_locked_symbol_table(directory: Path, resolved: dict) -> tuple[Path, dict]:
+def write_locked_symbol_table(
+    directory: Path, resolved: dict, extra: dict[str, str] | None = None
+) -> tuple[Path, dict]:
     """Register the exact resolved symbol definitions in an isolated KiCad configuration."""
     libraries = {}
-    for library_id, asset in sorted(resolved.items()):
+    definitions = {library_id: asset.definition for library_id, asset in resolved.items()}
+    for library_id, definition in sorted({**definitions, **(extra or {})}.items()):
         library, name = library_id.split(":", 1)
         libraries.setdefault(library, []).append(
-            asset.definition.replace(
+            definition.replace(
                 f"(symbol {quote(library_id)}",
                 f"(symbol {quote(name)}",
                 1,
@@ -957,6 +989,7 @@ class NativeSchematicEngine:
         source: Path | None = None,
         symbol_table: Path | None = None,
         maximum_field_distance_mm: float = 25.4,
+        power_symbol_rails: bool = False,
     ):
         self.resolved = assets()
         self.design = validate(design, self.resolved)
@@ -964,6 +997,9 @@ class NativeSchematicEngine:
         self.source = source.resolve() if source else None
         self.symbol_table = symbol_table
         self.maximum_field_distance_mm = maximum_field_distance_mm
+        # Brief v3: a rail may be presented by wires or by matching global power symbols.
+        self.power_symbol_rails = power_symbol_rails
+        self.power_symbols = power_symbol_definitions() if power_symbol_rails else {}
         self.environment = dict(os.environ, LC_ALL="C", TZ="UTC")
         self.renderer = shutil.which("rsvg-convert")
         self.convert = shutil.which("convert")
@@ -1039,13 +1075,16 @@ class NativeSchematicEngine:
 
     def assess(self, schematic: Path, directory: Path) -> SchematicAssessment:
         diagnostics = []
-        generated_table, symbol_hashes = write_locked_symbol_table(directory, self.resolved)
+        generated_table, symbol_hashes = write_locked_symbol_table(
+            directory, self.resolved, self.power_symbols
+        )
+        rail_check = "rail_presentation" if self.power_symbol_rails else "visible_rail_continuity"
         checks = {
             "native_tools": "PASS",
             "erc": "FAIL",
             "electrical_equivalence": "FAIL",
             "observed_layout": "FAIL",
-            "visible_rail_continuity": "FAIL",
+            rail_check: "FAIL",
         }
         try:
             run_headless(schematic, self.launcher, directory, self.symbol_table or generated_table)
@@ -1059,20 +1098,51 @@ class NativeSchematicEngine:
             checks["erc"] = "PASS"
         electrical, layout, observed = {}, {}, {}
         netlist = directory / "reports/netlist.xml"
+        # The protected observers inspect the compiler's label form of any power symbols.
+        inspected = schematic
+        placed_power = power_symbols(parse(schematic.read_text()))
+        if placed_power:
+            if not self.power_symbol_rails:
+                raise ValueError("power symbols require the brief v3 rail policy")
+            inspected = directory / "label-view" / schematic.name
+            inspected.parent.mkdir()
+            inspected.write_text(label_view_text(schematic.read_text()))
         if netlist.is_file():
             try:
-                observed = observe(schematic, netlist)
+                observed = observe(inspected, netlist)
+                virtual = {item["reference"] for item in placed_power}
+                observed["nets"] = {
+                    name: [node for node in nodes if node[0] not in virtual]
+                    for name, nodes in observed["nets"].items()
+                }
+                observed["xml_components"] = {
+                    reference: item
+                    for reference, item in observed["xml_components"].items()
+                    if reference not in virtual
+                }
                 electrical = compare(self.design, observed, self.resolved)
                 checks["electrical_equivalence"] = (
                     "PASS" if electrical["status"] == "pass" else "FAIL"
                 )
                 diagnostics.extend(electrical.get("diagnostics", []))
                 try:
-                    layout = check_observed_layout(schematic, observed, self.design)
+                    layout = check_observed_layout(inspected, observed, self.design)
                     checks["observed_layout"] = "PASS"
                     rail_witnesses = layout.get("observed_power_rail_wire_path_witnesses", [])
-                    checks["visible_rail_continuity"] = "FAIL" if rail_witnesses else "PASS"
-                    if rail_witnesses:
+                    if self.power_symbol_rails:
+                        rail_witnesses = rail_presentation(
+                            parse(schematic.read_text()),
+                            terminal_inventory_for_design(self.design, observed),
+                            sorted({item["net"] for item in self.design["power_assertions"]}),
+                        )
+                        layout["rail_presentation_witnesses"] = rail_witnesses
+                    checks[rail_check] = "FAIL" if rail_witnesses else "PASS"
+                    if rail_witnesses and self.power_symbol_rails:
+                        diagnostics.append(
+                            "asserted power-net wire groups are neither joined nor marked by a "
+                            f"matching power symbol: {rail_witnesses}"
+                        )
+                    elif rail_witnesses:
                         diagnostics.append(
                             "asserted power-net terminals lack a continuous visible wire path: "
                             f"{rail_witnesses}"
@@ -1081,7 +1151,13 @@ class NativeSchematicEngine:
                     diagnostics.append(str(error))
             except (InputError, ValueError, KeyError) as error:
                 diagnostics.append(str(error))
-        tree = parse(schematic.read_text())
+        if self.power_symbol_rails:
+            collisions = power_symbol_collisions(schematic.read_text())
+            checks["power_symbol_clearance"] = "FAIL" if collisions else "PASS"
+            if collisions:
+                diagnostics.append(f"power symbols touch other drawing items: {collisions}")
+        # Field checks concern component fields; power-symbol text is checked above.
+        tree = parse(inspected.read_text())
         field_collisions = field_collision_witnesses(tree)
         checks["field_separation"] = "FAIL" if field_collisions else "PASS"
         if field_collisions:
@@ -1313,26 +1389,38 @@ class NativeSchematicEngine:
             raise ValueError("candidate output already exists")
         design = getattr(self, "design", {})
         asserted_nets = {item["net"] for item in design.get("power_assertions", [])}
+        if not getattr(self, "power_symbol_rails", False) and any(
+            isinstance(action, UsePowerSymbols) for action in actions
+        ):
+            raise ValueError(
+                "use_power_symbols requires the brief v3 rail policy; this review requires "
+                "visible rail wiring"
+            )
         wire_actions = [
             action
             for action in actions
-            if isinstance(action, AddWirePath | ConnectRail | MoveSymbols)
+            if isinstance(action, AddWirePath | ConnectRail | MoveSymbols | UsePowerSymbols)
         ]
         if any(
             not isinstance(action, MoveSymbols) and action.net not in asserted_nets
             for action in wire_actions
         ):
             raise ValueError(
-                "add_wire_path and connect_rail are limited to explicitly asserted power nets; "
-                f"valid nets are {sorted(asserted_nets)}"
+                "add_wire_path, connect_rail and use_power_symbols are limited to explicitly "
+                f"asserted power nets; valid nets are {sorted(asserted_nets)}"
             )
-        inventory = None
+        inventory, power_flags = None, None
         if wire_actions:
             netlist = schematic.parent.parent / "reports/netlist.xml"
             if not netlist.is_file():
                 raise ValueError("wire and symbol-move edits require the current assessed netlist")
             observed = observe(schematic, netlist)
             inventory = terminal_inventory_for_design(design, observed)
+            power_flags = {}
+            for assertion in design.get("power_assertions", []):
+                power_flags.setdefault(assertion["net"], []).append(
+                    observed["pin_positions"][(assertion["refdes"], "1")]
+                )
             for action in wire_actions:
                 if isinstance(action, AddWirePath):
                     resolve_wire_path_points(action, inventory)
@@ -1370,7 +1458,9 @@ class NativeSchematicEngine:
                 project.mkdir()
                 target = project / schematic.name
                 target.write_bytes(schematic.read_bytes())
-            target.write_text(edit_schematic_text(target.read_text(), actions, inventory))
+            target.write_text(
+                edit_schematic_text(target.read_text(), actions, inventory, power_flags)
+            )
             relative = target.relative_to(stage)
             stage.rename(directory)
             return directory / relative

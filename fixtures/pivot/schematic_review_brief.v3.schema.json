@@ -1,0 +1,162 @@
+{
+  "$defs": {
+    "ReviewCriterion": {
+      "additionalProperties": false,
+      "description": "One owner-facing requirement and the machine/rubric evidence for it.",
+      "properties": {
+        "criterion_id": {
+          "enum": [
+            "label_association",
+            "page_composition",
+            "visible_local_rails"
+          ],
+          "title": "Criterion Id",
+          "type": "string"
+        },
+        "requirement": {
+          "minLength": 1,
+          "title": "Requirement",
+          "type": "string"
+        },
+        "measurements": {
+          "items": {
+            "$ref": "#/$defs/ReviewMeasurement"
+          },
+          "title": "Measurements",
+          "type": "array"
+        },
+        "visual_rubric": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Visual Rubric",
+          "type": "array"
+        },
+        "qualification_status": {
+          "enum": [
+            "qualified",
+            "not_yet_qualified"
+          ],
+          "title": "Qualification Status",
+          "type": "string"
+        },
+        "limitation": {
+          "minLength": 1,
+          "title": "Limitation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "criterion_id",
+        "requirement",
+        "measurements",
+        "visual_rubric",
+        "qualification_status",
+        "limitation"
+      ],
+      "title": "ReviewCriterion",
+      "type": "object"
+    },
+    "ReviewMeasurement": {
+      "additionalProperties": false,
+      "description": "A reported measurable constraint, with its qualification level explicit.",
+      "properties": {
+        "check_id": {
+          "minLength": 1,
+          "title": "Check Id",
+          "type": "string"
+        },
+        "operator": {
+          "enum": [
+            "<=",
+            ">=",
+            "=="
+          ],
+          "title": "Operator",
+          "type": "string"
+        },
+        "threshold": {
+          "minimum": 0,
+          "title": "Threshold",
+          "type": "number"
+        },
+        "unit": {
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        },
+        "source": {
+          "minLength": 1,
+          "title": "Source",
+          "type": "string"
+        },
+        "qualification": {
+          "enum": [
+            "independent_gate",
+            "profile_target"
+          ],
+          "title": "Qualification",
+          "type": "string"
+        }
+      },
+      "required": [
+        "check_id",
+        "operator",
+        "threshold",
+        "unit",
+        "source",
+        "qualification"
+      ],
+      "title": "ReviewMeasurement",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Owner brief that accepts conventional power symbols as rail presentation.",
+  "properties": {
+    "schema_version": {
+      "const": "schematic-review-brief.v3",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "brief_id": {
+      "const": "owner-readability.v3",
+      "title": "Brief Id",
+      "type": "string"
+    },
+    "scope": {
+      "minLength": 1,
+      "title": "Scope",
+      "type": "string"
+    },
+    "source_documents": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Source Documents",
+      "type": "array"
+    },
+    "criteria": {
+      "items": {
+        "$ref": "#/$defs/ReviewCriterion"
+      },
+      "maxItems": 3,
+      "minItems": 3,
+      "title": "Criteria",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "brief_id",
+    "scope",
+    "source_documents",
+    "criteria"
+  ],
+  "title": "SchematicReviewBriefV3",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-kicad-designer.local/schemas/schematic-review-brief.v3.json"
+}

@@ -4,6 +4,8 @@ For each design with asserted power nets, the native compiler output is assessed
 each net that lacks a visible wire path receives ``connect_rail``. When no safe route
 exists, single grid-aligned ``move_symbols`` edits of that net's terminal owners are
 searched, each followed by a full native reassessment and another ``connect_rail``.
+With ``--power-symbols`` (review brief v3), a rail that cannot be wired is instead drawn
+with ``use_power_symbols``, and a final plan draws every failing rail that way.
 No fixture-specific coordinates are used. Every candidate is retained.
 """
 
@@ -16,7 +18,13 @@ from pathlib import Path
 import subprocess
 import time
 
-from ai_kicad.pivot.schematic_review import ConnectRail, MoveSymbols, file_hash, write_json
+from ai_kicad.pivot.schematic_review import (
+    ConnectRail,
+    MoveSymbols,
+    UsePowerSymbols,
+    file_hash,
+    write_json,
+)
 from ai_kicad.pivot.schematic_review_native import NativeSchematicEngine
 from tools.pivot.experiment_paths import create_experiment_dir
 
@@ -37,16 +45,28 @@ DIRECTIONS = ((1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -
 
 
 def rail_witnesses(assessment) -> list[dict]:
-    return assessment.report.get("layout", {}).get("observed_power_rail_wire_path_witnesses", [])
+    layout = assessment.report.get("layout", {})
+    if "rail_presentation" in assessment.report["checks"]:
+        return layout.get("rail_presentation_witnesses", [])
+    return layout.get("observed_power_rail_wire_path_witnesses", [])
 
 
 def hard_pass(assessment) -> bool:
-    return all(assessment.report["checks"].get(name) == "PASS" for name in HARD_CHECKS)
+    checks = assessment.report["checks"]
+    required = HARD_CHECKS + (("power_symbol_clearance",) if "rail_presentation" in checks else ())
+    return all(checks.get(name) == "PASS" for name in required)
 
 
-def repair_design(name: str, launcher: Path, output: Path, budget_seconds: float) -> dict:
-    design = json.loads((ROOT / "fixtures/m2b" / f"{name}.json").read_text())
-    engine = NativeSchematicEngine(design, launcher)
+def design_path(name: str) -> Path:
+    path = ROOT / "fixtures/m2b" / f"{name}.json"
+    return path if path.is_file() else ROOT / "fixtures/pivot" / name / "design.json"
+
+
+def repair_design(
+    name: str, launcher: Path, output: Path, budget_seconds: float, power_symbols: bool = False
+) -> dict:
+    design = json.loads(design_path(name).read_text())
+    engine = NativeSchematicEngine(design, launcher, power_symbol_rails=power_symbols)
     references = {component["id"]: component["refdes"] for component in design["components"]}
     owners = {
         net["id"]: sorted({references[component] for component, _pin in net["members"]})
@@ -85,16 +105,27 @@ def repair_design(name: str, launcher: Path, output: Path, budget_seconds: float
         {"candidate": directory.name, "action": "initial", "checks": initial.report["checks"]}
     )
 
-    def plan(priority: list[str]) -> tuple[object, list[dict]]:
+    def plan(priority: list[str], style: str = "wire") -> tuple[object, list[dict]]:
         current, applied, blocked = initial, [], set()
         while pending := [w["net"] for w in rail_witnesses(current) if w["net"] not in blocked]:
             if time.monotonic() - started > budget_seconds:
                 break
             net = min(pending, key=lambda item: (priority.index(item), item))
-            connected = attempt(current, ConnectRail(operation="connect_rail", net=net))
-            if connected is not None and hard_pass(connected):
-                current = connected
-                applied.append({"operation": "connect_rail", "net": net})
+            edits = [ConnectRail(operation="connect_rail", net=net)] if style == "wire" else []
+            if power_symbols:
+                edits.append(UsePowerSymbols(operation="use_power_symbols", net=net))
+            for edit in edits:
+                edited = attempt(current, edit)
+                if edited is not None and hard_pass(edited):
+                    current = edited
+                    applied.append(edit.model_dump(mode="json"))
+                    break
+            else:
+                edited = None
+            if edited is not None:
+                continue
+            if power_symbols:
+                blocked.add(net)
                 continue
             found = False
             for reference in owners[net]:
@@ -129,18 +160,25 @@ def repair_design(name: str, launcher: Path, output: Path, budget_seconds: float
     # A rail routed first can enclose another rail's terminals. When a net stays blocked,
     # replan from the initial schematic with the blocked nets first; keep the best plan.
     failing = sorted({w["net"] for w in rail_witnesses(initial)})
-    orderings, plans, outcomes = [failing], [], []
+    orderings, plans, outcomes = [(failing, "wire")], [], []
     while orderings and time.monotonic() - started <= budget_seconds:
-        priority = orderings.pop(0)
-        final, edits = plan(priority)
+        priority, style = orderings.pop(0)
+        final, edits = plan(priority, style)
         unresolved = sorted({w["net"] for w in rail_witnesses(final)})
-        plans.append({"priority": priority, "unresolved_nets": unresolved})
+        if not hard_pass(final):
+            unresolved = sorted(set(unresolved) | {"(hard checks)"})
+        plans.append({"priority": priority, "style": style, "unresolved_nets": unresolved})
         outcomes.append((final, edits))
         if not unresolved:
             break
-        retry = unresolved + [net for net in failing if net not in unresolved]
-        if retry not in [entry["priority"] for entry in plans]:
-            orderings.append(retry)
+        retry = [net for net in unresolved if net in failing]
+        retry += [net for net in failing if net not in retry]
+        if (retry, "wire") not in [(entry["priority"], entry["style"]) for entry in plans]:
+            orderings.append((retry, "wire"))
+        elif power_symbols and not any(entry["style"] == "power" for entry in plans):
+            # Every wiring order left a rail unresolved: draw each failing rail with
+            # power symbols, the conventional presentation brief v3 accepts.
+            orderings.append((failing, "power"))
     best = min(range(len(plans)), key=lambda index: (len(plans[index]["unresolved_nets"]), index))
     current, applied = outcomes[best]
     result = {
@@ -169,6 +207,11 @@ def main() -> None:
     parser.add_argument("--designs", nargs="*", default=list(DESIGNS))
     parser.add_argument("--budget-seconds", type=float, default=1800)
     parser.add_argument("--jobs", type=int, default=4)
+    parser.add_argument(
+        "--power-symbols",
+        action="store_true",
+        help="apply review brief v3: rails may be drawn with matching power symbols",
+    )
     args = parser.parse_args()
     root = create_experiment_dir(ROOT, args.experiment_id)
     commit = subprocess.run(
@@ -184,7 +227,12 @@ def main() -> None:
     with ProcessPoolExecutor(max_workers=args.jobs) as pool:
         futures = {
             name: pool.submit(
-                repair_design, name, args.kicad_apprun, root / name, args.budget_seconds
+                repair_design,
+                name,
+                args.kicad_apprun,
+                root / name,
+                args.budget_seconds,
+                args.power_symbols,
             )
             for name in args.designs
         }
@@ -198,9 +246,11 @@ def main() -> None:
             for path in (
                 "src/ai_kicad/pivot/schematic_review.py",
                 "src/ai_kicad/pivot/schematic_review_native.py",
+                "src/ai_kicad/pivot/power_symbols.py",
                 "tools/pivot/run_rail_repair_corpus.py",
             )
         },
+        "rail_policy": "wire_or_power_symbols (brief v3)" if args.power_symbols else "wire_only",
         "designs": {
             name: {key: value for key, value in result.items() if key != "steps"}
             for name, result in results.items()

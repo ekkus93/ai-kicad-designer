@@ -1,0 +1,117 @@
+{
+  "schema_version": "schematic-review-brief.v3",
+  "brief_id": "owner-readability.v3",
+  "scope": "Single-sheet schematics generated from a pinned intended circuit. Keep component references, values, and electrical connectivity unchanged while improving presentation.",
+  "source_documents": [
+    "docs/MCP_ARCHITECTURE_SPEC.md#6.5",
+    "docs/SCHEMATIC_LAYOUT_SPEC.md#4",
+    "docs/SCHEMATIC_LAYOUT_SPEC.md#5",
+    "docs/SCHEMATIC_LAYOUT_SPEC.md#6",
+    "TODO owner direction confirmed 2026-10-25",
+    "Owner direction 2026-10-27: accept power symbols for rails, as conventional 555 schematics draw them"
+  ],
+  "criteria": [
+    {
+      "criterion_id": "label_association",
+      "requirement": "Every required component reference and value is legible and clearly associated with its own symbol.",
+      "measurements": [
+        {
+          "check_id": "field_locality",
+          "operator": "<=",
+          "threshold": 25.4,
+          "unit": "mm",
+          "source": "schematic review engine default maximum field-envelope distance",
+          "qualification": "independent_gate"
+        },
+        {
+          "check_id": "field_separation",
+          "operator": "==",
+          "threshold": 0,
+          "unit": "overlapping field pairs",
+          "source": "native field-envelope observer",
+          "qualification": "independent_gate"
+        },
+        {
+          "check_id": "field_owner_association",
+          "operator": "<=",
+          "threshold": 5.08,
+          "unit": "mm",
+          "source": "independent native symbol-anchor and text-envelope observer",
+          "qualification": "independent_gate"
+        }
+      ],
+      "visual_rubric": [
+        "Read each reference and value on the full-page image or its supplied detail image; flag fields that are too small, clipped, visually stranded, or ambiguous despite passing distance checks.",
+        "Confirm each field is visually closest and clearly related to its owning symbol, not a neighboring symbol."
+      ],
+      "qualification_status": "not_yet_qualified",
+      "limitation": "The 25.4 mm locality limit and non-overlap checks catch specific geometric defects; they do not establish human legibility or association by themselves. The 5.08 mm owner-advantage heuristic catches gross geometric mismatches; it does not prove human association."
+    },
+    {
+      "criterion_id": "page_composition",
+      "requirement": "The page has balanced functional grouping, clear reading flow, and enough space to follow the circuit without crowding.",
+      "measurements": [
+        {
+          "check_id": "observed_page_utilization",
+          "operator": "<=",
+          "threshold": 0.65,
+          "unit": "fraction of usable sheet area",
+          "source": "SCHEMATIC_LAYOUT_SPEC.md section 5 drafting target",
+          "qualification": "profile_target"
+        },
+        {
+          "check_id": "observed_page_margin_pass",
+          "operator": "==",
+          "threshold": 1,
+          "unit": "boolean",
+          "source": "independent observed-layout sheet-margin check",
+          "qualification": "independent_gate"
+        }
+      ],
+      "visual_rubric": [
+        "Inspect the full page for recognizable functional groups and a natural signal-flow direction.",
+        "Flag excessive unused space, crowding, fragmented motifs, confusing crossings, or a page that requires zooming to understand the main organization.",
+        "Use the detail image to confirm that local labels, pins, wires, and branches remain easy to follow."
+      ],
+      "qualification_status": "not_yet_qualified",
+      "limitation": "The 65% utilization value is a starting layout target, not a validated human-quality threshold; balance and flow remain visual judgments pending P6-011b qualification."
+    },
+    {
+      "criterion_id": "visible_local_rails",
+      "requirement": "Every terminal of an asserted REF/VCC rail is visibly connected to that rail: either by continuous wires to a shared rail, or by a matching power symbol (ground glyph for return rails, supply arrow otherwise) on each separately drawn terminal group. Repeated same-name net labels alone are not accepted.",
+      "measurements": [
+        {
+          "check_id": "electrical_equivalence",
+          "operator": "==",
+          "threshold": 1,
+          "unit": "boolean",
+          "source": "independent native netlist comparison to the pinned intended circuit",
+          "qualification": "independent_gate"
+        },
+        {
+          "check_id": "rail_presentation",
+          "operator": "==",
+          "threshold": 1,
+          "unit": "boolean",
+          "source": "independent native wire-geometry grouping of asserted-net terminals; each separated group must touch a power symbol whose value names that rail",
+          "qualification": "independent_gate"
+        },
+        {
+          "check_id": "power_symbol_clearance",
+          "operator": "==",
+          "threshold": 0,
+          "unit": "power-symbol glyph or value boxes touching another symbol, field, label, visible pin number or foreign wire",
+          "source": "native power-symbol geometry from the locked KiCad 10.0.6 power library",
+          "qualification": "independent_gate"
+        }
+      ],
+      "visual_rubric": [
+        "For each REF or VCC net in the intended circuit, confirm that every terminal either joins a visible common wire trunk or ends at a clearly drawn power symbol naming that rail; flag terminals connected only by text labels.",
+        "Check that power symbols read naturally (ground glyphs below or beside their terminals, supply arrows above or beside them), do not crowd nearby parts or text, and that names are legible.",
+        "Check that branch junctions are visibly unambiguous and do not visually merge distinct supply or return nets."
+      ],
+      "qualification_status": "not_yet_qualified",
+      "limitation": "Netlist equivalence proves electrical identity. The rail-presentation gate proves that every separated rail group is joined by wire or marked by a matching power symbol; power-symbol clearance uses conservative glyph and text boxes. Neither proves human readability, and the visual rubric is not yet qualified. Power symbols are global connections: the KiCad netlist, not the drawing, establishes that they join the intended terminals."
+    }
+  ]
+}
