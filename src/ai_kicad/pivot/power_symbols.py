@@ -13,6 +13,7 @@ import hashlib
 import heapq
 import json
 from pathlib import Path
+from typing import Callable
 import uuid
 
 from ai_kicad.m2_geometry import label_text_rect, point_on_segment
@@ -415,6 +416,7 @@ def use_power_symbols_text(
     terminal_inventory: list[dict],
     flag_points: list[Point],
     local_pairs: list[tuple[Point, Point]] = (),
+    layout_check: Callable[[str], str | None] | None = None,
 ) -> str:
     """Present one rail conventionally: a power symbol at each terminal, no rail wiring.
 
@@ -424,6 +426,9 @@ def use_power_symbols_text(
     the supply pin it serves). Each resulting wire
     group then receives one power symbol, placed where it touches no other drawing item
     when such a position exists (otherwise the clearance check reports the conflict).
+    ``layout_check`` returns the independent observer's objection to a candidate sheet,
+    if any; a group keeps its labels until its own symbol replaces them, so every
+    intermediate sheet is a valid label-form drawing for that observer.
     """
     from .schematic_review_native import _wire_trees
 
@@ -477,6 +482,13 @@ def use_power_symbols_text(
     project_node = one(one(next(iter(children(tree, "symbol"))), "instances"), "project")
     project = (project_node[1], one(project_node, "path")[1])
 
+    remaining = [
+        segment for segment, root in zip(segments, roots) if root not in rail_roots
+    ] + list(kept)
+
+    def anchored(point: Point) -> bool:
+        return point in terminals or any(point_on_segment(point, *item) for item in remaining)
+
     wire_index = -1
     pieces, cursor = [], 0
     for start, end, node in _forms(text):
@@ -485,7 +497,10 @@ def use_power_symbols_text(
             wire_index += 1
             drop = wire_index in removed_wires
         elif node[0] == "label":
-            drop = node[1] == net
+            # Labels left on removed rail runs go now; the rest go with their group.
+            drop = node[1] == net and not anchored(
+                (_nm(one(node, "at")[1]), _nm(one(node, "at")[2]))
+            )
         elif node[0] == "junction":
             drop = (_nm(one(node, "at")[1]), _nm(one(node, "at")[2])) in rail_segment_points
         if drop:
@@ -521,8 +536,25 @@ def use_power_symbols_text(
     used = {item["reference"] for item in power_symbols(tree)}
     serial = 1
     for indexes, group_segments in _point_group_wiring_of(tree, points):
-        tree = parse(text)
         members = [points[index] for index in indexes]
+        group_points = set(members) | {p for segment in group_segments for p in segment}
+        text = "".join(
+            _without_forms(
+                text,
+                lambda node: node[0] == "label"
+                and node[1] == net
+                and any(
+                    (_nm(one(node, "at")[1]), _nm(one(node, "at")[2])) == point
+                    or any(
+                        point_on_segment((_nm(one(node, "at")[1]), _nm(one(node, "at")[2])), *seg)
+                        for seg in group_segments
+                    )
+                    for point in group_points
+                ),
+            )
+        )
+        tree = parse(text)
+        baseline_ok = layout_check is None or layout_check(text) is None
         while f"#PWR{serial:02d}" in used:
             serial += 1
         reference = f"#PWR{serial:02d}"
@@ -588,9 +620,14 @@ def use_power_symbols_text(
                 "net": net,
                 "reference": reference,
             }
-            if not _collisions(trial_text, trial_tree, item):
-                chosen = (point, direction, stub)
-                break
+            if _collisions(trial_text, trial_tree, item):
+                continue
+            if layout_check is not None and baseline_ok:
+                instance = _instance(lib_id, reference, net, point, item["angle"], project)
+                if layout_check(_append_forms(trial_text, [instance])) is not None:
+                    continue
+            chosen = (point, direction, stub)
+            break
         if chosen is None:
             *_rank, point, _way, direction = options[0]
             chosen = (point, direction, None)
@@ -600,8 +637,9 @@ def use_power_symbols_text(
             _instance(lib_id, reference, net, point, _angle_for(lib_id, direction), project)
         )
         text = _append_forms(text, forms)
+    text = "".join(_without_forms(text, lambda node: node[0] == "label" and node[1] == net))
     text = _prune_dangling(text)
-    text = _reaim_colliding(text, project)
+    text = _reaim_colliding(text, project, layout_check)
     parse(text)
     return text
 
@@ -671,7 +709,11 @@ def _prune_dangling(text: str) -> str:
         text = "".join(_without_forms(text, drop))
 
 
-def _reaim_colliding(text: str, project: tuple[str, str]) -> str:
+def _reaim_colliding(
+    text: str,
+    project: tuple[str, str],
+    layout_check: Callable[[str], str | None] | None = None,
+) -> str:
     """Turn any colliding power symbol, of any rail, to a clear direction at its own point."""
     for _round in range(4):
         tree = parse(text)
@@ -687,7 +729,7 @@ def _reaim_colliding(text: str, project: tuple[str, str]) -> str:
                 trial = dict(item, angle=_angle_for(item["lib_id"], direction))
                 if trial["angle"] == item["angle"] or _collisions(text, tree, trial):
                     continue
-                text = "".join(
+                candidate = "".join(
                     _without_forms(
                         text,
                         lambda node, reference=item["reference"]: node[0] == "symbol"
@@ -697,8 +739,8 @@ def _reaim_colliding(text: str, project: tuple[str, str]) -> str:
                         ),
                     )
                 )
-                text = _append_forms(
-                    text,
+                candidate = _append_forms(
+                    candidate,
                     [
                         _instance(
                             item["lib_id"],
@@ -710,6 +752,9 @@ def _reaim_colliding(text: str, project: tuple[str, str]) -> str:
                         )
                     ],
                 )
+                if layout_check is not None and layout_check(candidate) is not None:
+                    continue
+                text = candidate
                 changed = True
                 break
             if changed:

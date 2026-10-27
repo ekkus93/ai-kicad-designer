@@ -155,6 +155,7 @@ def edit_schematic_text(
                 terminal_inventory,
                 context.get("flags", []),
                 context.get("local_pairs", []),
+                context.get("layout_check"),
             )
         elif isinstance(action, TranslateSheet):
             if action.dx_mm == 0 and action.dy_mm == 0:
@@ -1453,6 +1454,20 @@ class NativeSchematicEngine:
             observed = observe(schematic, netlist)
             inventory = terminal_inventory_for_design(design, observed)
             rail_context = rail_context_for_design(design, observed)
+
+            def layout_check(candidate: str) -> str | None:
+                """The protected observer's objection to a candidate's label form."""
+                with tempfile.TemporaryDirectory(prefix=".label-view-") as folder:
+                    view = Path(folder) / schematic.name
+                    view.write_text(label_view_text(candidate))
+                    try:
+                        check_observed_layout(view, observe(view, netlist), design)
+                    except (InputError, ValueError, KeyError) as error:
+                        return str(error)
+                return None
+
+            for entry in rail_context.values():
+                entry["layout_check"] = layout_check
             for action in wire_actions:
                 if isinstance(action, AddWirePath):
                     resolve_wire_path_points(action, inventory)

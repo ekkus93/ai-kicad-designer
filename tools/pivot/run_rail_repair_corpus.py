@@ -4,8 +4,9 @@ For each design with asserted power nets, the native compiler output is assessed
 each net that lacks a visible wire path receives ``connect_rail``. When no safe route
 exists, single grid-aligned ``move_symbols`` edits of that net's terminal owners are
 searched, each followed by a full native reassessment and another ``connect_rail``.
-With ``--power-symbols`` (review brief v3), a rail that cannot be wired is instead drawn
-with ``use_power_symbols``, and a final plan draws every failing rail that way.
+With ``--power-symbols`` (review brief v3), a rail that cannot be wired is next drawn
+with ``use_power_symbols`` before the move search, and a final plan draws every failing
+rail with power symbols.
 No fixture-specific coordinates are used. Every candidate is retained.
 """
 
@@ -135,9 +136,6 @@ def repair_design(
             else:
                 edited = None
             if edited is not None:
-                continue
-            if power_symbols:
-                blocked.add(net)
                 continue
             found = False
             for reference in owners[net]:
