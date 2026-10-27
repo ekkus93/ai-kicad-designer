@@ -50,10 +50,15 @@ def main() -> None:
         "--review-brief", type=Path, default=ROOT / "fixtures/pivot/schematic_review_brief_v2.json"
     )
     parser.add_argument("--max-reviews", type=int, default=8)
+    parser.add_argument("--context-tokens", type=int, default=16384)
     args = parser.parse_args()
     root = create_experiment_dir(ROOT, args.experiment_id)
     service = NativeSchematicReviewService(
-        args.kicad_apprun, args.model, review_brief=args.review_brief, max_reviews=args.max_reviews
+        args.kicad_apprun,
+        args.model,
+        review_brief=args.review_brief,
+        max_reviews=args.max_reviews,
+        context_tokens=args.context_tokens,
     )
     results = {}
     for design in CORPUS:
@@ -95,6 +100,7 @@ def main() -> None:
             )
         },
         "model": args.model,
+        "context_tokens": args.context_tokens,
         "review_brief": str(args.review_brief.relative_to(ROOT)),
         "budgets": service.budgets,
         "results": results,

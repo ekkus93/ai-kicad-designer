@@ -22,9 +22,11 @@ class NativeSchematicReviewService:
         max_reviews: int = 8,
         max_seconds: float = 1800,
         max_model_tokens: int = 120_000,
+        context_tokens: int = 16384,
     ):
         self.launcher = launcher
         self.model = model
+        self.context_tokens = context_tokens
         self.max_field_distance_mm, self.brief_text = resolve_review_brief(review_brief, None)
         # The loop checks its wall-clock budget between operations; one KiCad or model call
         # may still be running when it expires.
@@ -42,6 +44,8 @@ class NativeSchematicReviewService:
             maximum_field_distance_mm=self.max_field_distance_mm,
         )
         reviewer = OllamaSchematicReviewer(
-            self.model, **({"review_brief": self.brief_text} if self.brief_text else {})
+            self.model,
+            context_tokens=self.context_tokens,
+            **({"review_brief": self.brief_text} if self.brief_text else {}),
         )
         return run_schematic_review(engine, reviewer, output, **self.budgets)
