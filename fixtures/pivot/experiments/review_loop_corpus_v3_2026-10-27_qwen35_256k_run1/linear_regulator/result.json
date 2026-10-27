@@ -1,0 +1,91 @@
+{
+  "schema_version": "schematic-review-loop.v1",
+  "status": "ACCEPTED_FOR_REVIEW",
+  "reason": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, rail_presentation, power_symbol_clearance, field_separation, field_locality, field_owner_association) pass. Visual inspection confirms legible labels, clear association with symbols, balanced page composition, and continuous visible rails for all nets without crowding or ambiguity.",
+  "accepted_schematic": "candidates/002/project/LinearRegulator.kicad_sch",
+  "best_passing_schematic": "candidates/002/project/LinearRegulator.kicad_sch",
+  "reviewer": {
+    "model": "qwen35-256k:latest",
+    "digest": "b528609af3c0d8337a0fa6e27e6ffb54d3d25b23531abc37c38a5155fbcf2961",
+    "ollama_version": "0.40.8",
+    "capabilities": [
+      "completion",
+      "vision",
+      "tools",
+      "thinking"
+    ],
+    "options": {
+      "temperature": 0,
+      "seed": 20261025,
+      "num_ctx": 262144,
+      "num_predict": 2048
+    },
+    "think": false
+  },
+  "iterations": [
+    {
+      "iteration": 0,
+      "revision": "sha256:4d811114f2b9d5b56a4c2b8f75b022d1de6b9cbeae6bfcd0bdcfbf4911da625a",
+      "schematic": "candidates/000/project/LinearRegulator.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:4d811114f2b9d5b56a4c2b8f75b022d1de6b9cbeae6bfcd0bdcfbf4911da625a",
+        "decision": "revise",
+        "issues": [
+          "rail_presentation: The REF and VIN nets have disconnected terminal groups that are neither joined by a continuous wire nor marked with a matching power symbol.",
+          "visual_rail_continuity: Wires for the REF net (connecting C1, C2, J3, U1) and the VIN net (connecting C1, J1, U1) appear fragmented or lack explicit rail presentation as required by the review brief."
+        ],
+        "actions": [
+          {
+            "operation": "connect_rail",
+            "net": "REF"
+          }
+        ],
+        "rationale": "The visible_rail_continuity check failed because terminal groups for the REF and VIN nets are not visually connected via a continuous wire trunk nor marked with power symbols. The connect_rail action will generate obstacle-checked orthogonal paths to join these disconnected terminals into a single visual rail, satisfying the requirement that every separated group must touch a power symbol or be joined by wire."
+      }
+    },
+    {
+      "iteration": 1,
+      "revision": "sha256:7386076fba6243eeff6958dd99ba15de7aae9e5762faa5f5adb27c50a1010f8f",
+      "schematic": "candidates/001/project/LinearRegulator.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:7386076fba6243eeff6958dd99ba15de7aae9e5762faa5f5adb27c50a1010f8f",
+        "decision": "revise",
+        "issues": [
+          "rail_presentation: The VIN net terminals (C1.1, U1.1) and (J1.1) are not visually joined to a common rail nor marked by a matching power symbol.",
+          "rail_presentation: The VOUT net terminals (J2.1, C2.1) and (U1.3) are not visually joined to a common rail nor marked by a matching power symbol."
+        ],
+        "actions": [
+          {
+            "operation": "connect_rail",
+            "net": "VIN"
+          }
+        ],
+        "rationale": "The visible_rail_continuity check failed because the VIN net terminals are disconnected in the drawing representation, despite being electrically equivalent. The connect_rail action will wire every disconnected terminal group of the VIN net with obstacle-checked routes to establish visual continuity."
+      }
+    },
+    {
+      "iteration": 2,
+      "revision": "sha256:2d845588dd0b49ea303002315a2c003051a8fb523e1a2d093b2153c419a89e77",
+      "schematic": "candidates/002/project/LinearRegulator.kicad_sch",
+      "independent_checks_pass": true,
+      "review": {
+        "base_revision": "sha256:2d845588dd0b49ea303002315a2c003051a8fb523e1a2d093b2153c419a89e77",
+        "decision": "accept",
+        "issues": [],
+        "actions": [],
+        "rationale": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, rail_presentation, power_symbol_clearance, field_separation, field_locality, field_owner_association) pass. Visual inspection confirms legible labels, clear association with symbols, balanced page composition, and continuous visible rails for all nets without crowding or ambiguity."
+      }
+    }
+  ],
+  "model_tokens": 34602,
+  "elapsed_seconds": 98.948,
+  "budgets": {
+    "max_reviews": 8,
+    "max_seconds": 1800,
+    "max_model_tokens": 120000
+  },
+  "human_electrical_review": "PENDING",
+  "locked_host_qualification": false
+}

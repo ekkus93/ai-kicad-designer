@@ -1,0 +1,107 @@
+{
+  "schema_version": "schematic-review-loop.v1",
+  "status": "NO_PROGRESS",
+  "reason": "model repeated an invalid review: no obstacle-free native wire route joins the remaining REF wire groups. Repeating connect_rail for REF will fail again on this revision; first request move_symbols for one of ['C1', 'C2', 'C3', 'J1', 'U1'] by a grid-aligned offset into open space, then request connect_rail again",
+  "accepted_schematic": null,
+  "best_passing_schematic": null,
+  "reviewer": {
+    "model": "qwen35-256k:latest",
+    "digest": "b528609af3c0d8337a0fa6e27e6ffb54d3d25b23531abc37c38a5155fbcf2961",
+    "ollama_version": "0.40.8",
+    "capabilities": [
+      "completion",
+      "vision",
+      "tools",
+      "thinking"
+    ],
+    "options": {
+      "temperature": 0,
+      "seed": 20261025,
+      "num_ctx": 262144,
+      "num_predict": 2048
+    },
+    "think": false
+  },
+  "iterations": [
+    {
+      "iteration": 0,
+      "revision": "sha256:5a8cd9024cdd91a03a9730754a8270499c62dfad2d88a80156b9e37e35c63fb7",
+      "schematic": "candidates/000/project/SallenKey.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:5a8cd9024cdd91a03a9730754a8270499c62dfad2d88a80156b9e37e35c63fb7",
+        "decision": "revise",
+        "issues": [
+          "rail_presentation: The REF, VMINUS, and VPLUS nets are not visually joined by continuous wires nor marked by power symbols at their separated terminal groups.",
+          "field_owner_association: Fields for U1 unit 3 (Reference/Value) are too close to C2 fields, violating the 5.08 mm owner-advantage heuristic."
+        ],
+        "actions": [
+          {
+            "operation": "connect_rail",
+            "net": "REF"
+          }
+        ],
+        "rationale": "The connect_rail operation will wire all disconnected terminal groups of the REF net with obstacle-checked routes, satisfying the visible_rail_continuity requirement. This addresses the primary rail_presentation failure. The field_owner_association issue is a secondary layout concern that can be addressed in subsequent iterations if necessary after the wiring is resolved."
+      },
+      "rejected_response": "no obstacle-free native wire route joins the remaining REF wire groups. Repeating connect_rail for REF will fail again on this revision; first request move_symbols for one of ['C1', 'C2', 'C3', 'J1', 'U1'] by a grid-aligned offset into open space, then request connect_rail again"
+    },
+    {
+      "iteration": 1,
+      "revision": "sha256:5a8cd9024cdd91a03a9730754a8270499c62dfad2d88a80156b9e37e35c63fb7",
+      "schematic": "candidates/000/project/SallenKey.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:5a8cd9024cdd91a03a9730754a8270499c62dfad2d88a80156b9e37e35c63fb7",
+        "decision": "revise",
+        "issues": [
+          "rail_presentation: FAIL - Power rails (REF, VPLUS, VMINUS) are not visually continuous or marked with power symbols.",
+          "field_owner_association: FAIL - Fields for U1.3 Reference and Value are too close to C2 fields."
+        ],
+        "actions": [
+          {
+            "operation": "move_symbols",
+            "references": [
+              "C1",
+              "C2",
+              "C3"
+            ],
+            "dx_mm": 0.0,
+            "dy_mm": 1.27
+          }
+        ],
+        "rationale": "The independent checks report failures in rail_presentation and field_owner_association. The rails are disconnected wire groups without power symbols, and some fields are too close to neighboring components. Moving C1, C2, and C3 by a grid-aligned offset (1.27 mm) into open space will clear the field association violations and create room for subsequent connect_rail operations to establish continuous rail paths or place appropriate power symbols."
+      }
+    },
+    {
+      "iteration": 2,
+      "revision": "sha256:4400fd6df1d8222f152effbde8a3749e0e8b6bc5f1aeca1d465d26334fb0a378",
+      "schematic": "candidates/002/project/SallenKey.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:4400fd6df1d8222f152effbde8a3749e0e8b6bc5f1aeca1d465d26334fb0a378",
+        "decision": "revise",
+        "issues": [
+          "rail_presentation: The REF, VPLUS, and VMINUS nets are electrically correct but visually disconnected. Terminals for these nets are neither joined by continuous wires nor marked by matching power symbols.",
+          "label_association: Power rail terminals (e.g., U1.5, C1.2, J1.5) lack clear visual association with a shared rail or power symbol, violating the visible_local_rails criterion."
+        ],
+        "actions": [
+          {
+            "operation": "connect_rail",
+            "net": "REF"
+          }
+        ],
+        "rationale": "The connect_rail operation will wire all disconnected terminal groups of the 'REF' net with obstacle-checked routes. This satisfies the visible_local_rails requirement by creating a continuous visual path for the ground rail, replacing the current state where terminals are stranded or connected only by implicit netlist equivalence."
+      },
+      "rejected_response": "no obstacle-free native wire route joins the remaining REF wire groups. Repeating connect_rail for REF will fail again on this revision; first request move_symbols for one of ['C1', 'C2', 'C3', 'J1', 'U1'] by a grid-aligned offset into open space, then request connect_rail again"
+    }
+  ],
+  "model_tokens": 46886,
+  "elapsed_seconds": 123.725,
+  "budgets": {
+    "max_reviews": 8,
+    "max_seconds": 1800,
+    "max_model_tokens": 120000
+  },
+  "human_electrical_review": "PENDING",
+  "locked_host_qualification": false
+}
