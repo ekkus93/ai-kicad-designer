@@ -1,0 +1,140 @@
+{
+  "schema_version": "schematic-review-loop.v1",
+  "status": "NO_PROGRESS",
+  "reason": "model repeated an invalid review: move_symbols references not found: ['3', 'unit']",
+  "accepted_schematic": null,
+  "best_passing_schematic": null,
+  "reviewer": {
+    "model": "qwen35-256k:latest",
+    "digest": "b528609af3c0d8337a0fa6e27e6ffb54d3d25b23531abc37c38a5155fbcf2961",
+    "ollama_version": "0.40.8",
+    "capabilities": [
+      "completion",
+      "vision",
+      "tools",
+      "thinking"
+    ],
+    "options": {
+      "temperature": 0,
+      "seed": 20261025,
+      "num_ctx": 262144,
+      "num_predict": 2048
+    },
+    "think": false
+  },
+  "iterations": [
+    {
+      "iteration": 0,
+      "revision": "sha256:1813abca040a783a67c80e22a9f609b0eb8c91f8b28b8d9f7d9b501a7339df56",
+      "schematic": "candidates/000/project/InvertingGain.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:1813abca040a783a67c80e22a9f609b0eb8c91f8b28b8d9f7d9b501a7339df56",
+        "decision": "revise",
+        "issues": [
+          "visible_rail_continuity: The VPLUS and VMINUS nets lack continuous visible wire paths between their terminals (U1 pins 8/4 to J1 pins 3/4). Netlist equivalence does not satisfy the visual rubric.",
+          "field_owner_association: Fields for U1 unit 3 (Reference and Value) are closer to neighboring symbols (R1, C2) than to their own symbol, violating the 5.08 mm owner-advantage heuristic."
+        ],
+        "actions": [
+          {
+            "operation": "connect_rail",
+            "net": "VPLUS"
+          }
+        ],
+        "rationale": "The visible_rail_continuity check failed for VPLUS and VMINUS nets because no explicit wire path exists between the power supply terminals on U1 and J1. The connect_rail operation will generate obstacle-checked orthogonal routes to establish physical continuity. Field association issues for U1 unit 3 require subsequent move_symbols if the generated wires do not resolve the proximity conflict, but the primary electrical defect is addressed first."
+      }
+    },
+    {
+      "iteration": 1,
+      "revision": "sha256:9a7d6cd235c21fe9b9f512efe84deeb1099ed0bd4de6e0743a12f9231961789e",
+      "schematic": "candidates/001/project/InvertingGain.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:9a7d6cd235c21fe9b9f512efe84deeb1099ed0bd4de6e0743a12f9231961789e",
+        "decision": "revise",
+        "issues": [
+          "field_owner_association: U1 unit 3 Reference field is closer to R1 than its own symbol edge (owner_advantage_mm: 8.88 < 5.08 limit)",
+          "field_owner_association: U1 unit 3 Value field is closer to C2 than its own symbol edge (owner_advantage_mm: 5.48 < 5.08 limit)",
+          "visible_rail_continuity: No continuous visible wire path exists between VMINUS net terminals U1 pin 4 and J1 pin 4"
+        ],
+        "actions": [
+          {
+            "operation": "move_symbols",
+            "references": [
+              "U1"
+            ],
+            "dx_mm": 0.0,
+            "dy_mm": -2.54
+          }
+        ],
+        "rationale": "Shift U1 down by one grid (2.54 mm) to increase owner_advantage for its unit 3 fields and clear the VMINUS rail path."
+      }
+    },
+    {
+      "iteration": 2,
+      "revision": "sha256:2acdad17f8503db45335ecbb506e63be2d598f91d03734e16f4060bf211c8278",
+      "schematic": "candidates/002/project/InvertingGain.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:2acdad17f8503db45335ecbb506e63be2d598f91d03734e16f4060bf211c8278",
+        "decision": "revise",
+        "issues": [
+          "field_owner_association: U1 unit 3 Reference and Value fields are too close to R1 (owner_advantage < 5.08 mm)",
+          "visible_rail_continuity: Power rails for VPLUS/VMINUS rely on labels without explicit wire trunks in the lower-left quadrant",
+          "page_composition: Unused space is excessive, but functional grouping is acceptable"
+        ],
+        "actions": [
+          {
+            "operation": "move_symbols",
+            "references": [
+              "U1",
+              "unit",
+              "3"
+            ],
+            "dx_mm": 0.0,
+            "dy_mm": -2.54
+          }
+        ],
+        "rationale": "Shifting U1 unit 3 down by one grid (2.54 mm) increases owner_advantage for its Reference and Value fields relative to R1, satisfying the 5.08 mm association limit without altering electrical connectivity or net partitions."
+      },
+      "rejected_response": "move_symbols references not found: ['3', 'unit']"
+    },
+    {
+      "iteration": 3,
+      "revision": "sha256:2acdad17f8503db45335ecbb506e63be2d598f91d03734e16f4060bf211c8278",
+      "schematic": "candidates/002/project/InvertingGain.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:2acdad17f8503db45335ecbb506e63be2d598f91d03734e16f4060bf211c8278",
+        "decision": "revise",
+        "issues": [
+          "field_owner_association: U1 unit 3 Reference/Value fields are too close to R1 (owner_advantage < 5.08mm)",
+          "visible_rail_continuity: Power rails for VPLUS/VMINUS rely on labels without explicit wire trunks in the lower-left quadrant"
+        ],
+        "actions": [
+          {
+            "operation": "move_symbols",
+            "references": [
+              "U1",
+              "unit",
+              "3"
+            ],
+            "dx_mm": 0.0,
+            "dy_mm": 2.54
+          }
+        ],
+        "rationale": "Shift U1 unit 3 vertically by one grid step (2.54mm) to increase owner_advantage for its Reference and Value fields relative to R1, satisfying the 5.08mm association limit. This also clears space for explicit wire trunks on the VPLUS/VMINUS nets in the lower-left quadrant."
+      },
+      "rejected_response": "move_symbols references not found: ['3', 'unit']"
+    }
+  ],
+  "model_tokens": 53065,
+  "elapsed_seconds": 271.223,
+  "budgets": {
+    "max_reviews": 8,
+    "max_seconds": 1800,
+    "max_model_tokens": 120000
+  },
+  "human_electrical_review": "PENDING",
+  "locked_host_qualification": false
+}

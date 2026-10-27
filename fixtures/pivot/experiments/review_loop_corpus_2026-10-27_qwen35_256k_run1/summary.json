@@ -1,0 +1,226 @@
+{
+  "schema_version": "review-loop-corpus.v1",
+  "source_commit": "5ed00db2a13270838ea19e923cb99bb069da9540",
+  "implementation_sha256": {
+    "src/ai_kicad/pivot/schematic_review.py": "939eadaece0a00540f741a1fa46dc27278e3cb621c63e648a97f8392daacec78",
+    "src/ai_kicad/pivot/schematic_review_native.py": "77be4d33564d32253c97235096190230e19efbcedb2005d6be2233c132d6f08e",
+    "src/ai_kicad/pivot/schematic_review_service.py": "0e94c660bd6f5b6c644d8c73b2aaa2824e25fc770e2ec4b29bb864e5c290f889"
+  },
+  "model": "qwen35-256k:latest",
+  "context_tokens": 262144,
+  "review_brief": "fixtures/pivot/schematic_review_brief_v2.json",
+  "budgets": {
+    "max_reviews": 8,
+    "max_seconds": 1800,
+    "max_model_tokens": 120000
+  },
+  "results": {
+    "rc_lowpass": {
+      "design": "fixtures/m2b/rc_lowpass.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, visible_rail_continuity, field_separation, field_locality, field_owner_association) pass. Visual inspection confirms legible labels, clear association with symbols, balanced page composition, and continuous visible wiring for all nets. No unresolved issues found.",
+      "reviews": 1,
+      "model_tokens": 10007,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/RcLowpass.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/RcLowpass.kicad_sch"
+    },
+    "rc_highpass": {
+      "design": "fixtures/m2b/rc_highpass.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, visible_rail_continuity, field_separation, field_locality, field_owner_association) pass. Visual inspection confirms legible labels, clear association with symbols, balanced page composition, and continuous visible wiring for all nets. No unresolved issues found.",
+      "reviews": 1,
+      "model_tokens": 10005,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/RcHighpass.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/RcHighpass.kicad_sch"
+    },
+    "led_series": {
+      "design": "fixtures/m2b/led_series.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, visible_rail_continuity, field_separation, field_locality, field_owner_association) pass. Visual inspection confirms legible labels, clear association with symbols, balanced page composition, and continuous visible wiring for all nets. No unresolved issues detected.",
+      "reviews": 1,
+      "model_tokens": 9534,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/LedSeries.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/LedSeries.kicad_sch"
+    },
+    "led_long_text": {
+      "design": "fixtures/m2b/led_long_text.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks pass. Visual inspection confirms legible labels, clear association with symbols, balanced page composition, and continuous visible wiring for all nets. No unresolved issues found.",
+      "reviews": 1,
+      "model_tokens": 9592,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/LedLongText.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/LedLongText.kicad_sch"
+    },
+    "led_reverse_supply": {
+      "design": "fixtures/m2b/led_reverse_supply.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, visible_rail_continuity, field_separation, field_locality, field_owner_association) passed. The schematic displays clear component references and values with no overlapping fields or ambiguous wiring. Page composition is balanced with sufficient whitespace. No unresolved issues detected.",
+      "reviews": 2,
+      "model_tokens": 19250,
+      "requested_edits": [
+        "connect_rail"
+      ],
+      "rejected_replies": 1,
+      "accepted_schematic": "candidates/000/project/LedReverseSupply.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/LedReverseSupply.kicad_sch"
+    },
+    "dual_buffer": {
+      "design": "fixtures/m2b/dual_buffer.json",
+      "status": "NO_PROGRESS",
+      "reason": "model repeated an invalid review: move_symbols references not found: ['U1A', 'U1B']",
+      "reviews": 5,
+      "model_tokens": 60380,
+      "requested_edits": [
+        "connect_rail",
+        "connect_rail",
+        "move_symbols",
+        "move_symbols",
+        "move_symbols"
+      ],
+      "rejected_replies": 3,
+      "accepted_schematic": null,
+      "best_passing_schematic": null
+    },
+    "dual_rail_reference": {
+      "design": "fixtures/m2b/dual_rail_reference.json",
+      "status": "NO_PROGRESS",
+      "reason": "model repeated an invalid review: no obstacle-free native wire route joins the remaining VMINUS wire groups. Repeating connect_rail for VMINUS will fail again on this revision; first request move_symbols for one of ['C2', 'J1', 'R2', 'U1'] by a grid-aligned offset into open space, then request connect_rail again",
+      "reviews": 5,
+      "model_tokens": 66829,
+      "requested_edits": [
+        "connect_rail",
+        "move_symbols",
+        "connect_rail",
+        "connect_rail"
+      ],
+      "rejected_replies": 3,
+      "accepted_schematic": null,
+      "best_passing_schematic": null
+    },
+    "inverting_gain": {
+      "design": "fixtures/m2b/inverting_gain.json",
+      "status": "NO_PROGRESS",
+      "reason": "model repeated an invalid review: move_symbols references not found: ['3', 'unit']",
+      "reviews": 4,
+      "model_tokens": 53065,
+      "requested_edits": [
+        "connect_rail",
+        "move_symbols",
+        "move_symbols",
+        "move_symbols"
+      ],
+      "rejected_replies": 2,
+      "accepted_schematic": null,
+      "best_passing_schematic": null
+    },
+    "noninverting_gain": {
+      "design": "fixtures/m2b/noninverting_gain.json",
+      "status": "NO_PROGRESS",
+      "reason": "model repeated an invalid review: 1 validation error for SchematicReview\nactions.0.move_symbols\n  Value error, move_symbols made no change; choose nonzero movement [type=value_error, input_value={'operation': 'move_symbo..._mm': 0.0, 'dy_mm': 0.0}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/value_error",
+      "reviews": 6,
+      "model_tokens": 82096,
+      "requested_edits": [
+        "connect_rail",
+        "connect_rail",
+        "connect_rail",
+        "move_symbols"
+      ],
+      "rejected_replies": 2,
+      "accepted_schematic": null,
+      "best_passing_schematic": null
+    },
+    "rc_to_buffer": {
+      "design": "fixtures/m2b/rc_to_buffer.json",
+      "status": "NO_PROGRESS",
+      "reason": "model repeated an invalid review: no obstacle-free native wire route joins the remaining rerouted moved-symbol net groups",
+      "reviews": 3,
+      "model_tokens": 40556,
+      "requested_edits": [
+        "connect_rail",
+        "move_symbols",
+        "move_symbols"
+      ],
+      "rejected_replies": 2,
+      "accepted_schematic": null,
+      "best_passing_schematic": null
+    },
+    "sallen_key": {
+      "design": "fixtures/m2b/sallen_key.json",
+      "status": "NO_PROGRESS",
+      "reason": "model repeated an invalid review: no obstacle-free native wire route joins the remaining VPLUS wire groups. Repeating connect_rail for VPLUS will fail again on this revision; first request move_symbols for one of ['C1', 'J1', 'U1'] by a grid-aligned offset into open space, then request connect_rail again",
+      "reviews": 3,
+      "model_tokens": 45253,
+      "requested_edits": [
+        "connect_rail",
+        "connect_rail"
+      ],
+      "rejected_replies": 3,
+      "accepted_schematic": null,
+      "best_passing_schematic": null
+    },
+    "linear_regulator": {
+      "design": "fixtures/m2b/linear_regulator.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, visible_rail_continuity, field_separation, field_locality, field_owner_association) pass. Visual inspection confirms legible labels, clear association with symbols, balanced page composition, and continuous visible wiring for all nets without unresolved issues.",
+      "reviews": 3,
+      "model_tokens": 33440,
+      "requested_edits": [
+        "connect_rail",
+        "connect_rail"
+      ],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/002/project/LinearRegulator.kicad_sch",
+      "best_passing_schematic": "candidates/002/project/LinearRegulator.kicad_sch"
+    },
+    "timer_astable": {
+      "design": "fixtures/m2b/timer_astable.json",
+      "status": "NO_PROGRESS",
+      "reason": "model repeated an invalid review: no obstacle-free native wire route joins the remaining VCC wire groups. Repeating connect_rail for VCC will fail again on this revision; first request move_symbols for one of ['J1', 'R1', 'U1'] by a grid-aligned offset into open space, then request connect_rail again",
+      "reviews": 4,
+      "model_tokens": 51923,
+      "requested_edits": [
+        "connect_rail",
+        "connect_rail",
+        "move_symbols",
+        "connect_rail"
+      ],
+      "rejected_replies": 2,
+      "accepted_schematic": null,
+      "best_passing_schematic": null
+    },
+    "reference_555_led_flasher_v8": {
+      "design": "fixtures/pivot/reference_555_led_flasher_v8/design.json",
+      "status": "NO_PROGRESS",
+      "reason": "model repeated an invalid review: no obstacle-free native wire route joins the remaining VCC wire groups. Repeating connect_rail for VCC will fail again on this revision; first request move_symbols for one of ['J1', 'R1', 'R3', 'U1'] by a grid-aligned offset into open space, then request connect_rail again",
+      "reviews": 4,
+      "model_tokens": 56707,
+      "requested_edits": [
+        "connect_rail",
+        "connect_rail",
+        "connect_rail"
+      ],
+      "rejected_replies": 3,
+      "accepted_schematic": null,
+      "best_passing_schematic": null
+    }
+  },
+  "accepted": [
+    "led_long_text",
+    "led_reverse_supply",
+    "led_series",
+    "linear_regulator",
+    "rc_highpass",
+    "rc_lowpass"
+  ],
+  "locked_host_qualification": false,
+  "independent_readability_assessment": "PENDING",
+  "human_electrical_review": "PENDING"
+}
