@@ -1,0 +1,217 @@
+{
+  "schema_version": "schematic-review-loop.v1",
+  "status": "LIMIT_REACHED",
+  "reason": "wall-clock or model-token budget exhausted",
+  "accepted_schematic": null,
+  "best_passing_schematic": null,
+  "reviewer": {
+    "model": "qwen35-256k:latest",
+    "digest": "b528609af3c0d8337a0fa6e27e6ffb54d3d25b23531abc37c38a5155fbcf2961",
+    "ollama_version": "0.40.8",
+    "capabilities": [
+      "completion",
+      "vision",
+      "tools",
+      "thinking"
+    ],
+    "options": {
+      "temperature": 0,
+      "seed": 20261025,
+      "num_ctx": 262144,
+      "num_predict": 2048
+    },
+    "think": false
+  },
+  "iterations": [
+    {
+      "iteration": 0,
+      "revision": "sha256:5a8cd9024cdd91a03a9730754a8270499c62dfad2d88a80156b9e37e35c63fb7",
+      "schematic": "candidates/000/project/SallenKey.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:5a8cd9024cdd91a03a9730754a8270499c62dfad2d88a80156b9e37e35c63fb7",
+        "decision": "revise",
+        "issues": [
+          "rail_presentation: The REF, VMINUS, and VPLUS nets have terminals that are neither joined by a continuous wire nor marked by a matching power symbol.",
+          "field_owner_association: Fields for U1 unit 3 (Reference and Value) are closer to C2 than to their own symbol, violating the owner-advantage heuristic."
+        ],
+        "actions": [
+          {
+            "operation": "connect_rail",
+            "net": "REF"
+          }
+        ],
+        "rationale": "The connect_rail operation will wire all disconnected terminal groups of the REF net with obstacle-checked routes. This addresses the rail_presentation failure for the REF net. The field_owner_association issue is a secondary layout concern that may be resolved by the re-routing or can be addressed in a subsequent pass if necessary, but the primary electrical/presentation failure is the disconnected rails."
+      },
+      "rejected_response": "no obstacle-free native wire route joins the remaining REF wire groups. Repeating connect_rail for REF will fail again on this revision; request use_power_symbols for REF to draw it with power symbols instead"
+    },
+    {
+      "iteration": 1,
+      "revision": "sha256:5a8cd9024cdd91a03a9730754a8270499c62dfad2d88a80156b9e37e35c63fb7",
+      "schematic": "candidates/000/project/SallenKey.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:5a8cd9024cdd91a03a9730754a8270499c62dfad2d88a80156b9e37e35c63fb7",
+        "decision": "revise",
+        "issues": [
+          "rail_presentation: FAIL - Power nets (REF, VMINUS, VPLUS) are not visually connected via continuous wires or power symbols.",
+          "field_owner_association: FAIL - Fields for U1.3 Reference and Value are too close to C2 fields."
+        ],
+        "actions": [
+          {
+            "operation": "use_power_symbols",
+            "net": "REF"
+          }
+        ],
+        "rationale": "The visible_rail_continuity check failed because the REF, VMINUS, and VPLUS nets are drawn as separate wire groups without a continuous native wire path or matching power symbols. Since connect_rail is unavailable for this failure mode (per brief), use_power_symbols is requested to replace the rail wiring with explicit power symbols at each terminal. Additionally, field_owner_association fails for U1.3 fields due to proximity to C2; however, the primary electrical/presentation issue takes precedence for revision."
+      }
+    },
+    {
+      "iteration": 2,
+      "revision": "sha256:84c0b1d95c83b0cdac99d091c012e71a74e496377e4d2b1d45cdde125a063d48",
+      "schematic": "candidates/002/project/SallenKey.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:84c0b1d95c83b0cdac99d091c012e71a74e496377e4d2b1d45cdde125a063d48",
+        "decision": "revise",
+        "issues": [
+          "rail_presentation: VPLUS and VMINUS rails are not visually continuous or marked with power symbols at separated terminal groups.",
+          "field_owner_association: Fields for U1 unit 3 (Reference/Value) are closer to C2 than to their own symbol, violating the 5.08 mm owner-advantage heuristic."
+        ],
+        "actions": [
+          {
+            "operation": "connect_rail",
+            "net": "VPLUS"
+          }
+        ],
+        "rationale": "The connect_rail operation will wire all disconnected terminal groups of the VPLUS net with obstacle-checked routes and add required T-junction markers, satisfying the rail_presentation requirement. The field_owner_association issue is a secondary layout concern that can be addressed in a subsequent pass or by regenerate_schematic if the wiring changes significantly affect placement."
+      },
+      "rejected_response": "no obstacle-free native wire route joins the remaining VPLUS wire groups. Repeating connect_rail for VPLUS will fail again on this revision; request use_power_symbols for VPLUS to draw it with power symbols instead"
+    },
+    {
+      "iteration": 3,
+      "revision": "sha256:84c0b1d95c83b0cdac99d091c012e71a74e496377e4d2b1d45cdde125a063d48",
+      "schematic": "candidates/002/project/SallenKey.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:84c0b1d95c83b0cdac99d091c012e71a74e496377e4d2b1d45cdde125a063d48",
+        "decision": "revise",
+        "issues": [
+          "rail_presentation: VPLUS and VMINUS rails are not visually continuous or marked with power symbols.",
+          "field_owner_association: Fields for U1 unit 3 (Reference/Value) are too close to C2 fields, violating the 5.08 mm owner-advantage heuristic."
+        ],
+        "actions": [
+          {
+            "operation": "use_power_symbols",
+            "net": "VPLUS"
+          }
+        ],
+        "rationale": "The connect_rail operation is unavailable or would fail for VPLUS as noted in previous feedback. The use_power_symbols action will replace the missing rail wires with explicit power symbols (supply arrows) at each terminal group, satisfying the rail_presentation requirement. Additionally, this action helps resolve the field_owner_association issue by repositioning the rail symbols away from the crowded C2 area."
+      }
+    },
+    {
+      "iteration": 4,
+      "revision": "sha256:4e0ae821d42a106ee112d3a198eb4723c011fd73d085a12e232de1f4502e1ceb",
+      "schematic": "candidates/004/project/SallenKey.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:4e0ae821d42a106ee112d3a198eb4723c011fd73d085a12e232de1f4502e1ceb",
+        "decision": "revise",
+        "issues": [
+          "rail_presentation: VMINUS net terminals (C2.2, U1.4) and (J1.4) are not joined by a continuous wire nor marked by a power symbol.",
+          "rail_presentation: VPLUS net terminals (U1.8, J1.3) are not joined by a continuous wire nor marked by a power symbol.",
+          "power_symbol_clearance: Power symbol #PWR07 on VPLUS touches wire 25.400000 33.020000 -> 25.400000 66.040000.",
+          "field_owner_association: Fields for U1 unit 3 (Reference, Value) are closer to C2 than to their own symbol (owner_advantage < 5.08 mm)."
+        ],
+        "actions": [
+          {
+            "operation": "connect_rail",
+            "net": "VMINUS"
+          }
+        ],
+        "rationale": "The visible_rail_continuity check fails for the VMINUS net because its terminals are not visually connected by a continuous wire or marked by a power symbol. The connect_rail action will generate obstacle-checked orthogonal paths to join these terminal groups into a single visible rail. This addresses the primary visual continuity failure. Subsequent steps may be needed if clearance issues arise after wiring, but connect_rail is the first required repair for this specific failure mode."
+      },
+      "rejected_response": "no obstacle-free native wire route joins the remaining VMINUS wire groups. Repeating connect_rail for VMINUS will fail again on this revision; request use_power_symbols for VMINUS to draw it with power symbols instead"
+    },
+    {
+      "iteration": 5,
+      "revision": "sha256:4e0ae821d42a106ee112d3a198eb4723c011fd73d085a12e232de1f4502e1ceb",
+      "schematic": "candidates/004/project/SallenKey.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:4e0ae821d42a106ee112d3a198eb4723c011fd73d085a12e232de1f4502e1ceb",
+        "decision": "revise",
+        "issues": [
+          "rail_presentation: FAIL - VMINUS net terminals are not joined or marked by power symbols.",
+          "power_symbol_clearance: FAIL - Power symbol #PWR07 touches a wire segment.",
+          "field_owner_association: FAIL - Fields for U1 unit 3 are too close to C2 fields."
+        ],
+        "actions": [
+          {
+            "operation": "use_power_symbols",
+            "net": "VMINUS"
+          }
+        ],
+        "rationale": "The VMINUS rail fails the visible_rail_continuity check because its wire groups are disconnected and lack power symbols. Since connect_rail is unavailable for this net (as per previous feedback), use_power_symbols is the correct repair action to replace missing rails with matching power symbols at each terminal. This also addresses the clearance issue by re-placing symbols away from touching items."
+      }
+    },
+    {
+      "iteration": 6,
+      "revision": "sha256:f573115a105e3dba47d5bd06dba61e1ea4fc87b620a78fdda35c5f3ee3844090",
+      "schematic": "candidates/006/project/SallenKey.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:f573115a105e3dba47d5bd06dba61e1ea4fc87b620a78fdda35c5f3ee3844090",
+        "decision": "revise",
+        "issues": [
+          "power_symbol_clearance: #PWR07 (VPLUS) touches wire 25.400000 33.020000 -> 25.400000 66.040000",
+          "power_symbol_clearance: #PWR09 (VMINUS) touches #FLG02 and wire 25.400000 33.020000 -> 25.400000 66.040000",
+          "field_owner_association: U1 unit 3 Reference field is closer to C2 (11.85 mm) than its own symbol edge (18.19 mm), owner_advantage_mm=6.34 < 5.08 limit",
+          "field_owner_association: U1 unit 3 Value field is closer to C2 (9.15 mm) than its own symbol edge (14.63 mm), owner_advantage_mm=5.48 < 5.08 limit"
+        ],
+        "actions": [
+          {
+            "operation": "use_power_symbols",
+            "net": "VPLUS"
+          }
+        ],
+        "rationale": "The power_symbol_clearance check failed because power symbols #PWR07 and #PWR09 are touching other drawing items (wires and flags). The field_owner_association check failed for U1 unit 3 fields because they are visually closer to C2 than to their own symbol, violating the 5.08 mm owner-advantage heuristic. Per the review brief, use_power_symbols is the correct action when power_symbol_clearance fails or when a rail's wiring crowds the drawing. This operation will re-place only the VPLUS rail's symbols that touch other items, clearing them without affecting other nets. The field association issue for U1 unit 3 may be resolved by the same operation if it involves moving the power symbol near C2, or may require a separate move_symbols action if the fields themselves are misplaced; however, use_power_symbols is prioritized first per instructions."
+      }
+    },
+    {
+      "iteration": 7,
+      "revision": "sha256:6096e7cfec6457aae498ca2d75ee349fbdd6cd267af27301c7413781e8ddd21b",
+      "schematic": "candidates/007/project/SallenKey.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:6096e7cfec6457aae498ca2d75ee349fbdd6cd267af27301c7413781e8ddd21b",
+        "decision": "revise",
+        "issues": [
+          "field_owner_association: U1 unit 3 Reference/Value fields are closer to C2 than their own symbol (owner_advantage < 5.08 mm)",
+          "power_symbol_clearance: #PWR09 (VMINUS) and #PWR07 (VPLUS) touch wires or labels",
+          "rail_presentation: VPLUS and VMINUS rails rely on power symbols that are visually crowded"
+        ],
+        "actions": [
+          {
+            "operation": "move_symbols",
+            "references": [
+              "U1"
+            ],
+            "dx_mm": 2.54,
+            "dy_mm": 0.0
+          }
+        ],
+        "rationale": "Shift U1 horizontally by one grid unit (2.54 mm) to increase owner_advantage for its fields and clear power symbols from adjacent wires/labels."
+      }
+    }
+  ],
+  "model_tokens": 123359,
+  "elapsed_seconds": 352.302,
+  "budgets": {
+    "max_reviews": 8,
+    "max_seconds": 1800,
+    "max_model_tokens": 120000
+  },
+  "human_electrical_review": "PENDING",
+  "locked_host_qualification": false
+}

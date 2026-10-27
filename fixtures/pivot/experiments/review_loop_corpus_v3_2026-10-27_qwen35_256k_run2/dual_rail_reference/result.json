@@ -1,0 +1,146 @@
+{
+  "schema_version": "schematic-review-loop.v1",
+  "status": "NO_PROGRESS",
+  "reason": "model repeated an invalid review: no obstacle-free native wire route joins the remaining VMINUS wire groups. Repeating connect_rail for VMINUS will fail again on this revision; request use_power_symbols for VMINUS to draw it with power symbols instead",
+  "accepted_schematic": null,
+  "best_passing_schematic": "candidates/004/project/DualRailReference.kicad_sch",
+  "reviewer": {
+    "model": "qwen35-256k:latest",
+    "digest": "b528609af3c0d8337a0fa6e27e6ffb54d3d25b23531abc37c38a5155fbcf2961",
+    "ollama_version": "0.40.8",
+    "capabilities": [
+      "completion",
+      "vision",
+      "tools",
+      "thinking"
+    ],
+    "options": {
+      "temperature": 0,
+      "seed": 20261025,
+      "num_ctx": 262144,
+      "num_predict": 2048
+    },
+    "think": false
+  },
+  "iterations": [
+    {
+      "iteration": 0,
+      "revision": "sha256:e324701d24d01c603064dd42401b9cca3e18f0c01c4ae9afb9061bd631227c49",
+      "schematic": "candidates/000/project/DualRailReference.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:e324701d24d01c603064dd42401b9cca3e18f0c01c4ae9afb9061bd631227c49",
+        "decision": "revise",
+        "issues": [
+          "rail_presentation: VPLUS and VMINUS rails are not visually continuous or marked with power symbols at separated terminal groups.",
+          "field_owner_association: Fields for U1 unit 3 (Reference/Value) are closer to C2 than to their own symbol, violating the 5.08 mm owner-advantage heuristic."
+        ],
+        "actions": [
+          {
+            "operation": "connect_rail",
+            "net": "VPLUS"
+          }
+        ],
+        "rationale": "The connect_rail operation will wire all disconnected terminal groups of the VPLUS net with obstacle-checked routes and add required T-junction markers, satisfying the rail_presentation requirement. The field_owner_association issue is a secondary layout concern that can be addressed in a subsequent pass or by regenerate_schematic if the wiring changes significantly affect placement; however, the primary electrical/presentation failure (rail continuity) must be fixed first."
+      }
+    },
+    {
+      "iteration": 1,
+      "revision": "sha256:ac46752c9c02b6cc648dc78db7aaca4426358bfba1a783ff1db1f38b62779a0e",
+      "schematic": "candidates/001/project/DualRailReference.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:ac46752c9c02b6cc648dc78db7aaca4426358bfba1a783ff1db1f38b62779a0e",
+        "decision": "revise",
+        "issues": [
+          "field_owner_association: U1.3 Reference/Value fields are too close to C2 (owner_advantage < 5.08 mm)",
+          "rail_presentation: VMINUS net terminals are not visually joined or marked with a power symbol"
+        ],
+        "actions": [
+          {
+            "operation": "move_symbols",
+            "references": [
+              "U1"
+            ],
+            "dx_mm": 0.0,
+            "dy_mm": -2.54
+          }
+        ],
+        "rationale": "Move U1 down by one grid unit (2.54 mm) to increase owner_advantage for its fields relative to C2 and J1, satisfying the 5.08 mm field_owner_association limit. This also helps separate the VMINUS rail groups visually, allowing a subsequent connect_rail or use_power_symbols action to properly mark the rail if needed after re-checking."
+      }
+    },
+    {
+      "iteration": 2,
+      "revision": "sha256:3b67f90dbf1db59a2b2d6bfa60e7b317872cfbcc80048ca382b7f8c80dab2355",
+      "schematic": "candidates/002/project/DualRailReference.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:3b67f90dbf1db59a2b2d6bfa60e7b317872cfbcc80048ca382b7f8c80dab2355",
+        "decision": "revise",
+        "issues": [
+          "visible_rail_continuity: FAIL - The VMINUS rail is fragmented into disconnected wire groups without a continuous path or matching power symbol.",
+          "rail_presentation: FAIL - Terminals on the VMINUS net are not visibly connected to a shared rail trunk nor marked by a VMINUS power symbol."
+        ],
+        "actions": [
+          {
+            "operation": "connect_rail",
+            "net": "VMINUS"
+          }
+        ],
+        "rationale": "The visible_rail_continuity and rail_presentation checks have failed because the VMINUS net terminals (U1.4, C2.2, J1.4, R2.2) are not joined by a continuous wire path nor marked by a matching power symbol. The connect_rail operation is requested to generate obstacle-checked orthogonal routes joining these terminal groups into a single visible rail trunk for the VMINUS net."
+      },
+      "rejected_response": "no obstacle-free native wire route joins the remaining VMINUS wire groups. Repeating connect_rail for VMINUS will fail again on this revision; request use_power_symbols for VMINUS to draw it with power symbols instead"
+    },
+    {
+      "iteration": 3,
+      "revision": "sha256:3b67f90dbf1db59a2b2d6bfa60e7b317872cfbcc80048ca382b7f8c80dab2355",
+      "schematic": "candidates/002/project/DualRailReference.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:3b67f90dbf1db59a2b2d6bfa60e7b317872cfbcc80048ca382b7f8c80dab2355",
+        "decision": "revise",
+        "issues": [
+          "visible_rail_continuity: FAIL - VMINUS net terminals are not visually connected by a continuous rail or marked by power symbols"
+        ],
+        "actions": [
+          {
+            "operation": "use_power_symbols",
+            "net": "VMINUS"
+          }
+        ],
+        "rationale": "The visible_rail_continuity check failed because the VMINUS net terminals (U1.4, C2.2, J1.4, R2.2) are not joined by a continuous wire trunk nor marked by a matching power symbol. The diagnostics indicate that connect_rail would fail to find an obstacle-free route. Per the review brief, when connect_rail reports no route exists or for crowded rails, use_power_symbols should be requested. This operation will replace the disconnected wire groups with explicit power symbols (ground glyphs) at each terminal, satisfying the rail_presentation requirement without altering electrical connectivity."
+      }
+    },
+    {
+      "iteration": 4,
+      "revision": "sha256:8a8fb5e41be78b7ee9e34ffee25e458eb5a719635988f2d425989d49458f7278",
+      "schematic": "candidates/004/project/DualRailReference.kicad_sch",
+      "independent_checks_pass": true,
+      "review": {
+        "base_revision": "sha256:8a8fb5e41be78b7ee9e34ffee25e458eb5a719635988f2d425989d49458f7278",
+        "decision": "revise",
+        "issues": [
+          "The VMINUS net has disconnected terminal groups: terminals at U1 pin 4, C2 pin 2, J1 pin 4, and R2 pin 2 are not visibly connected by a continuous wire or power symbol.",
+          "The VPLUS net similarly shows disconnected terminal groups that lack explicit rail wiring or power symbols."
+        ],
+        "actions": [
+          {
+            "operation": "connect_rail",
+            "net": "VMINUS"
+          }
+        ],
+        "rationale": "The visible_rail_continuity check fails because the VMINUS and VPLUS nets have separated terminal groups without continuous native wire paths or matching power symbols. The connect_rail action will route orthogonal wires around existing components to join these terminals into a single visual rail for each net."
+      },
+      "rejected_response": "no obstacle-free native wire route joins the remaining VMINUS wire groups. Repeating connect_rail for VMINUS will fail again on this revision; request use_power_symbols for VMINUS to draw it with power symbols instead"
+    }
+  ],
+  "model_tokens": 68755,
+  "elapsed_seconds": 196.217,
+  "budgets": {
+    "max_reviews": 8,
+    "max_seconds": 1800,
+    "max_model_tokens": 120000
+  },
+  "human_electrical_review": "PENDING",
+  "locked_host_qualification": false
+}
