@@ -43,7 +43,10 @@ RAILS = ["REF", "VCC"]
 def compiled(name: str, directory: Path) -> tuple[dict, str, list[dict], dict[str, dict]]:
     """Native compiler output for a corpus design, with observed terminal positions."""
     resolved = assets()
-    design = validate(json.loads((ROOT / "fixtures/m2b" / f"{name}.json").read_text()), resolved)
+    source = ROOT / "fixtures/m2b" / f"{name}.json"
+    if not source.is_file():
+        source = ROOT / "fixtures/pivot" / name / "design.json"
+    design = validate(json.loads(source.read_text()), resolved)
     scene, _composition = compose_with_evidence(design, resolved)
     schematic = emit(design, resolved, scene, directory)
     # Pin positions come from the schematic itself; connectivity is not needed here.
@@ -275,3 +278,19 @@ def test_repeating_use_power_symbols_without_crowding_is_no_change(timer):
         use_power_symbols_text(
             converted, "VCC", inventory, context["VCC"]["flags"], context["VCC"]["local_pairs"]
         )
+
+
+def test_blocked_power_symbol_is_refused_with_the_blocking_rail_named(tmp_path):
+    from ai_kicad.pivot.schematic_review_native import connect_rail_text
+
+    # In the reference 555, a wired REF run passes beside R1's VCC pin.
+    _design, text, inventory, context = compiled("reference_555_led_flasher_v8", tmp_path)
+    wired = connect_rail_text(text, "REF", inventory)
+    with pytest.raises(ValueError, match=r"wiring of \['REF'\].*use_power_symbols for it first"):
+        use_power_symbols_text(
+            wired, "VCC", inventory, context["VCC"]["flags"], context["VCC"]["local_pairs"]
+        )
+    # Following the advice draws both rails cleanly.
+    converted = convert(wired, inventory, context, ["REF", "VCC"])
+    assert power_symbol_collisions(converted) == []
+    assert rail_presentation(parse(converted), inventory, RAILS) == []

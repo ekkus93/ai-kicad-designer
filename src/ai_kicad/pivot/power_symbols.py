@@ -498,7 +498,15 @@ def use_power_symbols_text(
         )
         text = _prune_dangling(text)
         return _place_rail_symbols(
-            text, net, lib_id, terminals, flag_points, set(), layout_check, project
+            text,
+            net,
+            lib_id,
+            terminals,
+            flag_points,
+            set(),
+            layout_check,
+            project,
+            terminal_inventory,
         )
     if not removed_wires and not label_points:
         raise ValueError(f"use_power_symbols made no change; {net} has no rail wiring or labels")
@@ -550,7 +558,15 @@ def use_power_symbols_text(
     text = _append_forms(text, additions)
 
     return _place_rail_symbols(
-        text, net, lib_id, terminals, flag_points, label_points, layout_check, project
+        text,
+        net,
+        lib_id,
+        terminals,
+        flag_points,
+        label_points,
+        layout_check,
+        project,
+        terminal_inventory,
     )
 
 
@@ -628,8 +644,13 @@ def _place_rail_symbols(
     label_points: set[Point],
     layout_check: Callable[[str], str | None] | None,
     project: tuple[str, str],
+    terminal_inventory: list[dict] = (),
 ) -> str:
-    """Give every unmarked wire group of one rail a clear power symbol."""
+    """Give every unmarked wire group of one rail a clear power symbol.
+
+    A group with no clear position is refused with the nets whose wiring blocks it,
+    rather than drawn overlapping another item.
+    """
     tree = parse(text)
     points = list(dict.fromkeys(terminals + list(flag_points)))
     # Drafting convention: ground glyphs point up, and supply glyphs down, only as a
@@ -734,8 +755,23 @@ def _place_rail_symbols(
             chosen = (point, direction, stub)
             break
         if chosen is None:
-            *_rank, point, _way, direction = options[0]
-            chosen = (point, direction, None)
+            blockers = _blocking_nets(tree, members, terminal_inventory, net)
+            names = sorted(
+                f"{item['reference']}.{item['pin']}"
+                for item in terminal_inventory
+                if item["net"] == net
+                and (round(item["x_mm"] * 1e6), round(item["y_mm"] * 1e6)) in set(members)
+            )
+            advice = (
+                f"; if {', '.join(blockers)} is an asserted rail, request use_power_symbols "
+                "for it first so its wiring is replaced by power symbols, then repeat this edit"
+                if blockers
+                else "; move a nearby symbol with move_symbols, then repeat this edit"
+            )
+            raise ValueError(
+                f"no clear position for a {net} power symbol at {names or 'its flag'}; "
+                f"wiring of {blockers or 'no other net'} and nearby drawing items block it" + advice
+            )
         point, direction, stub = chosen
         forms = [_wire_form(*stub, net)] if stub else []
         forms.append(
@@ -747,6 +783,36 @@ def _place_rail_symbols(
     text = _reaim_colliding(text, project, layout_check)
     parse(text)
     return text
+
+
+def _blocking_nets(
+    tree: list, members: list[Point], terminal_inventory: list[dict], net: str
+) -> list[str]:
+    """Other nets with wiring within reach of a power symbol at any of these points."""
+    from .schematic_review_native import _wire_trees
+
+    reach = 2 * GLYPH_TIPS["power:VCC"][1]
+    segments, _owners, roots = _wire_trees(tree)
+    net_of_root = {}
+    for item in terminal_inventory:
+        point = (round(item["x_mm"] * 1e6), round(item["y_mm"] * 1e6))
+        for segment, root in zip(segments, roots):
+            if point_on_segment(point, *segment):
+                net_of_root.setdefault(root, item["net"])
+    blockers = set()
+    for (first, second), root in zip(segments, roots):
+        other = net_of_root.get(root)
+        if other is None or other == net:
+            continue
+        bounds = (
+            min(first[0], second[0]),
+            min(first[1], second[1]),
+            max(first[0], second[0]),
+            max(first[1], second[1]),
+        )
+        if any(_overlaps((x - reach, y - reach, x + reach, y + reach), bounds) for x, y in members):
+            blockers.add(other)
+    return sorted(blockers)
 
 
 def _reaim_colliding(

@@ -52,6 +52,7 @@ def main() -> None:
     parser.add_argument("--max-reviews", type=int, default=8)
     parser.add_argument("--context-tokens", type=int, default=16384)
     parser.add_argument("--model-timeout", type=float, default=180)
+    parser.add_argument("--designs", nargs="*", help="run only these corpus designs (default: all)")
     args = parser.parse_args()
     args.review_brief = args.review_brief.resolve()
     root = create_experiment_dir(ROOT, args.experiment_id)
@@ -66,6 +67,8 @@ def main() -> None:
     results = {}
     for design in CORPUS:
         name = design.parent.name if design.name == "design.json" else design.stem
+        if args.designs and name not in args.designs:
+            continue
         try:
             result = service.review(design, root / name)
         except (OSError, RuntimeError, ValueError) as error:
