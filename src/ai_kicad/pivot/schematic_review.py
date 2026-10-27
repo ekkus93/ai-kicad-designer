@@ -250,6 +250,8 @@ class OllamaSchematicReviewer:
             "power symbol at each terminal (a ground glyph for REF/GND, a supply arrow "
             "otherwise), placed clear of other drawing items. Prefer it when connect_rail "
             "reports that no route exists, and for a rail whose wiring crowds the drawing. "
+            "If power_symbol_clearance fails, request use_power_symbols for that net again: "
+            "the editor re-places only that rail's symbols that touch other drawing items. "
             "use_power_symbols is unavailable when visible_rail_continuity is listed. "
             "Submit exactly one action per revision, then wait for rechecks. "
             "Use the listed terminal inventory and exact net witnesses; set from_ref/from_pin and "

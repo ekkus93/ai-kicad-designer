@@ -280,3 +280,11 @@ def test_blocked_connect_rail_feedback_names_movable_references() -> None:
         edit_schematic_text(
             walls, [ConnectRail(operation="connect_rail", net="VCC")], terminal_inventory=inventory
         )
+    # Under review brief v3 the same blocked route points at power-symbol presentation.
+    with pytest.raises(ValueError, match="request use_power_symbols for VCC"):
+        edit_schematic_text(
+            walls,
+            [ConnectRail(operation="connect_rail", net="VCC")],
+            terminal_inventory=inventory,
+            rail_context={},
+        )

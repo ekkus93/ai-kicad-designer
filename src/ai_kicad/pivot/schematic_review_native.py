@@ -138,7 +138,9 @@ def edit_schematic_text(
         elif isinstance(action, ConnectRail):
             if terminal_inventory is None:
                 raise ValueError("connect_rail requires independently observed terminal positions")
-            text = connect_rail_text(text, action.net, terminal_inventory)
+            text = connect_rail_text(
+                text, action.net, terminal_inventory, power_symbols_allowed=rail_context is not None
+            )
         elif isinstance(action, MoveSymbols):
             if terminal_inventory is None:
                 raise ValueError("move_symbols requires independently observed terminal positions")
@@ -439,7 +441,9 @@ def _connect_point_groups(
     return text
 
 
-def connect_rail_text(text: str, net: str, terminal_inventory: list[dict]) -> str:
+def connect_rail_text(
+    text: str, net: str, terminal_inventory: list[dict], power_symbols_allowed: bool = False
+) -> str:
     """Make every intended terminal of one net reachable through visible native wires."""
     terminals = [item for item in terminal_inventory if item["net"] == net]
     if len(terminals) < 2:
@@ -456,6 +460,11 @@ def connect_rail_text(text: str, net: str, terminal_inventory: list[dict]) -> st
         return _connect_point_groups(text, points, keepouts, f"{net} wire")
     except ValueError as error:
         references = sorted({item["reference"] for item in terminals})
+        if power_symbols_allowed:
+            raise ValueError(
+                f"{error}. Repeating connect_rail for {net} will fail again on this revision; "
+                f"request use_power_symbols for {net} to draw it with power symbols instead"
+            ) from error
         raise ValueError(
             f"{error}. Repeating connect_rail for {net} will fail again on this revision; "
             f"first request move_symbols for one of {references} by a grid-aligned offset "
@@ -1453,7 +1462,11 @@ class NativeSchematicEngine:
                 raise ValueError("wire and symbol-move edits require the current assessed netlist")
             observed = observe(schematic, netlist)
             inventory = terminal_inventory_for_design(design, observed)
-            rail_context = rail_context_for_design(design, observed)
+            rail_context = (
+                rail_context_for_design(design, observed)
+                if getattr(self, "power_symbol_rails", False)
+                else None
+            )
 
             def layout_check(candidate: str) -> str | None:
                 """The protected observer's objection to a candidate's label form."""
@@ -1466,7 +1479,7 @@ class NativeSchematicEngine:
                         return str(error)
                 return None
 
-            for entry in rail_context.values():
+            for entry in (rail_context or {}).values():
                 entry["layout_check"] = layout_check
             for action in wire_actions:
                 if isinstance(action, AddWirePath):

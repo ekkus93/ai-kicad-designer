@@ -475,12 +475,33 @@ def use_power_symbols_text(
     rail_segment_points = {
         point for segment, root in zip(segments, roots) if root in rail_roots for point in segment
     }
-    if not removed_wires and not label_points:
-        raise ValueError(f"use_power_symbols made no change; {net} has no rail wiring or labels")
-    if any(item["net"] == net for item in power_symbols(tree)):
-        raise ValueError(f"use_power_symbols made no change; {net} already uses power symbols")
     project_node = one(one(next(iter(children(tree, "symbol"))), "instances"), "project")
     project = (project_node[1], one(project_node, "path")[1])
+    existing = [item for item in power_symbols(tree) if item["net"] == net]
+    if existing:
+        # Repeating the edit re-places this rail's symbols that touch other drawing items.
+        colliding = {item["reference"] for item in existing if _collisions(text, tree, item)}
+        if not colliding:
+            raise ValueError(
+                f"use_power_symbols made no change; {net} already uses power symbols and "
+                "none of them touches another drawing item"
+            )
+        text = "".join(
+            _without_forms(
+                text,
+                lambda node: node[0] == "symbol"
+                and any(
+                    prop[1] == "Reference" and prop[2] in colliding
+                    for prop in children(node, "property")
+                ),
+            )
+        )
+        text = _prune_dangling(text)
+        return _place_rail_symbols(
+            text, net, lib_id, terminals, flag_points, set(), layout_check, project
+        )
+    if not removed_wires and not label_points:
+        raise ValueError(f"use_power_symbols made no change; {net} has no rail wiring or labels")
 
     remaining = [
         segment for segment, root in zip(segments, roots) if root not in rail_roots
@@ -528,6 +549,87 @@ def use_power_symbols_text(
         text = text[: end - 1] + power_symbol_definitions()[lib_id] + "\n  " + text[end - 1 :]
     text = _append_forms(text, additions)
 
+    return _place_rail_symbols(
+        text, net, lib_id, terminals, flag_points, label_points, layout_check, project
+    )
+
+
+def _pin_points(tree: list) -> set[Point]:
+    """Connection points of every placed symbol pin, including zero-length power pins."""
+    library = {item[1]: item for item in children(one(tree, "lib_symbols"), "symbol")}
+    points = set()
+    for symbol in children(tree, "symbol"):
+        definition = library.get(one(symbol, "lib_id")[1])
+        if definition is None:
+            continue
+        at = one(symbol, "at")
+        mirrors = children(symbol, "mirror")
+        unit = str(one(symbol, "unit")[1])
+        for body in children(definition, "symbol"):
+            if body[1].rsplit("_", 2)[-2] not in {"0", unit}:
+                continue
+            for pin in children(body, "pin"):
+                pin_at = one(pin, "at")
+                dx, dy = transform_library_point(
+                    _nm(pin_at[1]),
+                    _nm(pin_at[2]),
+                    int(float(at[3])),
+                    mirrors[0][1] if mirrors else None,
+                )
+                points.add((_nm(at[1]) + dx, _nm(at[2]) + dy))
+    return points
+
+
+def _prune_dangling(text: str) -> str:
+    """Remove wires left with an end that touches no other wire, pin or label."""
+    while True:
+        tree = parse(text)
+        anchors = _pin_points(tree) | {
+            (_nm(one(label, "at")[1]), _nm(one(label, "at")[2]))
+            for label in children(tree, "label")
+        }
+        wires = [
+            tuple((_nm(xy[1]), _nm(xy[2])) for xy in children(one(wire, "pts"), "xy"))
+            for wire in children(tree, "wire")
+        ]
+        dangling = {
+            index
+            for index, ends in enumerate(wires)
+            if any(
+                end not in anchors
+                and not any(
+                    point_on_segment(end, *other)
+                    for other_index, other in enumerate(wires)
+                    if other_index != index
+                )
+                for end in ends
+            )
+        }
+        if not dangling:
+            return text
+        position = -1
+
+        def drop(node: list) -> bool:
+            nonlocal position
+            if node[0] != "wire":
+                return False
+            position += 1
+            return position in dangling
+
+        text = "".join(_without_forms(text, drop))
+
+
+def _place_rail_symbols(
+    text: str,
+    net: str,
+    lib_id: str,
+    terminals: list[Point],
+    flag_points: list[Point],
+    label_points: set[Point],
+    layout_check: Callable[[str], str | None] | None,
+    project: tuple[str, str],
+) -> str:
+    """Give every unmarked wire group of one rail a clear power symbol."""
     tree = parse(text)
     points = list(dict.fromkeys(terminals + list(flag_points)))
     # Drafting convention: ground glyphs point up, and supply glyphs down, only as a
@@ -538,6 +640,9 @@ def use_power_symbols_text(
     for indexes, group_segments in _point_group_wiring_of(tree, points):
         members = [points[index] for index in indexes]
         group_points = set(members) | {p for segment in group_segments for p in segment}
+        markers = [item["point"] for item in power_symbols(parse(text)) if item["net"] == net]
+        if any(_marked(marker, set(members), group_segments) for marker in markers):
+            continue
         text = "".join(
             _without_forms(
                 text,
@@ -642,71 +747,6 @@ def use_power_symbols_text(
     text = _reaim_colliding(text, project, layout_check)
     parse(text)
     return text
-
-
-def _pin_points(tree: list) -> set[Point]:
-    """Connection points of every placed symbol pin, including zero-length power pins."""
-    library = {item[1]: item for item in children(one(tree, "lib_symbols"), "symbol")}
-    points = set()
-    for symbol in children(tree, "symbol"):
-        definition = library.get(one(symbol, "lib_id")[1])
-        if definition is None:
-            continue
-        at = one(symbol, "at")
-        mirrors = children(symbol, "mirror")
-        unit = str(one(symbol, "unit")[1])
-        for body in children(definition, "symbol"):
-            if body[1].rsplit("_", 2)[-2] not in {"0", unit}:
-                continue
-            for pin in children(body, "pin"):
-                pin_at = one(pin, "at")
-                dx, dy = transform_library_point(
-                    _nm(pin_at[1]),
-                    _nm(pin_at[2]),
-                    int(float(at[3])),
-                    mirrors[0][1] if mirrors else None,
-                )
-                points.add((_nm(at[1]) + dx, _nm(at[2]) + dy))
-    return points
-
-
-def _prune_dangling(text: str) -> str:
-    """Remove wires left with an end that touches no other wire, pin or label."""
-    while True:
-        tree = parse(text)
-        anchors = _pin_points(tree) | {
-            (_nm(one(label, "at")[1]), _nm(one(label, "at")[2]))
-            for label in children(tree, "label")
-        }
-        wires = [
-            tuple((_nm(xy[1]), _nm(xy[2])) for xy in children(one(wire, "pts"), "xy"))
-            for wire in children(tree, "wire")
-        ]
-        dangling = {
-            index
-            for index, ends in enumerate(wires)
-            if any(
-                end not in anchors
-                and not any(
-                    point_on_segment(end, *other)
-                    for other_index, other in enumerate(wires)
-                    if other_index != index
-                )
-                for end in ends
-            )
-        }
-        if not dangling:
-            return text
-        position = -1
-
-        def drop(node: list) -> bool:
-            nonlocal position
-            if node[0] != "wire":
-                return False
-            position += 1
-            return position in dangling
-
-        text = "".join(_without_forms(text, drop))
 
 
 def _reaim_colliding(

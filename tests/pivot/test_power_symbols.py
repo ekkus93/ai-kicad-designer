@@ -238,3 +238,40 @@ def test_only_the_v3_brief_enables_power_symbol_rails():
     assert brief_allows_power_symbol_rails(BRIEF_V3)
     assert not brief_allows_power_symbol_rails(BRIEF_V2)
     assert not brief_allows_power_symbol_rails(None)
+
+
+def test_repeating_use_power_symbols_replaces_only_crowded_symbols(timer):
+    _design, text, inventory, context = timer
+    converted = convert(text, inventory, context, RAILS)
+    vcc = [item for item in power_symbols.power_symbols(parse(converted)) if item["net"] == "VCC"]
+    target = vcc[0]
+    # A later edit drops another net's label onto one VCC glyph.
+    x, y = target["point"]
+    crowded = power_symbols._append_forms(
+        converted,
+        [
+            f'(label "OTHER" (at {x / 1e6:.2f} {(y - 1_270_000) / 1e6:.2f} 0) '
+            '(effects (font (size 1.27 1.27)) (justify left bottom)) (uuid "crowd"))'
+        ],
+    )
+    assert power_symbol_collisions(crowded)
+    repaired = use_power_symbols_text(
+        crowded, "VCC", inventory, context["VCC"]["flags"], context["VCC"]["local_pairs"]
+    )
+    tree = parse(repaired)
+    assert power_symbol_collisions(repaired) == []
+    assert rail_presentation(tree, inventory, RAILS) == []
+    untouched = {item["reference"] for item in vcc[1:]}
+    after = {item["reference"]: item for item in power_symbols.power_symbols(tree)}
+    assert all(
+        after[reference]["point"] in {item["point"] for item in vcc} for reference in untouched
+    )
+
+
+def test_repeating_use_power_symbols_without_crowding_is_no_change(timer):
+    _design, text, inventory, context = timer
+    converted = convert(text, inventory, context, RAILS)
+    with pytest.raises(ValueError, match="made no change"):
+        use_power_symbols_text(
+            converted, "VCC", inventory, context["VCC"]["flags"], context["VCC"]["local_pairs"]
+        )

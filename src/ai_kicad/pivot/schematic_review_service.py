@@ -23,10 +23,12 @@ class NativeSchematicReviewService:
         max_seconds: float = 1800,
         max_model_tokens: int = 120_000,
         context_tokens: int = 16384,
+        model_timeout_seconds: float = 180,
     ):
         self.launcher = launcher
         self.model = model
         self.context_tokens = context_tokens
+        self.model_timeout_seconds = model_timeout_seconds
         self.max_field_distance_mm, self.brief_text = resolve_review_brief(review_brief, None)
         self.power_symbol_rails = brief_allows_power_symbol_rails(review_brief)
         # The loop checks its wall-clock budget between operations; one KiCad or model call
@@ -48,6 +50,7 @@ class NativeSchematicReviewService:
         reviewer = OllamaSchematicReviewer(
             self.model,
             context_tokens=self.context_tokens,
+            timeout_seconds=self.model_timeout_seconds,
             **({"review_brief": self.brief_text} if self.brief_text else {}),
         )
         return run_schematic_review(engine, reviewer, output, **self.budgets)
