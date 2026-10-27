@@ -1,0 +1,140 @@
+{
+  "schema_version": "pivot-evidence.v1",
+  "evidence_id": "P6-011f-power-symbol-review-loops-2026-10-27",
+  "task_id": "P6-011",
+  "recorded_at_utc": "2026-10-27T15:51:57.178898Z",
+  "source_commit": "95e63161c5d480a1e91f6188123153c63bf1ea09",
+  "revision_kind": "git_commit",
+  "revision_id": "95e63161c5d480a1e91f6188123153c63bf1ea09",
+  "action": {
+    "summary": "Run complete unattended review loops with qwen35-256k (Qwen 3.5 9.7B, 262144 context) under briefs v2 and v3 across the vetted corpus, then rerun both 555 designs",
+    "command": "PYTHONPATH=src:. .venv/bin/python tools/pivot/run_review_loop_corpus.py --model qwen35-256k:latest --context-tokens 262144 [--model-timeout 600] [--review-brief fixtures/pivot/schematic_review_brief_v3.json] [--designs ...]",
+    "backend": "native KiCad 10.0.6 + Ollama",
+    "backend_version": "KiCad 10.0.6; Ollama 0.40.8; qwen35-256k:latest (b528609af3c0)",
+    "toolchain": "Python 3.12.12; Linux-6.8.0-87"
+  },
+  "status": "FAIL",
+  "artifacts": [
+    {
+      "path": "fixtures/pivot/experiments/review_loop_corpus_2026-10-27_qwen35_256k_run1/summary.json",
+      "sha256": "f36aec6b242c1524e7730bd4270019d189e84ad8fa844f9e9e0ef3b965448290",
+      "media_type": "application/json",
+      "role": "brief v2, qwen35-256k, 262144 context, commit 5ed00db2"
+    },
+    {
+      "path": "fixtures/pivot/experiments/review_loop_corpus_v3_2026-10-27_qwen35_256k_run1/summary.json",
+      "sha256": "3afa47d3e615019baa4b1ab84a9fd12184901da64d5d8b1f9b115a90e230772c",
+      "media_type": "application/json",
+      "role": "brief v3, commit c1c77832 (summary reconstructed after driver crash)"
+    },
+    {
+      "path": "fixtures/pivot/experiments/review_loop_corpus_v3_2026-10-27_qwen35_256k_run2/summary.json",
+      "sha256": "ea5974c63ce7f67f492566fbf0ca688adb9f7190d59eb89966616533a0414d20",
+      "media_type": "application/json",
+      "role": "brief v3, 600 s model timeout, commit c606d7b5"
+    },
+    {
+      "path": "fixtures/pivot/experiments/review_loop_555_v3_2026-10-27_qwen35_256k_run1/summary.json",
+      "sha256": "32f186d0282abfae4ddd66be047e2bb1ea0736fc8c4860f25965e58aab3eb5dd",
+      "media_type": "application/json",
+      "role": "brief v3, both 555 designs, commit 95e63161"
+    },
+    {
+      "path": "fixtures/pivot/experiments/review_loop_555_v3_2026-10-27_qwen35_256k_run1/timer_astable/result.json",
+      "sha256": "7bba6127c9758b909690ac96ba4a8eb064f352c473f1f8b3dcff41ba22e35001",
+      "media_type": "application/json",
+      "role": "555 loop record for timer_astable"
+    },
+    {
+      "path": "fixtures/pivot/experiments/review_loop_555_v3_2026-10-27_qwen35_256k_run1/timer_astable/candidates/003/assessment.json",
+      "sha256": "d2e6d87c7789a86587e0387e79e8ec6cd7ddfa0926c64e1c78fdd2f562e8620d",
+      "media_type": "application/json",
+      "role": "all-pass candidate checks for timer_astable"
+    },
+    {
+      "path": "fixtures/pivot/experiments/review_loop_555_v3_2026-10-27_qwen35_256k_run1/reference_555_led_flasher_v8/result.json",
+      "sha256": "93432074e088b034db13ce3a0cc333de20dd3d6c49009eb2672b7d35b62f6483",
+      "media_type": "application/json",
+      "role": "555 loop record for reference_555_led_flasher_v8"
+    },
+    {
+      "path": "fixtures/pivot/experiments/review_loop_555_v3_2026-10-27_qwen35_256k_run1/reference_555_led_flasher_v8/candidates/003/assessment.json",
+      "sha256": "f595625d944791fa6af7414ed052c8296d7cd01e3a10a0ca365e155da519f041",
+      "media_type": "application/json",
+      "role": "all-pass candidate checks for reference_555_led_flasher_v8"
+    },
+    {
+      "path": "tools/pivot/run_review_loop_corpus.py",
+      "sha256": "838fae3e98f83dcbf5688025149c87b1afc342b28698348d451fd04ffcb1bf45",
+      "media_type": "text/x-python",
+      "role": "corpus loop driver"
+    }
+  ],
+  "checks": [
+    {
+      "check_id": "joint-acceptance",
+      "status": "FAIL",
+      "independent": true,
+      "evidence_paths": [
+        "fixtures/pivot/experiments/review_loop_corpus_2026-10-27_qwen35_256k_run1/summary.json",
+        "fixtures/pivot/experiments/review_loop_corpus_v3_2026-10-27_qwen35_256k_run1/summary.json",
+        "fixtures/pivot/experiments/review_loop_corpus_v3_2026-10-27_qwen35_256k_run2/summary.json",
+        "fixtures/pivot/experiments/review_loop_555_v3_2026-10-27_qwen35_256k_run1/summary.json"
+      ],
+      "summary": "review_loop_corpus_2026-10-27_qwen35_256k_run1: 6/14 accepted (led_long_text, led_reverse_supply, led_series, linear_regulator, rc_highpass, rc_lowpass); review_loop_corpus_v3_2026-10-27_qwen35_256k_run1: 5/14 accepted (led_long_text, led_series, linear_regulator, rc_highpass, rc_lowpass); review_loop_corpus_v3_2026-10-27_qwen35_256k_run2: 6/14 accepted (dual_buffer, led_long_text, led_series, linear_regulator, rc_highpass, rc_lowpass); review_loop_555_v3_2026-10-27_qwen35_256k_run1: 0/2 accepted (none)"
+    },
+    {
+      "check_id": "no-false-acceptance",
+      "status": "PASS",
+      "independent": true,
+      "evidence_paths": [
+        "fixtures/pivot/experiments/review_loop_corpus_2026-10-27_qwen35_256k_run1/summary.json",
+        "fixtures/pivot/experiments/review_loop_corpus_v3_2026-10-27_qwen35_256k_run1/summary.json",
+        "fixtures/pivot/experiments/review_loop_corpus_v3_2026-10-27_qwen35_256k_run2/summary.json",
+        "fixtures/pivot/experiments/review_loop_555_v3_2026-10-27_qwen35_256k_run1/summary.json"
+      ],
+      "summary": "Every accepted candidate's own assessment passes all independent checks."
+    },
+    {
+      "check_id": "555-candidates-pass-independent-checks",
+      "status": "PASS",
+      "independent": true,
+      "evidence_paths": [
+        "fixtures/pivot/experiments/review_loop_555_v3_2026-10-27_qwen35_256k_run1/timer_astable/candidates/003/assessment.json",
+        "fixtures/pivot/experiments/review_loop_555_v3_2026-10-27_qwen35_256k_run1/reference_555_led_flasher_v8/candidates/003/assessment.json"
+      ],
+      "summary": "Both 555 designs reached a candidate (candidates/003) passing native tools, ERC, electrical equivalence, observed layout, rail presentation, power-symbol clearance and field checks."
+    },
+    {
+      "check_id": "full-555-joint-acceptance",
+      "status": "FAIL",
+      "independent": true,
+      "evidence_paths": [
+        "fixtures/pivot/experiments/review_loop_555_v3_2026-10-27_qwen35_256k_run1/timer_astable/result.json",
+        "fixtures/pivot/experiments/review_loop_555_v3_2026-10-27_qwen35_256k_run1/reference_555_led_flasher_v8/result.json"
+      ],
+      "summary": "The model rejected both passing 555 candidates, citing visible_rail_continuity (a brief v2 check absent under v3) and requesting connect_rail for VCC, which cannot route."
+    }
+  ],
+  "ci_links": [],
+  "blockers": [
+    {
+      "code": "REVIEWER_PROMPT_ASSUMES_BRIEF_V2",
+      "summary": "The fixed reviewer prompt still describes wire-only rail repair, and the model applies it under brief v3.",
+      "next_action": "Make the rail guidance depend on the active brief/checks, then rerun the 555 designs.",
+      "requires_owner_input": false
+    },
+    {
+      "code": "INDEPENDENT_READABILITY_ASSESSMENT",
+      "summary": "Accepted and passing images have model or agent inspection only.",
+      "next_action": "Owner or independent reviewer assesses retained images.",
+      "requires_owner_input": true
+    }
+  ],
+  "notes": [
+    "Brief v2 with qwen35-256k at 262144 context accepted 6/14 versus 5/14 for qwen3.5:9b at 16384; per-review prompts used about 10-20k tokens.",
+    "dual_buffer was repaired autonomously under v3 (connect_rail, use_power_symbols, move_symbols, connect_rail).",
+    "Fixes driven by these runs: re-placing crowded power symbols (c606d7b5) and refusing blocked placements with the blocking rail named (95e63161).",
+    "Single host runs; not locked-host qualification. Human electrical review pending."
+  ]
+}
