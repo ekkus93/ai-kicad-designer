@@ -31,11 +31,12 @@ def compiled_text(name: str, directory: Path) -> str:
     return emit(design, resolved, scene, directory).read_text()
 
 
-def fields(tree: list, reference: str) -> dict[str, tuple[str, tuple[int, int]]]:
+def fields(tree: list, reference: str, unit: int = 1) -> dict[str, tuple[str, tuple[int, int]]]:
     symbol = next(
         item
         for item in children(tree, "symbol")
-        if any(p[1] == "Reference" and p[2] == reference for p in children(item, "property"))
+        if int(one(item, "unit")[1]) == unit
+        and any(p[1] == "Reference" and p[2] == reference for p in children(item, "property"))
     )
     return {
         prop[1]: (
@@ -64,7 +65,7 @@ def test_vertical_part_text_moves_beside_the_body(tmp_path, name, expected):
     bodies = _vertical_bodies(after)
     for reference in expected:
         old, new = fields(before, reference), fields(after, reference)
-        body = bodies[reference]
+        body = bodies[(reference, 1)]
         for name_, (value, (x, y)) in new.items():
             assert y == old[name_][1][1], "text keeps its vertical position"
             assert x < old[name_][1][0], "text moves toward the part"
@@ -72,7 +73,9 @@ def test_vertical_part_text_moves_beside_the_body(tmp_path, name, expected):
             # At least the body gap clear of the body, and well under the old distance.
             assert box[0] >= body[2] + BODY_GAP
             assert box[0] - body[2] <= old[name_][1][0] - body[2]
-            assert not any(_overlaps(box, item) for item in _obstacles(tightened, after, reference))
+            assert not any(
+                _overlaps(box, item) for item in _obstacles(tightened, after, (reference, 1))
+            )
 
 
 def test_parts_with_pins_on_several_sides_are_left_alone(tmp_path):
@@ -91,7 +94,7 @@ def test_connector_text_moves_next_to_the_connector(tmp_path, name):
     bodies = _label_bodies(after)
     moved = {move["reference"]: move for move in moves}
     for reference in ("J1", "J2", "J3"):
-        body, kind = bodies[reference]
+        body, kind = bodies[(reference, 1)]
         assert kind == "connector" and reference in moved
         centre = ((body[0] + body[2]) / 2, (body[1] + body[3]) / 2)
 
@@ -103,7 +106,46 @@ def test_connector_text_moves_next_to_the_connector(tmp_path, name):
         assert spread(placed) < spread(before)
         for value, point in fields(after, reference).values():
             box = _field_box(point, value)
-            assert not any(_overlaps(box, item) for item in _obstacles(tightened, after, reference))
+            assert not any(
+                _overlaps(box, item) for item in _obstacles(tightened, after, (reference, 1))
+            )
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["dual_buffer", "dual_rail_reference", "noninverting_gain", "rc_to_buffer", "sallen_key"],
+)
+def test_op_amp_power_unit_text_reads_as_its_own(tmp_path, name):
+    """The body-less V+/V- unit's text moves beside it, not near a neighbouring part."""
+    from ai_kicad.pivot.field_layout import _label_bodies
+    from ai_kicad.pivot.schematic_fields import measure_field_association
+
+    text = compiled_text(name, tmp_path)
+    before = parse(text)
+    power_units = [
+        part for part, (_box, kind) in _label_bodies(before).items() if kind == "power_unit"
+    ]
+    assert power_units, "the op-amp supply unit is recognised"
+    tightened, moves = tighten_vertical_fields_text(text)
+    after = parse(tightened)
+    moved = {(move["reference"], move["unit"]) for move in moves}
+    for part in power_units:
+        assert part in moved
+        witnesses = [
+            item
+            for item in measure_field_association(after)["witnesses"]
+            if (item["reference"], item["unit"]) == part
+        ]
+        assert witnesses == []
+        for value, point in fields(after, *part).values():
+            box = _field_box(point, value)
+            assert not any(_overlaps(box, item) for item in _obstacles(tightened, after, part))
+    # Other units of the same part keep their text where it was.
+    for symbol in children(before, "symbol"):
+        reference = next(p[2] for p in children(symbol, "property") if p[1] == "Reference")
+        unit = int(one(symbol, "unit")[1])
+        if (reference, unit) not in moved and not reference.startswith("#"):
+            assert fields(before, reference, unit) == fields(after, reference, unit)
 
 
 def test_tightening_is_idempotent(tmp_path):
