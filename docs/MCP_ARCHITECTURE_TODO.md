@@ -171,6 +171,15 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     **Note:** Left unchecked. The full 555 REF/VCC requirement is not met and no independent readability assessment exists.
     **Progress (2026-10-27):** With `qwen35-256k:latest` at 262144 context: brief v2 accepted 6/14 (`review_loop_corpus_2026-10-27_qwen35_256k_run1`); brief v3 accepted 5/14 (`review_loop_corpus_v3_2026-10-27_qwen35_256k_run1`, summary reconstructed after a driver path bug) and 6/14 (`_run2`, including `dual_buffer`); a 555-only rerun (`review_loop_555_v3_2026-10-27_qwen35_256k_run1`) reached a candidate passing every independent check for both 555 designs, but the model rejected both. Every accepted candidate passes its own independent checks. Evidence: `fixtures/pivot/evidence/P6-011f-power-symbol-review-loops-2026-10-27.json`.
     **Note (2026-10-27):** Still unchecked: the full 555 is not jointly accepted and no independent readability assessment exists. Next: make the reviewer prompt's rail guidance follow the active brief and rerun the 555s.
+    **Progress (2026-10-31):** All runs use `qwen35-32k:latest` with `num_ctx` 262144 and brief v3. The reviewer prompt's rail guidance now follows the checks present. Generation plans rails before review: every rail order, with and without rewiring, keeping the valid plan with the fewest power symbols. Vertical-part, connector and op-amp power-unit text is placed beside its body.
+    - `review_loop_555_v3_2026-10-31_qwen35_32k_run1`–`run4` cover both 555s. Run4 (commit `a70a84be`) accepted both, with every independent check passing.
+    - `fixtures/pivot/timer_astable_gnd/` names the timer's return net GND.
+    - Full corpus `review_loop_corpus_v3_2026-10-31_qwen35_32k_run1` (commit `840d8414`, 15 designs): 9/15 accepted. Four op-amp designs stopped `NO_PROGRESS` on the U1 power-unit `field_owner_association` failure.
+    - Commit `20c2ec0a` places that text beside its unit. Rerun `_run2` (7 designs) accepted dual_buffer, dual_rail_reference, inverting_gain, noninverting_gain and rc_to_buffer on first review with no edits.
+    - Across the two runs 13/15 designs reached joint acceptance. The 8 designs accepted in run1 were not rerun at `20c2ec0a`.
+    - Still failing: `sallen_key` (VMINUS/REF `rail_presentation`; VPLUS power-symbol placement blocked by OUT/VMINUS wiring) and `led_reverse_supply` (content outside the A4 margin; the model repeats no-op `move_field`).
+    No false acceptance occurred.
+    **Note (2026-10-31):** Owner viewed the run1/run2 drawings and said: "I think it looks pretty good." Earlier owner feedback this week asked for wired VCC wherever routable, labels closer to vertical parts and connectors, and a visible ground; those requests were implemented and reviewed in the 555 run4 images. This is informal owner feedback, not the independent readability assessment or human electrical review the acceptance requires, so P6-011f stays unchecked.
 
 
 ## P7 — Conditional native KiCad extension/fork gate

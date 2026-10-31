@@ -1,0 +1,118 @@
+{
+  "schema_version": "review-loop-corpus.v1",
+  "source_commit": "20c2ec0ad1cca4651e737752ecc9b8ffae0b9428",
+  "implementation_sha256": {
+    "src/ai_kicad/pivot/schematic_review.py": "7c7fb229c031cb9653e15673e772a03890f63f66656fd58a072742a893b05356",
+    "src/ai_kicad/pivot/schematic_review_native.py": "d8478e3ed59c8a91d6855e92d4522c28cb0fd363597ca12db957aa3763200ece",
+    "src/ai_kicad/pivot/schematic_review_service.py": "0348c94137f0e430bff84528df9ea8f90061cf12f7942d44d973843e08469a7f"
+  },
+  "model": "qwen35-32k:latest",
+  "context_tokens": 262144,
+  "model_timeout_seconds": 600.0,
+  "review_brief": "fixtures/pivot/schematic_review_brief_v3.json",
+  "budgets": {
+    "max_reviews": 8,
+    "max_seconds": 1800,
+    "max_model_tokens": 120000
+  },
+  "results": {
+    "led_reverse_supply": {
+      "design": "fixtures/m2b/led_reverse_supply.json",
+      "status": "NO_PROGRESS",
+      "reason": "model repeated an invalid review: move_field for J1.Value made no change; choose a different position",
+      "reviews": 5,
+      "model_tokens": 48896,
+      "requested_edits": [
+        "connect_rail",
+        "move_field",
+        "move_field",
+        "move_field",
+        "move_field"
+      ],
+      "rejected_replies": 3,
+      "accepted_schematic": null,
+      "best_passing_schematic": null
+    },
+    "dual_buffer": {
+      "design": "fixtures/m2b/dual_buffer.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, rail_presentation, power_symbol_clearance, field_separation, field_locality, field_owner_association) pass. Visual inspection confirms legible labels, clear association with symbols, balanced page composition, and correct rail presentation for all nets. No unresolved issues found.",
+      "reviews": 1,
+      "model_tokens": 12047,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/DualBufferM2b.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/DualBufferM2b.kicad_sch"
+    },
+    "dual_rail_reference": {
+      "design": "fixtures/m2b/dual_rail_reference.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, rail_presentation, power_symbol_clearance, field_separation, field_locality, field_owner_association) pass. Visual inspection confirms legible labels, clear association with symbols, balanced page composition, and correct presentation of power rails via wires and matching power symbols. No unresolved issues found.",
+      "reviews": 1,
+      "model_tokens": 13104,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/DualRailReference.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/DualRailReference.kicad_sch"
+    },
+    "inverting_gain": {
+      "design": "fixtures/m2b/inverting_gain.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, rail_presentation, power_symbol_clearance, field_separation, field_locality, field_owner_association) pass. Visual inspection confirms legible labels, clear association, balanced page composition, and correct rail presentation with no unresolved issues.",
+      "reviews": 1,
+      "model_tokens": 13101,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/InvertingGain.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/InvertingGain.kicad_sch"
+    },
+    "noninverting_gain": {
+      "design": "fixtures/m2b/noninverting_gain.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks (native_tools, ERC, electrical_equivalence, observed_layout, rail_presentation, power_symbol_clearance, field_separation, field_locality, field_owner_association) pass. Visual inspection confirms legible labels, clear association with symbols, balanced page composition, and correct presentation of power rails via wires and symbols without clearance violations. No unresolved issues found.",
+      "reviews": 1,
+      "model_tokens": 13162,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/NoninvertingGain.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/NoninvertingGain.kicad_sch"
+    },
+    "rc_to_buffer": {
+      "design": "fixtures/m2b/rc_to_buffer.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, rail_presentation, power_symbol_clearance, field_separation, field_locality, field_owner_association) pass. Visual inspection confirms legible labels, clear association of fields to symbols, balanced page composition with sufficient whitespace, and correct presentation of power rails (VPLUS/VMINUS/REF) via wires and matching power symbols. No unresolved issues found.",
+      "reviews": 1,
+      "model_tokens": 13233,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/RcToBuffer.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/RcToBuffer.kicad_sch"
+    },
+    "sallen_key": {
+      "design": "fixtures/m2b/sallen_key.json",
+      "status": "NO_PROGRESS",
+      "reason": "model repeated an invalid review: no clear position for a VPLUS power symbol at ['J1.3']; wiring of ['OUT', 'VMINUS'] and nearby drawing items block it; if OUT, VMINUS is an asserted rail, request use_power_symbols for it first so its wiring is replaced by power symbols, then repeat this edit",
+      "reviews": 4,
+      "model_tokens": 60525,
+      "requested_edits": [
+        "connect_rail",
+        "connect_rail",
+        "use_power_symbols",
+        "use_power_symbols"
+      ],
+      "rejected_replies": 3,
+      "accepted_schematic": null,
+      "best_passing_schematic": null
+    }
+  },
+  "accepted": [
+    "dual_buffer",
+    "dual_rail_reference",
+    "inverting_gain",
+    "noninverting_gain",
+    "rc_to_buffer"
+  ],
+  "locked_host_qualification": false,
+  "independent_readability_assessment": "PENDING",
+  "human_electrical_review": "PENDING"
+}
