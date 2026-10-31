@@ -1,0 +1,55 @@
+{
+  "schema_version": "review-loop-corpus.v1",
+  "source_commit": "8b480f6660f6af270bc62b23f5cef95c5b3c7c0e",
+  "implementation_sha256": {
+    "src/ai_kicad/pivot/schematic_review.py": "7c7fb229c031cb9653e15673e772a03890f63f66656fd58a072742a893b05356",
+    "src/ai_kicad/pivot/schematic_review_native.py": "53d3091e4db8f892048770737e114bdc78314cbb5114d3a28a9bc1a79963d358",
+    "src/ai_kicad/pivot/schematic_review_service.py": "0348c94137f0e430bff84528df9ea8f90061cf12f7942d44d973843e08469a7f"
+  },
+  "model": "qwen35-32k:latest",
+  "context_tokens": 262144,
+  "model_timeout_seconds": 600.0,
+  "review_brief": "fixtures/pivot/schematic_review_brief_v3.json",
+  "budgets": {
+    "max_reviews": 8,
+    "max_seconds": 1800,
+    "max_model_tokens": 120000
+  },
+  "results": {
+    "reference_555_led_flasher_v8": {
+      "design": "fixtures/pivot/reference_555_led_flasher_v8/design.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, rail_presentation, power_symbol_clearance, field_separation, field_locality, field_owner_association) passed. Visual inspection confirms legible labels, clear association with symbols, balanced page composition, and correct presentation of power rails (REF and VCC) via wires and symbols without clearance violations. No unresolved issues found.",
+      "reviews": 3,
+      "model_tokens": 43192,
+      "requested_edits": [
+        "connect_rail",
+        "connect_rail"
+      ],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/002/project/Reference555LedFlasher.kicad_sch",
+      "best_passing_schematic": "candidates/002/project/Reference555LedFlasher.kicad_sch"
+    },
+    "timer_astable_gnd": {
+      "design": "fixtures/pivot/timer_astable_gnd/design.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, rail_presentation, power_symbol_clearance, field_separation, field_locality, field_owner_association) pass. Visual inspection confirms legible labels, clear functional grouping, balanced page composition, and correct presentation of VCC/GND rails via wires and power symbols. No unresolved issues found.",
+      "reviews": 3,
+      "model_tokens": 39805,
+      "requested_edits": [
+        "connect_rail",
+        "connect_rail"
+      ],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/002/project/TimerAstable.kicad_sch",
+      "best_passing_schematic": "candidates/002/project/TimerAstable.kicad_sch"
+    }
+  },
+  "accepted": [
+    "reference_555_led_flasher_v8",
+    "timer_astable_gnd"
+  ],
+  "locked_host_qualification": false,
+  "independent_readability_assessment": "PENDING",
+  "human_electrical_review": "PENDING"
+}
