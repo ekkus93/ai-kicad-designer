@@ -52,6 +52,8 @@ class AddWirePath(StrictModel):
 class ConnectRail(StrictModel):
     operation: Literal["connect_rail"]
     net: str = Field(min_length=1, max_length=64)
+    # Remove the rail's existing terminal-to-terminal runs first, then route it afresh.
+    replace_existing: bool = False
 
 
 class MoveSymbols(StrictModel):
@@ -244,6 +246,8 @@ class OllamaSchematicReviewer:
             "open space; their private wiring moves with them and shared nets are rerouted. "
             "Then request connect_rail again. Alternatively, add explicit Manhattan wire segments "
             "with add_wire_path. "
+            "Set replace_existing on connect_rail to reroute a rail whose existing long runs "
+            "block other connections. "
             "When the checks list rail_presentation instead of visible_rail_continuity, a rail "
             "may also be drawn the conventional way: use_power_symbols with the failing net "
             "replaces that rail's labels and terminal-to-terminal rail wiring with a matching "

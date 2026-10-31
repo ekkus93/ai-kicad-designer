@@ -14,11 +14,14 @@ from __future__ import annotations
 
 import argparse
 from concurrent.futures import ProcessPoolExecutor
+import itertools
 import json
 from pathlib import Path
 import subprocess
 import time
 
+from ai_kicad.pivot.power_symbols import _wire_segments
+from ai_kicad.pivot.power_symbols import power_symbols as placed_power_symbols
 from ai_kicad.pivot.schematic_review import (
     ConnectRail,
     MoveSymbols,
@@ -27,6 +30,7 @@ from ai_kicad.pivot.schematic_review import (
     write_json,
 )
 from ai_kicad.pivot.schematic_review_native import NativeSchematicEngine
+from ai_kicad.sexpr import parse
 from tools.pivot.experiment_paths import create_experiment_dir
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -56,6 +60,16 @@ def hard_pass(assessment) -> bool:
     checks = assessment.report["checks"]
     required = HARD_CHECKS + (("power_symbol_clearance",) if "rail_presentation" in checks else ())
     return all(checks.get(name) == "PASS" for name in required)
+
+
+def presentation_cost(assessment) -> tuple[int, float]:
+    """Power symbols drawn and total wire length of a candidate."""
+    tree = parse(assessment.schematic.read_text())
+    wire = sum(
+        abs(first[0] - second[0]) + abs(first[1] - second[1])
+        for first, second in _wire_segments(tree)
+    )
+    return len(placed_power_symbols(tree)), round(wire / 1_000_000, 2)
 
 
 def design_path(name: str) -> Path:
@@ -124,7 +138,11 @@ def repair_design(
             if time.monotonic() - started > budget_seconds:
                 break
             net = min(pending, key=lambda item: (priority.index(item), item))
-            edits = [ConnectRail(operation="connect_rail", net=net)] if style == "wire" else []
+            edits = {
+                "wire": [ConnectRail(operation="connect_rail", net=net)],
+                "rewire": [ConnectRail(operation="connect_rail", net=net, replace_existing=True)],
+                "power": [],
+            }[style]
             if power_symbols:
                 edits.append(UsePowerSymbols(operation="use_power_symbols", net=net))
             for edit in edits:
@@ -171,15 +189,34 @@ def repair_design(
     # replan from the initial schematic with the blocked nets first; keep the best plan.
     failing = sorted({w["net"] for w in rail_witnesses(initial)})
     orderings, plans, outcomes = [(failing, "wire")], [], []
+    if power_symbols:
+        # Brief v3: compare every rail order, keeping or rerouting existing rail runs, and
+        # prefer the drawing with the fewest power symbols (most rail drawn as wire).
+        orderings = [
+            (list(order), style)
+            for style in ("wire", "rewire")
+            for order in itertools.permutations(failing)
+        ]
     while orderings and time.monotonic() - started <= budget_seconds:
         priority, style = orderings.pop(0)
         final, edits = plan(priority, style)
         unresolved = sorted({w["net"] for w in rail_witnesses(final)})
         if not hard_pass(final):
             unresolved = sorted(set(unresolved) | {"(hard checks)"})
-        plans.append({"priority": priority, "style": style, "unresolved_nets": unresolved})
+        symbols, wire_mm = presentation_cost(final)
+        plans.append(
+            {
+                "priority": priority,
+                "style": style,
+                "unresolved_nets": unresolved,
+                "power_symbols": symbols,
+                "wire_length_mm": wire_mm,
+            }
+        )
         outcomes.append((final, edits))
-        if not unresolved:
+        if power_symbols and orderings:
+            continue
+        if not unresolved or any(not entry["unresolved_nets"] for entry in plans):
             break
         retry = [net for net in unresolved if net in failing]
         retry += [net for net in failing if net not in retry]
@@ -189,7 +226,15 @@ def repair_design(
             # Every wiring order left a rail unresolved: draw each failing rail with
             # power symbols, the conventional presentation brief v3 accepts.
             orderings.append((failing, "power"))
-    best = min(range(len(plans)), key=lambda index: (len(plans[index]["unresolved_nets"]), index))
+    best = min(
+        range(len(plans)),
+        key=lambda index: (
+            len(plans[index]["unresolved_nets"]),
+            plans[index]["power_symbols"],
+            plans[index]["wire_length_mm"],
+            index,
+        ),
+    )
     current, applied = outcomes[best]
     result = {
         "design": name,

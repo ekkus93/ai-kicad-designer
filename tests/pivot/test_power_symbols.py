@@ -294,3 +294,46 @@ def test_blocked_power_symbol_is_refused_with_the_blocking_rail_named(tmp_path):
     converted = convert(wired, inventory, context, ["REF", "VCC"])
     assert power_symbol_collisions(converted) == []
     assert rail_presentation(parse(converted), inventory, RAILS) == []
+
+
+@pytest.mark.parametrize(
+    ("name", "most_symbols"), [("timer_astable", 2), ("reference_555_led_flasher_v8", 3)]
+)
+def test_v3_connect_rail_wires_rails_and_marks_only_unreachable_groups(
+    tmp_path, name, most_symbols
+):
+    from ai_kicad.pivot.schematic_review_native import _point_groups, connect_rail_text
+
+    _design, base, inventory, context = compiled(name, tmp_path)
+    results = []
+    for replace in (False, True):
+        for order in (["REF", "VCC"], ["VCC", "REF"]):
+            text = base
+            for net in order:
+                text = connect_rail_text(
+                    text,
+                    net,
+                    inventory,
+                    power_symbols_allowed=True,
+                    rail=context[net],
+                    replace_existing=replace,
+                )
+            tree = parse(text)
+            if rail_presentation(tree, inventory, RAILS) or power_symbol_collisions(text):
+                continue
+            for net in RAILS:
+                points = list(
+                    dict.fromkeys(
+                        (round(item["x_mm"] * 1e6), round(item["y_mm"] * 1e6))
+                        for item in inventory
+                        if item["net"] == net
+                    )
+                )
+                groups = len(_point_groups(tree, points))
+                marked = [item for item in power_symbols.power_symbols(tree) if item["net"] == net]
+                # A wired rail has no symbols; otherwise each remaining wire group has one.
+                assert len(marked) == (0 if groups == 1 else groups)
+            results.append(len(power_symbols.power_symbols(tree)))
+    assert results, "no plan drew both rails cleanly"
+    # The pin order forces one break per 555; the best plan stays near that minimum.
+    assert min(results) <= most_symbols

@@ -410,6 +410,96 @@ def _flag_paths(
     return path
 
 
+def _rail_runs(
+    segments: list[tuple[Point, Point]],
+    roots: list[int],
+    terminals: list[Point],
+    flag_points: list[Point],
+    local_pairs: list[tuple[Point, Point]],
+) -> tuple[set[int], list[tuple[Point, Point]]]:
+    """Wire trees joining two or more rail terminals, and the paths within them to keep.
+
+    A single pin's stub to its label is not a run. Kept are the shortest existing paths
+    from each power flag to its nearest terminal and between declared local pairs.
+    """
+    rail_roots = {
+        root
+        for root in set(roots)
+        if sum(
+            any(
+                point_on_segment(point, *segment)
+                for segment, other in zip(segments, roots)
+                if other == root
+            )
+            for point in terminals
+        )
+        >= 2
+    }
+    kept: list[tuple[Point, Point]] = []
+    for root in rail_roots:
+        tree_segments = [segment for segment, other in zip(segments, roots) if other == root]
+        for flag in flag_points:
+            if any(point_on_segment(flag, *segment) for segment in tree_segments):
+                kept.extend(_flag_paths(tree_segments, flag, set(terminals)))
+        for first, second in local_pairs:
+            if all(
+                any(point_on_segment(point, *segment) for segment in tree_segments)
+                for point in (first, second)
+            ):
+                kept.extend(_flag_paths(tree_segments, first, {second}))
+    return rail_roots, sorted({tuple(sorted(edge)) for edge in kept})
+
+
+def remove_rail_runs_text(
+    text: str,
+    net: str,
+    terminal_inventory: list[dict],
+    flag_points: list[Point],
+    local_pairs: list[tuple[Point, Point]] = (),
+) -> str:
+    """Remove one rail's terminal-to-terminal wiring so it can be rerouted.
+
+    Power-flag paths and declared local pairs (such as decoupling) stay wired, and
+    labels are untouched, so connectivity is unchanged.
+    """
+    from .schematic_review_native import _wire_trees
+
+    tree = parse(text)
+    terminals = _terminal_points(terminal_inventory, net)
+    segments, owners, roots = _wire_trees(tree)
+    rail_roots, kept = _rail_runs(segments, roots, terminals, flag_points, local_pairs)
+    if not rail_roots:
+        return text
+    removed = {owner for owner, root in zip(owners, roots) if root in rail_roots}
+    run_points = {
+        point for segment, root in zip(segments, roots) if root in rail_roots for point in segment
+    }
+    position = -1
+
+    def drop(node: list) -> bool:
+        nonlocal position
+        if node[0] == "wire":
+            position += 1
+            return position in removed
+        return (
+            node[0] == "junction"
+            and (_nm(one(node, "at")[1]), _nm(one(node, "at")[2])) in run_points
+        )
+
+    text = "".join(_without_forms(text, drop))
+    degree: dict[Point, int] = {}
+    for edge in kept:
+        for point in edge:
+            degree[point] = degree.get(point, 0) + 1
+    junctions = [
+        f"(junction (at {_mm(point)}) (diameter 0) (color 0 0 0 0) "
+        f"(uuid {quote(str(uuid.uuid5(uuid.NAMESPACE_URL, f'ai-kicad-kept-junction:{net}:{_mm(point)}')))}))"
+        for point, count in sorted(degree.items())
+        if count >= 3
+    ]
+    return _append_forms(text, junctions + [_wire_form(a, b, net) for a, b in kept])
+
+
 def use_power_symbols_text(
     text: str,
     net: str,
@@ -417,6 +507,7 @@ def use_power_symbols_text(
     flag_points: list[Point],
     local_pairs: list[tuple[Point, Point]] = (),
     layout_check: Callable[[str], str | None] | None = None,
+    prune_rail_wiring: bool = True,
 ) -> str:
     """Present one rail conventionally: a power symbol at each terminal, no rail wiring.
 
@@ -443,39 +534,21 @@ def use_power_symbols_text(
         if label[1] == net
     }
     segments, owners, roots = _wire_trees(tree)
-    # Only rail runs joining two or more terminals are removed; a single pin's stub to
-    # its label stays, and the label point becomes the power symbol's position.
-    rail_roots = {
-        root
-        for root in set(roots)
-        if sum(
-            any(
-                point_on_segment(point, *segment)
-                for segment, other in zip(segments, roots)
-                if other == root
-            )
-            for point in terminals
-        )
-        >= 2
-    }
-    kept: list[tuple[Point, Point]] = []
-    for root in rail_roots:
-        tree_segments = [segment for segment, other in zip(segments, roots) if other == root]
-        for flag in flag_points:
-            if any(point_on_segment(flag, *segment) for segment in tree_segments):
-                kept.extend(_flag_paths(tree_segments, flag, set(terminals)))
-        for first, second in local_pairs:
-            if all(
-                any(point_on_segment(point, *segment) for segment in tree_segments)
-                for point in (first, second)
-            ):
-                kept.extend(_flag_paths(tree_segments, first, {second}))
-    kept = sorted({tuple(sorted(edge)) for edge in kept})
+    rail_roots, kept = (
+        _rail_runs(segments, roots, terminals, flag_points, local_pairs)
+        if prune_rail_wiring
+        else (set(), [])
+    )
     removed_wires = {owner for owner, root in zip(owners, roots) if root in rail_roots}
     rail_segment_points = {
         point for segment, root in zip(segments, roots) if root in rail_roots for point in segment
     }
-    project_node = one(one(next(iter(children(tree, "symbol"))), "instances"), "project")
+    instances = [
+        node for symbol in children(tree, "symbol") for node in children(symbol, "instances")
+    ]
+    if not instances:
+        raise ValueError("use_power_symbols requires a native KiCad sheet with symbol instances")
+    project_node = one(instances[0], "project")
     project = (project_node[1], one(project_node, "path")[1])
     existing = [item for item in power_symbols(tree) if item["net"] == net]
     if existing:
