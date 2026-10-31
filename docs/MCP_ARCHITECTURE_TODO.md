@@ -179,6 +179,15 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - Across the two runs 13/15 designs reached joint acceptance. The 8 designs accepted in run1 were not rerun at `20c2ec0a`.
     - Still failing: `sallen_key` (VMINUS/REF `rail_presentation`; VPLUS power-symbol placement blocked by OUT/VMINUS wiring) and `led_reverse_supply` (content outside the A4 margin; the model repeats no-op `move_field`).
     No false acceptance occurred.
+    **Progress (2026-10-31, later):** Commit `e52f6b5c` makes two generation changes:
+    - Field moves stay inside the observer's A4 content area. Earlier, led_reverse_supply's J1 text went to y=25.025 mm, past the 25.4 mm margin.
+    - When no rail plan fits, rail planning moves each part named in the refusals by grid offsets, nearest first, and replans. On sallen_key, J1 moved 12.7 mm down; the result passes every independent check, but the J1 area is crowded.
+
+    Full corpus `review_loop_corpus_v3_2026-10-31_qwen35_32k_run3` at `e52f6b5c` accepted 13/15, all on first review with no edits:
+    - **sallen_key** passes every check, but the model twice requested a redundant REF `connect_rail` ("not visibly joined") and stopped `NO_PROGRESS`.
+    - **timer_astable_gnd** got `TOOL_ERROR`: the Ollama server closed the connection and then stopped. Rerun `_run4` was refused a connection; it is retained as a failed attempt, not a result.
+
+    No false acceptance occurred.
     **Note (2026-10-31):** Owner viewed the run1/run2 drawings and said: "I think it looks pretty good." Earlier owner feedback this week asked for wired VCC wherever routable, labels closer to vertical parts and connectors, and a visible ground; those requests were implemented and reviewed in the 555 run4 images. This is informal owner feedback, not the independent readability assessment or human electrical review the acceptance requires, so P6-011f stays unchecked.
 
 

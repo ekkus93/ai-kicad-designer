@@ -1,0 +1,206 @@
+{
+  "schema_version": "review-loop-corpus.v1",
+  "source_commit": "e52f6b5c0b73f2c517cde65d5268aae484c3d40f",
+  "implementation_sha256": {
+    "src/ai_kicad/pivot/schematic_review.py": "7c7fb229c031cb9653e15673e772a03890f63f66656fd58a072742a893b05356",
+    "src/ai_kicad/pivot/schematic_review_native.py": "f6d0082aab6416b2906b311dbe80c06ce7ed153a8b157f001dfa93221929e6e0",
+    "src/ai_kicad/pivot/schematic_review_service.py": "0348c94137f0e430bff84528df9ea8f90061cf12f7942d44d973843e08469a7f"
+  },
+  "model": "qwen35-32k:latest",
+  "context_tokens": 262144,
+  "model_timeout_seconds": 600.0,
+  "review_brief": "fixtures/pivot/schematic_review_brief_v3.json",
+  "budgets": {
+    "max_reviews": 8,
+    "max_seconds": 1800,
+    "max_model_tokens": 120000
+  },
+  "results": {
+    "rc_lowpass": {
+      "design": "fixtures/m2b/rc_lowpass.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, rail_presentation, power_symbol_clearance, field_separation, field_locality, field_owner_association) pass. Visual inspection confirms legible labels, clear association with symbols, balanced page composition, and correct rail presentation without unresolved issues.",
+      "reviews": 1,
+      "model_tokens": 10180,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/RcLowpass.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/RcLowpass.kicad_sch"
+    },
+    "rc_highpass": {
+      "design": "fixtures/m2b/rc_highpass.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, rail_presentation, power_symbol_clearance, field_separation, field_locality, field_owner_association) pass. Visual inspection confirms legible labels, clear association with symbols, balanced page composition, and correct rail presentation for all nets (IN, OUT, REF). No unresolved issues found.",
+      "reviews": 1,
+      "model_tokens": 10197,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/RcHighpass.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/RcHighpass.kicad_sch"
+    },
+    "led_series": {
+      "design": "fixtures/m2b/led_series.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks pass. The schematic shows a complete LED circuit with J1 (Input), R1 (1k resistor), D1 (LED), and J2 (Return). All component references and values are legible and correctly associated with their symbols. The page composition is balanced with sufficient white space. Power rails (VPLUS, REF) are correctly presented with visible wires connecting terminals to power symbols or shared trunks. No unresolved issues found.",
+      "reviews": 1,
+      "model_tokens": 9811,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/LedSeries.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/LedSeries.kicad_sch"
+    },
+    "led_long_text": {
+      "design": "fixtures/m2b/led_long_text.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks pass. The schematic shows a complete circuit with J1, R123, D24, and J2 correctly wired. All labels are legible and associated with their components. Page composition is balanced with sufficient whitespace. No unresolved issues found.",
+      "reviews": 1,
+      "model_tokens": 9840,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/LedLongText.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/LedLongText.kicad_sch"
+    },
+    "led_reverse_supply": {
+      "design": "fixtures/m2b/led_reverse_supply.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, rail_presentation, power_symbol_clearance, field_separation, field_locality, field_owner_association) passed. Visual inspection confirms legible labels, clear association with symbols, balanced page composition, and correct rail presentation for all nets. No unresolved issues found.",
+      "reviews": 1,
+      "model_tokens": 9804,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/LedReverseSupply.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/LedReverseSupply.kicad_sch"
+    },
+    "dual_buffer": {
+      "design": "fixtures/m2b/dual_buffer.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, rail_presentation, power_symbol_clearance, field_separation, field_locality, field_owner_association) pass. Visual inspection confirms legible labels, clear association of fields to symbols, balanced page composition with sufficient whitespace, and correct presentation of power rails via wires and power symbols. No unresolved issues found.",
+      "reviews": 1,
+      "model_tokens": 12073,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/DualBufferM2b.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/DualBufferM2b.kicad_sch"
+    },
+    "dual_rail_reference": {
+      "design": "fixtures/m2b/dual_rail_reference.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, rail_presentation, power_symbol_clearance, field_separation, field_locality, field_owner_association) pass. Visual inspection confirms legible labels, clear association with symbols, balanced page composition, and correct presentation of VPLUS/VMINUS rails via wires and power symbols. No unresolved issues found.",
+      "reviews": 1,
+      "model_tokens": 13096,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/DualRailReference.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/DualRailReference.kicad_sch"
+    },
+    "inverting_gain": {
+      "design": "fixtures/m2b/inverting_gain.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, rail_presentation, power_symbol_clearance, field_separation, field_locality, field_owner_association) pass. Visual inspection confirms legible labels, clear association, balanced page composition, and correct rail presentation for all nets. No unresolved issues found.",
+      "reviews": 1,
+      "model_tokens": 13100,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/InvertingGain.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/InvertingGain.kicad_sch"
+    },
+    "noninverting_gain": {
+      "design": "fixtures/m2b/noninverting_gain.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, rail_presentation, power_symbol_clearance, field_separation, field_locality, field_owner_association) pass. Visual inspection confirms legible labels, clear association of fields to symbols, balanced page composition with sufficient margin and flow, and correct presentation of power rails via wires and symbols without clearance violations. No unresolved issues found.",
+      "reviews": 1,
+      "model_tokens": 13180,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/NoninvertingGain.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/NoninvertingGain.kicad_sch"
+    },
+    "rc_to_buffer": {
+      "design": "fixtures/m2b/rc_to_buffer.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, rail_presentation, power_symbol_clearance, field_separation, field_locality, field_owner_association) pass. Visual inspection confirms legible labels, clear association of fields to symbols, balanced page composition with sufficient whitespace, and correct presentation of power rails (VPLUS/VMINUS/REF) via wires and matching power symbols. No unresolved issues found.",
+      "reviews": 1,
+      "model_tokens": 13209,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/RcToBuffer.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/RcToBuffer.kicad_sch"
+    },
+    "sallen_key": {
+      "design": "fixtures/m2b/sallen_key.json",
+      "status": "NO_PROGRESS",
+      "reason": "model repeated an invalid review: connect_rail wired what it could of REF, but marking the unreachable groups failed: use_power_symbols made no change; REF already uses power symbols and none of them touches another drawing item",
+      "reviews": 2,
+      "model_tokens": 29148,
+      "requested_edits": [
+        "connect_rail",
+        "connect_rail"
+      ],
+      "rejected_replies": 2,
+      "accepted_schematic": null,
+      "best_passing_schematic": "candidates/000/project/SallenKey.kicad_sch"
+    },
+    "linear_regulator": {
+      "design": "fixtures/m2b/linear_regulator.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, rail_presentation, power_symbol_clearance, field_separation, field_locality, field_owner_association) pass. Visual inspection confirms legible labels, clear association with symbols, balanced page composition, and correct rail presentation for REF/VCC nets. No unresolved issues found.",
+      "reviews": 1,
+      "model_tokens": 11198,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/LinearRegulator.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/LinearRegulator.kicad_sch"
+    },
+    "timer_astable": {
+      "design": "fixtures/m2b/timer_astable.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, rail_presentation, power_symbol_clearance, field_separation, field_locality, field_owner_association) pass. Visual inspection confirms legible labels, clear association with symbols, balanced page composition, and correct presentation of power rails via wires and symbols without clearance violations. No unresolved issues found.",
+      "reviews": 1,
+      "model_tokens": 12757,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/TimerAstable.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/TimerAstable.kicad_sch"
+    },
+    "reference_555_led_flasher_v8": {
+      "design": "fixtures/pivot/reference_555_led_flasher_v8/design.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, rail_presentation, power_symbol_clearance, field_separation, field_locality, field_owner_association) pass. Visual inspection confirms legible labels, clear association with symbols, balanced page composition, and correct presentation of REF/VCC rails via wires and power symbols. No unresolved issues found.",
+      "reviews": 1,
+      "model_tokens": 14018,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/Reference555LedFlasher.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/Reference555LedFlasher.kicad_sch"
+    },
+    "timer_astable_gnd": {
+      "design": "fixtures/pivot/timer_astable_gnd/design.json",
+      "status": "TOOL_ERROR",
+      "reason": "Remote end closed connection without response",
+      "reviews": 1,
+      "model_tokens": 0,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": null,
+      "best_passing_schematic": "candidates/000/project/TimerAstable.kicad_sch"
+    }
+  },
+  "accepted": [
+    "dual_buffer",
+    "dual_rail_reference",
+    "inverting_gain",
+    "led_long_text",
+    "led_reverse_supply",
+    "led_series",
+    "linear_regulator",
+    "noninverting_gain",
+    "rc_highpass",
+    "rc_lowpass",
+    "rc_to_buffer",
+    "reference_555_led_flasher_v8",
+    "timer_astable"
+  ],
+  "locked_host_qualification": false,
+  "independent_readability_assessment": "PENDING",
+  "human_electrical_review": "PENDING"
+}
