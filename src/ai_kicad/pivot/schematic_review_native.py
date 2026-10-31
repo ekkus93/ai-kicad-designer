@@ -45,8 +45,10 @@ from .schematic_review import (
     file_hash,
     write_json,
 )
+from .field_layout import tighten_vertical_fields_text
 from .power_symbols import (
     label_view_text,
+    remove_rail_runs_text,
     use_power_symbols_text,
     power_symbol_collisions,
     power_symbol_definitions,
@@ -139,7 +141,12 @@ def edit_schematic_text(
             if terminal_inventory is None:
                 raise ValueError("connect_rail requires independently observed terminal positions")
             text = connect_rail_text(
-                text, action.net, terminal_inventory, power_symbols_allowed=rail_context is not None
+                text,
+                action.net,
+                terminal_inventory,
+                power_symbols_allowed=rail_context is not None,
+                rail=(rail_context or {}).get(action.net),
+                replace_existing=action.replace_existing,
             )
         elif isinstance(action, MoveSymbols):
             if terminal_inventory is None:
@@ -381,6 +388,9 @@ def _route_length(route: list[WirePoint]) -> int:
 
 # The independent layout observer rejects a net longer than 250 mm.
 MAXIMUM_CONNECTED_NET_LENGTH = 240_000_000
+# Under brief v3, rail routes longer than this give way to power symbols.
+MAXIMUM_DETOUR_FACTOR = 3
+MINIMUM_DETOUR_ALLOWANCE = 25_400_000
 
 
 def _connect_point_groups(
@@ -388,51 +398,75 @@ def _connect_point_groups(
     points: list[Point],
     keepouts: list[tuple[int, int, int, int]],
     description: str,
+    partial: bool = False,
 ) -> str:
-    """Join wire-disconnected points with the shortest obstacle-checked route found."""
+    """Join wire-disconnected points with the shortest obstacle-checked route found.
+
+    With ``partial``, groups that cannot reach the largest group may still be joined to
+    each other, and the routes found are kept when some groups stay unreachable.
+    """
     wiring = _point_group_wiring(parse(text), points)
     while len(wiring) > 1:
         main = max(wiring, key=lambda item: (len(item[0]), -min(item[0])))
         existing_length = sum(
             abs(a[0] - b[0]) + abs(a[1] - b[1]) for _, segments in wiring for a, b in segments
         )
-        candidates = set()
-        for other in wiring:
-            if other is main:
-                continue
-            for first, first_segments, second, second_segments in (
-                (main[0], main[1], other[0], other[1]),
-                (other[0], other[1], main[0], main[1]),
-            ):
-                for index in first:
-                    start = points[index]
-                    targets = [points[item] for item in second] + [
-                        _grid_projection(start, segment) for segment in second_segments
-                    ]
-                    candidates.update((start, target) for target in targets if target != start)
-        ordered = sorted(
-            candidates,
-            key=lambda pair: (
-                abs(pair[0][0] - pair[1][0]) + abs(pair[0][1] - pair[1][1]),
-                pair,
-            ),
-        )
         successes = []
-        for start, finish in ordered[:32]:
-            try:
-                route = route_around_existing_wires(
-                    text, [_wire_point(start), _wire_point(finish)], keepouts=keepouts
-                )
-                candidate = _insert_wire_route(text, route)
-            except ValueError:
-                continue
-            if existing_length + _route_length(route) > MAXIMUM_CONNECTED_NET_LENGTH:
-                continue
-            if len(_point_groups(parse(candidate), points)) < len(wiring):
-                successes.append((_route_length(route), len(successes), candidate))
-                if len(successes) == 4:
-                    break
+        pairings = [[(main, other) for other in wiring if other is not main]]
+        if partial:
+            pairings.append(
+                [
+                    (first, second)
+                    for index, first in enumerate(wiring)
+                    for second in wiring[index + 1 :]
+                    if main not in (first, second)
+                ]
+            )
+        for pairs in pairings:
+            candidates = set()
+            for group, other in pairs:
+                for first, first_segments, second, second_segments in (
+                    (group[0], group[1], other[0], other[1]),
+                    (other[0], other[1], group[0], group[1]),
+                ):
+                    for index in first:
+                        start = points[index]
+                        targets = [points[item] for item in second] + [
+                            _grid_projection(start, segment) for segment in second_segments
+                        ]
+                        candidates.update((start, target) for target in targets if target != start)
+            ordered = sorted(
+                candidates,
+                key=lambda pair: (
+                    abs(pair[0][0] - pair[1][0]) + abs(pair[0][1] - pair[1][1]),
+                    pair,
+                ),
+            )
+            for start, finish in ordered[:32]:
+                try:
+                    route = route_around_existing_wires(
+                        text, [_wire_point(start), _wire_point(finish)], keepouts=keepouts
+                    )
+                    candidate = _insert_wire_route(text, route)
+                except ValueError:
+                    continue
+                if existing_length + _route_length(route) > MAXIMUM_CONNECTED_NET_LENGTH:
+                    continue
+                direct = abs(start[0] - finish[0]) + abs(start[1] - finish[1])
+                if partial and _route_length(route) > max(
+                    MAXIMUM_DETOUR_FACTOR * direct, direct + MINIMUM_DETOUR_ALLOWANCE
+                ):
+                    # A lap around the drawing reads worse than a power symbol.
+                    continue
+                if len(_point_groups(parse(candidate), points)) < len(wiring):
+                    successes.append((_route_length(route), len(successes), candidate))
+                    if len(successes) == 4:
+                        break
+            if successes:
+                break
         if not successes:
+            if partial:
+                return text
             raise ValueError(
                 f"no obstacle-free native wire route joins the remaining {description} groups"
             )
@@ -442,9 +476,18 @@ def _connect_point_groups(
 
 
 def connect_rail_text(
-    text: str, net: str, terminal_inventory: list[dict], power_symbols_allowed: bool = False
+    text: str,
+    net: str,
+    terminal_inventory: list[dict],
+    power_symbols_allowed: bool = False,
+    rail: dict | None = None,
+    replace_existing: bool = False,
 ) -> str:
-    """Make every intended terminal of one net reachable through visible native wires."""
+    """Make every intended terminal of one net reachable through visible native wires.
+
+    Under the power-symbol rail policy (brief v3), every group that can be routed is
+    wired, and only the groups no wire can reach are marked with matching power symbols.
+    """
     terminals = [item for item in terminal_inventory if item["net"] == net]
     if len(terminals) < 2:
         raise ValueError(f"connect_rail requires at least two observed terminals on {net}")
@@ -453,9 +496,34 @@ def connect_rail_text(
             (round(item["x_mm"] * 1_000_000), round(item["y_mm"] * 1_000_000)) for item in terminals
         )
     )
-    if len(_point_groups(parse(text), points)) == 1:
+    if replace_existing:
+        rail = rail or {}
+        text = remove_rail_runs_text(
+            text, net, terminal_inventory, rail.get("flags", []), rail.get("local_pairs", [])
+        )
+    elif len(_point_groups(parse(text), points)) == 1:
         raise ValueError(f"connect_rail made no change; {net} terminals are already wire-joined")
     keepouts = _terminal_keepouts([item for item in terminal_inventory if item["net"] != net])
+    if power_symbols_allowed:
+        wired = _connect_point_groups(text, points, keepouts, f"{net} wire", partial=True)
+        if len(_point_groups(parse(wired), points)) == 1:
+            return wired
+        rail = rail or {}
+        try:
+            return use_power_symbols_text(
+                wired,
+                net,
+                terminal_inventory,
+                rail.get("flags", []),
+                rail.get("local_pairs", []),
+                rail.get("layout_check"),
+                prune_rail_wiring=False,
+            )
+        except ValueError as error:
+            raise ValueError(
+                f"connect_rail wired what it could of {net}, but marking the unreachable "
+                f"groups failed: {error}"
+            ) from error
     try:
         return _connect_point_groups(text, points, keepouts, f"{net} wire")
     except ValueError as error:
@@ -1088,6 +1156,10 @@ class NativeSchematicEngine:
         schematic = emit(self.design, self.resolved, scene, directory)
         verify_serialized_scene(self.design, scene, schematic)
         write_json(directory / "composition.json", composition)
+        # Pivot presentation step on the verified compiler output; every move is recorded.
+        text, moves = tighten_vertical_fields_text(schematic.read_text())
+        schematic.write_text(text)
+        write_json(directory / "presentation.json", {"vertical_field_moves": moves})
         return schematic
 
     def initial(self, directory: Path) -> Path:
