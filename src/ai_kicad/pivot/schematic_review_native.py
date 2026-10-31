@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import heapq
+import itertools
 from itertools import count
 import os
 from pathlib import Path
@@ -47,6 +48,7 @@ from .schematic_review import (
 )
 from .field_layout import tighten_vertical_fields_text
 from .power_symbols import (
+    _wire_segments,
     glyph_for_net,
     label_view_text,
     remove_rail_runs_text,
@@ -1014,6 +1016,22 @@ def terminal_inventory_for_design(design: dict, observed: dict) -> list[dict]:
     ]
 
 
+def _layout_checker(design: dict, name: str, netlist: Path):
+    """The protected observer's objection to a candidate sheet's label form, if any."""
+
+    def layout_check(candidate: str) -> str | None:
+        with tempfile.TemporaryDirectory(prefix=".label-view-") as folder:
+            view = Path(folder) / name
+            view.write_text(label_view_text(candidate))
+            try:
+                check_observed_layout(view, observe(view, netlist), design)
+            except (InputError, ValueError, KeyError) as error:
+                return str(error)
+        return None
+
+    return layout_check
+
+
 def rail_context_for_design(design: dict, observed: dict) -> dict[str, dict]:
     """Per rail: power-flag pins, and terminal pairs the design wires locally."""
     references = {component["id"]: component["refdes"] for component in design["components"]}
@@ -1190,11 +1208,88 @@ class NativeSchematicEngine:
         schematic = emit(self.design, self.resolved, scene, directory)
         verify_serialized_scene(self.design, scene, schematic)
         write_json(directory / "composition.json", composition)
-        # Pivot presentation step on the verified compiler output; every move is recorded.
+        # Pivot presentation steps on the verified compiler output; every change is recorded.
+        # Rails are drawn first so the labels are then placed around the final wiring.
+        presentation = {}
+        if getattr(self, "power_symbol_rails", False):
+            text, plans = self._plan_rails(schematic, directory)
+            schematic.write_text(text)
+            presentation["rail_plans"] = plans
         text, moves = tighten_vertical_fields_text(schematic.read_text())
         schematic.write_text(text)
-        write_json(directory / "presentation.json", {"vertical_field_moves": moves})
+        presentation["vertical_field_moves"] = moves
+        write_json(directory / "presentation.json", presentation)
         return schematic
+
+    def _plan_rails(self, schematic: Path, directory: Path) -> tuple[str, list[dict]]:
+        """Draw the asserted rails with the fewest power symbols over every plan.
+
+        Each plan applies connect_rail to every rail in one order, keeping or rerouting
+        existing rail runs. A plan counts only if every rail is presented, no power symbol
+        touches another item, and the protected observer accepts its label form. Rail
+        edits keep connectivity, so one KiCad netlist of the compiler output serves all.
+        """
+        base = schematic.read_text()
+        nets = sorted({item["net"] for item in self.design.get("power_assertions", [])})
+        if not nets:
+            return base, []
+        with tempfile.TemporaryDirectory(dir=directory, prefix=".rail-plan-") as folder:
+            work = Path(folder)
+            table, _hashes = write_locked_symbol_table(work, self.resolved, self.power_symbols)
+            run_headless(schematic, self.launcher, work, self.symbol_table or table)
+            netlist = work / "reports/netlist.xml"
+            observed = observe(schematic, netlist)
+            inventory = terminal_inventory_for_design(self.design, observed)
+            context = rail_context_for_design(self.design, observed)
+            check = _layout_checker(self.design, schematic.name, netlist)
+            for entry in context.values():
+                entry["layout_check"] = check
+            plans, best = [], None
+            for replace in (False, True):
+                for order in itertools.permutations(nets):
+                    record = {"order": list(order), "replace_existing": replace}
+                    text = base
+                    try:
+                        for net in order:
+                            try:
+                                text = connect_rail_text(
+                                    text,
+                                    net,
+                                    inventory,
+                                    power_symbols_allowed=True,
+                                    rail=context.get(net),
+                                    replace_existing=replace,
+                                )
+                            except ValueError as error:
+                                if "made no change" not in str(error):
+                                    raise
+                    except ValueError as error:
+                        record["refused"] = str(error)
+                        plans.append(record)
+                        continue
+                    tree = parse(text)
+                    problems = rail_presentation(tree, inventory, nets)
+                    problems += power_symbol_collisions(text)
+                    objection = check(text)
+                    symbols = len(power_symbols(tree))
+                    wire = sum(
+                        abs(first[0] - second[0]) + abs(first[1] - second[1])
+                        for first, second in _wire_segments(tree)
+                    )
+                    record.update(
+                        {
+                            "valid": not problems and objection is None,
+                            "power_symbols": symbols,
+                            "wire_length_mm": round(wire / 1_000_000, 2),
+                        }
+                    )
+                    plans.append(record)
+                    if record["valid"] and (best is None or (symbols, wire) < best[0]):
+                        best = ((symbols, wire), text, len(plans) - 1)
+        if best is None:
+            return base, plans
+        plans[best[2]]["chosen"] = True
+        return best[1], plans
 
     def initial(self, directory: Path) -> Path:
         if self.source is None:
@@ -1574,17 +1669,7 @@ class NativeSchematicEngine:
                 else None
             )
 
-            def layout_check(candidate: str) -> str | None:
-                """The protected observer's objection to a candidate's label form."""
-                with tempfile.TemporaryDirectory(prefix=".label-view-") as folder:
-                    view = Path(folder) / schematic.name
-                    view.write_text(label_view_text(candidate))
-                    try:
-                        check_observed_layout(view, observe(view, netlist), design)
-                    except (InputError, ValueError, KeyError) as error:
-                        return str(error)
-                return None
-
+            layout_check = _layout_checker(design, schematic.name, netlist)
             for entry in (rail_context or {}).values():
                 entry["layout_check"] = layout_check
             for action in wire_actions:
