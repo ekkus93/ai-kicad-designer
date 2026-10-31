@@ -1144,6 +1144,78 @@ def write_locked_symbol_table(
     return table, hashes
 
 
+# Terminal references such as 'J1.3' named in a refused rail edit.
+RAIL_BLOCKER = re.compile(r"'([A-Z][A-Z0-9_]*?\d+)\.[A-Za-z0-9_+-]+'")
+# Grid offsets (mm) tried for a part blocking every rail plan, nearest first.
+RAIL_PLAN_MOVES = sorted(
+    (
+        (dx, dy)
+        for dx in (-25.4, -12.7, 0.0, 12.7, 25.4)
+        for dy in (-25.4, -12.7, 0.0, 12.7, 25.4)
+        if (dx, dy) != (0.0, 0.0)
+    ),
+    key=lambda offset: (abs(offset[0]) + abs(offset[1]), -offset[0], offset[1]),
+)
+
+
+def _search_rail_plans(
+    base: str, nets: list[str], inventory: list[dict], context: dict, check
+) -> tuple[tuple | None, list[dict]]:
+    """Every rail order, keeping or rerouting existing runs; best = fewest symbols, wire."""
+    plans: list[dict] = []
+    best = None
+    for replace in (False, True):
+        for order in itertools.permutations(nets):
+            record: dict = {"order": list(order), "replace_existing": replace}
+            text = base
+            try:
+                for net in order:
+                    try:
+                        text = connect_rail_text(
+                            text,
+                            net,
+                            inventory,
+                            power_symbols_allowed=True,
+                            rail=context.get(net),
+                            replace_existing=replace,
+                        )
+                    except ValueError as error:
+                        if "made no change" not in str(error):
+                            raise
+            except ValueError as error:
+                record["refused"] = str(error)
+                plans.append(record)
+                continue
+            tree = parse(text)
+            problems = rail_presentation(tree, inventory, nets)
+            problems += power_symbol_collisions(text)
+            objection = check(text)
+            symbols = len(power_symbols(tree))
+            wire = sum(
+                abs(first[0] - second[0]) + abs(first[1] - second[1])
+                for first, second in _wire_segments(tree)
+            )
+            record.update(
+                {
+                    "valid": not problems and objection is None,
+                    "power_symbols": symbols,
+                    "wire_length_mm": round(wire / 1_000_000, 2),
+                    "unresolved_references": sorted(
+                        {
+                            terminal.split(".")[0]
+                            for problem in problems
+                            if isinstance(problem, dict)
+                            for terminal in problem.get("terminals", [])
+                        }
+                    ),
+                }
+            )
+            plans.append(record)
+            if record["valid"] and (best is None or (symbols, wire) < best[0]):
+                best = ((symbols, wire), text, record)
+    return best, plans
+
+
 class NativeSchematicEngine:
     """Generate, render and independently inspect a single-sheet supported M2b design."""
 
@@ -1228,6 +1300,10 @@ class NativeSchematicEngine:
         existing rail runs. A plan counts only if every rail is presented, no power symbol
         touches another item, and the protected observer accepts its label form. Rail
         edits keep connectivity, so one KiCad netlist of the compiler output serves all.
+
+        When no plan is valid, each part named in the refusals (for example a connector
+        crowded against the page edge) is moved by small grid offsets, nearest first, and
+        the plans are searched again; the first offset with a valid plan is used.
         """
         base = schematic.read_text()
         nets = sorted({item["net"] for item in self.design.get("power_assertions", [])})
@@ -1238,57 +1314,56 @@ class NativeSchematicEngine:
             table, _hashes = write_locked_symbol_table(work, self.resolved, self.power_symbols)
             run_headless(schematic, self.launcher, work, self.symbol_table or table)
             netlist = work / "reports/netlist.xml"
-            observed = observe(schematic, netlist)
-            inventory = terminal_inventory_for_design(self.design, observed)
-            context = rail_context_for_design(self.design, observed)
             check = _layout_checker(self.design, schematic.name, netlist)
-            for entry in context.values():
-                entry["layout_check"] = check
-            plans, best = [], None
-            for replace in (False, True):
-                for order in itertools.permutations(nets):
-                    record = {"order": list(order), "replace_existing": replace}
-                    text = base
-                    try:
-                        for net in order:
-                            try:
-                                text = connect_rail_text(
-                                    text,
-                                    net,
-                                    inventory,
-                                    power_symbols_allowed=True,
-                                    rail=context.get(net),
-                                    replace_existing=replace,
-                                )
-                            except ValueError as error:
-                                if "made no change" not in str(error):
-                                    raise
-                    except ValueError as error:
-                        record["refused"] = str(error)
-                        plans.append(record)
-                        continue
-                    tree = parse(text)
-                    problems = rail_presentation(tree, inventory, nets)
-                    problems += power_symbol_collisions(text)
-                    objection = check(text)
-                    symbols = len(power_symbols(tree))
-                    wire = sum(
-                        abs(first[0] - second[0]) + abs(first[1] - second[1])
-                        for first, second in _wire_segments(tree)
-                    )
-                    record.update(
-                        {
-                            "valid": not problems and objection is None,
-                            "power_symbols": symbols,
-                            "wire_length_mm": round(wire / 1_000_000, 2),
-                        }
-                    )
-                    plans.append(record)
-                    if record["valid"] and (best is None or (symbols, wire) < best[0]):
-                        best = ((symbols, wire), text, len(plans) - 1)
+
+            def inventory_of(path: Path) -> tuple[list[dict], dict]:
+                observed = observe(path, netlist)
+                context = rail_context_for_design(self.design, observed)
+                for entry in context.values():
+                    entry["layout_check"] = check
+                return terminal_inventory_for_design(self.design, observed), context
+
+            inventory, context = inventory_of(schematic)
+            best, plans = _search_rail_plans(base, nets, inventory, context, check)
+            if best is None:
+                blockers = sorted(
+                    {
+                        reference
+                        for plan in plans
+                        for reference in RAIL_BLOCKER.findall(plan.get("refused", ""))
+                        + plan.get("unresolved_references", [])
+                    }
+                )
+                moved_path = work / schematic.name
+                for dx, dy in RAIL_PLAN_MOVES:
+                    for reference in blockers:
+                        move = {"references": [reference], "dx_mm": dx, "dy_mm": dy}
+                        try:
+                            moved = move_symbols_text(
+                                base,
+                                MoveSymbols(operation="move_symbols", **move),
+                                inventory,
+                            )
+                        except ValueError as error:
+                            plans.append({"move": move, "refused": str(error)})
+                            continue
+                        objection = check(moved)
+                        if objection is not None:
+                            plans.append({"move": move, "refused": objection})
+                            continue
+                        moved_path.write_text(moved)
+                        moved_inventory, moved_context = inventory_of(moved_path)
+                        best, moved_plans = _search_rail_plans(
+                            moved, nets, moved_inventory, moved_context, check
+                        )
+                        plans.append({"move": move, "plans": moved_plans})
+                        if best is not None:
+                            break
+                    if best is not None:
+                        break
         if best is None:
             return base, plans
-        plans[best[2]]["chosen"] = True
+        best[2]["chosen"] = True
         return best[1], plans
 
     def initial(self, directory: Path) -> Path:

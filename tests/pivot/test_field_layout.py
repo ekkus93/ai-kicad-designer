@@ -152,3 +152,16 @@ def test_tightening_is_idempotent(tmp_path):
     once, _moves = tighten_vertical_fields_text(compiled_text("timer_astable", tmp_path))
     twice, moves = tighten_vertical_fields_text(once)
     assert twice == once and moves == []
+
+
+def test_moved_text_stays_inside_the_observers_page_area(tmp_path):
+    """led_reverse_supply's J1 sits near the top; its text must not move past the margin."""
+    # The protected observer's A4 content area (m2b_observation), in nm.
+    page = (20_320_000, 25_400_000, 276_680_000, 184_600_000)
+    _tightened, moves = tighten_vertical_fields_text(compiled_text("led_reverse_supply", tmp_path))
+    assert "J1" in {move["reference"] for move in moves}
+    for move in moves:
+        for x, y in move["to_mm"].values():
+            x, y = round(x * 1e6), round(y * 1e6)
+            assert page[0] <= x <= page[2]
+            assert page[1] <= y <= page[3]

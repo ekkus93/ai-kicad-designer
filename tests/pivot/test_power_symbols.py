@@ -1,6 +1,7 @@
 """Conventional power-symbol rail presentation under review brief v3."""
 
 import json
+import os
 from pathlib import Path
 
 import pytest
@@ -440,3 +441,38 @@ def test_marking_a_partly_wired_rail_keeps_its_wire_groups(tmp_path):
     )
     assert len(_point_groups(parse(marked), points)) == before
     assert rail_presentation(parse(marked), inventory, ["VCC"]) == []
+
+
+def test_rail_plan_fallback_names_blockers_and_tries_nearest_moves_first():
+    from ai_kicad.pivot.schematic_review_native import RAIL_BLOCKER, RAIL_PLAN_MOVES
+
+    refusal = (
+        "no clear position for a VPLUS power symbol at ['J1.3']; wiring of "
+        "['OUT', 'VMINUS'] and nearby drawing items block it"
+    )
+    assert RAIL_BLOCKER.findall(refusal) == ["J1"]
+    assert RAIL_BLOCKER.findall("['#PWR01.1', 'U1.V+']") == ["U1"]
+    steps = [abs(dx) + abs(dy) for dx, dy in RAIL_PLAN_MOVES]
+    assert steps == sorted(steps) and steps[0] == 12.7
+    assert (0.0, 0.0) not in RAIL_PLAN_MOVES and len(set(RAIL_PLAN_MOVES)) == 24
+
+
+@pytest.mark.skipif(
+    not os.environ.get("AI_KICAD_APPRUN"), reason="set AI_KICAD_APPRUN to the KiCad 10.0.6 AppRun"
+)
+def test_sallen_key_rails_plan_after_moving_the_crowded_connector(tmp_path):
+    """Every rail plan is blocked at J1 against the page edge; a grid move of J1 frees it."""
+    from ai_kicad.pivot.schematic_review_native import NativeSchematicEngine
+
+    design = json.loads((ROOT / "fixtures/m2b/sallen_key.json").read_text())
+    engine = NativeSchematicEngine(
+        design, Path(os.environ["AI_KICAD_APPRUN"]), power_symbol_rails=True
+    )
+    schematic = engine._compile(tmp_path)
+    plans = json.loads((tmp_path / "presentation.json").read_text())["rail_plans"]
+    assert not any(plan.get("valid") for plan in plans if "move" not in plan)
+    moved = [plan for plan in plans if any(p.get("chosen") for p in plan.get("plans", []))]
+    assert len(moved) == 1 and moved[0]["move"]["references"] == ["J1"]
+    (tmp_path / "check").mkdir()
+    report = engine.assess(schematic, tmp_path / "check").report
+    assert set(report["checks"].values()) == {"PASS"}

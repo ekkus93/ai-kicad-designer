@@ -171,6 +171,17 @@ def _obstacles(text: str, tree: list, part: Part) -> list[Box]:
     return boxes
 
 
+# The protected layout observer rejects any field position outside this A4 content area.
+PAGE_CONTENT: Box = (20_320_000, 25_400_000, 276_680_000, 184_600_000)
+
+
+def _on_page(points: dict[str, tuple[int, int]]) -> bool:
+    return all(
+        PAGE_CONTENT[0] <= x <= PAGE_CONTENT[2] and PAGE_CONTENT[1] <= y <= PAGE_CONTENT[3]
+        for x, y in points.values()
+    )
+
+
 # Reach of the search for a clear position right of the body.
 SEARCH_REACH = 25_400_000
 # Vertical offset of a connector's reference (above) and value (below) from its centre.
@@ -241,6 +252,7 @@ def tighten_vertical_fields_text(text: str) -> tuple[str, list[dict]]:
                 proposed
                 for proposed in proposals
                 if distance(proposed) < distance(positions)
+                and _on_page(proposed)
                 and not any(
                     _overlaps(_field_box(proposed[name], prop[2]), obstacle)
                     for name, prop in fields.items()
