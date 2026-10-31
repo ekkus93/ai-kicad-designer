@@ -156,6 +156,39 @@ class SchematicReviewer(Protocol):
     def review(self, assessment: SchematicAssessment, feedback: str, record: Path) -> str: ...
 
 
+WIRE_RAIL_GUIDANCE = (
+    "Asserted power rails are checked by visible_rail_continuity: every terminal must be "
+    "joined by visible wire. For a failed visible_rail_continuity check, prefer connect_rail "
+    "with the failing net: the native editor wires every disconnected terminal group of that "
+    "net with obstacle-checked routes. Set replace_existing on connect_rail to reroute a rail "
+    "whose existing long runs block other connections. If connect_rail reports that no route "
+    "exists, use move_symbols to shift one or more listed references by a grid-aligned offset "
+    "into open space; their private wiring moves with them and shared nets are rerouted. Then "
+    "request connect_rail again. Alternatively, add explicit Manhattan wire segments with "
+    "add_wire_path. use_power_symbols is unavailable in this review. "
+)
+POWER_SYMBOL_RAIL_GUIDANCE = (
+    "Asserted power rails are checked by rail_presentation; there is no "
+    "visible_rail_continuity check in this review, so never cite it. A rail is correctly "
+    "presented when its terminals are joined by visible wire, or when each separately wired "
+    "part of the rail ends at a power symbol naming that rail (a supply arrow, or a ground "
+    "glyph for REF/GND). Power symbols with the same name are connected to each other, as in "
+    "any KiCad schematic; do not report them as disconnected. When rail_presentation and "
+    "power_symbol_clearance pass, the rails need no further edit. For a failed "
+    "rail_presentation check, request connect_rail with the failing net: the editor wires "
+    "every group it can route and marks only unreachable groups with power symbols. Set "
+    "replace_existing on connect_rail to reroute a rail whose existing long runs block other "
+    "connections. use_power_symbols instead draws the whole rail with power symbols. If "
+    "power_symbol_clearance fails, request use_power_symbols for that net again: the editor "
+    "re-places only that rail's symbols that touch other drawing items. "
+)
+
+
+def rail_guidance(checks: dict) -> str:
+    """Rail repair instructions matching the rail check this review actually reports."""
+    return POWER_SYMBOL_RAIL_GUIDANCE if "rail_presentation" in checks else WIRE_RAIL_GUIDANCE
+
+
 class OllamaSchematicReviewer:
     """Local vision adapter; logs image hashes rather than duplicating encoded images."""
 
@@ -239,36 +272,18 @@ class OllamaSchematicReviewer:
             "independent checks pass AND the images have no unresolved issues. "
             "For overlapping or distant labels, request move_field with absolute millimetre coordinates using the "
             "field inventory, or regenerate_schematic to recompute placement and wiring. "
-            "For a failed visible_rail_continuity check, prefer connect_rail with the failing net: "
-            "the native editor wires every disconnected terminal group of that net with "
-            "obstacle-checked routes. If connect_rail reports that no route exists, use "
-            "move_symbols to shift one or more listed references by a grid-aligned offset into "
-            "open space; their private wiring moves with them and shared nets are rerouted. "
-            "Then request connect_rail again. Alternatively, add explicit Manhattan wire segments "
-            "with add_wire_path. "
-            "Set replace_existing on connect_rail to reroute a rail whose existing long runs "
-            "block other connections. "
-            "When the checks list rail_presentation instead of visible_rail_continuity, a rail "
-            "may also be drawn the conventional way: use_power_symbols with the failing net "
-            "replaces that rail's labels and terminal-to-terminal rail wiring with a matching "
-            "power symbol at each terminal (a ground glyph for REF/GND, a supply arrow "
-            "otherwise), placed clear of other drawing items. Prefer it when connect_rail "
-            "reports that no route exists, and for a rail whose wiring crowds the drawing. "
-            "If power_symbol_clearance fails, request use_power_symbols for that net again: "
-            "the editor re-places only that rail's symbols that touch other drawing items. "
-            "use_power_symbols is unavailable when visible_rail_continuity is listed. "
-            "Submit exactly one action per revision, then wait for rechecks. "
+            + rail_guidance(assessment.report.get("checks", {}))
+            + "Submit exactly one action per revision, then wait for rechecks. "
             "Use the listed terminal inventory and exact net witnesses; set from_ref/from_pin and "
             "to_ref/to_pin to identify two listed terminals on the named net. The waypoints field "
             "contains only intermediate coordinates; the editor supplies exact pin endpoints. "
             "All waypoint coordinates must align to KiCad's 1.27 mm connection grid. The native "
             "editor plans orthogonal paths around visible symbol bodies, fields and existing wires, "
             "and adds required T-junction markers. Do not reuse a wire segment or invent off-grid points. "
-            "Do not request regenerate_schematic or translate_sheet to repair a visible_rail_continuity failure; "
-            "neither operation creates a new explicit rail route. Use connect_rail, move_symbols "
-            "or add_wire_path instead. "
-            "The native observer will reject new shorts, changed net partitions, crossings, collisions, "
-            "or routes that do not make the asserted rail physically continuous. "
+            "Do not request regenerate_schematic or translate_sheet to repair a rail failure; "
+            "neither operation creates a new explicit rail route. "
+            "The native observer will reject new shorts, changed net partitions, crossings, "
+            "collisions, or edits that leave the asserted rail incorrectly presented. "
             "For missing parts, wrong values or wiring mismatches, regenerate_schematic "
             "rebuilds the native schematic from the intended circuit, preserving its values "
             "and connectivity. translate_sheet moves the entire drawing. move_symbols offsets "

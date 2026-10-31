@@ -358,3 +358,14 @@ def test_removing_rail_runs_strands_no_label(timer):
         assert point in terminals or any(
             point_on_segment(point, *segment) for segment in _wire_segments(tree)
         ), f"label {label[1]} stranded at {point}"
+
+
+def test_reviewer_rail_guidance_follows_the_active_rail_check():
+    from ai_kicad.pivot.schematic_review import rail_guidance
+
+    v3 = rail_guidance({"rail_presentation": "PASS", "power_symbol_clearance": "PASS"})
+    v2 = rail_guidance({"visible_rail_continuity": "FAIL"})
+    assert "Power symbols with the same name are connected" in v3
+    assert "never cite it" in v3 and "For a failed visible_rail_continuity" not in v3
+    assert "For a failed visible_rail_continuity" in v2
+    assert "use_power_symbols is unavailable" in v2 and "rail_presentation" not in v2
