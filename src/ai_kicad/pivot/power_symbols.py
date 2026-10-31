@@ -591,7 +591,7 @@ def use_power_symbols_text(
             project,
             terminal_inventory,
         )
-    if not removed_wires and not label_points:
+    if prune_rail_wiring and not removed_wires and not label_points:
         raise ValueError(f"use_power_symbols made no change; {net} has no rail wiring or labels")
 
     remaining = [
@@ -680,7 +680,12 @@ def _pin_points(tree: list) -> set[Point]:
 
 
 def _prune_dangling(text: str) -> str:
-    """Remove wires left with an end that touches no other wire, pin or label."""
+    """Trim wire ends that touch no other wire, pin or label back to their last connection.
+
+    A dangling wire is shortened to the attachment nearest its free end (another wire's
+    end, a pin or a label lying on it), so T-junctions it carries survive; a wire with no
+    attachment besides its other end is removed.
+    """
     while True:
         tree = parse(text)
         anchors = _pin_points(tree) | {
@@ -691,31 +696,62 @@ def _prune_dangling(text: str) -> str:
             tuple((_nm(xy[1]), _nm(xy[2])) for xy in children(one(wire, "pts"), "xy"))
             for wire in children(tree, "wire")
         ]
-        dangling = {
-            index
-            for index, ends in enumerate(wires)
-            if any(
-                end not in anchors
-                and not any(
-                    point_on_segment(end, *other)
-                    for other_index, other in enumerate(wires)
-                    if other_index != index
-                )
-                for end in ends
+
+        def attached(point: Point, index: int) -> bool:
+            return point in anchors or any(
+                point_on_segment(point, *other)
+                for other_index, other in enumerate(wires)
+                if other_index != index
             )
-        }
-        if not dangling:
+
+        change: tuple[int, tuple[Point, Point] | None] | None = None
+        for index, (first, second) in enumerate(wires):
+            for free, kept in ((first, second), (second, first)):
+                if attached(free, index):
+                    continue
+                stops = [
+                    point
+                    for point in anchors
+                    | {
+                        end
+                        for other_index, other in enumerate(wires)
+                        if other_index != index
+                        for end in other
+                    }
+                    if point != free and point_on_segment(point, first, second)
+                ]
+                nearest = min(
+                    stops,
+                    key=lambda point: abs(point[0] - free[0]) + abs(point[1] - free[1]),
+                    default=kept,
+                )
+                # Nothing else on the wire: drop it; otherwise trim to the nearest stop.
+                change = (index, None if nearest == kept else (nearest, kept))
+                break
+            if change is not None:
+                break
+        if change is None:
             return text
+        target, replacement = change
         position = -1
-
-        def drop(node: list) -> bool:
-            nonlocal position
+        pieces, cursor = [], 0
+        for start, end_, node in _forms(text):
             if node[0] != "wire":
-                return False
+                continue
             position += 1
-            return position in dangling
-
-        text = "".join(_without_forms(text, drop))
+            if position != target:
+                continue
+            pieces.append(text[cursor:start].rstrip(" "))
+            if replacement is not None:
+                identity = one(node, "uuid")[1]
+                pieces.append(
+                    f"(wire (pts (xy {_mm(replacement[0])}) (xy {_mm(replacement[1])})) "
+                    f"(stroke (width 0) (type default)) (uuid {quote(identity)}))"
+                )
+            cursor = end_
+            break
+        pieces.append(text[cursor:])
+        text = "".join(pieces)
 
 
 def _place_rail_symbols(
