@@ -459,8 +459,9 @@ def remove_rail_runs_text(
 ) -> str:
     """Remove one rail's terminal-to-terminal wiring so it can be rerouted.
 
-    Power-flag paths and declared local pairs (such as decoupling) stay wired, and
-    labels are untouched, so connectivity is unchanged.
+    Power-flag paths and declared local pairs (such as decoupling) stay wired, and the
+    rail's labels at terminals keep naming it, so connectivity is unchanged. Labels left
+    stranded on a removed run are removed with it.
     """
     from .schematic_review_native import _wire_trees
 
@@ -474,6 +475,9 @@ def remove_rail_runs_text(
     run_points = {
         point for segment, root in zip(segments, roots) if root in rail_roots for point in segment
     }
+    remaining = [
+        segment for segment, root in zip(segments, roots) if root not in rail_roots
+    ] + list(kept)
     position = -1
 
     def drop(node: list) -> bool:
@@ -481,9 +485,15 @@ def remove_rail_runs_text(
         if node[0] == "wire":
             position += 1
             return position in removed
+        if node[0] not in {"junction", "label"}:
+            return False
+        point = (_nm(one(node, "at")[1]), _nm(one(node, "at")[2]))
+        if node[0] == "junction":
+            return point in run_points
         return (
-            node[0] == "junction"
-            and (_nm(one(node, "at")[1]), _nm(one(node, "at")[2])) in run_points
+            node[1] == net
+            and point not in terminals
+            and not any(point_on_segment(point, *segment) for segment in remaining)
         )
 
     text = "".join(_without_forms(text, drop))

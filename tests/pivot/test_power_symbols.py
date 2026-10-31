@@ -337,3 +337,24 @@ def test_v3_connect_rail_wires_rails_and_marks_only_unreachable_groups(
     assert results, "no plan drew both rails cleanly"
     # The pin order forces one break per 555; the best plan stays near that minimum.
     assert min(results) <= most_symbols
+
+
+def test_removing_rail_runs_strands_no_label(timer):
+    from ai_kicad.pivot.power_symbols import remove_rail_runs_text
+
+    _design, text, inventory, context = timer
+    removed = remove_rail_runs_text(
+        text, "REF", inventory, context["REF"]["flags"], context["REF"]["local_pairs"]
+    )
+    tree = parse(removed)
+    assert len(_wire_segments(tree)) < len(_wire_segments(parse(text)))
+    terminals = {
+        (round(item["x_mm"] * 1e6), round(item["y_mm"] * 1e6))
+        for item in inventory
+        if item["net"] == "REF"
+    }
+    for label in [item for item in children(tree, "label") if item[1] == "REF"]:
+        point = (round(float(one(label, "at")[1]) * 1e6), round(float(one(label, "at")[2]) * 1e6))
+        assert point in terminals or any(
+            point_on_segment(point, *segment) for segment in _wire_segments(tree)
+        ), f"label {label[1]} stranded at {point}"
