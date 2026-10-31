@@ -60,7 +60,7 @@ def test_vertical_part_text_moves_beside_the_body(tmp_path, name, expected):
     before = parse(text)
     tightened, moves = tighten_vertical_fields_text(text)
     after = parse(tightened)
-    assert {move["reference"] for move in moves} == expected
+    assert expected <= {move["reference"] for move in moves}
     bodies = _vertical_bodies(after)
     for reference in expected:
         old, new = fields(before, reference), fields(after, reference)
@@ -75,11 +75,35 @@ def test_vertical_part_text_moves_beside_the_body(tmp_path, name, expected):
             assert not any(_overlaps(box, item) for item in _obstacles(tightened, after, reference))
 
 
-def test_horizontal_and_multi_pin_parts_are_left_alone(tmp_path):
+def test_parts_with_pins_on_several_sides_are_left_alone(tmp_path):
     text = compiled_text("timer_astable", tmp_path)
     tightened, _moves = tighten_vertical_fields_text(text)
-    for reference in ("U1", "J1", "J2", "J3"):
-        assert fields(parse(text), reference) == fields(parse(tightened), reference)
+    assert fields(parse(text), "U1") == fields(parse(tightened), "U1")
+
+
+@pytest.mark.parametrize("name", ["timer_astable", "reference_555_led_flasher_v8"])
+def test_connector_text_moves_next_to_the_connector(tmp_path, name):
+    from ai_kicad.pivot.field_layout import _label_bodies
+
+    text = compiled_text(name, tmp_path)
+    tightened, moves = tighten_vertical_fields_text(text)
+    after = parse(tightened)
+    bodies = _label_bodies(after)
+    moved = {move["reference"]: move for move in moves}
+    for reference in ("J1", "J2", "J3"):
+        body, kind = bodies[reference]
+        assert kind == "connector" and reference in moved
+        centre = ((body[0] + body[2]) / 2, (body[1] + body[3]) / 2)
+
+        def spread(points):
+            return sum(abs(x - centre[0]) + abs(y - centre[1]) for x, y in points)
+
+        before = [tuple(v * 1e6 for v in point) for point in moved[reference]["from_mm"].values()]
+        placed = [point for _value, point in fields(after, reference).values()]
+        assert spread(placed) < spread(before)
+        for value, point in fields(after, reference).values():
+            box = _field_box(point, value)
+            assert not any(_overlaps(box, item) for item in _obstacles(tightened, after, reference))
 
 
 def test_tightening_is_idempotent(tmp_path):
