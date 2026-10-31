@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import re
 
+from ai_kicad.m2_text_layout import text_extents
 from ai_kicad.m2_transform import transform_library_point
 from ai_kicad.m2a_core import _nm
 from ai_kicad.sexpr import children, one, parse
@@ -25,16 +26,20 @@ STEP = 635_000
 FIELD_HALF_HEIGHT = 850_000
 FIELD_CHARACTER_HALF_WIDTH = 445_000
 MINIMUM_FIELD_HALF_WIDTH = 635_000
+# Margin the router keeps around visible text; labels keep the same clearance from wires.
+TEXT_PADDING = 500_000
 
 
 def _field_box(center: tuple[int, int], text: str) -> Box:
-    half = max(MINIMUM_FIELD_HALF_WIDTH, len(text) * FIELD_CHARACTER_HALF_WIDTH)
-    return (
-        center[0] - half,
-        center[1] - FIELD_HALF_HEIGHT,
-        center[0] + half,
-        center[1] + FIELD_HALF_HEIGHT,
+    """Conservative text box: the wider of the observer's and the router's estimates."""
+    width, height = text_extents(text, 0)
+    half = max(
+        MINIMUM_FIELD_HALF_WIDTH,
+        len(text) * FIELD_CHARACTER_HALF_WIDTH,
+        width // 2 + TEXT_PADDING,
     )
+    half_height = max(FIELD_HALF_HEIGHT, height // 2 + TEXT_PADDING)
+    return (center[0] - half, center[1] - half_height, center[0] + half, center[1] + half_height)
 
 
 def _vertical_bodies(tree: list) -> dict[str, Box]:
@@ -160,10 +165,7 @@ def tighten_vertical_fields_text(text: str) -> tuple[str, list[dict]]:
         def distance(points: dict[str, tuple[int, int]]) -> int:
             return sum(abs(x - centre[0]) + abs(y - centre[1]) for x, y in points.values())
 
-        half = max(
-            max(MINIMUM_FIELD_HALF_WIDTH, len(prop[2]) * FIELD_CHARACTER_HALF_WIDTH)
-            for prop in fields.values()
-        )
+        half = max((_field_box((0, 0), prop[2])[2]) for prop in fields.values())
         first = body[2] + BODY_GAP + half
         if kind == "vertical":
             # Right of the body, each field at its own height.
