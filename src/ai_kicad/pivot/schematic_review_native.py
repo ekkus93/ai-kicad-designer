@@ -47,6 +47,7 @@ from .schematic_review import (
 )
 from .field_layout import tighten_vertical_fields_text
 from .power_symbols import (
+    glyph_for_net,
     label_view_text,
     remove_rail_runs_text,
     use_power_symbols_text,
@@ -487,6 +488,8 @@ def connect_rail_text(
 
     Under the power-symbol rail policy (brief v3), every group that can be routed is
     wired, and only the groups no wire can reach are marked with matching power symbols.
+    A fully wired return rail also gets one ground symbol, as schematics conventionally
+    show ground.
     """
     terminals = [item for item in terminal_inventory if item["net"] == net]
     if len(terminals) < 2:
@@ -496,19 +499,43 @@ def connect_rail_text(
             (round(item["x_mm"] * 1_000_000), round(item["y_mm"] * 1_000_000)) for item in terminals
         )
     )
+    joined = len(_point_groups(parse(text), points)) == 1
     if replace_existing:
         rail = rail or {}
         text = remove_rail_runs_text(
             text, net, terminal_inventory, rail.get("flags", []), rail.get("local_pairs", [])
         )
-    elif len(_point_groups(parse(text), points)) == 1:
+        joined = False
+    elif joined and not (power_symbols_allowed and _needs_ground_symbol(text, net)):
         raise ValueError(f"connect_rail made no change; {net} terminals are already wire-joined")
     keepouts = _terminal_keepouts([item for item in terminal_inventory if item["net"] != net])
     if power_symbols_allowed:
-        wired = _connect_point_groups(text, points, keepouts, f"{net} wire", partial=True)
-        if len(_point_groups(parse(wired), points)) == 1:
-            return wired
+        wired = (
+            text
+            if joined
+            else _connect_point_groups(text, points, keepouts, f"{net} wire", partial=True)
+        )
         rail = rail or {}
+        if len(_point_groups(parse(wired), points)) == 1:
+            if not _needs_ground_symbol(wired, net):
+                return wired
+            try:
+                return use_power_symbols_text(
+                    wired,
+                    net,
+                    terminal_inventory,
+                    rail.get("flags", []),
+                    rail.get("local_pairs", []),
+                    rail.get("layout_check"),
+                    prune_rail_wiring=False,
+                )
+            except ValueError as error:
+                if joined:
+                    raise ValueError(
+                        f"connect_rail made no change; {net} is wired and no clear position "
+                        f"exists for its ground symbol: {error}"
+                    ) from error
+                return wired
         try:
             return use_power_symbols_text(
                 wired,
@@ -538,6 +565,13 @@ def connect_rail_text(
             f"first request move_symbols for one of {references} by a grid-aligned offset "
             "into open space, then request connect_rail again"
         ) from error
+
+
+def _needs_ground_symbol(text: str, net: str) -> bool:
+    """A return rail drawn without any ground symbol."""
+    return glyph_for_net(net) == "power:GND" and not any(
+        item["net"] == net for item in power_symbols(parse(text))
+    )
 
 
 def move_symbols_text(text: str, action: MoveSymbols, terminal_inventory: list[dict]) -> str:

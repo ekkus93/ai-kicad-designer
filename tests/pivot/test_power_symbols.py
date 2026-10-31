@@ -297,31 +297,42 @@ def test_blocked_power_symbol_is_refused_with_the_blocking_rail_named(tmp_path):
 
 
 @pytest.mark.parametrize(
-    ("name", "most_symbols"), [("timer_astable", 2), ("reference_555_led_flasher_v8", 3)]
+    ("name", "return_net", "most_breaks"),
+    [
+        ("timer_astable", "REF", 1),
+        ("timer_astable_gnd", "GND", 1),
+        ("reference_555_led_flasher_v8", "REF", 2),
+    ],
 )
 def test_v3_connect_rail_wires_rails_and_marks_only_unreachable_groups(
-    tmp_path, name, most_symbols
+    tmp_path, name, return_net, most_breaks
 ):
     from ai_kicad.pivot.schematic_review_native import _point_groups, connect_rail_text
 
+    rails = [return_net, "VCC"]
     _design, base, inventory, context = compiled(name, tmp_path)
     results = []
     for replace in (False, True):
-        for order in (["REF", "VCC"], ["VCC", "REF"]):
+        for order in (rails, rails[::-1]):
             text = base
-            for net in order:
-                text = connect_rail_text(
-                    text,
-                    net,
-                    inventory,
-                    power_symbols_allowed=True,
-                    rail=context[net],
-                    replace_existing=replace,
-                )
-            tree = parse(text)
-            if rail_presentation(tree, inventory, RAILS) or power_symbol_collisions(text):
+            try:
+                for net in order:
+                    text = connect_rail_text(
+                        text,
+                        net,
+                        inventory,
+                        power_symbols_allowed=True,
+                        rail=context[net],
+                        replace_existing=replace,
+                    )
+            except ValueError:
+                # A refused plan names its blocker; the harness moves on to the next plan.
                 continue
-            for net in RAILS:
+            tree = parse(text)
+            if rail_presentation(tree, inventory, rails) or power_symbol_collisions(text):
+                continue
+            breaks = 0
+            for net in rails:
                 points = list(
                     dict.fromkeys(
                         (round(item["x_mm"] * 1e6), round(item["y_mm"] * 1e6))
@@ -331,12 +342,15 @@ def test_v3_connect_rail_wires_rails_and_marks_only_unreachable_groups(
                 )
                 groups = len(_point_groups(tree, points))
                 marked = [item for item in power_symbols.power_symbols(tree) if item["net"] == net]
-                # A wired rail has no symbols; otherwise each remaining wire group has one.
-                assert len(marked) == (0 if groups == 1 else groups)
-            results.append(len(power_symbols.power_symbols(tree)))
+                # A wired supply rail has no symbol and a wired return rail one ground
+                # symbol; otherwise each remaining wire group has one.
+                wired_count = 1 if net == return_net else 0
+                assert len(marked) == (wired_count if groups == 1 else groups)
+                breaks += groups - 1
+            results.append(breaks)
     assert results, "no plan drew both rails cleanly"
-    # The pin order forces one break per 555; the best plan stays near that minimum.
-    assert min(results) <= most_symbols
+    # The pin order forces at most one break per rail; the best plan reaches that.
+    assert min(results) <= most_breaks
 
 
 def test_removing_rail_runs_strands_no_label(timer):
@@ -369,3 +383,60 @@ def test_reviewer_rail_guidance_follows_the_active_rail_check():
     assert "never cite it" in v3 and "For a failed visible_rail_continuity" not in v3
     assert "For a failed visible_rail_continuity" in v2
     assert "use_power_symbols is unavailable" in v2 and "rail_presentation" not in v2
+
+
+def test_a_fully_wired_return_rail_shows_one_ground_symbol(tmp_path):
+    from ai_kicad.pivot.schematic_review_native import _point_groups, connect_rail_text
+
+    _design, text, inventory, context = compiled("timer_astable_gnd", tmp_path)
+    for net in ("GND", "VCC"):
+        text = connect_rail_text(
+            text, net, inventory, power_symbols_allowed=True, rail=context[net]
+        )
+    tree = parse(text)
+    points = list(
+        dict.fromkeys(
+            (round(item["x_mm"] * 1e6), round(item["y_mm"] * 1e6))
+            for item in inventory
+            if item["net"] == "GND"
+        )
+    )
+    grounds = [item for item in power_symbols.power_symbols(tree) if item["net"] == "GND"]
+    assert {item["lib_id"] for item in grounds} == {"power:GND"}
+    if len(_point_groups(tree, points)) == 1:
+        assert len(grounds) == 1
+    assert not [label for label in children(tree, "label") if label[1] == "GND"]
+    assert power_symbol_collisions(text) == []
+    assert rail_presentation(tree, inventory, ["GND", "VCC"]) == []
+
+
+def test_marking_a_partly_wired_rail_keeps_its_wire_groups(tmp_path):
+    from ai_kicad.pivot.schematic_review_native import (
+        _connect_point_groups,
+        _point_groups,
+        _terminal_keepouts,
+    )
+
+    # On the reference 555, the R1 route ends on R3's label stub (a T-junction); trimming
+    # that stub once its label is replaced must not split the group.
+    _design, text, inventory, context = compiled("reference_555_led_flasher_v8", tmp_path)
+    points = list(
+        dict.fromkeys(
+            (round(item["x_mm"] * 1e6), round(item["y_mm"] * 1e6))
+            for item in inventory
+            if item["net"] == "VCC"
+        )
+    )
+    keepouts = _terminal_keepouts([item for item in inventory if item["net"] != "VCC"])
+    wired = _connect_point_groups(text, points, keepouts, "VCC", partial=True)
+    before = len(_point_groups(parse(wired), points))
+    marked = use_power_symbols_text(
+        wired,
+        "VCC",
+        inventory,
+        context["VCC"]["flags"],
+        context["VCC"]["local_pairs"],
+        prune_rail_wiring=False,
+    )
+    assert len(_point_groups(parse(marked), points)) == before
+    assert rail_presentation(parse(marked), inventory, ["VCC"]) == []
