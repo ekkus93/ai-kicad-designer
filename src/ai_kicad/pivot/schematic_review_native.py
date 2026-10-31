@@ -618,6 +618,7 @@ def move_symbols_text(text: str, action: MoveSymbols, terminal_inventory: list[d
         )
 
     carried_wires, removed_wires = set(), set()
+    carried_roots: set[int] = set()
     carried_points: set[Point] = set(moved_pins)
     removed_points: set[Point] = set()
     reconnect: list[list[Point]] = []
@@ -632,10 +633,21 @@ def move_symbols_text(text: str, action: MoveSymbols, terminal_inventory: list[d
         if not fixed:
             carried_wires |= wire_indexes
             carried_points |= attached_labels | attached_junctions
+            carried_roots.add(root)
             continue
         removed_wires |= wire_indexes
         removed_points |= attached_junctions
         reconnect.append(sorted({(x + dx, y + dy) for x, y in moving} | fixed | attached_labels))
+
+    # Power flags and power symbols on a carried stub travel with it, not left stranded.
+    for symbol in children(tree, "symbol"):
+        if not one(symbol, "lib_id")[1].startswith("power:"):
+            continue
+        point = _nm_point(one(symbol, "at"))
+        if any(touches(root, point) for root in carried_roots):
+            moved.add(
+                next(prop[2] for prop in children(symbol, "property") if prop[1] == "Reference")
+            )
 
     rewritten = []
     wire_index = -1
@@ -1156,6 +1168,8 @@ RAIL_PLAN_MOVES = sorted(
     ),
     key=lambda offset: (abs(offset[0]) + abs(offset[1]), -offset[0], offset[1]),
 )
+# Every offset up to this Manhattan distance is compared before a farther one is tried.
+RAIL_PLAN_REACH_MM = 25.4
 
 
 def _search_rail_plans(
@@ -1302,8 +1316,9 @@ class NativeSchematicEngine:
         edits keep connectivity, so one KiCad netlist of the compiler output serves all.
 
         When no plan is valid, each part named in the refusals (for example a connector
-        crowded against the page edge) is moved by small grid offsets, nearest first, and
-        the plans are searched again; the first offset with a valid plan is used.
+        crowded against the page edge) is moved by every grid offset within
+        RAIL_PLAN_REACH_MM (farther only if none of those works), the plans are searched
+        again, and the best plan over all moves is used.
         """
         base = schematic.read_text()
         nets = sorted({item["net"] for item in self.design.get("power_assertions", [])})
@@ -1335,7 +1350,10 @@ class NativeSchematicEngine:
                     }
                 )
                 moved_path = work / schematic.name
+                found = []
                 for dx, dy in RAIL_PLAN_MOVES:
+                    if found and abs(dx) + abs(dy) > RAIL_PLAN_REACH_MM:
+                        break
                     for reference in blockers:
                         move = {"references": [reference], "dx_mm": dx, "dy_mm": dy}
                         try:
@@ -1353,14 +1371,14 @@ class NativeSchematicEngine:
                             continue
                         moved_path.write_text(moved)
                         moved_inventory, moved_context = inventory_of(moved_path)
-                        best, moved_plans = _search_rail_plans(
+                        moved_best, moved_plans = _search_rail_plans(
                             moved, nets, moved_inventory, moved_context, check
                         )
                         plans.append({"move": move, "plans": moved_plans})
-                        if best is not None:
-                            break
-                    if best is not None:
-                        break
+                        if moved_best is not None:
+                            found.append(moved_best)
+                # Same preference as unmoved plans: fewest power symbols, then wire length.
+                best = min(found, key=lambda item: item[0]) if found else None
         if best is None:
             return base, plans
         best[2]["chosen"] = True

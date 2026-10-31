@@ -473,6 +473,21 @@ def test_sallen_key_rails_plan_after_moving_the_crowded_connector(tmp_path):
     assert not any(plan.get("valid") for plan in plans if "move" not in plan)
     moved = [plan for plan in plans if any(p.get("chosen") for p in plan.get("plans", []))]
     assert len(moved) == 1 and moved[0]["move"]["references"] == ["J1"]
+    chosen = next(p for p in moved[0]["plans"] if p.get("chosen"))
+    # Comparing every nearby move keeps the rails mostly wired (6 symbols before).
+    assert chosen["power_symbols"] <= 2
+    tree = parse(schematic.read_text())
+    anchors = {
+        next(p[2] for p in children(symbol, "property") if p[1] == "Reference"): (
+            float(one(symbol, "at")[1]),
+            float(one(symbol, "at")[2]),
+        )
+        for symbol in children(tree, "symbol")
+    }
+    # The two power flags on J1's stubs travel with J1 instead of being stranded.
+    j1 = anchors["J1"]
+    flags = [point for reference, point in anchors.items() if reference.startswith("#FLG")]
+    assert sum(abs(x - j1[0]) + abs(y - j1[1]) < 20 for x, y in flags) == 2
     (tmp_path / "check").mkdir()
     report = engine.assess(schematic, tmp_path / "check").report
     assert set(report["checks"].values()) == {"PASS"}
