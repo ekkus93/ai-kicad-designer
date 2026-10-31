@@ -1,0 +1,126 @@
+{
+  "schema_version": "schematic-review-loop.v1",
+  "status": "ACCEPTED_FOR_REVIEW",
+  "reason": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, rail_presentation, power_symbol_clearance, field_separation, field_locality, field_owner_association) pass. Visual inspection confirms legible labels, clear association, balanced page composition, and correct rail presentation with no unresolved issues.",
+  "accepted_schematic": "candidates/003/project/InvertingGain.kicad_sch",
+  "best_passing_schematic": "candidates/003/project/InvertingGain.kicad_sch",
+  "reviewer": {
+    "model": "qwen35-32k:latest",
+    "digest": "cb98bf1e233e1d1fe7abf04d09efc1f6a076740fd7e16131af6ff6138e7ac219",
+    "ollama_version": "0.40.12",
+    "capabilities": [
+      "completion",
+      "vision",
+      "tools",
+      "thinking"
+    ],
+    "options": {
+      "temperature": 0,
+      "seed": 20261025,
+      "num_ctx": 262144,
+      "num_predict": 2048
+    },
+    "think": false
+  },
+  "iterations": [
+    {
+      "iteration": 0,
+      "revision": "sha256:893262e67ea3f620d41b1227703c7c184781a0a1d9f769990ceca31af76d8e30",
+      "schematic": "candidates/000/project/InvertingGain.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:893262e67ea3f620d41b1227703c7c184781a0a1d9f769990ceca31af76d8e30",
+        "decision": "revise",
+        "issues": [
+          "field_owner_association: U1 unit 3 Reference field is closer to R1 (9.31 mm) than its own symbol edge (18.19 mm), failing the 5.08 mm owner-advantage limit.",
+          "field_owner_association: U1 unit 3 Value field is closer to C2 (9.15 mm) than its own symbol edge (14.63 mm), failing the 5.08 mm owner-advantage limit."
+        ],
+        "actions": [
+          {
+            "operation": "move_field",
+            "reference": "U1",
+            "unit": 3,
+            "field": "Reference",
+            "x_mm": 91.44,
+            "y_mm": 66.04,
+            "angle": 0
+          }
+        ],
+        "rationale": "The Reference field for U1 unit 3 is visually associated with R1 rather than its own symbol due to proximity. Moving it closer to the NE5532 symbol restores clear owner association."
+      }
+    },
+    {
+      "iteration": 1,
+      "revision": "sha256:d17cb0b4baf38d9c21e390f04b5553b51cd90bb773ba5f973762b12c9f83ed04",
+      "schematic": "candidates/001/project/InvertingGain.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:d17cb0b4baf38d9c21e390f04b5553b51cd90bb773ba5f973762b12c9f83ed04",
+        "decision": "revise",
+        "issues": [
+          "field_owner_association: The 'Value' field for U1 unit 3 (NE5532) is visually closer to C2's reference label than its own symbol, violating the owner-advantage heuristic."
+        ],
+        "actions": [
+          {
+            "operation": "move_field",
+            "reference": "U1",
+            "unit": 3,
+            "field": "Value",
+            "x_mm": 100.33,
+            "y_mm": 68.74,
+            "angle": 0
+          }
+        ],
+        "rationale": "The independent check identified that the 'Value' field for U1 unit 3 is too close to C2's reference label (owner_advantage_mm: 5.480434 < 5.08 mm limit). The move_field action repositions this specific text field closer to its owning symbol body, restoring clear visual association without altering the circuit or other labels."
+      },
+      "rejected_response": "move_field for U1.Value made no change; choose a different position"
+    },
+    {
+      "iteration": 2,
+      "revision": "sha256:d17cb0b4baf38d9c21e390f04b5553b51cd90bb773ba5f973762b12c9f83ed04",
+      "schematic": "candidates/001/project/InvertingGain.kicad_sch",
+      "independent_checks_pass": false,
+      "review": {
+        "base_revision": "sha256:d17cb0b4baf38d9c21e390f04b5553b51cd90bb773ba5f973762b12c9f83ed04",
+        "decision": "revise",
+        "issues": [
+          "field_owner_association: U1 unit 3 Value field is visually closer to C2 than its owner (owner_advantage_mm: 5.48 < 5.08 limit)"
+        ],
+        "actions": [
+          {
+            "operation": "move_field",
+            "reference": "U1",
+            "unit": 3,
+            "field": "Value",
+            "x_mm": 91.44,
+            "y_mm": 68.74,
+            "angle": 0
+          }
+        ],
+        "rationale": "The Value field for U1 unit 3 is positioned too close to C2's Reference field, violating the owner-association heuristic. Moving it closer to its own symbol restores clear visual association."
+      }
+    },
+    {
+      "iteration": 3,
+      "revision": "sha256:a176c9260fe639746d5f402ceb9bdd63062a6330f7654e494cd5f4212f31e04e",
+      "schematic": "candidates/003/project/InvertingGain.kicad_sch",
+      "independent_checks_pass": true,
+      "review": {
+        "base_revision": "sha256:a176c9260fe639746d5f402ceb9bdd63062a6330f7654e494cd5f4212f31e04e",
+        "decision": "accept",
+        "issues": [],
+        "actions": [],
+        "rationale": "All independent checks (native_tools, erc, electrical_equivalence, observed_layout, rail_presentation, power_symbol_clearance, field_separation, field_locality, field_owner_association) pass. Visual inspection confirms legible labels, clear association, balanced page composition, and correct rail presentation with no unresolved issues."
+      }
+    }
+  ],
+  "model_tokens": 53502,
+  "elapsed_seconds": 135.793,
+  "budgets": {
+    "max_reviews": 8,
+    "max_seconds": 1800,
+    "max_model_tokens": 120000
+  },
+  "human_electrical_review": "PENDING",
+  "locked_host_qualification": false
+}
