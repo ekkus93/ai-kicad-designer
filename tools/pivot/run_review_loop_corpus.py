@@ -38,6 +38,7 @@ CORPUS = [
         )
     ),
     ROOT / "fixtures/pivot/reference_555_led_flasher_v8/design.json",
+    ROOT / "fixtures/pivot/timer_astable_gnd/design.json",
 ]
 
 
