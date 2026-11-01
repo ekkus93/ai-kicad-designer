@@ -13,6 +13,7 @@ from ai_kicad.pivot.field_layout import (
     _field_box,
     _obstacles,
     _vertical_bodies,
+    clear_label_pin_numbers_text,
     tighten_vertical_fields_text,
 )
 from ai_kicad.pivot.power_symbols import _overlaps
@@ -165,3 +166,94 @@ def test_moved_text_stays_inside_the_observers_page_area(tmp_path):
             x, y = round(x * 1e6), round(y * 1e6)
             assert page[0] <= x <= page[2]
             assert page[1] <= y <= page[3]
+
+
+CORPUS_RUN = ROOT / "fixtures/pivot/experiments/review_loop_corpus_v3_2026-11-01_qwen35_32k_run2"
+
+
+def _labels(text: str) -> list[tuple[str, tuple[int, int]]]:
+    from ai_kicad.m2a_core import _nm
+
+    return [
+        (label[1], (_nm(one(label, "at")[1]), _nm(one(label, "at")[2])))
+        for label in children(parse(text), "label")
+    ]
+
+
+def _number_gap(text: str, name: str, point: tuple[int, int]) -> int:
+    from ai_kicad.m2_geometry import label_text_rect
+    from ai_kicad.pivot.power_symbols import _pin_number_boxes
+
+    box = label_text_rect(name, point)
+    return min(
+        max(box[0] - b[2], b[0] - box[2], box[1] - b[3], b[1] - box[3])
+        for _owner, b in _pin_number_boxes(text, parse(text))
+    )
+
+
+@pytest.mark.parametrize(
+    "design", ["dual_buffer", "noninverting_gain", "rc_to_buffer", "sallen_key"]
+)
+def test_vminus_label_moves_off_the_connector_pin_number(design):
+    """The VMINUS label's text, 0.14 mm from pin number 4, moves out along a longer stub."""
+    from ai_kicad.m2a_core import _nm
+    from ai_kicad.pivot.power_symbols import _wire_segments
+
+    text = next((CORPUS_RUN / design / "candidates/000/project").glob("*.kicad_sch")).read_text()
+    before = [item for item in _labels(text) if item[0] == "VMINUS"]
+    flags_before = {
+        (_nm(one(s, "at")[1]), _nm(one(s, "at")[2]))
+        for s in children(parse(text), "symbol")
+        if one(s, "lib_id")[1] == "power:PWR_FLAG"
+    }
+    # The connector's label, on the stub end it shares with a flag.
+    crowded = [
+        item for item in before if item[1] in flags_before and _number_gap(text, *item) < 635_000
+    ]
+    assert len(crowded) == 1
+    name, old = crowded[0]
+
+    moved, moves = clear_label_pin_numbers_text(text)
+
+    vminus = [m for m in moves if m["label"] == "VMINUS"]
+    assert len(vminus) == 1
+    new = tuple(round(v * 1_000_000) for v in vminus[0]["to_mm"])
+    assert new[1] == old[1] and new[0] < old[0]
+    assert (name, new) in _labels(moved) and (name, old) not in _labels(moved)
+    assert _number_gap(moved, name, new) >= 635_000
+    # The stub is lengthened to the new anchor and the flag on its end moves with the label.
+    assert any({first, second} == {new, old} for first, second in _wire_segments(parse(moved)))
+    flags_after = {
+        (_nm(one(s, "at")[1]), _nm(one(s, "at")[2]))
+        for s in children(parse(moved), "symbol")
+        if one(s, "lib_id")[1] == "power:PWR_FLAG"
+    }
+    assert flags_after == flags_before - {old} | {new}
+
+
+@pytest.mark.parametrize(
+    "design", ["timer_astable", "timer_astable_gnd", "led_series", "rc_lowpass", "linear_regulator"]
+)
+def test_labels_clear_of_pin_numbers_stay_where_drawn(design):
+    text = next((CORPUS_RUN / design / "candidates/000/project").glob("*.kicad_sch")).read_text()
+    assert clear_label_pin_numbers_text(text) == (text, [])
+
+
+@pytest.mark.parametrize("design", sorted(p.name for p in CORPUS_RUN.iterdir() if p.is_dir()))
+def test_lengthened_label_stub_touches_only_its_own_wire(design):
+    """A moved label's new stub must not reach another wire; on inverting_gain the
+    VPLUS rail runs one grid step outside the VMINUS stub, so that label cannot move."""
+    from ai_kicad.m2_geometry import point_on_segment
+    from ai_kicad.pivot.power_symbols import _wire_segments
+
+    text = next((CORPUS_RUN / design / "candidates/000/project").glob("*.kicad_sch")).read_text()
+    original = _wire_segments(parse(text))
+    _moved, moves = clear_label_pin_numbers_text(text)
+    for move in moves:
+        old = tuple(round(v * 1_000_000) for v in move["from_mm"])
+        new = tuple(round(v * 1_000_000) for v in move["to_mm"])
+        step = 1_270_000 if new[0] > old[0] else -1_270_000
+        for x in range(old[0] + step, new[0] + step, step):
+            assert not any(point_on_segment((x, old[1]), *segment) for segment in original)
+    if design == "inverting_gain":
+        assert "VMINUS" not in {move["label"] for move in moves}

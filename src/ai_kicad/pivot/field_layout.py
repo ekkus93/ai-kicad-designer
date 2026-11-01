@@ -307,3 +307,205 @@ def _move_fields(text: str, part: Part, points: dict[str, tuple[int, int]]) -> s
             )
         return text[:start] + block + text[end:]
     raise ValueError(f"symbol {reference} unit {unit} not found")
+
+
+# A net label's text closer than this to a pin number or field reads as touching it.
+LABEL_CLEARANCE = 635_000
+# Furthest a label's stub is lengthened to make that room.
+LABEL_REACH = 4 * 1_270_000
+
+
+def _gap(first: Box, second: Box) -> int:
+    """Separation of two boxes; negative when they overlap."""
+    gap = max(
+        first[0] - second[2], second[0] - first[2], first[1] - second[3], second[1] - first[3]
+    )
+    return gap if gap >= 0 else -1
+
+
+def _label_text_box(name: str, point: tuple[int, int], angle: int) -> Box:
+    from ai_kicad.m2_geometry import label_text_width
+
+    width = label_text_width(name)
+    if angle == 0:
+        return (point[0], point[1] - 2_000_000, point[0] + width, point[1])
+    return (point[0] - width, point[1] - 2_000_000, point[0], point[1])
+
+
+def _relocate(block: str, old: tuple[int, int], new: tuple[int, int]) -> str:
+    """Move the first ``(at x y ...)`` of a form from ``old`` to ``new``."""
+
+    def number(value: int) -> str:
+        return f"{value / 1_000_000:.6f}"
+
+    pattern = re.compile(r"\(at\s+([-+0-9.eE]+)\s+([-+0-9.eE]+)")
+    match = pattern.search(block)
+    if match is None or (_nm(match[1]), _nm(match[2])) != old:
+        raise ValueError("form is not at the expected point")
+    return block[: match.start()] + f"(at {number(new[0])} {number(new[1])}" + block[match.end() :]
+
+
+def clear_label_pin_numbers_text(text: str) -> tuple[str, list[dict]]:
+    """Give a net label crowding a pin number room by lengthening its free stub end.
+
+    A horizontal label whose text comes within ``LABEL_CLEARANCE`` of a pin number or
+    other text is moved outward along its stub, one grid step at a time, when its
+    anchor is a free wire end (one wire, no pin, no other wire through it). The wire
+    is extended to the new anchor and PWR_FLAGs on that end move with the label, so
+    the netlist is unchanged. The first step at which the text is clear and the
+    lengthened stub, label and flags touch nothing else is kept.
+    """
+    from .power_symbols import _append_forms, _pin_points, _wire_form, _wire_segments
+    from .schematic_review_native import _drawn_boxes
+
+    moves = []
+    names = [
+        (label[1], (_nm(one(label, "at")[1]), _nm(one(label, "at")[2])))
+        for label in children(parse(text), "label")
+        if int(float(one(label, "at")[3])) % 360 in {0, 180}
+    ]
+    for name, anchor in names:
+        tree = parse(text)
+        label = next(
+            item
+            for item in children(tree, "label")
+            if item[1] == name and (_nm(one(item, "at")[1]), _nm(one(item, "at")[2])) == anchor
+        )
+        angle = int(float(one(label, "at")[3])) % 360
+        outward = -1 if angle == 0 else 1
+        box = _label_text_box(name, anchor, angle)
+        numbers = [bounds for _owner, bounds in _pin_number_boxes(text, tree)]
+        symbol_boxes, text_boxes = _drawn_boxes(tree)
+        # Stacked connector labels sit a pitch apart by design: they must not overlap,
+        # but only pin numbers and symbol fields need the full clearance.
+        fields = [bounds for owner, bounds in text_boxes if not owner.startswith("label-")]
+        labels = [
+            bounds
+            for owner, bounds in text_boxes
+            if owner.startswith("label-") and not (owner == f"label-{name}" and bounds == box)
+        ]
+
+        def crowding(candidate: Box) -> int:
+            if any(_overlaps(candidate, bounds) for bounds in labels):
+                return -1
+            return min(
+                (_gap(candidate, bounds) for bounds in numbers + fields), default=LABEL_CLEARANCE
+            )
+
+        before = crowding(box)
+        if before >= LABEL_CLEARANCE:
+            continue
+        segments = _wire_segments(tree)
+        touching = [segment for segment in segments if anchor in segment]
+        through = [
+            segment
+            for segment in segments
+            if anchor not in segment and _on_segment(anchor, segment)
+        ]
+        flag_pins = {
+            (_nm(one(symbol, "at")[1]), _nm(one(symbol, "at")[2]))
+            for symbol in children(tree, "symbol")
+            if one(symbol, "lib_id")[1] == "power:PWR_FLAG"
+        }
+        points = _pin_points(tree) - flag_pins
+        if len(touching) != 1 or through or anchor in points:
+            continue
+        other_end = next(end for end in touching[0] if end != anchor)
+        if other_end[1] != anchor[1] or (other_end[0] - anchor[0]) * outward > 0:
+            continue
+        flags = [
+            symbol
+            for symbol in children(tree, "symbol")
+            if one(symbol, "lib_id")[1] == "power:PWR_FLAG"
+            and (_nm(one(symbol, "at")[1]), _nm(one(symbol, "at")[2])) == anchor
+        ]
+        flag_names = {
+            next(p[2] for p in children(flag, "property") if p[1] == "Reference") for flag in flags
+        }
+        bodies = [
+            bounds
+            for owner, bounds in symbol_boxes
+            if owner not in flag_names and not _overlaps(box, bounds)
+        ]
+        for step in range(1_270_000, LABEL_REACH + 1, 1_270_000):
+            new = (anchor[0] + outward * step, anchor[1])
+            moved = _label_text_box(name, new, angle)
+            stub = (min(new[0], anchor[0]), anchor[1], max(new[0], anchor[0]), anchor[1])
+            # The text sits above its own wire: test it against wires a hair above that line.
+            lifted = (moved[0], moved[1], moved[2], moved[3] - 100_000)
+            if (
+                crowding(moved) < LABEL_CLEARANCE
+                or not _on_page({"anchor": new, "text": (moved[0], moved[1])})
+                or not _on_page({"end": (moved[2], moved[3])})
+                or any(_overlaps(moved, bounds) or _overlaps(stub, bounds) for bounds in bodies)
+                or any(
+                    _overlaps(lifted, _segment_box(segment))
+                    or _touches(stub, _segment_box(segment))
+                    for segment in segments
+                    if segment != touching[0]
+                )
+                or any(stub[0] <= x <= stub[2] and y == anchor[1] for x, y in points)
+            ):
+                continue
+            text = _move_label(text, name, anchor, new)
+            for reference in sorted(flag_names):
+                text = _move_symbol(text, reference, anchor, new)
+            text = _append_forms(text, [_wire_form(new, anchor, name)])
+            moves.append(
+                {
+                    "label": name,
+                    "from_mm": [v / 1_000_000 for v in anchor],
+                    "to_mm": [v / 1_000_000 for v in new],
+                    "flags": sorted(flag_names),
+                    "clearance_mm": [before / 1_000_000, crowding(moved) / 1_000_000],
+                }
+            )
+            break
+    parse(text)
+    return text, moves
+
+
+def _touches(first: Box, second: Box) -> bool:
+    """Closed-box intersection: shared edges and end points count."""
+    return (
+        first[0] <= second[2]
+        and second[0] <= first[2]
+        and first[1] <= second[3]
+        and second[1] <= first[3]
+    )
+
+
+def _segment_box(segment: tuple[tuple[int, int], tuple[int, int]]) -> Box:
+    first, second = segment
+    return (
+        min(first[0], second[0]),
+        min(first[1], second[1]),
+        max(first[0], second[0]),
+        max(first[1], second[1]),
+    )
+
+
+def _on_segment(point: tuple[int, int], segment) -> bool:
+    from ai_kicad.m2_geometry import point_on_segment
+
+    return point_on_segment(point, *segment)
+
+
+def _move_label(text: str, name: str, old: tuple[int, int], new: tuple[int, int]) -> str:
+    for start, end, node in _forms(text):
+        if (
+            node[0] == "label"
+            and node[1] == name
+            and (_nm(one(node, "at")[1]), _nm(one(node, "at")[2])) == old
+        ):
+            return text[:start] + _relocate(text[start:end], old, new) + text[end:]
+    raise ValueError(f"label {name} not found")
+
+
+def _move_symbol(text: str, reference: str, old: tuple[int, int], new: tuple[int, int]) -> str:
+    for start, end, node in _forms(text):
+        if node[0] == "symbol" and any(
+            p[1] == "Reference" and p[2] == reference for p in children(node, "property")
+        ):
+            return text[:start] + _relocate(text[start:end], old, new) + text[end:]
+    raise ValueError(f"symbol {reference} not found")

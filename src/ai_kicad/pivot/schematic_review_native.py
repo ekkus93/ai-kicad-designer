@@ -46,7 +46,7 @@ from .schematic_review import (
     file_hash,
     write_json,
 )
-from .field_layout import tighten_vertical_fields_text
+from .field_layout import clear_label_pin_numbers_text, tighten_vertical_fields_text
 from .power_symbols import (
     aim_power_flags_text,
     _wire_segments,
@@ -1302,6 +1302,9 @@ class NativeSchematicEngine:
             text, plans = self._plan_rails(schematic, directory)
             schematic.write_text(text)
             presentation["rail_plans"] = plans
+        text, label_moves = clear_label_pin_numbers_text(schematic.read_text())
+        schematic.write_text(text)
+        presentation["label_moves"] = label_moves
         text, turns = aim_power_flags_text(schematic.read_text())
         schematic.write_text(text)
         presentation["power_flag_turns"] = turns

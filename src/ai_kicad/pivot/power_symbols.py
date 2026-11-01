@@ -1128,6 +1128,24 @@ def _label_gap(tree: list, symbol: list, angle: int) -> int:
     )
 
 
+def _under_label(tree: list, symbol: list, angle: int) -> bool:
+    """Whether a flag drawn at ``angle`` sits in the column directly above or below a
+    horizontal net label's text, where it reads as part of that text."""
+    from .schematic_review_native import _drawn_boxes
+
+    at = one(symbol, "at")
+    box = _flag_box((_nm(at[1]), _nm(at[2])), angle)
+    _symbols, text_boxes = _drawn_boxes(tree)
+    return any(
+        _overlaps(
+            box,
+            (bounds[0], bounds[1] - FLAG_CLEARANCE, bounds[2], bounds[3] + FLAG_CLEARANCE),
+        )
+        for owner, bounds in text_boxes
+        if owner.startswith("label-") and bounds[2] - bounds[0] > bounds[3] - bounds[1]
+    )
+
+
 def _flag_clearance(text: str, tree: list, symbol: list, angle: int) -> int | None:
     """Closest approach of a flag drawn at ``angle`` to any other drawn item.
 
@@ -1169,9 +1187,10 @@ def _flag_clearance(text: str, tree: list, symbol: list, angle: int) -> int | No
 def aim_power_flags_text(text: str) -> tuple[str, list[dict]]:
     """Turn each PWR_FLAG crowding a net label to the free direction with the most room.
 
-    A flag closer than ``FLAG_CLEARANCE`` to a label's text is rotated
-    about its own connection point (so the netlist is unchanged) when another
-    direction, not along one of its wires, gives it strictly more clearance.
+    A flag closer than ``FLAG_CLEARANCE`` to a label's text is rotated about its own
+    connection point (so the netlist is unchanged) to another direction, not along one
+    of its wires and overlapping nothing, that takes it out of the text's column above
+    or below the label or, failing that, gives it strictly more clearance.
     """
     turns = []
     flags = [
@@ -1194,16 +1213,23 @@ def aim_power_flags_text(text: str) -> tuple[str, list[dict]]:
         if _label_gap(tree, symbol, current) >= FLAG_CLEARANCE:
             continue
         before = _flag_clearance(text, tree, symbol, current)
+        # Rank directions: out of every label's text column first, then by clearance.
         options = [
-            (clearance, angle)
+            (not _under_label(tree, symbol, angle), clearance, -angle)
             for angle in (0, 90, 180, 270)
             if angle != current
             and (clearance := _flag_clearance(text, tree, symbol, angle)) is not None
         ]
         if not options:
             continue
-        clearance, angle = max(options, key=lambda item: (item[0], -item[1]))
-        if before is not None and clearance <= before:
+        free, clearance, angle = max(options)
+        angle = -angle
+        if before is not None and (free, clearance) <= (
+            not _under_label(tree, symbol, current),
+            before,
+        ):
+            continue
+        if clearance < 0:
             continue
         at = one(node, "at")
         block = text[start:end]
