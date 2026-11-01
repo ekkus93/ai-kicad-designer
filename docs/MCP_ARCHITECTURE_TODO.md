@@ -197,6 +197,12 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - Together with run3, all 15 corpus designs have now been accepted at least once on brief v3, but across two source commits rather than one full-corpus run.
     - The independent readability assessment and human electrical review are still PENDING.
 
+    **Progress (2026-11-01, later):** A full corpus `review_loop_corpus_v3_2026-11-01_qwen35_32k_run2` at `4e75adb0` accepted 15/15 designs (`ACCEPTED_FOR_REVIEW`), with every independent check passing on each accepted schematic. Thirteen were accepted on the first review. Two took a second review, and in both cases the loop correctly rejected the model's reply and the second review accepted the unchanged candidate:
+    - **sallen_key** asked again for a redundant REF `connect_rail`. It was rejected as making no change.
+    - **dual_rail_reference** answered with a wrong `base_revision`. It was rejected as a stale review.
+
+    Apart from wire UUIDs, every generated schematic is identical to the previously accepted one (run3, and 2026-11-01 run1 for sallen_key and timer_astable_gnd). No false acceptance occurred. The independent readability assessment and human electrical review are still PENDING, so P6-011f stays unchecked.
+
 
 ## P7 — Conditional native KiCad extension/fork gate
 
