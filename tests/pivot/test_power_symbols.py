@@ -12,8 +12,11 @@ from ai_kicad.m2a_artifacts import emit, observe
 from ai_kicad.m2b import assets, validate
 from ai_kicad.pivot import power_symbols
 from ai_kicad.pivot.power_symbols import (
+    _flag_box,
+    _gap,
     _pin_points,
     _wire_segments,
+    aim_power_flags_text,
     glyph_for_net,
     label_view_text,
     power_symbol_collisions,
@@ -491,3 +494,65 @@ def test_sallen_key_rails_plan_after_moving_the_crowded_connector(tmp_path):
     (tmp_path / "check").mkdir()
     report = engine.assess(schematic, tmp_path / "check").report
     assert set(report["checks"].values()) == {"PASS"}
+
+
+CORPUS_RUN = ROOT / "fixtures/pivot/experiments/review_loop_corpus_v3_2026-11-01_qwen35_32k_run2"
+
+
+def _flags(text: str) -> dict[str, tuple[tuple[int, int], int]]:
+    return {
+        next(p[2] for p in children(item, "property") if p[1] == "Reference"): (
+            (power_symbols._nm(one(item, "at")[1]), power_symbols._nm(one(item, "at")[2])),
+            int(float(one(item, "at")[3])),
+        )
+        for item in children(parse(text), "symbol")
+        if one(item, "lib_id")[1] == "power:PWR_FLAG"
+    }
+
+
+def _label_boxes(text: str) -> dict[str, list[tuple[int, int, int, int]]]:
+    from ai_kicad.m2_geometry import label_text_rect
+
+    boxes: dict[str, list] = {}
+    for label in children(parse(text), "label"):
+        at = one(label, "at")
+        point = (power_symbols._nm(at[1]), power_symbols._nm(at[2]))
+        boxes.setdefault(label[1], []).append(label_text_rect(label[1], point))
+    return boxes
+
+
+@pytest.mark.parametrize("design", ["dual_buffer", "noninverting_gain", "sallen_key"])
+def test_connector_flag_turns_away_from_the_label_it_hangs_under(design):
+    """A PWR_FLAG sharing a connector stub end with the VMINUS label points away from it."""
+    path = next((CORPUS_RUN / design / "candidates/000/project").glob("*.kicad_sch"))
+    text = path.read_text()
+    vminus = next(box for box in _label_boxes(text)["VMINUS"] if box[0] < 70_000_000)
+    anchor = (vminus[0], vminus[3])
+    before = _flags(text)
+    flag = next(name for name, (point, _angle) in before.items() if point == anchor)
+    assert _gap(_flag_box(anchor, before[flag][1]), vminus) < 1_270_000
+
+    turned, turns = aim_power_flags_text(text)
+
+    after = _flags(turned)
+    assert [item["reference"] for item in turns] == [flag]
+    # Rotated about its own connection point: same pin position, so the netlist is unchanged.
+    assert after[flag][0] == anchor
+    box = _flag_box(anchor, after[flag][1])
+    # Now on the far side of the label's anchor from its text, and touching no other wire.
+    assert box[2] <= vminus[0]
+    assert not any(
+        _gap(box, (min(a[0], b[0]), min(a[1], b[1]), max(a[0], b[0]), max(a[1], b[1]))) < 0
+        for a, b in _wire_segments(parse(turned))
+        if not point_on_segment(anchor, a, b)
+    )
+    assert {name: value for name, value in after.items() if name != flag} == {
+        name: value for name, value in before.items() if name != flag
+    }
+
+
+@pytest.mark.parametrize("design", ["timer_astable", "timer_astable_gnd", "dual_rail_reference"])
+def test_flags_clear_of_labels_are_left_as_drawn(design):
+    path = next((CORPUS_RUN / design / "candidates/000/project").glob("*.kicad_sch"))
+    text = path.read_text()
+    assert aim_power_flags_text(text) == (text, [])

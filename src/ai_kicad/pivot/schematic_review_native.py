@@ -48,6 +48,7 @@ from .schematic_review import (
 )
 from .field_layout import tighten_vertical_fields_text
 from .power_symbols import (
+    aim_power_flags_text,
     _wire_segments,
     glyph_for_net,
     label_view_text,
@@ -1301,6 +1302,9 @@ class NativeSchematicEngine:
             text, plans = self._plan_rails(schematic, directory)
             schematic.write_text(text)
             presentation["rail_plans"] = plans
+        text, turns = aim_power_flags_text(schematic.read_text())
+        schematic.write_text(text)
+        presentation["power_flag_turns"] = turns
         text, moves = tighten_vertical_fields_text(schematic.read_text())
         schematic.write_text(text)
         presentation["vertical_field_moves"] = moves

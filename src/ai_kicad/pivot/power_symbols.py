@@ -1084,3 +1084,143 @@ def _append_forms(text: str, forms: list[str]) -> str:
         if item[2][0] in {"symbol", "wire", "label", "junction"}
     )
     return text[:end] + "".join("\n  " + form for form in forms) + text[end:]
+
+
+# PWR_FLAG: a 1.27 mm stem, then a diamond 1.016 mm either side of the axis, 2.54 mm long.
+FLAG_TIP = (0, 2_540_000)
+FLAG_HALF_WIDTH = 1_016_000
+# Clearance a flag keeps when it has the choice; closer flags read as part of the text.
+FLAG_CLEARANCE = 1_270_000
+
+
+def _flag_box(point: Point, angle: int) -> Box:
+    tip_x, tip_y = transform_library_point(*FLAG_TIP, angle)
+    direction = (_sign(tip_x), _sign(tip_y))
+    start = (point[0] + direction[0] * 500_000, point[1] + direction[1] * 500_000)
+    tip = (point[0] + tip_x, point[1] + tip_y)
+    across_x = FLAG_HALF_WIDTH if direction[1] else 0
+    across_y = FLAG_HALF_WIDTH if direction[0] else 0
+    return (
+        min(start[0], tip[0]) - across_x,
+        min(start[1], tip[1]) - across_y,
+        max(start[0], tip[0]) + across_x,
+        max(start[1], tip[1]) + across_y,
+    )
+
+
+def _gap(first: Box, second: Box) -> int:
+    """Separation of two boxes; negative when they overlap."""
+    dx = max(first[0] - second[2], second[0] - first[2])
+    dy = max(first[1] - second[3], second[1] - first[3])
+    return max(dx, dy) if max(dx, dy) >= 0 else -1
+
+
+def _label_gap(tree: list, symbol: list, angle: int) -> int:
+    """Closest approach of a flag drawn at ``angle`` to any net label's text."""
+    from .schematic_review_native import _drawn_boxes
+
+    at = one(symbol, "at")
+    box = _flag_box((_nm(at[1]), _nm(at[2])), angle)
+    _symbols, text_boxes = _drawn_boxes(tree)
+    return min(
+        (_gap(box, bounds) for owner, bounds in text_boxes if owner.startswith("label-")),
+        default=FLAG_CLEARANCE,
+    )
+
+
+def _flag_clearance(text: str, tree: list, symbol: list, angle: int) -> int | None:
+    """Closest approach of a flag drawn at ``angle`` to any other drawn item.
+
+    ``None`` when the flag would lie along a wire leaving its own connection point.
+    """
+    from .schematic_review_native import _drawn_boxes
+
+    at = one(symbol, "at")
+    point = (_nm(at[1]), _nm(at[2]))
+    reference = next(p[2] for p in children(symbol, "property") if p[1] == "Reference")
+    box = _flag_box(point, angle)
+    tip_x, tip_y = transform_library_point(*FLAG_TIP, angle)
+    direction = (_sign(tip_x), _sign(tip_y))
+    symbol_boxes, text_boxes = _drawn_boxes(tree)
+    obstacles = [bounds for owner, bounds in symbol_boxes + text_boxes if owner != reference] + [
+        bounds for _owner, bounds in _pin_number_boxes(text, tree)
+    ]
+    for first, second in _wire_segments(tree):
+        if point_on_segment(point, first, second):
+            leaving = {
+                (_sign(end[0] - point[0]), _sign(end[1] - point[1]))
+                for end in (first, second)
+                if end != point
+            }
+            if direction in leaving:
+                return None
+            continue
+        obstacles.append(
+            (
+                min(first[0], second[0]),
+                min(first[1], second[1]),
+                max(first[0], second[0]),
+                max(first[1], second[1]),
+            )
+        )
+    return min((_gap(box, bounds) for bounds in obstacles), default=FLAG_CLEARANCE)
+
+
+def aim_power_flags_text(text: str) -> tuple[str, list[dict]]:
+    """Turn each PWR_FLAG crowding a net label to the free direction with the most room.
+
+    A flag closer than ``FLAG_CLEARANCE`` to a label's text is rotated
+    about its own connection point (so the netlist is unchanged) when another
+    direction, not along one of its wires, gives it strictly more clearance.
+    """
+    turns = []
+    flags = [
+        next(p[2] for p in children(item, "property") if p[1] == "Reference")
+        for item in children(parse(text), "symbol")
+        if one(item, "lib_id")[1] == "power:PWR_FLAG"
+    ]
+    for reference in flags:
+        tree = parse(text)
+        start, end, node = next(
+            form
+            for form in _forms(text)
+            if form[2][0] == "symbol"
+            and any(
+                p[1] == "Reference" and p[2] == reference for p in children(form[2], "property")
+            )
+        )
+        symbol = node
+        current = int(float(one(symbol, "at")[3])) % 360
+        if _label_gap(tree, symbol, current) >= FLAG_CLEARANCE:
+            continue
+        before = _flag_clearance(text, tree, symbol, current)
+        options = [
+            (clearance, angle)
+            for angle in (0, 90, 180, 270)
+            if angle != current
+            and (clearance := _flag_clearance(text, tree, symbol, angle)) is not None
+        ]
+        if not options:
+            continue
+        clearance, angle = max(options, key=lambda item: (item[0], -item[1]))
+        if before is not None and clearance <= before:
+            continue
+        at = one(node, "at")
+        block = text[start:end]
+        old = f"(at {at[1]} {at[2]} {at[3]})"
+        if old not in block:
+            raise ValueError(f"unexpected position form in {reference}")
+        text = text[:start] + block.replace(old, f"(at {at[1]} {at[2]} {angle})", 1) + text[end:]
+        turns.append(
+            {
+                "reference": reference,
+                "from_angle": current,
+                "to_angle": angle,
+                "clearance_mm": [
+                    None if before is None else before / 1_000_000,
+                    clearance / 1_000_000,
+                ],
+            }
+        )
+    parse(text)
+    return text, turns
