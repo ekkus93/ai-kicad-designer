@@ -189,6 +189,13 @@ These features are **planned**, not prerequisites for P4 except when a specific 
 
     No false acceptance occurred.
     **Note (2026-10-31):** Owner viewed the run1/run2 drawings and said: "I think it looks pretty good." Earlier owner feedback this week asked for wired VCC wherever routable, labels closer to vertical parts and connectors, and a visible ground; those requests were implemented and reviewed in the 555 run4 images. This is informal owner feedback, not the independent readability assessment or human electrical review the acceptance requires, so P6-011f stays unchecked.
+    **Progress (2026-11-01):**
+    - At `31985df6`, the rail-plan move fallback carries stub-mounted power flags with a moved part and compares every move within 25.4 mm. Sallen-Key generation went from 6 power symbols to 2, with VPLUS and VMINUS wired (`sallen_key_rail_plan_2026-10-31_run1`).
+    - `review_loop_corpus_v3_2026-11-01_qwen35_32k_run1` at `f54cdb6c` reran the two designs that run3 did not accept. Both were `ACCEPTED_FOR_REVIEW` on the first review with no edits, and every independent check passed:
+      - sallen_key: 14345 tokens
+      - timer_astable_gnd: 12778 tokens
+    - Together with run3, all 15 corpus designs have now been accepted at least once on brief v3, but across two source commits rather than one full-corpus run.
+    - The independent readability assessment and human electrical review are still PENDING.
 
 
 ## P7 — Conditional native KiCad extension/fork gate
