@@ -203,6 +203,15 @@ These features are **planned**, not prerequisites for P4 except when a specific 
 
     Apart from wire UUIDs, every generated schematic is identical to the previously accepted one (run3, and 2026-11-01 run1 for sallen_key and timer_astable_gnd). No false acceptance occurred. The independent readability assessment and human electrical review are still PENDING, so P6-011f stays unchecked.
 
+    **Progress (2026-11-02):** Two presentation steps were added following owner requests:
+    - `2262ee64`: a PWR_FLAG crowding a net label is turned away from it.
+    - `4e9c8888`: a net label crowding a connector pin number has its free stub lengthened. The step refuses any stub that would touch another wire.
+    Evidence for these is in `power_flag_turn_2026-11-01_run1` and `label_pin_number_clearance_2026-11-01_run1`.
+
+    Full corpus `review_loop_corpus_v3_2026-11-02_qwen35_32k_run1` at `f8a7afcb` accepted 15/15 designs (`ACCEPTED_FOR_REVIEW`). Every design was accepted on its first review, with no edits and no rejected replies, and every independent check passed. Apart from UUIDs, every generated schematic matches the separately assessed generation. No false acceptance occurred.
+
+    The independent readability assessment and human electrical review are still PENDING, so P6-011f stays unchecked.
+
 
 ## P7 — Conditional native KiCad extension/fork gate
 
