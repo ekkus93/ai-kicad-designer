@@ -257,3 +257,26 @@ def test_lengthened_label_stub_touches_only_its_own_wire(design):
             assert not any(point_on_segment((x, old[1]), *segment) for segment in original)
     if design == "inverting_gain":
         assert "VMINUS" not in {move["label"] for move in moves}
+
+
+def test_inverting_gain_vminus_label_gets_room_before_the_rails_are_drawn(tmp_path):
+    """On the compiler output the VMINUS stub end is still free, so the label moves out;
+    drawn first, the VPLUS rail would run one grid step outside it and block the move."""
+    text = compiled_text("inverting_gain", tmp_path)
+    moved, moves = clear_label_pin_numbers_text(text)
+    vminus = [move for move in moves if move["label"] == "VMINUS"]
+    assert len(vminus) == 1
+    new = tuple(round(v * 1_000_000) for v in vminus[0]["to_mm"])
+    assert ("VMINUS", new) in _labels(moved)
+    assert _number_gap(moved, "VMINUS", new) >= 635_000
+
+
+def test_compile_gives_labels_room_before_and_after_the_rails():
+    import inspect
+
+    from ai_kicad.pivot.schematic_review_native import NativeSchematicEngine
+
+    source = inspect.getsource(NativeSchematicEngine._compile)
+    first = source.index("clear_label_pin_numbers_text")
+    rails = source.index("self._plan_rails")
+    assert first < rails < source.index("clear_label_pin_numbers_text", rails)

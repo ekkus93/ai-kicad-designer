@@ -1296,15 +1296,20 @@ class NativeSchematicEngine:
         verify_serialized_scene(self.design, scene, schematic)
         write_json(directory / "composition.json", composition)
         # Pivot presentation steps on the verified compiler output; every change is recorded.
-        # Rails are drawn first so the labels are then placed around the final wiring.
+        # Net labels get room from pin numbers first, so rails are routed around them, and
+        # again after the rails, which may move a part to where its labels have room;
+        # rails are drawn before the field text so it is placed around the final wiring.
         presentation = {}
+        text, label_moves = clear_label_pin_numbers_text(schematic.read_text())
+        schematic.write_text(text)
+        presentation["label_moves"] = label_moves
         if getattr(self, "power_symbol_rails", False):
             text, plans = self._plan_rails(schematic, directory)
             schematic.write_text(text)
             presentation["rail_plans"] = plans
         text, label_moves = clear_label_pin_numbers_text(schematic.read_text())
         schematic.write_text(text)
-        presentation["label_moves"] = label_moves
+        presentation["label_moves_after_rails"] = label_moves
         text, turns = aim_power_flags_text(schematic.read_text())
         schematic.write_text(text)
         presentation["power_flag_turns"] = turns
