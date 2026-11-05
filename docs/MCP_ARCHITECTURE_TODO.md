@@ -212,6 +212,12 @@ These features are **planned**, not prerequisites for P4 except when a specific 
 
     The independent readability assessment and human electrical review are still PENDING, so P6-011f stays unchecked.
 
+    **Progress (2026-11-05):** `d7a0703f` runs the label-room step twice: once before the rails are planned, so the rails route around the lengthened stub, and once after, for connectors that rail planning moves. On inverting_gain, VMINUS now clears J1 pin number 4 by 1.41 mm instead of 0.14 mm. Evidence for the regenerated op-amp designs is in `label_room_before_rails_2026-11-02_run1`.
+
+    Full corpus `review_loop_corpus_v3_2026-11-05_qwen35_256k_run1` at `71b1785a` used `qwen35-256k:latest` with a 262144-token context. Earlier runs used `qwen35-32k:latest`; both are `qwen3.5:9b` with the same sampling settings. It accepted 15/15 designs (`ACCEPTED_FOR_REVIEW`), each on its first review, with no edits and no rejected replies, and every independent check passed. Apart from UUIDs, every generated schematic matches the earlier generations: the six op-amp designs match `label_room_before_rails_2026-11-02_run1`, and the other nine match `review_loop_corpus_v3_2026-11-02_qwen35_32k_run1`. No false acceptance occurred.
+
+    The independent readability assessment and human electrical review are still PENDING, so P6-011f stays unchecked.
+
 
 ## P7 — Conditional native KiCad extension/fork gate
 
