@@ -218,6 +218,10 @@ These features are **planned**, not prerequisites for P4 except when a specific 
 
     The independent readability assessment and human electrical review are still PENDING, so P6-011f stays unchecked.
 
+    **Progress (2026-11-09):** In five drawings that run accepted, a ground wire crossed the op-amp power unit (U1C) between V+ and V−, over its pin names: dual_buffer, inverting_gain, noninverting_gain, rc_to_buffer and sallen_key. The owner reported this. The model review and the independent checks did not flag it. `0b9049ab` makes the pin column of a unit drawn without a body a routing obstacle and rejects rail plans whose wires cross it. Ground at the decoupling capacitors is now drawn with REF ground symbols. Evidence is in `power_unit_column_2026-11-09_run1`: all five regenerated designs pass every independent check, and the other ten are unchanged. No model review of the new drawings has been run yet.
+
+    The independent readability assessment and human electrical review are still PENDING, so P6-011f stays unchecked.
+
 
 ## P7 — Conditional native KiCad extension/fork gate
 
