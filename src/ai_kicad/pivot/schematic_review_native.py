@@ -688,9 +688,17 @@ def move_symbols_text(text: str, action: MoveSymbols, terminal_inventory: list[d
 
 Box = tuple[int, int, int, int]
 
+# Half a 1.27 mm pin-name line plus the 0.25 mm body padding.
+BODYLESS_UNIT_HALF_WIDTH = 885_000
 
-def _drawn_boxes(tree: list) -> tuple[list[tuple[str, Box]], list[tuple[str, Box]]]:
-    """Padded symbol body/pin-stub boxes and visible field/label text boxes of a sheet."""
+
+def _drawn_boxes(
+    tree: list, bodyless: list[tuple[str, Box]] | None = None
+) -> tuple[list[tuple[str, Box]], list[tuple[str, Box]]]:
+    """Padded symbol body/pin-stub boxes and visible field/label text boxes of a sheet.
+
+    The column boxes of units drawn without a body are also appended to ``bodyless``.
+    """
     library_symbols = {item[1]: item for item in children(one(tree, "lib_symbols"), "symbol")}
     symbol_boxes: list[tuple[str, Box]] = []
     text_boxes: list[tuple[str, Box]] = []
@@ -744,6 +752,7 @@ def _drawn_boxes(tree: list) -> tuple[list[tuple[str, Box]], list[tuple[str, Box
         units = children(symbol, "unit")
         unit = units[0][1] if units else "1"
         body_points: list[Point] = []
+        inner_ends: list[Point] = []
         for body in children(library, "symbol"):
             body_unit = body[1].rsplit("_", 2)[-2] if body[1].count("_") >= 2 else "0"
             if body_unit not in {"0", str(unit)}:
@@ -767,6 +776,7 @@ def _drawn_boxes(tree: list) -> tuple[list[tuple[str, Box]], list[tuple[str, Box
                     stub.append((origin[0] + dx, origin[1] + dy))
                 # The stub stops short of its connection point so wires may still land there.
                 (x1, y1), (x2, y2) = stub
+                inner_ends.append((x2, y2))
                 step_x = (x2 > x1) - (x2 < x1)
                 step_y = (y2 > y1) - (y2 < y1)
                 x1, y1 = x1 + step_x * 500_000, y1 + step_y * 500_000
@@ -804,8 +814,64 @@ def _drawn_boxes(tree: list) -> tuple[list[tuple[str, Box]], list[tuple[str, Box
                     ),
                 )
             )
+        elif len(inner_ends) > 1:
+            # A unit drawn without a body, such as an op-amp power unit, reads as one
+            # column from pin to pin with the pin names along it; keep wires out of it.
+            column = (
+                reference,
+                (
+                    min(point[0] for point in inner_ends) - BODYLESS_UNIT_HALF_WIDTH,
+                    min(point[1] for point in inner_ends) - BODYLESS_UNIT_HALF_WIDTH,
+                    max(point[0] for point in inner_ends) + BODYLESS_UNIT_HALF_WIDTH,
+                    max(point[1] for point in inner_ends) + BODYLESS_UNIT_HALF_WIDTH,
+                ),
+            )
+            symbol_boxes.append(column)
+            if bodyless is not None:
+                bodyless.append(column)
 
     return symbol_boxes, text_boxes
+
+
+def wires_through_bodyless_units(tree: list) -> list[dict]:
+    """Wires drawn across the pin column of a unit that has no body, such as U1C.
+
+    A wire crosses the column when it passes from one side to the other, or runs along
+    it between the pins' inner ends where the pin names are. Wires that only end at a
+    pin's inner end, as the compiler draws a local decoupling pair, are not crossings.
+    """
+    columns: list[tuple[str, Box]] = []
+    _drawn_boxes(tree, columns)
+    pad = BODYLESS_UNIT_HALF_WIDTH
+    crossings = []
+    for reference, (left, top, right, bottom) in columns:
+        vertical = bottom - top >= right - left
+        for wire in children(tree, "wire"):
+            points = children(one(wire, "pts"), "xy")
+            (x1, y1), (x2, y2) = _nm_point(points[0]), _nm_point(points[1])
+            if not vertical:
+                # Work in the column's frame: along = the axis between the pins.
+                x1, y1, x2, y2 = y1, x1, y2, x2
+                left, top, right, bottom = top, left, bottom, right
+            across = x1 != x2 and y1 == y2 and top <= y1 <= bottom
+            crosses = across and min(x1, x2) < left and max(x1, x2) > right
+            along = (
+                x1 == x2
+                and left <= x1 <= right
+                and min(max(y1, y2), bottom - pad) - max(min(y1, y2), top + pad) > 0
+            )
+            if not vertical:
+                x1, y1, x2, y2 = y1, x1, y2, x2
+                left, top, right, bottom = top, left, bottom, right
+            if crosses or along:
+                crossings.append(
+                    {
+                        "kind": "wire_through_bodyless_unit",
+                        "reference": reference,
+                        "wire_mm": [[x1 / 1e6, y1 / 1e6], [x2 / 1e6, y2 / 1e6]],
+                    }
+                )
+    return crossings
 
 
 def route_around_existing_wires(
@@ -1029,6 +1095,33 @@ def terminal_inventory_for_design(design: dict, observed: dict) -> list[dict]:
     ]
 
 
+def _name_nets_from_power_labels(observed: dict) -> dict:
+    """Name an auto-named net after the power symbol a candidate places on its pin.
+
+    Rail plans are checked against the netlist of the sheet before the rails were drawn.
+    A rail drawn there only with wires has a KiCad auto-name (``Net-(J1-Pin_5)``); once a
+    plan marks it with a power symbol, KiCad names the net after that symbol. In the label
+    view the symbol is a label, so the old netlist name would make the rail's wires look
+    like they belong to two nets.
+    """
+    nets = observed["nets"]
+    renames: dict[str, str] = {}
+    for label, point in observed["labels"]:
+        if label in nets:
+            continue
+        found = {
+            name
+            for name, members in nets.items()
+            for member in members
+            if observed["pin_positions"].get(tuple(member)) == point
+        }
+        if len(found) == 1 and (name := next(iter(found))).startswith("Net-("):
+            renames.setdefault(name, label)
+    if not renames:
+        return observed
+    return dict(observed, nets={renames.get(name, name): members for name, members in nets.items()})
+
+
 def _layout_checker(design: dict, name: str, netlist: Path):
     """The protected observer's objection to a candidate sheet's label form, if any."""
 
@@ -1037,7 +1130,8 @@ def _layout_checker(design: dict, name: str, netlist: Path):
             view = Path(folder) / name
             view.write_text(label_view_text(candidate))
             try:
-                check_observed_layout(view, observe(view, netlist), design)
+                observed = _name_nets_from_power_labels(observe(view, netlist))
+                check_observed_layout(view, observed, design)
             except (InputError, ValueError, KeyError) as error:
                 return str(error)
         return None
@@ -1204,6 +1298,7 @@ def _search_rail_plans(
             tree = parse(text)
             problems = rail_presentation(tree, inventory, nets)
             problems += power_symbol_collisions(text)
+            problems += wires_through_bodyless_units(tree)
             objection = check(text)
             symbols = len(power_symbols(tree))
             wire = sum(

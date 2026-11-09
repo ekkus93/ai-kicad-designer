@@ -1,0 +1,98 @@
+"""Wires stay out of the pin column of a unit drawn without a body, such as an op-amp's
+power unit, where its pin names are written."""
+
+import json
+from pathlib import Path
+
+from ai_kicad.m2_compose import compose_with_evidence
+from ai_kicad.m2a_artifacts import emit
+from ai_kicad.m2b import assets, validate
+from ai_kicad.pivot.schematic_review_native import (
+    WirePoint,
+    _drawn_boxes,
+    _insert_wire_route,
+    _name_nets_from_power_labels,
+    route_around_existing_wires,
+    wires_through_bodyless_units,
+)
+from ai_kicad.sexpr import parse
+
+ROOT = Path(__file__).resolve().parents[2]
+ACCEPTED = (
+    ROOT
+    / "fixtures/pivot/experiments/review_loop_corpus_v3_2026-11-05_qwen35_256k_run1"
+    / "inverting_gain/candidates/000/project/InvertingGain.kicad_sch"
+)
+MM = 1_000_000
+
+
+def compiled_text(name: str, directory: Path) -> str:
+    resolved = assets()
+    source = ROOT / "fixtures/m2b" / f"{name}.json"
+    design = validate(json.loads(source.read_text()), resolved)
+    scene, _composition = compose_with_evidence(design, resolved)
+    return emit(design, resolved, scene, directory).read_text()
+
+
+def test_power_unit_column_spans_both_pin_names():
+    """U1C's pins end at y 74.93 (V+) and 82.55 (V-) on x 82.55; the column covers both."""
+    columns = []
+    symbol_boxes, _text = _drawn_boxes(parse(ACCEPTED.read_text()), columns)
+    assert len(columns) == 1
+    reference, (left, top, right, bottom) = columns[0]
+    assert reference == "U1"
+    assert left < round(82.55 * MM) < right
+    assert top < round(74.93 * MM) and round(82.55 * MM) < bottom
+    # Neither pin's connection point is covered, so wires can still land there.
+    assert top > round(71.12 * MM) and bottom < round(86.36 * MM)
+    assert columns[0] in symbol_boxes
+
+
+def test_accepted_ground_wire_through_u1c_is_reported():
+    """The 2026-11-05 drawing jogs the C1-C2 ground wire to y 81.28, across V-."""
+    crossings = wires_through_bodyless_units(parse(ACCEPTED.read_text()))
+    assert [item["wire_mm"] for item in crossings] == [[[81.28, 81.28], [97.79, 81.28]]]
+    assert crossings[0]["reference"] == "U1"
+
+
+def test_compiler_ground_wire_is_a_crossing_but_its_decoupling_wires_are_not(tmp_path):
+    """The compiler runs ground straight across U1C at y 82.55. Its C1 wire that ends on
+    the V+ pin and runs along that pin's stub only reaches the column, so it is allowed."""
+    text = compiled_text("inverting_gain", tmp_path)
+    crossings = wires_through_bodyless_units(parse(text))
+    assert [item["wire_mm"] for item in crossings] == [[[72.39, 82.55], [99.06, 82.55]]]
+
+
+def test_router_goes_around_the_power_unit_column(tmp_path):
+    text = compiled_text("inverting_gain", tmp_path)
+    route = route_around_existing_wires(
+        text, [WirePoint(x_mm=72.39, y_mm=82.55), WirePoint(x_mm=99.06, y_mm=82.55)]
+    )
+    drawn = _insert_wire_route(text, route)
+    new = [item for item in wires_through_bodyless_units(parse(drawn))]
+    assert new == wires_through_bodyless_units(parse(text))
+
+
+def test_auto_named_net_takes_the_power_symbol_name_at_its_pin():
+    point, other = (72_390_000, 82_550_000), (10_000_000, 10_000_000)
+    observed = {
+        "nets": {"Net-(J1-Pin_5)": [("J1", "5"), ("C1", "2")], "VPLUS": [("C1", "1")]},
+        "labels": [("REF", point), ("VPLUS", other)],
+        "pin_positions": {("C1", "2"): point, ("C1", "1"): other, ("J1", "5"): (0, 0)},
+    }
+    renamed = _name_nets_from_power_labels(observed)
+    assert renamed["nets"] == {
+        "REF": [("J1", "5"), ("C1", "2")],
+        "VPLUS": [("C1", "1")],
+    }
+    assert observed["nets"].keys() == {"Net-(J1-Pin_5)", "VPLUS"}
+
+
+def test_named_nets_are_never_renamed():
+    point = (72_390_000, 82_550_000)
+    observed = {
+        "nets": {"GND": [("C1", "2")]},
+        "labels": [("REF", point)],
+        "pin_positions": {("C1", "2"): point},
+    }
+    assert _name_nets_from_power_labels(observed) is observed
