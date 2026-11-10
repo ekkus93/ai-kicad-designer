@@ -280,3 +280,33 @@ def test_compile_gives_labels_room_before_and_after_the_rails():
     first = source.index("clear_label_pin_numbers_text")
     rails = source.index("self._plan_rails")
     assert first < rails < source.index("clear_label_pin_numbers_text", rails)
+
+
+def test_horizontal_resistor_text_moves_next_to_the_body(tmp_path):
+    """On inverting_gain the compiler puts R2's text 10 mm above R2, on the far side of
+    the U1A + input wire, and R1's under U1A's output. Both move beside their own body."""
+    from ai_kicad.pivot.field_layout import _label_bodies
+
+    text = compiled_text("inverting_gain", tmp_path)
+    tightened, moves = tighten_vertical_fields_text(text)
+    after = parse(tightened)
+    bodies = _label_bodies(after)
+    moved = {move["reference"]: move for move in moves if move["kind"] == "horizontal"}
+    assert set(moved) == {"R1", "R2"}
+    for reference in ("R1", "R2"):
+        body, kind = bodies[(reference, 1)]
+        assert kind == "horizontal"
+        placed = fields(after, reference)
+        reference_y, value_y = placed["Reference"][1][1], placed["Value"][1][1]
+        assert reference_y < value_y
+        # The pair sits just above or just below the body, centred on it.
+        nearest = value_y if value_y < body[1] else reference_y
+        assert min(abs(nearest - body[1]), abs(nearest - body[3])) < 3 * BODY_GAP
+        for value, point in placed.values():
+            assert point[0] == (body[0] + body[2]) // 2
+            box = _field_box(point, value)
+            assert not any(
+                _overlaps(box, item) for item in _obstacles(tightened, after, (reference, 1))
+            )
+    # R2's text no longer sits beyond the + input wire at y 39.37 mm.
+    assert fields(after, "R2")["Reference"][1][1] > 39_370_000

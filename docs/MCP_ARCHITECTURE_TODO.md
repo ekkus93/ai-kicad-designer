@@ -222,6 +222,8 @@ These features are **planned**, not prerequisites for P4 except when a specific 
 
     Full corpus `review_loop_corpus_v3_2026-11-09_qwen35_256k_run1` at `757aeb79` (`qwen35-256k:latest`, 262144-token context) accepted 15/15 designs (`ACCEPTED_FOR_REVIEW`), and every independent check passed. Apart from UUIDs, the five op-amp drawings match `power_unit_column_2026-11-09_run1` and the other ten match `review_loop_corpus_v3_2026-11-05_qwen35_256k_run1`. No accepted drawing has a wire across a power unit column. Fourteen designs were accepted on their first review. On sallen_key, the first review asked for `connect_rail` on VMINUS, saying rail_presentation had failed when it had passed. The editor made no change and rejected the reply, and the second review accepted the unchanged drawing.
 
+    **Progress (2026-11-10):** In the accepted inverting_gain drawing, "R2 10k" sat 10 mm above R2 beyond U1A's + input wire, and "R1 100k" sat under U1A's output. The owner reported this; the checks and the model review did not flag it. The field-placement step now also moves the reference and value of a horizontal two-pin part to the nearest clear position centred above or below its body. Evidence is in `horizontal_field_text_2026-11-10_run1`: all 15 designs pass every independent check, and the text moves in six designs (inverting_gain, rc_lowpass, rc_highpass, noninverting_gain, rc_to_buffer, sallen_key). No model review of the new drawings has been run yet.
+
     The independent readability assessment and human electrical review are still PENDING, so P6-011f stays unchecked.
 
 

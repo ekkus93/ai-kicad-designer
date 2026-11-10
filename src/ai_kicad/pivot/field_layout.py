@@ -1,8 +1,9 @@
-"""Place reference/value text of vertical two-pin parts next to their bodies.
+"""Place reference/value text of two-pin parts next to their bodies.
 
-The protected compiler centres these fields about 10 mm right of the part. This pivot
-presentation step moves each pair to the nearest clear position just right of the
-body. Connectors and body-less power units (an op-amp's V+/V- unit) get the same
+The protected compiler centres these fields about 10 mm right of a vertical part and
+about 10 mm above a horizontal one. This pivot presentation step moves each pair to the
+nearest clear position just right of a vertical body, or just above or below a
+horizontal one. Connectors and body-less power units (an op-amp's V+/V- unit) get the same
 treatment. Parts are keyed by reference and unit, because every unit of a
 multi-unit part shares one reference. Field boxes use the independent layout observer's text-size estimate, and a
 position is accepted only when it touches no wire, body, pin, label, pin number or
@@ -54,7 +55,8 @@ def _vertical_bodies(tree: list) -> dict[Part, Box]:
 def _label_bodies(tree: list) -> dict[Part, tuple[Box, str]]:
     """Parts whose text belongs right of the body, keyed by (reference, unit).
 
-    ``vertical``: exactly two pins on one vertical line. ``connector``: every pin leaves
+    ``vertical``: exactly two pins on one vertical line. ``horizontal``: exactly two
+    pins on one horizontal line; its text belongs above or below the body. ``connector``: every pin leaves
     the body on its left, so the right side is free for the reference and value.
     ``power_unit``: a unit with no drawn body whose pins all lie on one vertical line
     (such as an op-amp's supply unit); its body spans that line and the symbol anchor.
@@ -111,6 +113,8 @@ def _label_bodies(tree: list) -> dict[Part, tuple[Box, str]]:
         )
         if len(pins) == 2 and pins[0][0] == pins[1][0]:
             kind = "vertical"
+        elif len(pins) == 2 and pins[0][1] == pins[1][1]:
+            kind = "horizontal"
         elif all(origin[0] + x < box[0] for x, _y in pins):
             kind = "connector"
         else:
@@ -189,9 +193,10 @@ CONNECTOR_ROW_OFFSET = 1_350_000
 
 
 def tighten_vertical_fields_text(text: str) -> tuple[str, list[dict]]:
-    """Move reference/value pairs of vertical parts, connectors and power units nearer.
+    """Move reference/value pairs of two-pin parts, connectors and power units nearer.
 
-    Vertical parts keep each field's height; connector and power-unit text is centred
+    Vertical parts keep each field's height; horizontal parts' text is centred above or
+    below the body; connector and power-unit text is centred
     beside the body (or above it), reference above value. A move is kept only when it
     brings the text closer to the body and does not make the part's text read as
     belonging to another symbol (the independent owner-association measurement).
@@ -216,6 +221,8 @@ def tighten_vertical_fields_text(text: str) -> tuple[str, list[dict]]:
             or positions["Reference"][0] <= body[2]
         ):
             continue
+        if kind == "horizontal" and positions["Value"][0] != positions["Reference"][0]:
+            continue
         centre = ((body[0] + body[2]) // 2, (body[1] + body[3]) // 2)
 
         def distance(points: dict[str, tuple[int, int]]) -> int:
@@ -223,7 +230,18 @@ def tighten_vertical_fields_text(text: str) -> tuple[str, list[dict]]:
 
         half = max((_field_box((0, 0), prop[2])[2]) for prop in fields.values())
         first = body[2] + BODY_GAP + half
-        if kind == "vertical":
+        if kind == "horizontal":
+            # Centred above the body or centred below it; reference on top.
+            above = body[1] - BODY_GAP - FIELD_HALF_HEIGHT
+            below = body[3] + BODY_GAP + FIELD_HALF_HEIGHT
+            proposals = [
+                {"Reference": (centre[0], y - 2 * CONNECTOR_ROW_OFFSET), "Value": (centre[0], y)}
+                for y in range(above, above - SEARCH_REACH, -STEP)
+            ] + [
+                {"Reference": (centre[0], y), "Value": (centre[0], y + 2 * CONNECTOR_ROW_OFFSET)}
+                for y in range(below, below + SEARCH_REACH, STEP)
+            ]
+        elif kind == "vertical":
             # Right of the body, each field at its own height.
             proposals = [
                 {name: (x, positions[name][1]) for name in fields}
