@@ -74,6 +74,9 @@ def power_symbols(tree: list) -> list[dict]:
         if lib_id not in GLYPH_TIPS:
             continue
         properties = {prop[1]: prop[2] for prop in children(symbol, "property")}
+        value_at = next(
+            one(prop, "at") for prop in children(symbol, "property") if prop[1] == "Value"
+        )
         at = one(symbol, "at")
         result.append(
             {
@@ -82,6 +85,7 @@ def power_symbols(tree: list) -> list[dict]:
                 "lib_id": lib_id,
                 "point": (_nm(at[1]), _nm(at[2])),
                 "angle": int(float(at[3])),
+                "value": (_nm(value_at[1]), _nm(value_at[2])),
             }
         )
     return result
@@ -130,8 +134,13 @@ def _sign(value: int) -> int:
     return (value > 0) - (value < 0)
 
 
-def _glyph_boxes(lib_id: str, point: Point, angle: int, net: str) -> list[Box]:
-    """Glyph and value-text boxes of one power symbol, starting just off its pin end."""
+def _glyph_boxes(
+    lib_id: str, point: Point, angle: int, net: str, value: Point | None = None
+) -> list[Box]:
+    """Glyph and value-text boxes of one power symbol, starting just off its pin end.
+
+    ``value`` is the drawn value-text centre; by default it is the usual spot past the tip.
+    """
     tip_x, tip_y = transform_library_point(*GLYPH_TIPS[lib_id], angle)
     x, y = point
     direction = (_sign(tip_x), _sign(tip_y))
@@ -146,7 +155,7 @@ def _glyph_boxes(lib_id: str, point: Point, angle: int, net: str) -> list[Box]:
         max(start[0], tip[0]) + across_x,
         max(start[1], tip[1]) + across_y,
     )
-    centre = _value_position(lib_id, point, angle, net)
+    centre = value or _value_position(lib_id, point, angle, net)
     width, height = text_extents(net, 0)
     text = (
         centre[0] - width // 2 - 300_000,
@@ -157,10 +166,25 @@ def _glyph_boxes(lib_id: str, point: Point, angle: int, net: str) -> list[Box]:
     return [glyph, text]
 
 
-def _value_position(lib_id: str, point: Point, angle: int, net: str) -> Point:
-    """Horizontal value text centred just beyond the glyph tip, away from the pin."""
+# A value written beside an upright glyph clears its 1.27 mm half-width by this gap and is
+# centred on the triangle or arrowhead, 1.905 mm along the glyph from the pin end.
+BESIDE_GAP = 500_000
+BESIDE_ALONG = 1_905_000
+
+
+def _value_position(lib_id: str, point: Point, angle: int, net: str, side: int = 0) -> Point:
+    """Horizontal value text centred just beyond the glyph tip, away from the pin.
+
+    With ``side`` 1 or -1, an upright glyph's value is written right or left of the glyph
+    instead, for a spot with room for the glyph but not for text past its tip.
+    """
     tip_x, tip_y = transform_library_point(*GLYPH_TIPS[lib_id], angle)
     width, height = text_extents(net, 0)
+    if side and not tip_x:
+        return (
+            point[0] + side * (1_270_000 + BESIDE_GAP + width // 2),
+            point[1] + _sign(tip_y) * BESIDE_ALONG,
+        )
     if tip_x:
         offset = abs(tip_x) + width // 2 + 600_000
         return (point[0] + _sign(tip_x) * offset, point[1])
@@ -221,8 +245,11 @@ def _collisions(text: str, tree: list, item: dict) -> list[str]:
     """Drawn items and foreign wires touched by one power symbol's glyph or value."""
     from .schematic_review_native import _drawn_boxes, _release_endpoints
 
-    symbol_boxes, text_boxes = _drawn_boxes(tree)
-    boxes = _glyph_boxes(item["lib_id"], item["point"], item["angle"], item["net"])
+    columns: list[tuple[str, Box]] = []
+    symbol_boxes, text_boxes = _drawn_boxes(tree, columns)
+    boxes = _glyph_boxes(
+        item["lib_id"], item["point"], item["angle"], item["net"], item.get("value")
+    )
     numbers = _pin_number_boxes(text, tree)
     hits = []
     # The protected observers see this symbol as a label whose text runs right of it.
@@ -233,7 +260,11 @@ def _collisions(text: str, tree: list, item: dict) -> list[str]:
     for owner, bounds in symbol_boxes + text_boxes + numbers:
         if owner == item.get("reference"):
             continue
-        released = _release_endpoints(bounds, (item["point"],))
+        # A bodyless unit's pin column, where its pin names are written, stays whole even
+        # when the symbol sits on one of its pins' inner ends.
+        released = (
+            bounds if (owner, bounds) in columns else _release_endpoints(bounds, (item["point"],))
+        )
         if released is not None and any(_overlaps(box, released) for box in boxes):
             hits.append(owner)
     tip = transform_library_point(*GLYPH_TIPS[item["lib_id"]], item["angle"])
@@ -369,11 +400,17 @@ def _pin_directions(tree: list, connectors_only: bool = False) -> dict[Point, tu
 
 
 def _instance(
-    lib_id: str, reference: str, net: str, point: Point, angle: int, project: tuple[str, str]
+    lib_id: str,
+    reference: str,
+    net: str,
+    point: Point,
+    angle: int,
+    project: tuple[str, str],
+    side: int = 0,
 ) -> str:
     identity = uuid.uuid5(uuid.NAMESPACE_URL, f"ai-kicad-power:{reference}:{net}:{_mm(point)}")
     pin = uuid.uuid5(identity, "pin-1")
-    value = _value_position(lib_id, point, angle, net)
+    value = _value_position(lib_id, point, angle, net, side)
     # KiCad field angles are 0 (horizontal) or 90 relative to the symbol; 180/270 would
     # draw the rail name upside down.
     field_angle = angle % 180
@@ -792,6 +829,9 @@ def _place_rail_symbols(
     # last resort.
     forbidden = (0, -1) if lib_id == "power:GND" else (0, 1)
     conventional = (-forbidden[0], -forbidden[1])
+    # Ground hangs down wherever it fits, with its name beside the glyph if need be,
+    # before it is turned sideways. Supply symbols keep their sideways placements.
+    upright = conventional if lib_id == "power:GND" else None
     used = {item["reference"] for item in power_symbols(tree)}
     serial = 1
     for indexes, group_segments in _point_group_wiring_of(tree, points):
@@ -874,15 +914,19 @@ def _place_rail_symbols(
                     direction == forbidden,
                     not (near and direction == conventional),
                     0,
+                    direction != upright,
+                    abs(side) + (side < 0),
                     order,
                     0,
                     0,
                     point,
                     None,
                     direction,
+                    side,
                 )
                 for direction in ordered
                 if direction != inward
+                for side in _value_sides(direction, upright)
             )
             for rank, way in enumerate(stub_ways):
                 for steps in (1, 2, 3, 4):
@@ -891,21 +935,25 @@ def _place_rail_symbols(
                             direction == forbidden,
                             not (near and direction == conventional),
                             1 + (way != outward),
+                            direction != upright,
+                            abs(side) + (side < 0),
                             order,
                             rank,
                             steps,
                             point,
                             way,
                             direction,
+                            side,
                         )
                         for direction in DIRECTIONS
                         if direction != (-way[0], -way[1])
+                        for side in _value_sides(direction, upright)
                     )
         if not options:
             raise ValueError(f"use_power_symbols found no placement for a {net} wire group")
         options.sort()
         chosen, trials = None, {}
-        for _forbidden, _unconventional, *_rank, steps, point, way, direction in options:
+        for *_rank, steps, point, way, direction, side in options:
             origin = point
             stub = None
             # A symbol on a wire's interior lands on the end of one half of that wire.
@@ -925,12 +973,14 @@ def _place_rail_symbols(
                 point = end
             else:
                 trial_text, trial_tree = base_text, base_tree
+            angle = _angle_for(lib_id, direction)
             item = {
                 "lib_id": lib_id,
                 "point": point,
-                "angle": _angle_for(lib_id, direction),
+                "angle": angle,
                 "net": net,
                 "reference": reference,
+                "value": _value_position(lib_id, point, angle, net, side),
             }
             if _collisions(trial_text, trial_tree, item):
                 continue
@@ -938,10 +988,10 @@ def _place_rail_symbols(
                 # The observers would read this symbol's label form as touching the part.
                 continue
             if layout_check is not None and baseline_ok:
-                instance = _instance(lib_id, reference, net, point, item["angle"], project)
+                instance = _instance(lib_id, reference, net, point, angle, project, side)
                 if layout_check(_append_forms(trial_text, [instance])) is not None:
                     continue
-            chosen = (point, direction, stub, base_text)
+            chosen = (point, direction, side, stub, base_text)
             break
         if chosen is None:
             blockers = _blocking_nets(tree, members, terminal_inventory, net)
@@ -961,10 +1011,10 @@ def _place_rail_symbols(
                 f"no clear position for a {net} power symbol at {names or 'its flag'}; "
                 f"wiring of {blockers or 'no other net'} and nearby drawing items block it" + advice
             )
-        point, direction, stub, text = chosen
+        point, direction, side, stub, text = chosen
         forms = [_wire_form(*stub, net)] if stub else []
         forms.append(
-            _instance(lib_id, reference, net, point, _angle_for(lib_id, direction), project)
+            _instance(lib_id, reference, net, point, _angle_for(lib_id, direction), project, side)
         )
         text = _append_forms(text, forms)
     text = "".join(_without_forms(text, lambda node: node[0] == "label" and node[1] == net))
@@ -1004,6 +1054,12 @@ def _blocking_nets(
     return sorted(blockers)
 
 
+def _value_sides(direction: tuple[int, int], conventional: tuple[int, int]) -> tuple[int, ...]:
+    """Value-text spots tried for one glyph direction: past the tip, then for an upright
+    glyph beside it, right before left."""
+    return (0, 1, -1) if direction == conventional else (0,)
+
+
 def _reaim_colliding(
     text: str,
     project: tuple[str, str],
@@ -1021,7 +1077,7 @@ def _reaim_colliding(
             for direction in sorted(DIRECTIONS, key=lambda direction: direction == forbidden):
                 if outward and direction == (-outward[0], -outward[1]):
                     continue
-                trial = dict(item, angle=_angle_for(item["lib_id"], direction))
+                trial = dict(item, angle=_angle_for(item["lib_id"], direction), value=None)
                 if trial["angle"] == item["angle"] or _collisions(text, tree, trial):
                     continue
                 candidate = "".join(

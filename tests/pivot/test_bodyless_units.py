@@ -96,3 +96,19 @@ def test_named_nets_are_never_renamed():
         "pin_positions": {("C1", "2"): point},
     }
     assert _name_nets_from_power_labels(observed) is observed
+
+
+def test_power_symbol_on_a_pin_inner_end_may_not_reach_into_the_column():
+    """A glyph aimed from U1C's V+ inner end (82.55, 74.93) into the column would cover
+    the pin names, even though the symbol's own point is on that pin."""
+    from ai_kicad.pivot.power_symbols import _collisions
+
+    tree = parse(ACCEPTED.read_text())
+    item = {
+        "lib_id": "power:GND",
+        "point": (82_550_000, 74_930_000),
+        "angle": 0,
+        "net": "REF",
+        "reference": "#PWR99",
+    }
+    assert "U1" in _collisions(ACCEPTED.read_text(), tree, item)

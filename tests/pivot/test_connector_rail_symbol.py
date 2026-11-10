@@ -8,6 +8,7 @@ from ai_kicad.pivot.field_layout import _obstacles
 from ai_kicad.pivot.power_symbols import (
     _forms,
     _split_wire_at,
+    power_symbol_collisions,
     power_symbols,
     use_power_symbols_text,
 )
@@ -36,7 +37,7 @@ def without_symbols(text: str, references: set[str]) -> str:
 def test_wired_ground_group_is_marked_at_the_connector():
     """The 2026-11-09 drawing marks the J1-wired REF group at C1's pin (72.39, 82.55),
     sideways. Re-marked, its ground symbol hangs down from J1 pin 5's wire instead;
-    C2, which only a symbol connects, keeps its own."""
+    C2, which only a symbol connects, keeps its own, also pointing down."""
     text = without_symbols(
         (ACCEPTED / "project/InvertingGain.kicad_sch").read_text(), {"#PWR01", "#PWR02"}
     )
@@ -49,7 +50,7 @@ def test_wired_ground_group_is_marked_at_the_connector():
     }
     assert placed == {
         ((round(40.64 * MM), round(45.72 * MM)), 0),
-        ((round(99.06 * MM), round(82.55 * MM)), 270),
+        ((round(99.06 * MM), round(82.55 * MM)), 0),
     }
     # The symbol sits on a wire end: the J1 wire was split where it lands.
     ends = {
@@ -92,3 +93,23 @@ def test_field_text_keeps_clear_of_power_symbol_label_forms():
     boxes = _obstacles(text, tree, ("R2", 1))
     for item in power_symbols(tree):
         assert label_text_rect(item["net"], item["point"]) in boxes
+
+
+def test_ground_symbol_writes_its_name_beside_the_glyph_above_a_wire():
+    """C2's ground pin (99.06, 82.55) is 3.81 mm above U1C's V- wire at y 86.36: room for
+    the downward glyph but not for "REF" under it. The name goes right of the triangle."""
+    text = without_symbols(
+        (ACCEPTED / "project/InvertingGain.kicad_sch").read_text(), {"#PWR01", "#PWR02"}
+    )
+    inventory = json.loads((ACCEPTED / "assessment.json").read_text())["terminal_inventory"]
+    marked = use_power_symbols_text(text, "REF", inventory, [], [], None, prune_rail_wiring=False)
+    (c2,) = [
+        item
+        for item in power_symbols(parse(marked))
+        if item["point"] == (round(99.06 * MM), round(82.55 * MM))
+    ]
+    assert c2["angle"] == 0
+    value_x, value_y = c2["value"]
+    assert value_x > round(99.06 * MM + 1.27 * MM)
+    assert round(82.55 * MM) < value_y < round(86.36 * MM)
+    assert power_symbol_collisions(marked) == []
