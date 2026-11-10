@@ -1096,7 +1096,7 @@ def terminal_inventory_for_design(design: dict, observed: dict) -> list[dict]:
 
 
 def _name_nets_from_power_labels(observed: dict) -> dict:
-    """Name an auto-named net after the power symbol a candidate places on its pin.
+    """Name an auto-named net after the power symbol a candidate places on it.
 
     Rail plans are checked against the netlist of the sheet before the rails were drawn.
     A rail drawn there only with wires has a KiCad auto-name (``Net-(J1-Pin_5)``); once a
@@ -1105,15 +1105,32 @@ def _name_nets_from_power_labels(observed: dict) -> dict:
     like they belong to two nets.
     """
     nets = observed["nets"]
+    wires = observed.get("wires", [])
     renames: dict[str, str] = {}
     for label, point in observed["labels"]:
         if label in nets:
             continue
+        # The pins the label reaches: one at its point, or any on the wires it sits on.
+        reached = {point}
+        group = {i for i, wire in enumerate(wires) if point_on_segment(point, *wire)}
+        frontier = list(group)
+        while frontier:
+            a, b = wires[frontier.pop()]
+            for j, other in enumerate(wires):
+                if j not in group and (
+                    point_on_segment(a, *other)
+                    or point_on_segment(b, *other)
+                    or point_on_segment(other[0], a, b)
+                    or point_on_segment(other[1], a, b)
+                ):
+                    group.add(j)
+                    frontier.append(j)
         found = {
             name
             for name, members in nets.items()
             for member in members
-            if observed["pin_positions"].get(tuple(member)) == point
+            if (pin := observed["pin_positions"].get(tuple(member))) is not None
+            and (pin in reached or any(point_on_segment(pin, *wires[i]) for i in group))
         }
         if len(found) == 1 and (name := next(iter(found))).startswith("Net-("):
             renames.setdefault(name, label)

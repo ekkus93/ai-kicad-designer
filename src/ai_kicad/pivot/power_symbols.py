@@ -259,6 +259,15 @@ def _collisions(text: str, tree: list, item: dict) -> list[str]:
     return hits
 
 
+def _label_form_hits_body(tree: list, net: str, point: Point) -> bool:
+    """Whether the label form of a power symbol at ``point`` overlaps a symbol body."""
+    from .schematic_review_native import _drawn_boxes
+
+    label_form = label_text_rect(net, point)
+    symbol_boxes, _text_boxes = _drawn_boxes(tree)
+    return any(_overlaps(label_form, bounds) for _owner, bounds in symbol_boxes)
+
+
 def power_symbol_collisions(text: str) -> list[dict]:
     """Power symbols whose glyph or value touches another drawn item or a foreign wire."""
     tree = parse(text)
@@ -315,11 +324,18 @@ def rail_presentation(tree: list, terminal_inventory: list[dict], nets: list[str
     return witnesses
 
 
-def _pin_directions(tree: list) -> dict[Point, tuple[int, int]]:
+def _connector_pin_points(tree: list) -> set[Point]:
+    """Pin ends of placed connectors (symbols from a ``Connector*`` library)."""
+    return set(_pin_directions(tree, connectors_only=True))
+
+
+def _pin_directions(tree: list, connectors_only: bool = False) -> dict[Point, tuple[int, int]]:
     """Outward direction (away from the body) at every placed symbol pin end."""
     library = {item[1]: item for item in children(one(tree, "lib_symbols"), "symbol")}
     directions = {}
     for symbol in children(tree, "symbol"):
+        if connectors_only and not one(symbol, "lib_id")[1].startswith("Connector"):
+            continue
         definition = library.get(one(symbol, "lib_id")[1])
         if definition is None:
             continue
@@ -775,6 +791,7 @@ def _place_rail_symbols(
     # Drafting convention: ground glyphs point up, and supply glyphs down, only as a
     # last resort.
     forbidden = (0, -1) if lib_id == "power:GND" else (0, 1)
+    conventional = (-forbidden[0], -forbidden[1])
     used = {item["reference"] for item in power_symbols(tree)}
     serial = 1
     for indexes, group_segments in _point_group_wiring_of(tree, points):
@@ -805,11 +822,36 @@ def _place_rail_symbols(
         reference = f"#PWR{serial:02d}"
         used.add(reference)
         pin_directions = _pin_directions(tree)
+        # Drafting convention: a rail that enters through a connector is marked there, at
+        # the connector pin or, when that is crowded, on the group's wire close to it.
+        connector_pins = _connector_pin_points(tree) & set(members)
         candidates = sorted(set(members) | {p for s in group_segments for p in s})
         # The compiler's own label points are known-clear for the label-form observers.
         candidates.sort(
             key=lambda point: (point not in label_points, point not in pin_directions, point)
         )
+
+        def to_connector(point: Point) -> int:
+            return min(abs(point[0] - pin[0]) + abs(point[1] - pin[1]) for pin in connector_pins)
+
+        on_wire = (
+            sorted(
+                (
+                    point
+                    for point in _interior_grid_points(group_segments)
+                    if point not in candidates and to_connector(point) <= CONNECTOR_REACH
+                ),
+                key=lambda point: (to_connector(point), point),
+            )
+            if connector_pins
+            else []
+        )
+        near_connector = connector_pins | set(on_wire)
+        candidates += on_wire
+        split = {}
+        for point in on_wire:
+            split_text = _split_wire_at(text, point)
+            split[point] = (split_text, parse(split_text))
         options = []
         for order, point in enumerate(candidates):
             outward = pin_directions.get(point)
@@ -817,9 +859,28 @@ def _place_rail_symbols(
             # A stub leaves the point outward from its pin first, sideways second.
             stub_ways = [way for way in ([outward] if outward else []) + list(DIRECTIONS)]
             stub_ways = [way for way in dict.fromkeys(stub_ways) if way != inward]
+            if point in split:
+                # A stub would branch the split wire; the symbol sits on the wire itself.
+                stub_ways = []
             ordered = ([outward] if outward else []) + [d for d in DIRECTIONS if d != outward]
+            if point in split:
+                # Points along a wire are offered only to mark a connector's rail upright.
+                ordered = [conventional]
+            near = point in near_connector
+            # Near a connector only with the glyph the conventional way (ground down,
+            # supply up); a sideways symbol keeps the usual preference for no stub.
             options.extend(
-                (direction == forbidden, 0, order, 0, 0, point, None, direction)
+                (
+                    direction == forbidden,
+                    not (near and direction == conventional),
+                    0,
+                    order,
+                    0,
+                    0,
+                    point,
+                    None,
+                    direction,
+                )
                 for direction in ordered
                 if direction != inward
             )
@@ -828,6 +889,7 @@ def _place_rail_symbols(
                     options.extend(
                         (
                             direction == forbidden,
+                            not (near and direction == conventional),
                             1 + (way != outward),
                             order,
                             rank,
@@ -843,21 +905,26 @@ def _place_rail_symbols(
             raise ValueError(f"use_power_symbols found no placement for a {net} wire group")
         options.sort()
         chosen, trials = None, {}
-        for *_rank, steps, point, way, direction in options:
+        for _forbidden, _unconventional, *_rank, steps, point, way, direction in options:
+            origin = point
             stub = None
+            # A symbol on a wire's interior lands on the end of one half of that wire.
+            base_text, base_tree = split.get(point, (text, tree))
             if steps:
                 end = (point[0] + way[0] * steps * PITCH, point[1] + way[1] * steps * PITCH)
                 stub = (point, end)
                 if stub not in trials:
-                    clear = not _segment_collisions(text, tree, point, end)
-                    trial = _append_forms(text, [_wire_form(point, end, net)]) if clear else None
+                    clear = not _segment_collisions(base_text, base_tree, point, end)
+                    trial = (
+                        _append_forms(base_text, [_wire_form(point, end, net)]) if clear else None
+                    )
                     trials[stub] = (trial, parse(trial) if trial else None)
                 trial_text, trial_tree = trials[stub]
                 if trial_text is None:
                     continue
                 point = end
             else:
-                trial_text, trial_tree = text, tree
+                trial_text, trial_tree = base_text, base_tree
             item = {
                 "lib_id": lib_id,
                 "point": point,
@@ -867,11 +934,14 @@ def _place_rail_symbols(
             }
             if _collisions(trial_text, trial_tree, item):
                 continue
+            if origin in near_connector and _label_form_hits_body(trial_tree, net, point):
+                # The observers would read this symbol's label form as touching the part.
+                continue
             if layout_check is not None and baseline_ok:
                 instance = _instance(lib_id, reference, net, point, item["angle"], project)
                 if layout_check(_append_forms(trial_text, [instance])) is not None:
                     continue
-            chosen = (point, direction, stub)
+            chosen = (point, direction, stub, base_text)
             break
         if chosen is None:
             blockers = _blocking_nets(tree, members, terminal_inventory, net)
@@ -891,7 +961,7 @@ def _place_rail_symbols(
                 f"no clear position for a {net} power symbol at {names or 'its flag'}; "
                 f"wiring of {blockers or 'no other net'} and nearby drawing items block it" + advice
             )
-        point, direction, stub = chosen
+        point, direction, stub, text = chosen
         forms = [_wire_form(*stub, net)] if stub else []
         forms.append(
             _instance(lib_id, reference, net, point, _angle_for(lib_id, direction), project)
@@ -987,6 +1057,45 @@ def _reaim_colliding(
         if not changed:
             return text
     return text
+
+
+# How far along its wire from the connector pin a rail's power symbol may sit.
+CONNECTOR_REACH = 8 * PITCH
+
+
+def _interior_grid_points(segments: list[tuple[Point, Point]]) -> list[Point]:
+    """Grid points strictly inside straight wire segments, one pitch apart."""
+    points = []
+    for first, second in segments:
+        length = abs(second[0] - first[0]) + abs(second[1] - first[1])
+        if first[0] != second[0] and first[1] != second[1]:
+            continue
+        step = (_sign(second[0] - first[0]), _sign(second[1] - first[1]))
+        points += [
+            (first[0] + step[0] * offset, first[1] + step[1] * offset)
+            for offset in range(PITCH, length, PITCH)
+        ]
+    return list(dict.fromkeys(points))
+
+
+def _split_wire_at(text: str, point: Point) -> str:
+    """Break the wire passing through ``point`` into two wires that meet there."""
+    for start, end, node in _forms(text):
+        if node[0] != "wire":
+            continue
+        first, second = ((_nm(xy[1]), _nm(xy[2])) for xy in children(one(node, "pts"), "xy"))
+        if point in (first, second) or not point_on_segment(point, first, second):
+            continue
+        identity = one(node, "uuid")[1]
+        halves = []
+        for index, (a, b) in enumerate(((first, point), (point, second))):
+            half = uuid.uuid5(uuid.NAMESPACE_URL, f"ai-kicad-split-wire:{identity}:{index}")
+            halves.append(
+                f"(wire (pts (xy {_mm(a)}) (xy {_mm(b)})) (stroke (width 0) (type default)) "
+                f"(uuid {quote(str(half))}))"
+            )
+        return text[:start] + "\n  ".join(halves) + text[end:]
+    raise ValueError(f"no wire passes through {_mm(point)}")
 
 
 def _wire_form(first: Point, second: Point, net: str) -> str:

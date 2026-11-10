@@ -20,7 +20,16 @@ from ai_kicad.m2_transform import transform_library_point
 from ai_kicad.m2a_core import _nm
 from ai_kicad.sexpr import children, one, parse
 
-from .power_symbols import GLYPH_TIPS, _forms, _overlaps, _pin_number_boxes, _wire_segments
+from ai_kicad.m2_geometry import label_text_rect
+
+from .power_symbols import (
+    GLYPH_TIPS,
+    _forms,
+    _overlaps,
+    _pin_number_boxes,
+    _wire_segments,
+    power_symbols,
+)
 
 Box = tuple[int, int, int, int]
 Part = tuple[str, int]
@@ -163,6 +172,8 @@ def _obstacles(text: str, tree: list, part: Part) -> list[Box]:
         or ((bounds[0] + bounds[2]) // 2, (bounds[1] + bounds[3]) // 2) not in own
     ]
     boxes += [bounds for _owner, bounds in _pin_number_boxes(text, tree)]
+    # The protected observers read each power symbol as a label whose text runs right.
+    boxes += [label_text_rect(item["net"], item["point"]) for item in power_symbols(tree)]
     boxes += [
         (
             min(first[0], second[0]) - 100_000,

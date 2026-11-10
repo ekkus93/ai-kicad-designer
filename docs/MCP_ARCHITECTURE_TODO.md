@@ -224,6 +224,8 @@ These features are **planned**, not prerequisites for P4 except when a specific 
 
     **Progress (2026-11-10):** In the accepted inverting_gain drawing, "R2 10k" sat 10 mm above R2 beyond U1A's + input wire, and "R1 100k" sat under U1A's output. The owner reported this; the checks and the model review did not flag it. The field-placement step now also moves the reference and value of a horizontal two-pin part to the nearest clear position centred above or below its body. Evidence is in `horizontal_field_text_2026-11-10_run1`: all 15 designs pass every independent check, and the text moves in six designs (inverting_gain, rc_lowpass, rc_highpass, noninverting_gain, rc_to_buffer, sallen_key). No model review of the new drawings has been run yet.
 
+    The REF symbol on inverting_gain's C1 looked redundant but is needed: it names the J1-wired ground group, and C2 connects to REF only through its own symbol. At the owner's request, a rail's wired group that contains a connector pin is now marked at that connector, on its pin or on its wire within 10.16 mm, with the glyph pointing the conventional way. Evidence is in `connector_rail_symbol_2026-11-10_run1`: all 15 designs pass every independent check. Seven changed (inverting_gain, dual_buffer, noninverting_gain, rc_to_buffer, timer_astable, timer_astable_gnd, reference_555_led_flasher_v8), and linear_regulator keeps its ground symbol under C1. No model review of the new drawings has been run yet.
+
     The independent readability assessment and human electrical review are still PENDING, so P6-011f stays unchecked.
 
 
