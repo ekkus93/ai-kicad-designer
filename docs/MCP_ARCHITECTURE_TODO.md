@@ -232,6 +232,8 @@ These features are **planned**, not prerequisites for P4 except when a specific 
 
     Full corpus `review_loop_corpus_v3_2026-11-11_qwen35_256k_run2` at `9a2a2d13` (`qwen35-256k:latest`, 262144-token context) accepted 15/15 designs (`ACCEPTED_FOR_REVIEW`), each on its first review, and every independent check passed. Apart from UUIDs, each accepted drawing matches `upright_ground_symbol_2026-11-10_run1` (inverting_gain, reference_555_led_flasher_v8, sallen_key) or `review_loop_corpus_v3_2026-11-10_qwen35_256k_run1` (the other twelve). An earlier attempt, `run1`, stopped before any review because ffmpeg was missing after a host restart. It produced no evidence and is not recorded.
 
+    The owner asked for "U1C / NE5532" in inverting_gain to go back above pin 8. A power unit's reference and value now go just above its top pin, shifted sideways past a wire leaving the pin upward if needed. They go beside the unit only if nothing within 5.08 mm above fits. Evidence is in `power_unit_text_above_2026-11-11_run1`: the text moved above pin 8 in dual_rail_reference, inverting_gain, rc_to_buffer and sallen_key, and every independent check passes. dual_buffer and noninverting_gain are unchanged. No model review of the new drawings has been run yet.
+
     The independent readability assessment and human electrical review are still PENDING, so P6-011f stays unchecked.
 
 

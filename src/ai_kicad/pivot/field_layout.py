@@ -201,14 +201,16 @@ def _on_page(points: dict[str, tuple[int, int]]) -> bool:
 SEARCH_REACH = 25_400_000
 # Vertical offset of a connector's reference (above) and value (below) from its centre.
 CONNECTOR_ROW_OFFSET = 1_350_000
+# How far above a power unit's top pin its text may be, before it goes beside the unit.
+POWER_UNIT_REACH = 4 * 1_270_000
 
 
 def tighten_vertical_fields_text(text: str) -> tuple[str, list[dict]]:
     """Move reference/value pairs of two-pin parts, connectors and power units nearer.
 
     Vertical parts keep each field's height; horizontal parts' text is centred above or
-    below the body; connector and power-unit text is centred
-    beside the body (or above it), reference above value. A move is kept only when it
+    below the body; connector text is centred beside the body (or above it), and
+    power-unit text centred above it, reference above value. A move is kept only when it
     brings the text closer to the body and does not make the part's text read as
     belonging to another symbol (the independent owner-association measurement).
     """
@@ -258,6 +260,28 @@ def tighten_vertical_fields_text(text: str) -> tuple[str, list[dict]]:
                 {name: (x, positions[name][1]) for name in fields}
                 for x in range(first, first + SEARCH_REACH, STEP)
             ]
+        elif kind == "power_unit":
+            # Just above the top pin, centred or shifted sideways past a wire that leaves
+            # the pin upward, clear of the pin names beside it; beside the unit only when
+            # nothing above fits.
+            lowest = body[1] - BODY_GAP - FIELD_HALF_HEIGHT
+            shift = half + BODY_GAP
+            proposals = [
+                {
+                    "Reference": (centre[0] + dx, y - 2 * CONNECTOR_ROW_OFFSET),
+                    "Value": (centre[0] + dx, y),
+                }
+                for y in range(lowest, lowest - POWER_UNIT_REACH, -STEP)
+                for step in range(0, shift + 1, STEP)
+                for dx in dict.fromkeys((-step, step))
+            ] + [
+                {
+                    "Reference": (x, centre[1] - CONNECTOR_ROW_OFFSET),
+                    "Value": (x, centre[1] + CONNECTOR_ROW_OFFSET),
+                    "beside": True,
+                }
+                for x in range(first, first + SEARCH_REACH, STEP)
+            ]
         else:
             # Right of the body centred on it, or centred above it; reference on top.
             proposals = [
@@ -275,6 +299,7 @@ def tighten_vertical_fields_text(text: str) -> tuple[str, list[dict]]:
                 }
                 for y in range(lowest, lowest - SEARCH_REACH, -STEP)
             ]
+        fallback = [proposed for proposed in proposals if proposed.pop("beside", False)]
         obstacles = _obstacles(text, tree, part)
         clear = sorted(
             (
@@ -288,7 +313,7 @@ def tighten_vertical_fields_text(text: str) -> tuple[str, list[dict]]:
                     for obstacle in obstacles
                 )
             ),
-            key=distance,
+            key=lambda proposed: (proposed in fallback, distance(proposed)),
         )
         before = _association_witnesses(tree, part)
         for chosen in clear:

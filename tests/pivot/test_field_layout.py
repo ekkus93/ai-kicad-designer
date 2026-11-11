@@ -11,6 +11,7 @@ from ai_kicad.m2b import assets, validate
 from ai_kicad.pivot.field_layout import (
     BODY_GAP,
     _field_box,
+    _move_fields,
     _obstacles,
     _vertical_bodies,
     clear_label_pin_numbers_text,
@@ -310,3 +311,52 @@ def test_horizontal_resistor_text_moves_next_to_the_body(tmp_path):
             )
     # R2's text no longer sits beyond the + input wire at y 39.37 mm.
     assert fields(after, "R2")["Reference"][1][1] > 39_370_000
+
+
+RUN2 = ROOT / "fixtures/pivot/experiments/review_loop_corpus_v3_2026-11-11_qwen35_256k_run2"
+
+
+def _power_unit_fields(text: str) -> dict[str, tuple[float, float]]:
+    symbol = next(
+        item
+        for item in children(parse(text), "symbol")
+        if one(item, "unit")[1] == "3"
+        and any(p[1] == "Reference" and p[2] == "U1" for p in children(item, "property"))
+    )
+    return {
+        prop[1]: (float(one(prop, "at")[1]), float(one(prop, "at")[2]))
+        for prop in children(symbol, "property")
+        if prop[1] in {"Reference", "Value"}
+    }
+
+
+@pytest.mark.parametrize(
+    ("name", "pin_x", "pin_y"),
+    [("inverting_gain", 82.55, 71.12), ("rc_to_buffer", 125.73, 66.04)],
+)
+def test_power_unit_text_goes_back_above_its_top_pin(name, pin_x, pin_y):
+    """The 2026-11-11 drawings put "U1C / NE5532" beside the unit's pin names. Re-run,
+    the text sits just above pin 8, beside the wire when one leaves the pin upward."""
+    candidate = RUN2 / name / "candidates/000"
+    text = next((candidate / "project").glob("*.kicad_sch")).read_text()
+    assert _power_unit_fields(text)["Reference"][0] > pin_x + 5, "accepted text is beside"
+    # Start where the compiler put the text, as the field-tightening step does.
+    (move,) = [
+        item
+        for item in json.loads((candidate / "presentation.json").read_text())[
+            "vertical_field_moves"
+        ]
+        if item["kind"] == "power_unit"
+    ]
+    compiled = _move_fields(
+        text,
+        ("U1", 3),
+        {
+            name: tuple(round(v * 1_000_000) for v in point)
+            for name, point in move["from_mm"].items()
+        },
+    )
+    after = _power_unit_fields(tighten_vertical_fields_text(compiled)[0])
+    for x, y in after.values():
+        assert abs(x - pin_x) < 6
+        assert pin_y - 8 < y < pin_y
