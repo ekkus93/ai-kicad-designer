@@ -395,6 +395,10 @@ MAXIMUM_CONNECTED_NET_LENGTH = 240_000_000
 # Under brief v3, rail routes longer than this give way to power symbols.
 MAXIMUM_DETOUR_FACTOR = 3
 MINIMUM_DETOUR_ALLOWANCE = 25_400_000
+# Under brief v3, a supply rail (not a return rail) is wired between its separately drawn
+# terminal groups only by routes up to this long; farther groups get supply symbols
+# instead of long rail wires around the page.
+MAXIMUM_SUPPLY_ROUTE = 25_400_000
 
 
 def _connect_point_groups(
@@ -403,6 +407,7 @@ def _connect_point_groups(
     keepouts: list[tuple[int, int, int, int]],
     description: str,
     partial: bool = False,
+    max_route: int | None = None,
 ) -> str:
     """Join wire-disconnected points with the shortest obstacle-checked route found.
 
@@ -462,6 +467,8 @@ def _connect_point_groups(
                 ):
                     # A lap around the drawing reads worse than a power symbol.
                     continue
+                if max_route is not None and _route_length(route) > max_route:
+                    continue
                 if len(_point_groups(parse(candidate), points)) < len(wiring):
                     successes.append((_route_length(route), len(successes), candidate))
                     if len(successes) == 4:
@@ -491,7 +498,8 @@ def connect_rail_text(
 
     Under the power-symbol rail policy (brief v3), every group that can be routed is
     wired, and only the groups no wire can reach are marked with matching power symbols.
-    A fully wired return rail also gets one ground symbol, as schematics conventionally
+    A supply rail's groups are wired only by routes up to MAXIMUM_SUPPLY_ROUTE; farther
+    groups get supply symbols. A fully wired return rail also gets one ground symbol, as schematics conventionally
     show ground.
     """
     terminals = [item for item in terminal_inventory if item["net"] == net]
@@ -516,7 +524,14 @@ def connect_rail_text(
         wired = (
             text
             if joined
-            else _connect_point_groups(text, points, keepouts, f"{net} wire", partial=True)
+            else _connect_point_groups(
+                text,
+                points,
+                keepouts,
+                f"{net} wire",
+                partial=True,
+                max_route=None if glyph_for_net(net) == "power:GND" else MAXIMUM_SUPPLY_ROUTE,
+            )
         )
         rail = rail or {}
         if len(_point_groups(parse(wired), points)) == 1:
@@ -1303,7 +1318,9 @@ def _search_rail_plans(
                             inventory,
                             power_symbols_allowed=True,
                             rail=context.get(net),
-                            replace_existing=replace,
+                            # Supply rails are always rerouted, so that a long compiler
+                            # run gives way to supply symbols.
+                            replace_existing=replace or glyph_for_net(net) != "power:GND",
                         )
                     except ValueError as error:
                         if "made no change" not in str(error):

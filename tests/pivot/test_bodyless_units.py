@@ -112,3 +112,32 @@ def test_power_symbol_on_a_pin_inner_end_may_not_reach_into_the_column():
         "reference": "#PWR99",
     }
     assert "U1" in _collisions(ACCEPTED.read_text(), tree, item)
+
+
+def test_supply_arrow_keeps_off_the_power_unit_text_spot():
+    """An upward VPLUS arrow on U1C pin 8 (82.55, 71.12) would take the spot above the unit
+    where its "U1C / NE5532" text goes; a sideways arrow there leaves it free."""
+    from ai_kicad.pivot.power_symbols import _collisions
+
+    path = next(
+        (
+            ROOT
+            / "fixtures/pivot/experiments/review_loop_corpus_v3_2026-11-11_qwen35_256k_run3"
+            / "inverting_gain/candidates/000/project"
+        ).glob("*.kicad_sch")
+    )
+    text = path.read_text()
+    tree = parse(text)
+
+    def hits(angle: int) -> list[str]:
+        item = {
+            "lib_id": "power:VCC",
+            "point": (82_550_000, 71_120_000),
+            "angle": angle,
+            "net": "VPLUS",
+            "reference": "#PWR99",
+        }
+        return [hit for hit in _collisions(text, tree, item) if "power unit text" in hit]
+
+    assert hits(0)
+    assert not hits(90) and not hits(270)

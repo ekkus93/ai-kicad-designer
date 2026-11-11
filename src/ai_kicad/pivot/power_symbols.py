@@ -243,6 +243,7 @@ def _pin_number_boxes(text: str, tree: list) -> list[tuple[str, Box]]:
 
 def _collisions(text: str, tree: list, item: dict) -> list[str]:
     """Drawn items and foreign wires touched by one power symbol's glyph or value."""
+    from .field_layout import power_unit_text_spots
     from .schematic_review_native import _drawn_boxes, _release_endpoints
 
     columns: list[tuple[str, Box]] = []
@@ -257,6 +258,9 @@ def _collisions(text: str, tree: list, item: dict) -> list[str]:
     hits += [
         f"label form overlaps {owner}" for owner, bounds in numbers if _overlaps(label_form, bounds)
     ]
+    # The spot above an op-amp power unit stays free for the unit's own text.
+    spots = [(f"{owner} power unit text", bounds) for owner, bounds in power_unit_text_spots(tree)]
+    hits += [owner for owner, bounds in spots if any(_overlaps(box, bounds) for box in boxes)]
     for owner, bounds in symbol_boxes + text_boxes + numbers:
         if owner == item.get("reference"):
             continue

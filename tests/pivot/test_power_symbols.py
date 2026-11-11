@@ -350,10 +350,13 @@ def test_v3_connect_rail_wires_rails_and_marks_only_unreachable_groups(
                 # symbol; otherwise each remaining wire group has one.
                 wired_count = 1 if net == return_net else 0
                 assert len(marked) == (wired_count if groups == 1 else groups)
-                breaks += groups - 1
+                if net == return_net:
+                    breaks += groups - 1
             results.append(breaks)
     assert results, "no plan drew both rails cleanly"
-    # The pin order forces at most one break per rail; the best plan reaches that.
+    # The pin order forces at most this many breaks in the return rail; the best plan
+    # reaches that. VCC is broken by design wherever its groups are more than
+    # MAXIMUM_SUPPLY_ROUTE apart, each group marked by its own supply symbol.
     assert min(results) <= most_breaks
 
 

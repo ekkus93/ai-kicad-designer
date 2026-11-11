@@ -205,6 +205,38 @@ CONNECTOR_ROW_OFFSET = 1_350_000
 POWER_UNIT_REACH = 4 * 1_270_000
 
 
+def power_unit_text_spots(tree: list) -> list[tuple[str, Box]]:
+    """Text boxes of the reference and value centred just above each power unit.
+
+    That is where tighten_vertical_fields_text puts a power unit's text first; a power
+    symbol drawn there would push the text beside the unit's pin names.
+    """
+    spots = []
+    for part, (body, kind) in sorted(_label_bodies(tree).items()):
+        if kind != "power_unit":
+            continue
+        fields = {
+            prop[1]: prop[2]
+            for prop in children(_symbol(tree, part), "property")
+            if prop[1] in {"Reference", "Value"} and not children(prop, "hide")
+        }
+        if set(fields) != {"Reference", "Value"}:
+            continue
+        centre = (body[0] + body[2]) // 2
+        value_y = body[1] - BODY_GAP - FIELD_HALF_HEIGHT
+        for name, y in (("Reference", value_y - 2 * CONNECTOR_ROW_OFFSET), ("Value", value_y)):
+            # The drawn text itself; the placement step's padding would also rule out a
+            # symbol drawn sideways at the pin.
+            width, height = text_extents(fields[name], 0)
+            spots.append(
+                (
+                    part[0],
+                    (centre - width // 2, y - height // 2, centre + width // 2, y + height // 2),
+                )
+            )
+    return spots
+
+
 def tighten_vertical_fields_text(text: str) -> tuple[str, list[dict]]:
     """Move reference/value pairs of two-pin parts, connectors and power units nearer.
 
