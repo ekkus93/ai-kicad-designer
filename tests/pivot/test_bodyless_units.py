@@ -141,3 +141,34 @@ def test_supply_arrow_keeps_off_the_power_unit_text_spot():
 
     assert hits(0)
     assert not hits(90) and not hits(270)
+
+
+def test_looping_decoupling_capacitor_is_moved_beside_its_pin():
+    """In return_rail_symbols_2026-11-11_run1, C2's VMINUS wire leaves U1C pin 4
+    (82.55, 86.36), runs right under C2 and up to C2's top pin (99.06, 74.93): 40.64 mm.
+    Moved 11.43 mm left and down, C2's top pin sits 5.08 mm beside pin 4's end."""
+    from ai_kicad.pivot.power_symbols import _flag_paths, _wire_segments
+    from ai_kicad.pivot.schematic_review_native import straighten_decoupling_text
+
+    folder = ROOT / "fixtures/pivot/experiments/return_rail_symbols_2026-11-11_run1/inverting_gain"
+    text = next((folder / "project").glob("*.kicad_sch")).read_text()
+    inventory = json.loads((folder / "assessment.json").read_text())["terminal_inventory"]
+    pin, capacitor = (82_550_000, 86_360_000), (99_060_000, 74_930_000)
+    context = {"VMINUS": {"flags": [], "local_pairs": [(pin, capacitor)]}}
+    moved, move = straighten_decoupling_text(text, inventory, context, lambda _text: None)
+    assert move is not None
+    assert (move["reference"], move["dx_mm"], move["dy_mm"]) == ("C2", -11.43, 11.43)
+    assert move["pair_wire_mm"] == [40.64, 5.08]
+    target = (87_630_000, 86_360_000)
+    path = _flag_paths(_wire_segments(parse(moved)), pin, {target})
+    assert sum(abs(a[0] - b[0]) + abs(a[1] - b[1]) for a, b in path) == 5_080_000
+    # Once straight, the pair is left alone.
+    assert (
+        straighten_decoupling_text(
+            moved,
+            inventory,
+            {"VMINUS": {"flags": [], "local_pairs": [(pin, target)]}},
+            lambda _t: None,
+        )[1]
+        is None
+    )

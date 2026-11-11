@@ -48,6 +48,8 @@ from .schematic_review import (
 )
 from .field_layout import clear_label_pin_numbers_text, tighten_vertical_fields_text
 from .power_symbols import (
+    _flag_paths,
+    _pin_directions,
     aim_power_flags_text,
     _wire_segments,
     glyph_for_net,
@@ -1299,6 +1301,94 @@ RAIL_PLAN_MOVES = sorted(
 RAIL_PLAN_REACH_MM = 25.4
 
 
+# How far beside its pin, along the pin's end, a decoupling capacitor may be moved.
+DECOUPLING_REACH = 20 * PITCH
+DECOUPLING_NEAREST = 4 * PITCH
+
+
+def _path_length(path: list[tuple[Point, Point]]) -> int:
+    return sum(abs(a[0] - b[0]) + abs(a[1] - b[1]) for a, b in path)
+
+
+def straighten_decoupling_text(
+    text: str, inventory: list[dict], context: dict, check
+) -> tuple[str, dict | None]:
+    """Move one decoupling capacitor whose wire to its pin detours, so the wire is straight.
+
+    A capacitor in a declared local pair whose wire is longer than the direct distance
+    to its consumer pin (for example looping around the capacitor to reach a pin on its
+    far side) is moved so that its paired pin sits level with the consumer pin's end,
+    beside it, with the capacitor body extending the way that pin points. The nearest
+    position whose pair wire is one straight run and that the protected layout check
+    accepts is used. Only a capacitor that already points that way is moved; at most one
+    move is made, so the caller can observe the new drawing before the next.
+    """
+
+    def at(item: dict) -> Point:
+        return (round(item["x_mm"] * 1_000_000), round(item["y_mm"] * 1_000_000))
+
+    owner = {at(item): item["reference"] for item in inventory}
+    # Power flags are not design terminals, but a moved part's rails must stay wired to
+    # them, so the move reroutes to each flag's pin as to a fixed terminal.
+    terminals = inventory + [
+        {
+            "net": net,
+            "reference": f"flag:{net}:{index}",
+            "pin": "1",
+            "x_mm": point[0] / 1_000_000,
+            "y_mm": point[1] / 1_000_000,
+        }
+        for net in sorted(context)
+        for index, point in enumerate(context[net].get("flags", []))
+    ]
+    tree = parse(text)
+    segments = _wire_segments(tree)
+    outward = _pin_directions(tree)
+    for net in sorted(context):
+        for consumer, capacitor in context[net].get("local_pairs", []):
+            direct = abs(consumer[0] - capacitor[0]) + abs(consumer[1] - capacitor[1])
+            path = _flag_paths(segments, consumer, {capacitor})
+            if not path or _path_length(path) <= direct:
+                continue
+            way = outward.get(consumer)
+            reference = owner.get(capacitor)
+            others = [point for point, name in owner.items() if name == reference]
+            others = [point for point in others if point != capacitor]
+            if way is None or way[0] or len(others) != 1:
+                continue
+            other = others[0]
+            if other[0] != capacitor[0] or (other[1] > capacitor[1]) != (way[1] > 0):
+                continue
+            side = 1 if capacitor[0] >= consumer[0] else -1
+            for steps in range(DECOUPLING_NEAREST // PITCH, DECOUPLING_REACH // PITCH + 1):
+                for sign in (side, -side):
+                    target = (consumer[0] + sign * steps * PITCH, consumer[1])
+                    dx, dy = target[0] - capacitor[0], target[1] - capacitor[1]
+                    if not dx and not dy:
+                        continue
+                    action = MoveSymbols(
+                        operation="move_symbols",
+                        references=[reference],
+                        dx_mm=dx / 1_000_000,
+                        dy_mm=dy / 1_000_000,
+                    )
+                    try:
+                        moved = move_symbols_text(text, action, terminals)
+                    except ValueError:
+                        continue
+                    wire = _flag_paths(_wire_segments(parse(moved)), consumer, {target})
+                    if _path_length(wire) != steps * PITCH or check(moved) is not None:
+                        continue
+                    return moved, {
+                        "net": net,
+                        "reference": reference,
+                        "dx_mm": dx / 1_000_000,
+                        "dy_mm": dy / 1_000_000,
+                        "pair_wire_mm": [_path_length(path) / 1_000_000, steps * PITCH / 1e6],
+                    }
+    return text, None
+
+
 def _search_rail_plans(
     base: str, nets: list[str], inventory: list[dict], context: dict, check
 ) -> tuple[tuple | None, list[dict]]:
@@ -1457,6 +1547,9 @@ class NativeSchematicEngine:
         touches another item, and the protected observer accepts its label form. Rail
         edits keep connectivity, so one KiCad netlist of the compiler output serves all.
 
+        A decoupling capacitor whose wire to its pin detours is first moved beside that
+        pin (straighten_decoupling_text), and the drawing is observed again.
+
         When no plan is valid, each part named in the refusals (for example a connector
         crowded against the page edge) is moved by every grid offset within
         RAIL_PLAN_REACH_MM (farther only if none of those works), the plans are searched
@@ -1481,6 +1574,16 @@ class NativeSchematicEngine:
                 return terminal_inventory_for_design(self.design, observed), context
 
             inventory, context = inventory_of(schematic)
+            # Decoupling capacitors whose wire detours are moved beside their pins first.
+            straightened = []
+            moved_path = work / schematic.name
+            for _round in range(4):
+                base, move = straighten_decoupling_text(base, inventory, context, check)
+                if move is None:
+                    break
+                straightened.append({"decoupling_move": move})
+                moved_path.write_text(base)
+                inventory, context = inventory_of(moved_path)
             best, plans = _search_rail_plans(base, nets, inventory, context, check)
             if best is None:
                 blockers = sorted(
@@ -1522,9 +1625,9 @@ class NativeSchematicEngine:
                 # Same preference as unmoved plans: fewest power symbols, then wire length.
                 best = min(found, key=lambda item: item[0]) if found else None
         if best is None:
-            return base, plans
+            return base, straightened + plans
         best[2]["chosen"] = True
-        return best[1], plans
+        return best[1], straightened + plans
 
     def initial(self, directory: Path) -> Path:
         if self.source is None:
