@@ -395,10 +395,10 @@ MAXIMUM_CONNECTED_NET_LENGTH = 240_000_000
 # Under brief v3, rail routes longer than this give way to power symbols.
 MAXIMUM_DETOUR_FACTOR = 3
 MINIMUM_DETOUR_ALLOWANCE = 25_400_000
-# Under brief v3, a supply rail (not a return rail) is wired between its separately drawn
-# terminal groups only by routes up to this long; farther groups get supply symbols
-# instead of long rail wires around the page.
-MAXIMUM_SUPPLY_ROUTE = 25_400_000
+# Under brief v3, a rail is wired between its separately drawn terminal groups only by
+# routes up to this long; farther groups get power symbols (supply arrows or ground
+# glyphs) instead of long rail wires around the page.
+MAXIMUM_RAIL_ROUTE = 25_400_000
 
 
 def _connect_point_groups(
@@ -498,9 +498,9 @@ def connect_rail_text(
 
     Under the power-symbol rail policy (brief v3), every group that can be routed is
     wired, and only the groups no wire can reach are marked with matching power symbols.
-    A supply rail's groups are wired only by routes up to MAXIMUM_SUPPLY_ROUTE; farther
-    groups get supply symbols. A fully wired return rail also gets one ground symbol, as schematics conventionally
-    show ground.
+    Groups are wired only by routes up to MAXIMUM_RAIL_ROUTE; farther groups get power
+    symbols. A fully wired return rail also gets one ground symbol, as schematics
+    conventionally show ground.
     """
     terminals = [item for item in terminal_inventory if item["net"] == net]
     if len(terminals) < 2:
@@ -530,7 +530,7 @@ def connect_rail_text(
                 keepouts,
                 f"{net} wire",
                 partial=True,
-                max_route=None if glyph_for_net(net) == "power:GND" else MAXIMUM_SUPPLY_ROUTE,
+                max_route=MAXIMUM_RAIL_ROUTE,
             )
         )
         rail = rail or {}
@@ -1302,10 +1302,13 @@ RAIL_PLAN_REACH_MM = 25.4
 def _search_rail_plans(
     base: str, nets: list[str], inventory: list[dict], context: dict, check
 ) -> tuple[tuple | None, list[dict]]:
-    """Every rail order, keeping or rerouting existing runs; best = fewest symbols, wire."""
+    """Every rail order, rerouting existing runs; best = fewest symbols, then wire.
+
+    Every rail is rerouted, so that a long compiler run gives way to power symbols.
+    """
     plans: list[dict] = []
     best = None
-    for replace in (False, True):
+    for replace in (True,):
         for order in itertools.permutations(nets):
             record: dict = {"order": list(order), "replace_existing": replace}
             text = base
@@ -1318,9 +1321,7 @@ def _search_rail_plans(
                             inventory,
                             power_symbols_allowed=True,
                             rail=context.get(net),
-                            # Supply rails are always rerouted, so that a long compiler
-                            # run gives way to supply symbols.
-                            replace_existing=replace or glyph_for_net(net) != "power:GND",
+                            replace_existing=replace,
                         )
                     except ValueError as error:
                         if "made no change" not in str(error):

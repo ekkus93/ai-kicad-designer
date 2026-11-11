@@ -238,6 +238,8 @@ These features are **planned**, not prerequisites for P4 except when a specific 
 
     An outside review of run3's inverting_gain found the long VPLUS/VMINUS wires around the page hard to follow. Every check and the qwen35-256k review had passed it. With the owner's approval, a supply rail is now wired between separate terminal groups only by routes up to 25.4 mm, and farther groups get supply symbols. The planner always reroutes supply rails. A power unit's text spot is an obstacle for power symbols, so VPLUS on pin 8 points sideways and the unit's text stays above the pin. Evidence is in `supply_rail_symbols_2026-11-11_run1`: all 15 designs pass every independent check. Nine changed, with total wire length cut by 15–43%. No model review of the new drawings has been run yet. This also shows the layout checks and the model review do not measure readability, which P6-011b still has to qualify.
 
+    A second outside review found a long REF wire from J1 to U1A, a REF loop over U1C, and text clearance down to 0.635 mm. With the owner's approval, the 25.4 mm cap now applies to return rails too, so distant ground groups get ground symbols. Evidence is in `return_rail_symbols_2026-11-11_run1`: all 15 designs pass every independent check. Ten differ from run3, each with 27–65% less wire. inverting_gain's text clearance is back to 1.40 mm. No model review of the new drawings has been run yet.
+
     The independent readability assessment and human electrical review are still PENDING, so P6-011f stays unchecked.
 
 

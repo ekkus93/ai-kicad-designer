@@ -356,7 +356,7 @@ def test_v3_connect_rail_wires_rails_and_marks_only_unreachable_groups(
     assert results, "no plan drew both rails cleanly"
     # The pin order forces at most this many breaks in the return rail; the best plan
     # reaches that. VCC is broken by design wherever its groups are more than
-    # MAXIMUM_SUPPLY_ROUTE apart, each group marked by its own supply symbol.
+    # MAXIMUM_RAIL_ROUTE apart, each group marked by its own supply symbol.
     assert min(results) <= most_breaks
 
 
