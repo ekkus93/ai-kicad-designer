@@ -271,6 +271,11 @@ def _collisions(text: str, tree: list, item: dict) -> list[str]:
         )
         if released is not None and any(_overlaps(box, released) for box in boxes):
             hits.append(owner)
+    # The rail name keeps a grid step clear of a pin-name column, so it does not read as
+    # one more pin name beside them.
+    for owner, (left, top, right, bottom) in columns:
+        if _overlaps(boxes[1], (left - PITCH, top, right + PITCH, bottom)):
+            hits.append(f"{owner} pin names")
     tip = transform_library_point(*GLYPH_TIPS[item["lib_id"]], item["angle"])
     glyph_direction = (_sign(tip[0]), _sign(tip[1]))
     for first, second in _wire_segments(tree):

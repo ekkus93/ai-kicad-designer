@@ -172,3 +172,27 @@ def test_looping_decoupling_capacitor_is_moved_beside_its_pin():
         )[1]
         is None
     )
+
+
+def test_rail_name_keeps_a_grid_step_clear_of_pin_names():
+    """In decoupling_placement_2026-11-11_run1, VMINUS points up from C2's top pin
+    (87.63, 86.36) and its name sits about 1 mm right of U1C's "V-" pin name. It must
+    now keep a grid step clear of the pin-name column."""
+    from ai_kicad.pivot.power_symbols import _collisions, power_symbols
+
+    path = next(
+        (
+            ROOT
+            / "fixtures/pivot/experiments/decoupling_placement_2026-11-11_run1"
+            / "inverting_gain/project"
+        ).glob("*.kicad_sch")
+    )
+    text = path.read_text()
+    tree = parse(text)
+    (vminus,) = [
+        item
+        for item in power_symbols(tree)
+        if item["net"] == "VMINUS" and item["point"] == (87_630_000, 86_360_000)
+    ]
+    assert vminus["angle"] == 0
+    assert "U1 pin names" in _collisions(text, tree, vminus)
