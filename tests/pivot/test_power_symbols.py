@@ -499,6 +499,32 @@ def test_sallen_key_rails_plan_after_moving_the_crowded_connector(tmp_path):
     assert set(report["checks"].values()) == {"PASS"}
 
 
+@pytest.mark.skipif(
+    not os.environ.get("AI_KICAD_APPRUN"), reason="set AI_KICAD_APPRUN to the KiCad 10.0.6 AppRun"
+)
+def test_v3_report_omits_wire_only_rail_witnesses(tmp_path):
+    """The reviewer sees rail_presentation's witnesses, not the protected wire-only ones.
+
+    Those list every rail joined by power symbols as "no continuous native wire path",
+    which the reviewer quoted as a defect on drawings that pass rail_presentation.
+    """
+    from ai_kicad.pivot.schematic_review_native import NativeSchematicEngine
+
+    folder = ROOT / "fixtures/pivot/experiments/review_loop_corpus_v3_2026-11-12_qwen35_256k_run1"
+    source = folder / "inverting_gain/candidates/000/project/InvertingGain.kicad_sch"
+    engine = NativeSchematicEngine(
+        json.loads((ROOT / "fixtures/m2b/inverting_gain.json").read_text()),
+        Path(os.environ["AI_KICAD_APPRUN"]),
+        source=source,
+        power_symbol_rails=True,
+    )
+    schematic = engine.initial(tmp_path)
+    report = engine.assess(schematic, tmp_path).report
+    assert set(report["checks"].values()) == {"PASS"}
+    assert report["layout"]["rail_presentation_witnesses"] == []
+    assert "observed_power_rail_wire_path_witnesses" not in report["layout"]
+
+
 CORPUS_RUN = ROOT / "fixtures/pivot/experiments/review_loop_corpus_v3_2026-11-01_qwen35_32k_run2"
 
 
