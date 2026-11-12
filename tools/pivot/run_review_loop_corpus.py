@@ -52,6 +52,9 @@ def main() -> None:
     )
     parser.add_argument("--max-reviews", type=int, default=8)
     parser.add_argument("--context-tokens", type=int, default=16384)
+    parser.add_argument(
+        "--output-tokens", type=int, default=2048, help="per-reply output cap (num_predict)"
+    )
     parser.add_argument("--model-timeout", type=float, default=180)
     parser.add_argument("--designs", nargs="*", help="run only these corpus designs (default: all)")
     args = parser.parse_args()
@@ -63,6 +66,7 @@ def main() -> None:
         review_brief=args.review_brief,
         max_reviews=args.max_reviews,
         context_tokens=args.context_tokens,
+        output_tokens=args.output_tokens,
         model_timeout_seconds=args.model_timeout,
     )
     results = {}
@@ -108,6 +112,7 @@ def main() -> None:
         },
         "model": args.model,
         "context_tokens": args.context_tokens,
+        "output_tokens": args.output_tokens,
         "model_timeout_seconds": args.model_timeout,
         "review_brief": str(args.review_brief.relative_to(ROOT)),
         "budgets": service.budgets,
