@@ -153,6 +153,16 @@ def _association_witnesses(tree: list, part: Part) -> int:
     )
 
 
+def _nearer_witnesses(tree: list, part: Part) -> int:
+    from .readability_checks import fields_nearer_another_part
+
+    return sum(
+        1
+        for item in fields_nearer_another_part(tree, include_bodyless=True)
+        if (item["reference"], item["unit"]) == part
+    )
+
+
 def _obstacles(text: str, tree: list, part: Part) -> list[Box]:
     """Everything the part's text must stay clear of, except that text itself.
 
@@ -213,6 +223,8 @@ SEARCH_REACH = 25_400_000
 CONNECTOR_ROW_OFFSET = 1_350_000
 # How far above a power unit's top pin its text may be, before it goes beside the unit.
 POWER_UNIT_REACH = 4 * 1_270_000
+# How far off the pin column's centre line a power unit's text written beside it may sit.
+POWER_UNIT_BESIDE_SLACK = 2 * 1_270_000
 
 
 def power_unit_text_spots(tree: list) -> list[tuple[str, Box]]:
@@ -247,7 +259,9 @@ def power_unit_text_spots(tree: list) -> list[tuple[str, Box]]:
     return spots
 
 
-def tighten_vertical_fields_text(text: str) -> tuple[str, list[dict]]:
+def tighten_vertical_fields_text(
+    text: str, power_unit_both_sides: bool = False
+) -> tuple[str, list[dict]]:
     """Move reference/value pairs of two-pin parts, connectors and power units nearer.
 
     Vertical parts keep each field's height; horizontal parts' text is centred above or
@@ -255,6 +269,11 @@ def tighten_vertical_fields_text(text: str) -> tuple[str, list[dict]]:
     power-unit text centred above it, reference above value. A move is kept only when it
     brings the text closer to the body and does not make the part's text read as
     belonging to another symbol (the independent owner-association measurement).
+
+    With ``power_unit_both_sides`` (brief v7), power-unit text that cannot sit above the
+    unit may be written on either side of its pin column, up to two grid steps off the
+    column's centre line; otherwise only on its right, level with the centre. It also
+    rejects a move that leaves the text nearer another part's drawing than its own.
     """
     moves = []
     for part, (body, kind) in sorted(_label_bodies(parse(text)).items()):
@@ -317,12 +336,28 @@ def tighten_vertical_fields_text(text: str) -> tuple[str, list[dict]]:
                 for step in range(0, shift + 1, STEP)
                 for dx in dict.fromkeys((-step, step))
             ] + [
+                # Beside the pin column on either side, up to two grid steps off its
+                # centre line, so the text stays next to the pins it names.
                 {
-                    "Reference": (x, centre[1] - CONNECTOR_ROW_OFFSET),
-                    "Value": (x, centre[1] + CONNECTOR_ROW_OFFSET),
+                    "Reference": (x, y - CONNECTOR_ROW_OFFSET),
+                    "Value": (x, y + CONNECTOR_ROW_OFFSET),
                     "beside": True,
                 }
-                for x in range(first, first + SEARCH_REACH, STEP)
+                for offset in range(0, SEARCH_REACH, STEP)
+                for x in (
+                    (first + offset, body[0] - BODY_GAP - half - offset)
+                    if power_unit_both_sides
+                    else (first + offset,)
+                )
+                for y in (
+                    range(
+                        centre[1] - POWER_UNIT_BESIDE_SLACK,
+                        centre[1] + POWER_UNIT_BESIDE_SLACK + 1,
+                        STEP,
+                    )
+                    if power_unit_both_sides
+                    else (centre[1],)
+                )
             ]
         else:
             # Right of the body centred on it, or centred above it; reference on top.
@@ -358,9 +393,13 @@ def tighten_vertical_fields_text(text: str) -> tuple[str, list[dict]]:
             key=lambda proposed: (proposed in fallback, distance(proposed)),
         )
         before = _association_witnesses(tree, part)
+        nearer_before = _nearer_witnesses(tree, part) if power_unit_both_sides else 0
         for chosen in clear:
             moved = _move_fields(text, part, chosen)
             if _association_witnesses(parse(moved), part) > before:
+                continue
+            # Brief v7 also measures whether the text sits nearer another part's drawing.
+            if power_unit_both_sides and _nearer_witnesses(parse(moved), part) > nearer_before:
                 continue
             text = moved
             moves.append(

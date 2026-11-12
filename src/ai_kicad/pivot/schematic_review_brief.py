@@ -151,12 +151,31 @@ class SchematicReviewBriefV6(SchematicReviewBriefV5):
         return self
 
 
+class SchematicReviewBriefV7(SchematicReviewBriefV6):
+    """Brief v6 plus gates on text cut off by another net's wire and on sideways grounds;
+    power-unit text is measured as well."""
+
+    schema_version: Literal["schematic-review-brief.v7"]
+    brief_id: Literal["owner-readability.v7"]
+
+    @model_validator(mode="after")
+    def require_text_and_ground_gates(self) -> SchematicReviewBriefV7:
+        labels = next(item for item in self.criteria if item.criterion_id == "label_association")
+        if "field_wire_separation" not in {m.check_id for m in labels.measurements}:
+            raise ValueError("v7 label association requires the field wire-separation check")
+        rails = next(item for item in self.criteria if item.criterion_id == "visible_local_rails")
+        if "ground_symbol_direction" not in {m.check_id for m in rails.measurements}:
+            raise ValueError("v7 rails require the ground-symbol direction check")
+        return self
+
+
 BRIEF_MODELS = {
     "schematic-review-brief.v2": SchematicReviewBriefV2,
     "schematic-review-brief.v3": SchematicReviewBriefV3,
     "schematic-review-brief.v4": SchematicReviewBriefV4,
     "schematic-review-brief.v5": SchematicReviewBriefV5,
     "schematic-review-brief.v6": SchematicReviewBriefV6,
+    "schematic-review-brief.v7": SchematicReviewBriefV7,
 }
 ReviewBrief = (
     SchematicReviewBrief
@@ -165,6 +184,7 @@ ReviewBrief = (
     | SchematicReviewBriefV4
     | SchematicReviewBriefV5
     | SchematicReviewBriefV6
+    | SchematicReviewBriefV7
 )
 
 
@@ -201,6 +221,13 @@ def brief_requires_field_ownership(path: Path | None) -> bool:
     if path is None or path.suffix.lower() != ".json":
         return False
     return isinstance(load_review_brief(path), SchematicReviewBriefV6)
+
+
+def brief_requires_text_and_ground_checks(path: Path | None) -> bool:
+    """Whether the versioned brief adds the v7 text and ground gates."""
+    if path is None or path.suffix.lower() != ".json":
+        return False
+    return isinstance(load_review_brief(path), SchematicReviewBriefV7)
 
 
 def format_review_brief(brief: ReviewBrief) -> str:

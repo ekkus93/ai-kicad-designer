@@ -64,7 +64,9 @@ from .power_symbols import (
 from .readability_checks import (
     FRAME,
     content_extent,
+    fields_across_a_wire,
     fields_nearer_another_part,
+    grounds_that_could_point_down,
     page_balance_witnesses,
     page_offset,
     placement_fits,
@@ -1539,6 +1541,7 @@ class NativeSchematicEngine:
         readability_checks: bool = False,
         page_balance: bool = False,
         field_ownership: bool = False,
+        text_and_ground_checks: bool = False,
     ):
         self.resolved = assets()
         self.design = validate(design, self.resolved)
@@ -1560,6 +1563,11 @@ class NativeSchematicEngine:
         if field_ownership and not page_balance:
             raise ValueError("field ownership requires the brief v5+ page-balance gate")
         self.field_ownership = field_ownership
+        # Brief v7: power-unit text beside the pins on either side; that text is measured
+        # too, with gates on other-net wires between text and part and on sideways grounds.
+        if text_and_ground_checks and not field_ownership:
+            raise ValueError("text and ground checks require the brief v6+ field ownership gate")
+        self.text_and_ground_checks = text_and_ground_checks
         self.power_symbols = power_symbol_definitions() if power_symbol_rails else {}
         self.environment = dict(os.environ, LC_ALL="C", TZ="UTC")
         self.renderer = shutil.which("rsvg-convert")
@@ -1621,7 +1629,10 @@ class NativeSchematicEngine:
         text, turns = aim_power_flags_text(schematic.read_text())
         schematic.write_text(text)
         presentation["power_flag_turns"] = turns
-        text, moves = tighten_vertical_fields_text(schematic.read_text())
+        text, moves = tighten_vertical_fields_text(
+            schematic.read_text(),
+            power_unit_both_sides=getattr(self, "text_and_ground_checks", False),
+        )
         schematic.write_text(text)
         presentation["vertical_field_moves"] = moves
         if getattr(self, "page_balance", False):
@@ -1856,8 +1867,16 @@ class NativeSchematicEngine:
             readability["power_symbol_direction"] = power_symbols_against_convention(drawn)
             if getattr(self, "page_balance", False):
                 readability["page_balance"] = page_balance_witnesses(drawn)
+            strict = getattr(self, "text_and_ground_checks", False)
             if getattr(self, "field_ownership", False):
-                readability["field_nearest_owner"] = fields_nearer_another_part(drawn)
+                readability["field_nearest_owner"] = fields_nearer_another_part(
+                    drawn, include_bodyless=strict
+                )
+            if strict:
+                readability["field_wire_separation"] = fields_across_a_wire(drawn)
+                readability["ground_symbol_direction"] = grounds_that_could_point_down(
+                    schematic.read_text()
+                )
             messages = {
                 "bodyless_unit_clearance": "wires run through a bodyless unit's pin-name column",
                 "rail_route_detour": "rail wiring detours beyond 1.15x and 7.62 mm of the "
@@ -1868,6 +1887,10 @@ class NativeSchematicEngine:
                 "the half-frame from the page centre",
                 "field_nearest_owner": "reference/value text is more than 5.08 mm from its own "
                 "part and nearer another part",
+                "field_wire_separation": "a wire of another net runs between reference/value "
+                "text and its own part",
+                "ground_symbol_direction": "a ground glyph points sideways where it could "
+                "point down",
             }
             for name, witnesses in readability.items():
                 checks[name] = "FAIL" if witnesses else "PASS"

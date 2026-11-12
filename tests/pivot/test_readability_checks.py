@@ -10,7 +10,9 @@ from ai_kicad.pivot.readability_checks import (
     MAXIMUM_PAGE_OFFSET,
     MINIMUM_FIELD_OWNER_GAP_NM,
     content_extent,
+    fields_across_a_wire,
     fields_nearer_another_part,
+    grounds_that_could_point_down,
     page_balance_witnesses,
     power_symbols_against_convention,
     rail_route_detours,
@@ -19,10 +21,12 @@ from ai_kicad.pivot.schematic_review_brief import (
     SchematicReviewBriefV4,
     SchematicReviewBriefV5,
     SchematicReviewBriefV6,
+    SchematicReviewBriefV7,
     brief_allows_power_symbol_rails,
     brief_requires_field_ownership,
     brief_requires_page_balance,
     brief_requires_readability_checks,
+    brief_requires_text_and_ground_checks,
     load_review_brief,
 )
 from ai_kicad.pivot.schematic_review_native import (
@@ -335,4 +339,126 @@ def test_field_ownership_requires_page_balance():
             power_symbol_rails=True,
             readability_checks=True,
             field_ownership=True,
+        )
+
+
+BRIEF_V7 = ROOT / "fixtures/pivot/schematic_review_brief_v7.json"
+SCHEMA_V7 = ROOT / "fixtures/pivot/schematic_review_brief.v7.schema.json"
+
+
+@pytest.mark.parametrize("case", KNOWN_GOOD)
+def test_accepted_drawings_have_no_other_net_wire_between_text_and_part(case):
+    assert fields_across_a_wire(parse(drawing(case))) == []
+
+
+def test_r2_text_beyond_another_nets_wire_fails_field_wire_separation():
+    witnesses = fields_across_a_wire(parse(drawing("inverting_gain__r1_r2_text_misplaced")))
+    assert {(w["reference"], w["field"]) for w in witnesses} == {
+        ("R2", "Reference"),
+        ("R2", "Value"),
+    }
+
+
+def test_own_net_wire_looping_past_text_is_not_a_separation():
+    # sallen_key's J1 pin-1 wire loops over the connector, between it and "J1".
+    text = drawing("sallen_key__known_good")
+    assert fields_across_a_wire(parse(text)) == []
+
+
+@pytest.mark.parametrize("case", KNOWN_GOOD)
+def test_accepted_sideways_grounds_have_no_room_to_point_down(case):
+    assert grounds_that_could_point_down(drawing(case)) == []
+
+
+@pytest.mark.parametrize(
+    ("case", "sides"),
+    [
+        ("inverting_gain__sideways_ground", ["left"]),
+        ("inverting_gain__r1_r2_text_misplaced", ["left", "right"]),
+    ],
+)
+def test_sideways_ground_with_room_below_fails(case, sides):
+    witnesses = grounds_that_could_point_down(drawing(case))
+    assert sorted(w["points"] for w in witnesses) == sides
+    assert {w["net"] for w in witnesses} == {"REF"}
+
+
+def test_bodyless_unit_label_far_from_its_pins_fails_when_measured():
+    witnesses = fields_nearer_another_part(
+        parse(drawing("inverting_gain__known_good")), include_bodyless=True
+    )
+    assert {(w["reference"], w["unit"], w["nearest_part"]) for w in witnesses} == {
+        ("U1", 3, "C2:1")
+    }
+
+
+def test_v7_field_step_puts_power_unit_text_beside_its_pins():
+    from ai_kicad.pivot.field_layout import tighten_vertical_fields_text
+
+    text = drawing("inverting_gain__known_good")
+    unchanged, _moves = tighten_vertical_fields_text(text)
+    assert fields_nearer_another_part(parse(unchanged), include_bodyless=True)
+    moved, moves = tighten_vertical_fields_text(text, power_unit_both_sides=True)
+    assert [(m["reference"], m["unit"]) for m in moves if m["kind"] == "power_unit"] == [("U1", 3)]
+    tree = parse(moved)
+    assert fields_nearer_another_part(tree, include_bodyless=True) == []
+    assert fields_across_a_wire(tree) == []
+
+
+@pytest.mark.parametrize("case", KNOWN_GOOD)
+def test_v7_field_step_keeps_every_accepted_drawing_passing(case):
+    from ai_kicad.pivot.field_layout import tighten_vertical_fields_text
+
+    moved, _moves = tighten_vertical_fields_text(drawing(case), power_unit_both_sides=True)
+    tree = parse(moved)
+    assert fields_nearer_another_part(tree, include_bodyless=True) == []
+    assert fields_across_a_wire(tree) == []
+
+
+def test_v7_brief_gates_text_and_grounds():
+    brief = load_review_brief(BRIEF_V7)
+    assert isinstance(brief, SchematicReviewBriefV7)
+    assert brief_requires_text_and_ground_checks(BRIEF_V7)
+    assert not brief_requires_text_and_ground_checks(BRIEF_V6)
+    assert brief_requires_field_ownership(BRIEF_V7)
+    criteria = {c.criterion_id: {m.check_id for m in c.measurements} for c in brief.criteria}
+    assert {"field_nearest_owner", "field_wire_separation"} <= criteria["label_association"]
+    assert "ground_symbol_direction" in criteria["visible_local_rails"]
+
+
+def test_v7_brief_schema_matches_typed_contract():
+    schema = json.loads(SCHEMA_V7.read_text())
+    expected = SchematicReviewBriefV7.model_json_schema()
+    expected["$schema"] = "https://json-schema.org/draft/2020-12/schema"
+    expected["$id"] = "https://ai-kicad-designer.local/schemas/schematic-review-brief.v7.json"
+    assert schema == expected
+
+
+@pytest.mark.parametrize(
+    ("criterion", "check", "message"),
+    [
+        ("label_association", "field_wire_separation", "wire-separation"),
+        ("visible_local_rails", "ground_symbol_direction", "ground-symbol direction"),
+    ],
+)
+def test_v7_brief_requires_each_new_gate(criterion, check, message):
+    brief = json.loads(BRIEF_V7.read_text())
+    item = next(c for c in brief["criteria"] if c["criterion_id"] == criterion)
+    item["measurements"] = [m for m in item["measurements"] if m["check_id"] != check]
+    with pytest.raises(ValueError, match=message):
+        SchematicReviewBriefV7.model_validate(brief)
+
+
+def test_text_and_ground_checks_require_field_ownership():
+    from ai_kicad.pivot.schematic_review_native import NativeSchematicEngine
+
+    design = json.loads((ROOT / "fixtures/m2b/led_series.json").read_text())
+    with pytest.raises(ValueError, match="field ownership"):
+        NativeSchematicEngine(
+            design,
+            Path("/unused/AppRun"),
+            power_symbol_rails=True,
+            readability_checks=True,
+            page_balance=True,
+            text_and_ground_checks=True,
         )

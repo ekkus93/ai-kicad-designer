@@ -51,3 +51,15 @@ def test_v6_brief_turns_on_field_ownership():
     )
     assert v6.page_balance and v6.field_ownership
     assert v5.page_balance and not v5.field_ownership
+
+
+def test_v7_brief_turns_on_text_and_ground_checks():
+    root = Path(__file__).resolve().parents[2] / "fixtures/pivot"
+    v7 = NativeSchematicReviewService(
+        Path("/unused/AppRun"), "model", review_brief=root / "schematic_review_brief_v7.json"
+    )
+    v6 = NativeSchematicReviewService(
+        Path("/unused/AppRun"), "model", review_brief=root / "schematic_review_brief_v6.json"
+    )
+    assert v7.field_ownership and v7.text_and_ground_checks
+    assert v6.field_ownership and not v6.text_and_ground_checks

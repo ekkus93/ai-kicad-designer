@@ -243,9 +243,12 @@ def _gap(first: tuple[int, int, int, int], second: tuple[int, int, int, int]) ->
     return (dx * dx + dy * dy) ** 0.5
 
 
-def fields_nearer_another_part(tree: list) -> list[dict]:
-    """Visible reference/value text that reads as belonging to a different part."""
+def _placed_parts(tree: list) -> list[tuple[str, int, list, bool, list, set]]:
+    """Each placed unit: reference, unit, drawn boxes, drawn without a body, fields and
+    pin connection points."""
     from ai_kicad.m2_text_layout import property_page_angle, text_extents
+
+    from .power_symbols import _pin_points
 
     from .schematic_review_native import _drawn_boxes
 
@@ -276,17 +279,36 @@ def fields_nearer_another_part(tree: list) -> list[dict]:
             fields.append(
                 (name, prop[2], (x - half_width, y - half_height, x + half_width, y + half_height))
             )
-        placed.append((reference, int(one(symbol, "unit")[1]), boxes, bool(bodyless), fields))
+        placed.append(
+            (
+                reference,
+                int(one(symbol, "unit")[1]),
+                boxes,
+                bool(bodyless),
+                fields,
+                _pin_points(head + [symbol]),
+            )
+        )
+    return placed
+
+
+def fields_nearer_another_part(tree: list, include_bodyless: bool = False) -> list[dict]:
+    """Visible reference/value text that reads as belonging to a different part.
+
+    Brief v6 exempts units drawn without a body; brief v7 measures their text against
+    their pin column (``include_bodyless``).
+    """
+    placed = _placed_parts(tree)
     witnesses = []
-    for reference, unit, boxes, bodyless, fields in placed:
-        if bodyless or not boxes:
+    for reference, unit, boxes, bodyless, fields, _pins in placed:
+        if (bodyless and not include_bodyless) or not boxes:
             continue
         for name, text, box in fields:
             own = min(_gap(box, other) for other in boxes)
             nearest = min(
                 (
                     (_gap(box, other), other_reference, other_unit)
-                    for other_reference, other_unit, other_boxes, _, _ in placed
+                    for other_reference, other_unit, other_boxes, *_rest in placed
                     if (other_reference, other_unit) != (reference, unit)
                     for other in other_boxes
                 ),
@@ -304,4 +326,129 @@ def fields_nearer_another_part(tree: list) -> list[dict]:
                         "nearest_part_gap_mm": round(nearest[0] / 1e6, 2),
                     }
                 )
+    return witnesses
+
+
+def _closest_points(first: tuple, second: tuple) -> tuple[Point, Point]:
+    """The nearest pair of points of two axis-aligned boxes."""
+    points = []
+    for low_a, high_a, low_b, high_b in (
+        (first[0], first[2], second[0], second[2]),
+        (first[1], first[3], second[1], second[3]),
+    ):
+        if high_a < low_b:
+            points.append((high_a, low_b))
+        elif high_b < low_a:
+            points.append((low_a, high_b))
+        else:
+            middle = (max(low_a, low_b) + min(high_a, high_b)) // 2
+            points.append((middle, middle))
+    return (points[0][0], points[1][0]), (points[0][1], points[1][1])
+
+
+def _crosses(start: Point, end: Point, wire: Segment) -> bool:
+    """Whether an axis-aligned wire meets the straight line from ``start`` to ``end``."""
+    (x1, y1), (x2, y2) = wire
+
+    def side(point: Point, a: Point, b: Point) -> int:
+        return _sign((b[0] - a[0]) * (point[1] - a[1]) - (b[1] - a[1]) * (point[0] - a[0]))
+
+    if start == end:
+        return False
+    first, second = side(wire[0], start, end), side(wire[1], start, end)
+    third, fourth = side(start, wire[0], wire[1]), side(end, wire[0], wire[1])
+    if first * second < 0 and third * fourth < 0:
+        return True
+    # A wire lying along the line counts when the two overlap.
+    if first == second == 0:
+        lo_x, hi_x = sorted((x1, x2))
+        lo_y, hi_y = sorted((y1, y2))
+        s_lo_x, s_hi_x = sorted((start[0], end[0]))
+        s_lo_y, s_hi_y = sorted((start[1], end[1]))
+        return lo_x <= s_hi_x and s_lo_x <= hi_x and lo_y <= s_hi_y and s_lo_y <= hi_y
+    return False
+
+
+def fields_across_a_wire(tree: list) -> list[dict]:
+    """Visible reference/value text with a wire drawn between it and its own part.
+
+    The line joining the text box to the nearest point of its own unit's drawing (body,
+    pin stubs or, for a unit drawn without a body, its pin column) must not meet a wire;
+    otherwise a wire of another net separates the text from the part it names. Wiring
+    joined to one of the part's own pins is its own net and does not count.
+    """
+    groups = wire_groups(_segments(tree))
+    witnesses = []
+    for reference, unit, boxes, _bodyless, fields, pins in _placed_parts(tree):
+        if not boxes:
+            continue
+        foreign = [
+            wire
+            for group in groups
+            if not any(_on(pin, segment) for pin in pins for segment in group)
+            for wire in group
+        ]
+        for name, text, box in fields:
+            nearest = min(boxes, key=lambda other: _gap(box, other))
+            if _gap(box, nearest) == 0:
+                continue
+            start, end = _closest_points(box, nearest)
+            crossing = [wire for wire in foreign if _crosses(start, end, wire)]
+            if crossing:
+                witnesses.append(
+                    {
+                        "reference": reference,
+                        "unit": unit,
+                        "field": name,
+                        "text": text,
+                        "own_part_gap_mm": round(_gap(box, nearest) / 1e6, 2),
+                        "wires_between": [
+                            [[x / 1e6 for x in point] for point in wire] for wire in crossing
+                        ],
+                    }
+                )
+    return witnesses
+
+
+# A ground glyph may point sideways only where pointing down is impossible: into its own
+# pin, or onto another drawn item for every value-text spot the compiler tries (owner
+# request 2026-11-12). Supply arrows may point sideways (VPLUS on pin 8, owner decision).
+def grounds_that_could_point_down(text: str) -> list[dict]:
+    """Sideways ground glyphs with a clear spot to point down at the same connection."""
+    from ai_kicad.sexpr import parse
+
+    from .power_symbols import (
+        _angle_for,
+        _collisions,
+        _pin_directions,
+        _value_position,
+        _value_sides,
+    )
+
+    tree = parse(text)
+    outward = _pin_directions(tree)
+    witnesses = []
+    for item in power_symbols(tree):
+        if item["lib_id"] != "power:GND":
+            continue
+        tip = transform_library_point(*GLYPH_TIPS[item["lib_id"]], item["angle"])
+        if _sign(tip[0]) == 0:
+            continue
+        pin = outward.get(item["point"])
+        if pin and (0, 1) == (-pin[0], -pin[1]):
+            continue
+        angle = _angle_for(item["lib_id"], (0, 1))
+        for side in _value_sides((0, 1), (0, 1)):
+            value = _value_position(item["lib_id"], item["point"], angle, item["net"], side)
+            if not _collisions(text, tree, dict(item, angle=angle, value=value)):
+                witnesses.append(
+                    {
+                        "power_symbol": item["reference"],
+                        "net": item["net"],
+                        "points": "right" if tip[0] > 0 else "left",
+                        "at_mm": [item["point"][0] / 1e6, item["point"][1] / 1e6],
+                        "clear_downward_value_side": side,
+                    }
+                )
+                break
     return witnesses
