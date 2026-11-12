@@ -8,7 +8,9 @@ import pytest
 
 from ai_kicad.pivot.readability_checks import (
     MAXIMUM_PAGE_OFFSET,
+    MINIMUM_FIELD_OWNER_GAP_NM,
     content_extent,
+    fields_nearer_another_part,
     page_balance_witnesses,
     power_symbols_against_convention,
     rail_route_detours,
@@ -16,7 +18,9 @@ from ai_kicad.pivot.readability_checks import (
 from ai_kicad.pivot.schematic_review_brief import (
     SchematicReviewBriefV4,
     SchematicReviewBriefV5,
+    SchematicReviewBriefV6,
     brief_allows_power_symbol_rails,
+    brief_requires_field_ownership,
     brief_requires_page_balance,
     brief_requires_readability_checks,
     load_review_brief,
@@ -233,3 +237,102 @@ def test_v5_brief_requires_page_balance():
     item["measurements"] = [m for m in item["measurements"] if m["check_id"] != "page_balance"]
     with pytest.raises(ValueError, match="page-balance"):
         SchematicReviewBriefV5.model_validate(brief)
+
+
+BRIEF_V6 = ROOT / "fixtures/pivot/schematic_review_brief_v6.json"
+SCHEMA_V6 = ROOT / "fixtures/pivot/schematic_review_brief.v6.schema.json"
+# Text-association defects and the field the v6 gate must report for each.
+MISATTRIBUTED_TEXT = {
+    "cases/inverting_gain__r1_r2_text_misplaced": {("R1", "Reference"), ("R1", "Value")},
+    "injected/led_series__detached_value": {("D1", "Value")},
+}
+
+
+def schematic_text(case: str) -> str:
+    folder = CASES.parent / case
+    (schematic,) = list((folder / "project").glob("*.kicad_sch")) or list(
+        folder.glob("*.kicad_sch")
+    )
+    return schematic.read_text()
+
+
+@pytest.mark.parametrize("case", KNOWN_GOOD)
+def test_accepted_drawings_keep_text_by_its_own_part(case):
+    assert fields_nearer_another_part(parse(drawing(case))) == []
+
+
+@pytest.mark.parametrize("case", KNOWN_GOOD)
+def test_centred_drawings_keep_text_by_its_own_part(case):
+    text, _record = centre_on_page_text(drawing(case))
+    assert fields_nearer_another_part(parse(text)) == []
+
+
+@pytest.mark.parametrize(("case", "fields"), sorted(MISATTRIBUTED_TEXT.items()))
+def test_text_by_the_wrong_part_fails_field_nearest_owner(case, fields):
+    witnesses = fields_nearer_another_part(parse(schematic_text(case)))
+    assert {(w["reference"], w["field"]) for w in witnesses} == fields
+    assert all(w["own_part_gap_mm"] > w["nearest_part_gap_mm"] for w in witnesses)
+
+
+@pytest.mark.parametrize(
+    "case", sorted(path.name for path in (CASES.parent / "injected").glob("*__detached_value"))
+)
+def test_every_injected_detached_value_fails_field_nearest_owner(case):
+    assert fields_nearer_another_part(parse(schematic_text(f"injected/{case}")))
+
+
+def test_text_slightly_nearer_a_neighbour_is_allowed():
+    # Accepted inverting_gain: R1 sits 3.72 mm from its resistor and 2.91 mm from U1A.
+    witnesses = fields_nearer_another_part(parse(drawing("inverting_gain__known_good")))
+    assert witnesses == []
+
+
+def test_bodyless_unit_label_is_exempt():
+    # U1C's label stays beside its pin column by owner decision, 17-19 mm from the pins.
+    text = drawing("inverting_gain__known_good")
+    assert "(unit 3)" in text
+    assert all(w["unit"] != 3 for w in fields_nearer_another_part(parse(text)))
+
+
+def test_v6_brief_gates_field_ownership():
+    brief = load_review_brief(BRIEF_V6)
+    assert isinstance(brief, SchematicReviewBriefV6)
+    assert brief_requires_field_ownership(BRIEF_V6)
+    assert not brief_requires_field_ownership(BRIEF_V5)
+    assert brief_requires_page_balance(BRIEF_V6) and brief_requires_readability_checks(BRIEF_V6)
+    labels = next(c for c in brief.criteria if c.criterion_id == "label_association")
+    (gate,) = [m for m in labels.measurements if m.check_id == "field_nearest_owner"]
+    assert gate.threshold == 0
+    assert f"{MINIMUM_FIELD_OWNER_GAP_NM / 1e6:.2f} mm" in gate.unit
+
+
+def test_v6_brief_schema_matches_typed_contract():
+    schema = json.loads(SCHEMA_V6.read_text())
+    expected = SchematicReviewBriefV6.model_json_schema()
+    expected["$schema"] = "https://json-schema.org/draft/2020-12/schema"
+    expected["$id"] = "https://ai-kicad-designer.local/schemas/schematic-review-brief.v6.json"
+    assert schema == expected
+
+
+def test_v6_brief_requires_field_nearest_owner():
+    brief = json.loads(BRIEF_V6.read_text())
+    item = next(c for c in brief["criteria"] if c["criterion_id"] == "label_association")
+    item["measurements"] = [
+        m for m in item["measurements"] if m["check_id"] != "field_nearest_owner"
+    ]
+    with pytest.raises(ValueError, match="nearest-owner"):
+        SchematicReviewBriefV6.model_validate(brief)
+
+
+def test_field_ownership_requires_page_balance():
+    from ai_kicad.pivot.schematic_review_native import NativeSchematicEngine
+
+    design = json.loads((ROOT / "fixtures/m2b/led_series.json").read_text())
+    with pytest.raises(ValueError, match="page-balance"):
+        NativeSchematicEngine(
+            design,
+            Path("/unused/AppRun"),
+            power_symbol_rails=True,
+            readability_checks=True,
+            field_ownership=True,
+        )

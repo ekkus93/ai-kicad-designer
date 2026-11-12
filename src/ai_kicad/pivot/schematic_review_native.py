@@ -64,6 +64,7 @@ from .power_symbols import (
 from .readability_checks import (
     FRAME,
     content_extent,
+    fields_nearer_another_part,
     page_balance_witnesses,
     page_offset,
     placement_fits,
@@ -1537,6 +1538,7 @@ class NativeSchematicEngine:
         power_symbol_rails: bool = False,
         readability_checks: bool = False,
         page_balance: bool = False,
+        field_ownership: bool = False,
     ):
         self.resolved = assets()
         self.design = validate(design, self.resolved)
@@ -1554,6 +1556,10 @@ class NativeSchematicEngine:
         if page_balance and not readability_checks:
             raise ValueError("page balance requires the brief v4+ readability checks")
         self.page_balance = page_balance
+        # Brief v6: visible reference/value text must not read as another part's.
+        if field_ownership and not page_balance:
+            raise ValueError("field ownership requires the brief v5+ page-balance gate")
+        self.field_ownership = field_ownership
         self.power_symbols = power_symbol_definitions() if power_symbol_rails else {}
         self.environment = dict(os.environ, LC_ALL="C", TZ="UTC")
         self.renderer = shutil.which("rsvg-convert")
@@ -1850,6 +1856,8 @@ class NativeSchematicEngine:
             readability["power_symbol_direction"] = power_symbols_against_convention(drawn)
             if getattr(self, "page_balance", False):
                 readability["page_balance"] = page_balance_witnesses(drawn)
+            if getattr(self, "field_ownership", False):
+                readability["field_nearest_owner"] = fields_nearer_another_part(drawn)
             messages = {
                 "bodyless_unit_clearance": "wires run through a bodyless unit's pin-name column",
                 "rail_route_detour": "rail wiring detours beyond 1.15x and 7.62 mm of the "
@@ -1858,6 +1866,8 @@ class NativeSchematicEngine:
                 "(supply arrow down or ground glyph up)",
                 "page_balance": "the drawing is outside the usable frame or more than 0.25 of "
                 "the half-frame from the page centre",
+                "field_nearest_owner": "reference/value text is more than 5.08 mm from its own "
+                "part and nearer another part",
             }
             for name, witnesses in readability.items():
                 checks[name] = "FAIL" if witnesses else "PASS"

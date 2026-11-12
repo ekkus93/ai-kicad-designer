@@ -137,11 +137,26 @@ class SchematicReviewBriefV5(SchematicReviewBriefV4):
         return self
 
 
+class SchematicReviewBriefV6(SchematicReviewBriefV5):
+    """Brief v5 plus a gate on reference/value text that reads as another part's."""
+
+    schema_version: Literal["schematic-review-brief.v6"]
+    brief_id: Literal["owner-readability.v6"]
+
+    @model_validator(mode="after")
+    def require_field_ownership_gate(self) -> SchematicReviewBriefV6:
+        labels = next(item for item in self.criteria if item.criterion_id == "label_association")
+        if "field_nearest_owner" not in {m.check_id for m in labels.measurements}:
+            raise ValueError("v6 label association requires the field nearest-owner check")
+        return self
+
+
 BRIEF_MODELS = {
     "schematic-review-brief.v2": SchematicReviewBriefV2,
     "schematic-review-brief.v3": SchematicReviewBriefV3,
     "schematic-review-brief.v4": SchematicReviewBriefV4,
     "schematic-review-brief.v5": SchematicReviewBriefV5,
+    "schematic-review-brief.v6": SchematicReviewBriefV6,
 }
 ReviewBrief = (
     SchematicReviewBrief
@@ -149,6 +164,7 @@ ReviewBrief = (
     | SchematicReviewBriefV3
     | SchematicReviewBriefV4
     | SchematicReviewBriefV5
+    | SchematicReviewBriefV6
 )
 
 
@@ -178,6 +194,13 @@ def brief_requires_page_balance(path: Path | None) -> bool:
     if path is None or path.suffix.lower() != ".json":
         return False
     return isinstance(load_review_brief(path), SchematicReviewBriefV5)
+
+
+def brief_requires_field_ownership(path: Path | None) -> bool:
+    """Whether the versioned brief gates text that reads as another part's (v6)."""
+    if path is None or path.suffix.lower() != ".json":
+        return False
+    return isinstance(load_review_brief(path), SchematicReviewBriefV6)
 
 
 def format_review_brief(brief: ReviewBrief) -> str:

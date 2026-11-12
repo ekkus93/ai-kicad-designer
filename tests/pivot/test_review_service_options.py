@@ -39,3 +39,15 @@ def test_v4_brief_turns_on_readability_checks():
     )
     assert v4.power_symbol_rails and v4.readability_checks
     assert v3.power_symbol_rails and not v3.readability_checks
+
+
+def test_v6_brief_turns_on_field_ownership():
+    root = Path(__file__).resolve().parents[2] / "fixtures/pivot"
+    v6 = NativeSchematicReviewService(
+        Path("/unused/AppRun"), "model", review_brief=root / "schematic_review_brief_v6.json"
+    )
+    v5 = NativeSchematicReviewService(
+        Path("/unused/AppRun"), "model", review_brief=root / "schematic_review_brief_v5.json"
+    )
+    assert v6.page_balance and v6.field_ownership
+    assert v5.page_balance and not v5.field_ownership

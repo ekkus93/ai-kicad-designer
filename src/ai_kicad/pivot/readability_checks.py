@@ -7,6 +7,9 @@ passed every brief-v3 check and the model review
 * rail wiring that detours far beyond the shortest route joining its terminals;
 * power symbols drawn against convention (supply arrow down, ground glyph up).
 
+Brief v5 adds page balance, and brief v6 adds reference/value text that sits nearer
+another part than its own (``fields_nearer_another_part``).
+
 Wires through a bodyless unit's pin-name column are measured by
 ``schematic_review_native.wires_through_bodyless_units``.
 """
@@ -222,4 +225,83 @@ def page_balance_witnesses(tree: list) -> list[dict]:
                 "limit": MAXIMUM_PAGE_OFFSET,
             }
         )
+    return witnesses
+
+
+# A visible reference or value fails when another part's drawing is nearer to it than its
+# own unit's drawing and it is more than four drafting pitches from its own drawing. The
+# accepted drawings' nearest-other cases sit 3.72 mm from their own part; the historical
+# R1/R2 text measured 5.34-8.04 mm and led_series's detached value 6.93 mm (owner choice
+# 2026-11-12). Units drawn without a body, such as U1C, are exempt: their label stays
+# beside the pin column by owner decision and has no body to sit against.
+MINIMUM_FIELD_OWNER_GAP_NM = 5_080_000
+
+
+def _gap(first: tuple[int, int, int, int], second: tuple[int, int, int, int]) -> float:
+    dx = max(0, second[0] - first[2], first[0] - second[2])
+    dy = max(0, second[1] - first[3], first[1] - second[3])
+    return (dx * dx + dy * dy) ** 0.5
+
+
+def fields_nearer_another_part(tree: list) -> list[dict]:
+    """Visible reference/value text that reads as belonging to a different part."""
+    from ai_kicad.m2_text_layout import property_page_angle, text_extents
+
+    from .schematic_review_native import _drawn_boxes
+
+    head = [tree[0], one(tree, "lib_symbols")]
+    placed = []
+    for symbol in children(tree, "symbol"):
+        properties = {prop[1]: prop for prop in children(symbol, "property")}
+        reference = properties["Reference"][2]
+        if reference.startswith("#"):
+            continue
+        bodyless: list = []
+        boxes = [box for _owner, box in _drawn_boxes(head + [symbol], bodyless)[0]]
+        angle = int(float(one(symbol, "at")[3]))
+        fields = []
+        for name in ("Reference", "Value"):
+            prop = properties.get(name)
+            if prop is None or children(prop, "hide"):
+                continue
+            effects = children(prop, "effects")
+            if effects and (children(effects[0], "hide") or "hide" in effects[0]):
+                continue
+            size = one(one(effects[0], "font"), "size") if effects else None
+            scale = max(_nm(size[1]), _nm(size[2])) / 1_270_000 if size else 1.0
+            at = one(prop, "at")
+            width, height = text_extents(prop[2], property_page_angle(angle, int(float(at[3]))))
+            half_width, half_height = round(width * scale / 2), round(height * scale / 2)
+            x, y = _nm(at[1]), _nm(at[2])
+            fields.append(
+                (name, prop[2], (x - half_width, y - half_height, x + half_width, y + half_height))
+            )
+        placed.append((reference, int(one(symbol, "unit")[1]), boxes, bool(bodyless), fields))
+    witnesses = []
+    for reference, unit, boxes, bodyless, fields in placed:
+        if bodyless or not boxes:
+            continue
+        for name, text, box in fields:
+            own = min(_gap(box, other) for other in boxes)
+            nearest = min(
+                (
+                    (_gap(box, other), other_reference, other_unit)
+                    for other_reference, other_unit, other_boxes, _, _ in placed
+                    if (other_reference, other_unit) != (reference, unit)
+                    for other in other_boxes
+                ),
+                default=None,
+            )
+            if nearest and nearest[0] < own and own > MINIMUM_FIELD_OWNER_GAP_NM:
+                witnesses.append(
+                    {
+                        "reference": reference,
+                        "unit": unit,
+                        "field": name,
+                        "text": text,
+                        "own_part_gap_mm": round(own / 1e6, 2),
+                        "nearest_part": f"{nearest[1]}:{nearest[2]}",
+                        "nearest_part_gap_mm": round(nearest[0] / 1e6, 2),
+                    }
+                )
     return witnesses

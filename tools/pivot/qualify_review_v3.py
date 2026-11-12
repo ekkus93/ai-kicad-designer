@@ -35,6 +35,7 @@ from ai_kicad.pivot.schematic_review import (
 )
 from ai_kicad.pivot.schematic_review_brief import (
     brief_allows_power_symbol_rails,
+    brief_requires_field_ownership,
     brief_requires_page_balance,
     brief_requires_readability_checks,
     resolve_review_brief,
@@ -209,6 +210,7 @@ def prepare_cases(
     readability: bool,
     page_balance: bool,
     root: Path,
+    field_ownership: bool = False,
 ) -> list[dict]:
     cases = []
 
@@ -225,6 +227,7 @@ def prepare_cases(
             power_symbol_rails=power_rails,
             readability_checks=readability,
             page_balance=page_balance,
+            field_ownership=field_ownership,
         )
         schematic = engine.initial(directory)
         assessment = engine.assess(schematic, directory)
@@ -354,12 +357,15 @@ def main() -> None:
     power_rails = brief_allows_power_symbol_rails(args.review_brief)
     readability = brief_requires_readability_checks(args.review_brief)
     page_balance = brief_requires_page_balance(args.review_brief)
+    field_ownership = brief_requires_field_ownership(args.review_brief)
     if args.scratch_dir:
         args.scratch_dir.mkdir(parents=True, exist_ok=False)
         root = args.scratch_dir.resolve()
     else:
         root = create_experiment_dir(ROOT, args.experiment_id)
-    cases = prepare_cases(args, max_field_distance, power_rails, readability, page_balance, root)
+    cases = prepare_cases(
+        args, max_field_distance, power_rails, readability, page_balance, root, field_ownership
+    )
     # A prepare-only run records the independent check results without any model review.
     reviewer = None
     if not args.prepare_only:
