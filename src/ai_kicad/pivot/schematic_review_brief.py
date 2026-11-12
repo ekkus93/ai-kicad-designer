@@ -121,13 +121,34 @@ class SchematicReviewBriefV4(SchematicReviewBriefV3):
         return self
 
 
+class SchematicReviewBriefV5(SchematicReviewBriefV4):
+    """Brief v4 with a centred page: page balance replaces the unmeasured utilization target."""
+
+    schema_version: Literal["schematic-review-brief.v5"]
+    brief_id: Literal["owner-readability.v5"]
+
+    @model_validator(mode="after")
+    def require_page_balance_gate(self) -> SchematicReviewBriefV5:
+        composition = next(
+            item for item in self.criteria if item.criterion_id == "page_composition"
+        )
+        if "page_balance" not in {measurement.check_id for measurement in composition.measurements}:
+            raise ValueError("v5 page composition requires the page-balance check")
+        return self
+
+
 BRIEF_MODELS = {
     "schematic-review-brief.v2": SchematicReviewBriefV2,
     "schematic-review-brief.v3": SchematicReviewBriefV3,
     "schematic-review-brief.v4": SchematicReviewBriefV4,
+    "schematic-review-brief.v5": SchematicReviewBriefV5,
 }
 ReviewBrief = (
-    SchematicReviewBrief | SchematicReviewBriefV2 | SchematicReviewBriefV3 | SchematicReviewBriefV4
+    SchematicReviewBrief
+    | SchematicReviewBriefV2
+    | SchematicReviewBriefV3
+    | SchematicReviewBriefV4
+    | SchematicReviewBriefV5
 )
 
 
@@ -150,6 +171,13 @@ def brief_requires_readability_checks(path: Path | None) -> bool:
     if path is None or path.suffix.lower() != ".json":
         return False
     return isinstance(load_review_brief(path), SchematicReviewBriefV4)
+
+
+def brief_requires_page_balance(path: Path | None) -> bool:
+    """Whether the versioned brief centres the drawing and gates page balance (v5)."""
+    if path is None or path.suffix.lower() != ".json":
+        return False
+    return isinstance(load_review_brief(path), SchematicReviewBriefV5)
 
 
 def format_review_brief(brief: ReviewBrief) -> str:

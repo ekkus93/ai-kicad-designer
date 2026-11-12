@@ -61,7 +61,15 @@ from .power_symbols import (
     power_symbols,
     rail_presentation,
 )
-from .readability_checks import power_symbols_against_convention, rail_route_detours
+from .readability_checks import (
+    FRAME,
+    content_extent,
+    page_balance_witnesses,
+    page_offset,
+    placement_fits,
+    power_symbols_against_convention,
+    rail_route_detours,
+)
 from .schematic_fields import measure_field_association, measure_field_locality
 
 
@@ -215,6 +223,69 @@ def resolve_wire_path_points(
                 "either named terminal"
             )
     return route
+
+
+PAGE_CENTRING_REACH_STEPS = 60
+
+
+def centre_on_page_text(text: str) -> tuple[str, dict]:
+    """Translate the whole drawing, by whole grid steps, to the centre of the usable frame.
+
+    Offsets are tried nearest the exact centring first; the first whose drawing stays
+    inside the frame and clear of the title block is used. The drawing is left where it
+    is when no offset within PAGE_CENTRING_REACH_STEPS fits.
+    """
+    step = 1_270_000
+    extent = content_extent(parse(text))
+    left, top, right, bottom = FRAME
+    ideal = (
+        ((left + right) - (extent[0] + extent[2])) / 2 / step,
+        ((top + bottom) - (extent[1] + extent[3])) / 2 / step,
+    )
+    base = (round(ideal[0]), round(ideal[1]))
+    candidates = sorted(
+        (
+            (base[0] + i, base[1] + j)
+            for i in range(-PAGE_CENTRING_REACH_STEPS, PAGE_CENTRING_REACH_STEPS + 1)
+            for j in range(-PAGE_CENTRING_REACH_STEPS, PAGE_CENTRING_REACH_STEPS + 1)
+        ),
+        key=lambda move: (
+            max(
+                abs(axis)
+                for axis in page_offset(
+                    (
+                        extent[0] + move[0] * step,
+                        extent[1] + move[1] * step,
+                        extent[2] + move[0] * step,
+                        extent[3] + move[1] * step,
+                    )
+                )
+            ),
+            abs(move[0]) + abs(move[1]),
+            move,
+        ),
+    )
+    record = {
+        "before_offset_fraction": [round(value, 3) for value in page_offset(extent)],
+        "extent_mm": [round(value / 1e6, 2) for value in extent],
+    }
+    for dx, dy in candidates:
+        moved = (
+            extent[0] + dx * step,
+            extent[1] + dy * step,
+            extent[2] + dx * step,
+            extent[3] + dy * step,
+        )
+        if not placement_fits(moved):
+            continue
+        record["after_offset_fraction"] = [round(value, 3) for value in page_offset(moved)]
+        record["dx_mm"], record["dy_mm"] = round(dx * 1.27, 2), round(dy * 1.27, 2)
+        if dx == 0 and dy == 0:
+            return text, record
+        action = TranslateSheet(operation="translate_sheet", dx_mm=dx * 1.27, dy_mm=dy * 1.27)
+        return edit_schematic_text(text, [action]), record
+    record["refused"] = "no grid offset keeps the drawing inside the frame"
+    return text, record
 
 
 def _translate_block(block: str, dx_mm: float, dy_mm: float) -> str:
@@ -1465,6 +1536,7 @@ class NativeSchematicEngine:
         maximum_field_distance_mm: float = 25.4,
         power_symbol_rails: bool = False,
         readability_checks: bool = False,
+        page_balance: bool = False,
     ):
         self.resolved = assets()
         self.design = validate(design, self.resolved)
@@ -1478,6 +1550,10 @@ class NativeSchematicEngine:
         if readability_checks and not power_symbol_rails:
             raise ValueError("readability checks require the brief v3+ rail policy")
         self.readability_checks = readability_checks
+        # Brief v5: the compiler output is centred on the page, and balance is a gate.
+        if page_balance and not readability_checks:
+            raise ValueError("page balance requires the brief v4+ readability checks")
+        self.page_balance = page_balance
         self.power_symbols = power_symbol_definitions() if power_symbol_rails else {}
         self.environment = dict(os.environ, LC_ALL="C", TZ="UTC")
         self.renderer = shutil.which("rsvg-convert")
@@ -1542,6 +1618,11 @@ class NativeSchematicEngine:
         text, moves = tighten_vertical_fields_text(schematic.read_text())
         schematic.write_text(text)
         presentation["vertical_field_moves"] = moves
+        if getattr(self, "page_balance", False):
+            # Last, once every part, wire and field has its final place.
+            text, centring = centre_on_page_text(schematic.read_text())
+            schematic.write_text(text)
+            presentation["page_centring"] = centring
         write_json(directory / "presentation.json", presentation)
         return schematic
 
@@ -1767,12 +1848,16 @@ class NativeSchematicEngine:
                 else [{"reason": "no observed netlist to identify rail terminals"}]
             )
             readability["power_symbol_direction"] = power_symbols_against_convention(drawn)
+            if getattr(self, "page_balance", False):
+                readability["page_balance"] = page_balance_witnesses(drawn)
             messages = {
                 "bodyless_unit_clearance": "wires run through a bodyless unit's pin-name column",
                 "rail_route_detour": "rail wiring detours beyond 1.15x and 7.62 mm of the "
                 "shortest route joining its terminals",
                 "power_symbol_direction": "power symbols point against convention "
                 "(supply arrow down or ground glyph up)",
+                "page_balance": "the drawing is outside the usable frame or more than 0.25 of "
+                "the half-frame from the page centre",
             }
             for name, witnesses in readability.items():
                 checks[name] = "FAIL" if witnesses else "PASS"

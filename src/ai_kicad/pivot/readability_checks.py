@@ -151,3 +151,75 @@ def power_symbols_against_convention(tree: list) -> list[dict]:
                 }
             )
     return witnesses
+
+
+# Usable A4 frame and title block, as the protected observer defines them (nm).
+FRAME = (20_320_000, 25_400_000, 276_680_000, 184_600_000)
+TITLE_BLOCK = (177_000_000, 165_900_000, 285_100_000, 198_100_000)
+# Brief v5: the drawing's centre may sit at most this fraction of the frame's half-width
+# (half-height) from the frame centre (owner choice 2026-11-12: centre the drawing).
+MAXIMUM_PAGE_OFFSET = 0.25
+
+
+def content_extent(tree: list) -> tuple[int, int, int, int]:
+    """Box around every wire, symbol body/pin stub and visible field or label text."""
+    from .schematic_review_native import _drawn_boxes
+
+    symbol_boxes, text_boxes = _drawn_boxes(tree)
+    xs, ys = [], []
+    for _owner, (left, top, right, bottom) in symbol_boxes + text_boxes:
+        xs += [left, right]
+        ys += [top, bottom]
+    for start, end in _segments(tree):
+        xs += [start[0], end[0]]
+        ys += [start[1], end[1]]
+    return min(xs), min(ys), max(xs), max(ys)
+
+
+def _overlap(first: tuple[int, int, int, int], second: tuple[int, int, int, int]) -> bool:
+    return (
+        first[0] < second[2]
+        and second[0] < first[2]
+        and first[1] < second[3]
+        and second[1] < first[3]
+    )
+
+
+def page_offset(extent: tuple[int, int, int, int]) -> tuple[float, float]:
+    """Centre of ``extent`` from the frame centre, in half-widths and half-heights."""
+    left, top, right, bottom = FRAME
+    return (
+        ((extent[0] + extent[2]) / 2 - (left + right) / 2) / ((right - left) / 2),
+        ((extent[1] + extent[3]) / 2 - (top + bottom) / 2) / ((bottom - top) / 2),
+    )
+
+
+def placement_fits(extent: tuple[int, int, int, int]) -> bool:
+    """Whether a drawing's extent lies inside the usable frame and clear of the title block."""
+    left, top, right, bottom = FRAME
+    inside = extent[0] >= left and extent[1] >= top and extent[2] <= right and extent[3] <= bottom
+    return inside and not _overlap(extent, TITLE_BLOCK)
+
+
+def page_balance_witnesses(tree: list) -> list[dict]:
+    """A drawing outside the frame, over the title block, or off the frame centre."""
+    extent = content_extent(tree)
+    offset = page_offset(extent)
+    witnesses = []
+    if not placement_fits(extent):
+        witnesses.append(
+            {
+                "reason": "drawing extends outside the usable frame or over the title block",
+                "extent_mm": [round(value / 1e6, 2) for value in extent],
+                "frame_mm": [value / 1e6 for value in FRAME],
+            }
+        )
+    if max(abs(offset[0]), abs(offset[1])) > MAXIMUM_PAGE_OFFSET:
+        witnesses.append(
+            {
+                "reason": "drawing is off the page centre",
+                "offset_fraction": [round(offset[0], 3), round(offset[1], 3)],
+                "limit": MAXIMUM_PAGE_OFFSET,
+            }
+        )
+    return witnesses

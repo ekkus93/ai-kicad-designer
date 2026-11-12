@@ -8,6 +8,7 @@ from pathlib import Path
 from .schematic_review import OllamaSchematicReviewer, run_schematic_review
 from .schematic_review_brief import (
     brief_allows_power_symbol_rails,
+    brief_requires_page_balance,
     brief_requires_readability_checks,
     resolve_review_brief,
 )
@@ -38,6 +39,7 @@ class NativeSchematicReviewService:
         self.max_field_distance_mm, self.brief_text = resolve_review_brief(review_brief, None)
         self.power_symbol_rails = brief_allows_power_symbol_rails(review_brief)
         self.readability_checks = brief_requires_readability_checks(review_brief)
+        self.page_balance = brief_requires_page_balance(review_brief)
         # The loop checks its wall-clock budget between operations; one KiCad or model call
         # may still be running when it expires.
         self.timeout_seconds = max_seconds + 600
@@ -54,6 +56,7 @@ class NativeSchematicReviewService:
             maximum_field_distance_mm=self.max_field_distance_mm,
             power_symbol_rails=self.power_symbol_rails,
             readability_checks=self.readability_checks,
+            page_balance=self.page_balance,
         )
         reviewer = OllamaSchematicReviewer(
             self.model,
