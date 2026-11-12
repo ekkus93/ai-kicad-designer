@@ -6,7 +6,11 @@ import json
 from pathlib import Path
 
 from .schematic_review import OllamaSchematicReviewer, run_schematic_review
-from .schematic_review_brief import brief_allows_power_symbol_rails, resolve_review_brief
+from .schematic_review_brief import (
+    brief_allows_power_symbol_rails,
+    brief_requires_readability_checks,
+    resolve_review_brief,
+)
 from .schematic_review_native import NativeSchematicEngine
 
 
@@ -33,6 +37,7 @@ class NativeSchematicReviewService:
         self.model_timeout_seconds = model_timeout_seconds
         self.max_field_distance_mm, self.brief_text = resolve_review_brief(review_brief, None)
         self.power_symbol_rails = brief_allows_power_symbol_rails(review_brief)
+        self.readability_checks = brief_requires_readability_checks(review_brief)
         # The loop checks its wall-clock budget between operations; one KiCad or model call
         # may still be running when it expires.
         self.timeout_seconds = max_seconds + 600
@@ -48,6 +53,7 @@ class NativeSchematicReviewService:
             self.launcher,
             maximum_field_distance_mm=self.max_field_distance_mm,
             power_symbol_rails=self.power_symbol_rails,
+            readability_checks=self.readability_checks,
         )
         reviewer = OllamaSchematicReviewer(
             self.model,

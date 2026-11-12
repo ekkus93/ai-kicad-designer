@@ -61,6 +61,7 @@ from .power_symbols import (
     power_symbols,
     rail_presentation,
 )
+from .readability_checks import power_symbols_against_convention, rail_route_detours
 from .schematic_fields import measure_field_association, measure_field_locality
 
 
@@ -1463,6 +1464,7 @@ class NativeSchematicEngine:
         symbol_table: Path | None = None,
         maximum_field_distance_mm: float = 25.4,
         power_symbol_rails: bool = False,
+        readability_checks: bool = False,
     ):
         self.resolved = assets()
         self.design = validate(design, self.resolved)
@@ -1472,6 +1474,10 @@ class NativeSchematicEngine:
         self.maximum_field_distance_mm = maximum_field_distance_mm
         # Brief v3: a rail may be presented by wires or by matching global power symbols.
         self.power_symbol_rails = power_symbol_rails
+        # Brief v4: measured readability gates for defects the v3 checks and review missed.
+        if readability_checks and not power_symbol_rails:
+            raise ValueError("readability checks require the brief v3+ rail policy")
+        self.readability_checks = readability_checks
         self.power_symbols = power_symbol_definitions() if power_symbol_rails else {}
         self.environment = dict(os.environ, LC_ALL="C", TZ="UTC")
         self.renderer = shutil.which("rsvg-convert")
@@ -1746,6 +1752,32 @@ class NativeSchematicEngine:
             checks["power_symbol_clearance"] = "FAIL" if collisions else "PASS"
             if collisions:
                 diagnostics.append(f"power symbols touch other drawing items: {collisions}")
+        readability = {}
+        if getattr(self, "readability_checks", False):
+            drawn = parse(schematic.read_text())
+            readability["bodyless_unit_clearance"] = wires_through_bodyless_units(drawn)
+            # Without an observed netlist the rail terminals are unknown, so the check fails.
+            readability["rail_route_detour"] = (
+                rail_route_detours(
+                    drawn,
+                    terminal_inventory_for_design(self.design, observed),
+                    sorted({item["net"] for item in self.design["power_assertions"]}),
+                )
+                if observed
+                else [{"reason": "no observed netlist to identify rail terminals"}]
+            )
+            readability["power_symbol_direction"] = power_symbols_against_convention(drawn)
+            messages = {
+                "bodyless_unit_clearance": "wires run through a bodyless unit's pin-name column",
+                "rail_route_detour": "rail wiring detours beyond 1.15x and 7.62 mm of the "
+                "shortest route joining its terminals",
+                "power_symbol_direction": "power symbols point against convention "
+                "(supply arrow down or ground glyph up)",
+            }
+            for name, witnesses in readability.items():
+                checks[name] = "FAIL" if witnesses else "PASS"
+                if witnesses:
+                    diagnostics.append(f"{messages[name]}: {witnesses}")
         # Field checks concern component fields; power-symbol text is checked above.
         tree = parse(inspected.read_text())
         field_collisions = field_collision_witnesses(tree)
@@ -1795,6 +1827,7 @@ class NativeSchematicEngine:
             "field_collision_witnesses": field_collisions,
             "field_locality": locality,
             "field_owner_association": association,
+            "readability_witnesses": readability,
             "terminal_inventory": terminal_inventory,
             "intended_circuit": self.design,
             "toolchain": self.toolchain,

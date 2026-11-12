@@ -35,6 +35,7 @@ from ai_kicad.pivot.schematic_review import (
 )
 from ai_kicad.pivot.schematic_review_brief import (
     brief_allows_power_symbol_rails,
+    brief_requires_readability_checks,
     resolve_review_brief,
 )
 from ai_kicad.pivot.schematic_review_native import NativeSchematicEngine, edit_schematic_text
@@ -200,7 +201,9 @@ def accepted_schematic(folder: Path) -> Path:
     return schematic
 
 
-def prepare_cases(args, max_field_distance: float, power_rails: bool, root: Path) -> list[dict]:
+def prepare_cases(
+    args, max_field_distance: float, power_rails: bool, readability: bool, root: Path
+) -> list[dict]:
     cases = []
 
     def add(name, design_name, group, source, expected, **extra) -> None:
@@ -214,6 +217,7 @@ def prepare_cases(args, max_field_distance: float, power_rails: bool, root: Path
             source=source,
             maximum_field_distance_mm=max_field_distance,
             power_symbol_rails=power_rails,
+            readability_checks=readability,
         )
         schematic = engine.initial(directory)
         assessment = engine.assess(schematic, directory)
@@ -341,23 +345,25 @@ def main() -> None:
     args.review_brief = args.review_brief.resolve()
     max_field_distance, brief_text = resolve_review_brief(args.review_brief, None)
     power_rails = brief_allows_power_symbol_rails(args.review_brief)
+    readability = brief_requires_readability_checks(args.review_brief)
     if args.scratch_dir:
         args.scratch_dir.mkdir(parents=True, exist_ok=False)
         root = args.scratch_dir.resolve()
     else:
         root = create_experiment_dir(ROOT, args.experiment_id)
-    cases = prepare_cases(args, max_field_distance, power_rails, root)
-    if args.prepare_only:
-        return
-    reviewer = OllamaSchematicReviewer(
-        args.model,
-        context_tokens=args.context_tokens,
-        output_tokens=args.output_tokens,
-        timeout_seconds=args.model_timeout,
-        review_brief=brief_text,
-    )
+    cases = prepare_cases(args, max_field_distance, power_rails, readability, root)
+    # A prepare-only run records the independent check results without any model review.
+    reviewer = None
+    if not args.prepare_only:
+        reviewer = OllamaSchematicReviewer(
+            args.model,
+            context_tokens=args.context_tokens,
+            output_tokens=args.output_tokens,
+            timeout_seconds=args.model_timeout,
+            review_brief=brief_text,
+        )
     rows = []
-    for seed in args.seeds:
+    for seed in [] if args.prepare_only else args.seeds:
         reviewer.options["seed"] = seed
         for mode in args.modes:
             for case in cases:
@@ -392,8 +398,8 @@ def main() -> None:
             ["git", "rev-parse", "HEAD"], cwd=ROOT, capture_output=True, text=True, check=True
         ).stdout.strip(),
         "harness_sha256": file_hash(Path(__file__)),
-        "reviewer": reviewer.identity,
-        "reviewer_options": reviewer.options,
+        "reviewer": reviewer.identity if reviewer else "NOT_RUN",
+        "reviewer_options": reviewer.options if reviewer else None,
         "review_brief": str(args.review_brief.relative_to(ROOT)),
         "review_brief_sha256": file_hash(args.review_brief),
         "known_good_run": KNOWN_GOOD_RUN,
