@@ -253,6 +253,12 @@ These features are **planned**, not prerequisites for P4 except when a specific 
 
     The owner asked for inverting_gain's "VMINUS" text, about 1 mm above C2's "C2 / 100n", to be moved clear. A power symbol's glyph and name now keep one grid step clear of part references and values, and of differently drawn rail names. Field tightening keeps the same distance. Evidence is in `rail_name_part_text_clearance_2026-11-12_run1`: all 15 designs pass every independent check. Eight changed: inverting_gain (VMINUS clear of C2's text), reference_555_led_flasher_v8 and timer_astable (VCC arrows no longer crowd part or rail text), and five op-amp designs where U1C's text moved up 0.635 mm. No model review of the new drawings has been run yet.
 
+    Full corpus `review_loop_corpus_v3_2026-11-12_qwen35_256k_run1` at `ed9ed9df` (same code as `8d2f86ea`; only docs differ) accepted 15/15 designs (`ACCEPTED_FOR_REVIEW`) with `qwen35-256k:latest` (262144-token context), and every independent check passed on every review. This is the first run on a new host, with KiCad 10.0.6 re-extracted to `/tmp/AppDir` and all six locked file hashes matching. Apart from UUIDs, the eight designs changed by `8d2f86ea` match `rail_name_part_text_clearance_2026-11-12_run1`, and the other seven match run5. Twelve designs were accepted on their first review.
+    - inverting_gain took two reviews. The first again claimed the rails rely on text labels only and asked for `connect_rail`, which the editor rejected.
+    - dual_buffer and dual_rail_reference took three reviews. Each first reply started a valid review, then looped on a key (`"action_type_1a_1b_1c_…_21w`) until it hit the 2048-token output limit (`num_predict`; the context was not the limit, as the prompt was about 12–13k tokens). The loop rejected it as over the output limit. Each second review made the false `connect_rail` claim, which the editor rejected, and each third review accepted.
+    - rc_to_buffer and sallen_key were accepted on their first review this time.
+    - Every accepted drawing is unchanged by the review. The false rail claim appeared on three drawings, dual_rail_reference for the first time.
+
     The independent readability assessment and human electrical review are still PENDING, so P6-011f stays unchecked.
 
 
