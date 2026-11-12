@@ -276,6 +276,18 @@ def _collisions(text: str, tree: list, item: dict) -> list[str]:
     for owner, (left, top, right, bottom) in columns:
         if _overlaps(boxes[1], (left - PITCH, top, right + PITCH, bottom)):
             hits.append(f"{owner} pin names")
+    # The glyph and its name also keep a grid step clear of a part's reference and value
+    # and of another rail name, so the two do not run together ("REF -> VCC"). Net labels, and rail names
+    # drawn the same way side by side (as on a connector's adjacent pins), may sit closer.
+    angles = {other["reference"]: other["angle"] for other in power_symbols(tree)}
+    for owner, (left, top, right, bottom) in text_boxes:
+        if owner == item.get("reference") or owner.startswith(("#FLG", "label-")):
+            continue
+        if angles.get(owner, item["angle"] + 1) == item["angle"]:
+            continue
+        padded = (left - PITCH, top - PITCH, right + PITCH, bottom + PITCH)
+        if any(_overlaps(box, padded) for box in boxes):
+            hits.append(f"{owner} text")
     tip = transform_library_point(*GLYPH_TIPS[item["lib_id"]], item["angle"])
     glyph_direction = (_sign(tip[0]), _sign(tip[1]))
     for first, second in _wire_segments(tree):

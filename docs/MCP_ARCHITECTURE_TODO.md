@@ -251,6 +251,8 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - rc_to_buffer took three reviews. The first asked for `move_field` to put U1C's reference exactly where it already was; the editor said it made no change. The second repeated the `connect_rail` request, which the editor rejected. The third accepted.
     - Every accepted drawing is unchanged by the review. The false rail claim now appears on four of the five symbol-heavy op-amp drawings (run4: three).
 
+    The owner asked for inverting_gain's "VMINUS" text, about 1 mm above C2's "C2 / 100n", to be moved clear. A power symbol's glyph and name now keep one grid step clear of part references and values, and of differently drawn rail names. Field tightening keeps the same distance. Evidence is in `rail_name_part_text_clearance_2026-11-12_run1`: all 15 designs pass every independent check. Eight changed: inverting_gain (VMINUS clear of C2's text), reference_555_led_flasher_v8 and timer_astable (VCC arrows no longer crowd part or rail text), and five op-amp designs where U1C's text moved up 0.635 mm. No model review of the new drawings has been run yet.
+
     The independent readability assessment and human electrical review are still PENDING, so P6-011f stays unchecked.
 
 

@@ -196,3 +196,22 @@ def test_rail_name_keeps_a_grid_step_clear_of_pin_names():
     ]
     assert vminus["angle"] == 0
     assert "U1 pin names" in _collisions(text, tree, vminus)
+
+
+def test_rail_name_keeps_a_grid_step_clear_of_part_text():
+    """In run5, "VMINUS" at (87.63, 85.09) sits about 1 mm above C2's "C2 / 100n"; J1's
+    VPLUS and VMINUS names, stacked on adjacent pins and drawn the same way, may stay."""
+    from ai_kicad.pivot.power_symbols import _collisions, power_symbols
+
+    path = next(
+        (
+            ROOT
+            / "fixtures/pivot/experiments/review_loop_corpus_v3_2026-11-11_qwen35_256k_run5"
+            / "inverting_gain/candidates/000/project"
+        ).glob("*.kicad_sch")
+    )
+    text = path.read_text()
+    tree = parse(text)
+    symbols = {(item["net"], item["point"]): item for item in power_symbols(tree)}
+    assert "C2 text" in _collisions(text, tree, symbols[("VMINUS", (87_630_000, 85_090_000))])
+    assert not _collisions(text, tree, symbols[("VPLUS", (26_670_000, 38_100_000))])

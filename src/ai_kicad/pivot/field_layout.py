@@ -22,9 +22,12 @@ from ai_kicad.sexpr import children, one, parse
 
 from ai_kicad.m2_geometry import label_text_rect
 
+from ai_kicad.m2a_constants import PITCH
+
 from .power_symbols import (
     GLYPH_TIPS,
     _forms,
+    _glyph_boxes,
     _overlaps,
     _pin_number_boxes,
     _wire_segments,
@@ -174,6 +177,13 @@ def _obstacles(text: str, tree: list, part: Part) -> list[Box]:
     boxes += [bounds for _owner, bounds in _pin_number_boxes(text, tree)]
     # The protected observers read each power symbol as a label whose text runs right.
     boxes += [label_text_rect(item["net"], item["point"]) for item in power_symbols(tree)]
+    # A power symbol's rail name keeps a grid step clear of other text (power-symbol
+    # clearance), so part text keeps the same distance from it.
+    for item in power_symbols(tree):
+        left, top, right, bottom = _glyph_boxes(
+            item["lib_id"], item["point"], item["angle"], item["net"], item["value"]
+        )[1]
+        boxes.append((left - PITCH, top - PITCH, right + PITCH, bottom + PITCH))
     boxes += [
         (
             min(first[0], second[0]) - 100_000,
