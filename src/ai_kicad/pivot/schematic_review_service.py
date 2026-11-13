@@ -39,6 +39,7 @@ class NativeSchematicReviewService:
         description_source: bool = False,
         withhold_checks: bool = False,
         with_images: bool = False,
+        max_actions: int = 1,
     ):
         self.launcher = launcher
         self.model = model
@@ -54,6 +55,8 @@ class NativeSchematicReviewService:
         self.withhold_checks = withhold_checks
         # With a text source, also send the PNG renders.
         self.with_images = with_images
+        # Edits per review; above one they are applied and checked one at a time.
+        self.max_actions = max_actions
         self.model_timeout_seconds = model_timeout_seconds
         self.max_field_distance_mm, self.brief_text = resolve_review_brief(review_brief, None)
         self.power_symbol_rails = brief_allows_power_symbol_rails(review_brief)
@@ -95,6 +98,7 @@ class NativeSchematicReviewService:
             description_source=self.description_source,
             withhold_checks=self.withhold_checks,
             with_images=self.with_images,
+            max_actions=self.max_actions,
             **({"review_brief": self.brief_text} if self.brief_text else {}),
         )
         return run_schematic_review(engine, reviewer, output, **self.budgets)

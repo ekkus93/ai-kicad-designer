@@ -491,3 +491,60 @@ def test_svg_with_images_sends_both_the_svg_text_and_the_pngs(tmp_path, monkeypa
     assert "rendered images are attached too" in payload["messages"][0]["content"]
     with pytest.raises(ValueError, match="text source"):
         OllamaSchematicReviewer("vision:test", with_images=True)
+
+
+class BatchReviewer(Reviewer):
+    from ai_kicad.pivot.schematic_review import review_model
+
+    review_model = review_model(4)
+
+
+class RefusingEngine(Engine):
+    """Refuses any edit whose action list holds a translate_sheet."""
+
+    def apply(self, schematic, directory, actions):
+        if any(action.operation == "translate_sheet" for action in actions):
+            raise ValueError("translate refused")
+        return super().apply(schematic, directory, actions)
+
+
+def test_batched_actions_apply_one_at_a_time_and_stop_at_the_first_refusal(tmp_path):
+    move = {"operation": "move_field", "reference": "R1", "unit": 1, "field": "Value"}
+    batch = {
+        "decision": "revise",
+        "issues": ["two labels far away", "page off centre"],
+        "actions": [
+            move | {"x_mm": 10.16, "y_mm": 10.16, "angle": 0},
+            move | {"x_mm": 12.7, "y_mm": 10.16, "angle": 0},
+            {"operation": "translate_sheet", "dx_mm": 2.54, "dy_mm": 0},
+            move | {"x_mm": 15.24, "y_mm": 10.16, "angle": 0},
+        ],
+    }
+    engine = RefusingEngine((True,))
+    reviewer = BatchReviewer([batch, {}])
+    result = run_schematic_review(engine, reviewer, tmp_path / "run")
+    first = result["iterations"][0]
+    assert first["applied_actions"] == [1, 2]
+    assert "action 3 (translate_sheet) refused" in first["stopped"]
+    assert engine.applied == 2
+    assert "Applied actions [1, 2] of 4." in reviewer.inputs[1][2]
+    assert result["status"] == "ACCEPTED_FOR_REVIEW"
+    assert result["accepted_schematic"].endswith("001-1/project/test.kicad_sch")
+
+
+def test_one_action_reviews_still_reject_a_list():
+    from pydantic import ValidationError
+
+    from ai_kicad.pivot.schematic_review import SchematicReview, review_model
+
+    two = {
+        "base_revision": "sha256:" + "0" * 64,
+        "decision": "revise",
+        "issues": [],
+        "actions": [{"operation": "regenerate_schematic"}] * 2,
+        "rationale": "x",
+    }
+    assert review_model(1) is SchematicReview
+    with pytest.raises(ValidationError):
+        SchematicReview.model_validate(two)
+    assert len(review_model(2).model_validate(two).actions) == 2

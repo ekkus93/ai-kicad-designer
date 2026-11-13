@@ -29,7 +29,6 @@ from dataclasses import replace
 from ai_kicad.pivot.schematic_review import (
     OllamaSchematicReviewer,
     SchematicAssessment,
-    SchematicReview,
     file_hash,
     write_json,
 )
@@ -357,6 +356,7 @@ def main() -> None:
     parser.add_argument(
         "--with-images", action="store_true", help="with --svg/--description, also send PNGs"
     )
+    parser.add_argument("--max-actions", type=int, default=1, help="edits per review")
     parser.add_argument(
         "--prepare-only", action="store_true", help="build and assess cases without the model"
     )
@@ -398,6 +398,7 @@ def main() -> None:
             svg_source=args.svg,
             description_source=args.description,
             with_images=args.with_images,
+            max_actions=args.max_actions,
             review_brief=brief_text,
         )
     rows = []
@@ -421,7 +422,9 @@ def main() -> None:
                     "record": str(record.relative_to(root)),
                 }
                 try:
-                    review = SchematicReview.model_validate_json(reviewer.review(sent, "", record))
+                    review = reviewer.review_model.model_validate_json(
+                        reviewer.review(sent, "", record)
+                    )
                     row.update(
                         decision=review.decision,
                         issues=review.issues,

@@ -108,6 +108,23 @@ class SchematicReview(StrictModel):
     rationale: str = Field(min_length=1, max_length=4000)
 
 
+# The most edits one review may request when the loop applies them one at a time.
+MAX_BATCH_ACTIONS = 4
+
+
+class SchematicReviewBatch(SchematicReview):
+    """A review that may request several edits, applied in order and checked after each."""
+
+    actions: list[SchematicAction] = Field(max_length=MAX_BATCH_ACTIONS)
+
+
+def review_model(max_actions: int) -> type[SchematicReview]:
+    """The review schema for ``max_actions`` edits per review (1 or up to the batch limit)."""
+    if not 1 <= max_actions <= MAX_BATCH_ACTIONS:
+        raise ValueError(f"max_actions must be 1..{MAX_BATCH_ACTIONS}")
+    return SchematicReview if max_actions == 1 else SchematicReviewBatch
+
+
 def file_hash(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
@@ -205,6 +222,7 @@ class OllamaSchematicReviewer:
         description_source: bool = False,
         withhold_checks: bool = False,
         with_images: bool = False,
+        max_actions: int = 1,
         review_brief: str = "Inspect readable labels, visible local wiring and page composition.",
     ):
         url = urlparse(endpoint)
@@ -243,6 +261,10 @@ class OllamaSchematicReviewer:
         # With a text source, also send the PNG renders, so the model has both the exact
         # text and positions and the picture.
         self.with_images = with_images
+        # Edits one review may request; above one, the loop applies them in order, checking
+        # after each and stopping at the first that is refused or breaks a passing check.
+        self.max_actions = max_actions
+        self.review_model = review_model(max_actions)
         if with_images and not (svg_source or description_source):
             raise ValueError("images are always sent unless a text source is chosen")
         self.review_brief = review_brief
@@ -264,6 +286,7 @@ class OllamaSchematicReviewer:
             "description_source": description_source,
             "withhold_checks": withhold_checks,
             "with_images": with_images,
+            "max_actions": max_actions,
         }
 
     def _request(self, path: str, payload: dict | None = None) -> dict:
@@ -352,8 +375,16 @@ class OllamaSchematicReviewer:
             + "For overlapping or distant labels, request move_field with absolute millimetre coordinates using the "
             "field inventory, or regenerate_schematic to recompute placement and wiring. "
             + rail_guidance(assessment.report.get("checks", {}))
-            + "Submit exactly one action per revision, then wait for rechecks. "
-            "Use the listed terminal inventory and exact net witnesses; set from_ref/from_pin and "
+            + (
+                "Submit exactly one action per revision, then wait for rechecks. "
+                if self.max_actions == 1
+                else f"Submit up to {self.max_actions} actions per revision, in the order to "
+                "apply them. Each is applied and checked in turn; the first that is refused or "
+                "makes a passing check fail stops the rest, and the next review sees the result. "
+                "Prefer independent edits, such as moving several labels; coordinates in later "
+                "actions must still be valid after the earlier ones. "
+            )
+            + "Use the listed terminal inventory and exact net witnesses; set from_ref/from_pin and "
             "to_ref/to_pin to identify two listed terminals on the named net. The waypoints field "
             "contains only intermediate coordinates; the editor supplies exact pin endpoints. "
             "All waypoint coordinates must align to KiCad's 1.27 mm connection grid. The native "
@@ -400,7 +431,7 @@ class OllamaSchematicReviewer:
             "messages": messages,
             "stream": False,
             "think": self.think,
-            "format": SchematicReview.model_json_schema(),
+            "format": self.review_model.model_json_schema(),
             "options": self.options,
         }
         started = time.monotonic()
@@ -493,7 +524,7 @@ def run_schematic_review(
                 tokens += int(response.get("prompt_eval_count", 0)) + int(
                     response.get("eval_count", 0)
                 )
-            review = SchematicReview.model_validate_json(raw)
+            review = getattr(reviewer, "review_model", SchematicReview).model_validate_json(raw)
             entry["review"] = review.model_dump(mode="json")
             if review.base_revision != assessment.revision:
                 raise ValueError("stale model review: base_revision does not match image revision")
@@ -515,9 +546,56 @@ def run_schematic_review(
                 reason = "review budget exhausted before edit and re-review"
                 break
             directory = output / "candidates" / f"{index + 1:03d}"
-            source = engine.apply(assessment.schematic, directory, review.actions)
-            candidate_dir = directory
-            assessment, feedback = None, ""
+            if len(review.actions) == 1:
+                source = engine.apply(assessment.schematic, directory, review.actions)
+                candidate_dir = directory
+                assessment, feedback = None, ""
+            else:
+                # Several edits: apply and check one at a time; keep each good edit and stop
+                # at the first that is refused or makes a passing check fail.
+                current, kept, stop = assessment, [], ""
+                for number, action in enumerate(review.actions):
+                    step = (
+                        directory
+                        if number == 0
+                        else directory.with_name(f"{directory.name}-{number}")
+                    )
+                    try:
+                        trial = engine.assess(engine.apply(current.schematic, step, [action]), step)
+                    except (ValueError, KeyError) as error:
+                        stop = f"action {number + 1} ({action.operation}) refused: {error}"
+                        break
+                    broken = sorted(
+                        name
+                        for name, value in current.report.get("checks", {}).items()
+                        if value == "PASS" and trial.report.get("checks", {}).get(name) != "PASS"
+                    )
+                    if broken:
+                        stop = (
+                            f"action {number + 1} ({action.operation}) not kept: it made "
+                            f"{', '.join(broken)} fail"
+                        )
+                        break
+                    current = trial
+                    kept.append(number + 1)
+                entry["applied_actions"] = kept
+                if stop:
+                    entry["stopped"] = stop
+                if not kept:
+                    raise ValueError(stop)
+                candidate_dir = current.schematic.parent.parent
+                source = current.schematic
+                assessment = current
+                if assessment.revision in seen:
+                    status, reason = "NO_PROGRESS", "candidate repeats an earlier revision"
+                    break
+                seen.add(assessment.revision)
+                if assessment.passed:
+                    best_passing = str(assessment.schematic.relative_to(output))
+                    best_assessment = assessment
+                feedback = f"Applied actions {kept} of {len(review.actions)}." + (
+                    f" {stop}" if stop else ""
+                )
         except (ValidationError, ValueError) as error:
             feedback = str(error)
             entry["rejected_response"] = feedback
