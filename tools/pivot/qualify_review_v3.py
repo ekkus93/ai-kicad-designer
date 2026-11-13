@@ -348,6 +348,12 @@ def main() -> None:
     parser.add_argument("--seeds", type=int, nargs="+", default=[20261025])
     parser.add_argument("--modes", nargs="+", choices=["full", "image_only"], default=["full"])
     parser.add_argument("--cases", nargs="*", help="run only these case names (default: all)")
+    parser.add_argument("--think", action="store_true", help="let the reviewer reason first")
+    source = parser.add_mutually_exclusive_group()
+    source.add_argument("--svg", action="store_true", help="review the SVG source as text")
+    source.add_argument(
+        "--description", action="store_true", help="review a plain-text drawing description"
+    )
     parser.add_argument(
         "--prepare-only", action="store_true", help="build and assess cases without the model"
     )
@@ -385,6 +391,9 @@ def main() -> None:
             context_tokens=args.context_tokens,
             output_tokens=args.output_tokens,
             timeout_seconds=args.model_timeout,
+            think=args.think,
+            svg_source=args.svg,
+            description_source=args.description,
             review_brief=brief_text,
         )
     rows = []
@@ -394,6 +403,8 @@ def main() -> None:
             for case in cases:
                 assessment = case["assessment"]
                 sent = image_only(assessment) if mode == "image_only" else assessment
+                # Blind mode: the prompt also says the verdicts are withheld.
+                reviewer.withhold_checks = mode == "image_only"
                 record = root / "reviews" / f"seed{seed}" / mode / f"{case['case']}.json"
                 row = {
                     "seed": seed,

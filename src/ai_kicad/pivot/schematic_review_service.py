@@ -36,6 +36,8 @@ class NativeSchematicReviewService:
         model_timeout_seconds: float = 180,
         think: bool = False,
         svg_source: bool = False,
+        description_source: bool = False,
+        withhold_checks: bool = False,
     ):
         self.launcher = launcher
         self.model = model
@@ -45,6 +47,10 @@ class NativeSchematicReviewService:
         self.think = think
         # Review the SVG source as text instead of the PNG renders.
         self.svg_source = svg_source
+        # Review a plain-text description of the drawing instead of images.
+        self.description_source = description_source
+        # Withhold check verdicts from the reviewer; the checks still gate acceptance.
+        self.withhold_checks = withhold_checks
         self.model_timeout_seconds = model_timeout_seconds
         self.max_field_distance_mm, self.brief_text = resolve_review_brief(review_brief, None)
         self.power_symbol_rails = brief_allows_power_symbol_rails(review_brief)
@@ -83,6 +89,8 @@ class NativeSchematicReviewService:
             timeout_seconds=self.model_timeout_seconds,
             think=self.think,
             svg_source=self.svg_source,
+            description_source=self.description_source,
+            withhold_checks=self.withhold_checks,
             **({"review_brief": self.brief_text} if self.brief_text else {}),
         )
         return run_schematic_review(engine, reviewer, output, **self.budgets)

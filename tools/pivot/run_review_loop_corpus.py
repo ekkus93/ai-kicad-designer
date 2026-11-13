@@ -66,6 +66,16 @@ def main() -> None:
         action="store_true",
         help="send the reviewer the rendered SVG source as text instead of PNG images",
     )
+    parser.add_argument(
+        "--description",
+        action="store_true",
+        help="send the reviewer a plain-text description of the drawing instead of images",
+    )
+    parser.add_argument(
+        "--withhold-checks",
+        action="store_true",
+        help="do not show the reviewer the check verdicts (they still gate acceptance)",
+    )
     parser.add_argument("--designs", nargs="*", help="run only these corpus designs (default: all)")
     args = parser.parse_args()
     args.review_brief = args.review_brief.resolve()
@@ -80,6 +90,8 @@ def main() -> None:
         model_timeout_seconds=args.model_timeout,
         think=args.think,
         svg_source=args.svg,
+        description_source=args.description,
+        withhold_checks=args.withhold_checks,
     )
     results = {}
     for design in CORPUS:
@@ -127,6 +139,8 @@ def main() -> None:
         "output_tokens": args.output_tokens,
         "think": args.think,
         "svg_source": args.svg,
+        "description_source": args.description,
+        "withhold_checks": args.withhold_checks,
         "model_timeout_seconds": args.model_timeout,
         "review_brief": str(args.review_brief.relative_to(ROOT)),
         "budgets": service.budgets,

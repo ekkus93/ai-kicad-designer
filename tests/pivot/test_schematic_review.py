@@ -399,3 +399,59 @@ def test_svg_source_review_sends_the_svg_text_and_no_images(tmp_path, monkeypatc
     assert handoff["schematic_svg"] == '<svg><text x="1" y="2">R1</text></svg>'
     assert "plotted SVG" in payload["messages"][0]["content"]
     assert reviewer.identity["svg_source"] and reviewer.identity["think"]
+
+
+def test_description_review_withholds_verdicts_and_sends_no_images(tmp_path, monkeypatch):
+    calls = []
+
+    def request(self, path, payload=None):
+        calls.append((path, payload))
+        return {
+            "/api/show": {"capabilities": ["vision", "completion"]},
+            "/api/tags": {"models": [{"name": "vision:test", "digest": "123"}]},
+            "/api/version": {"version": "test"},
+            "/api/chat": {"message": {"content": "{}"}, "done_reason": "stop"},
+        }[path]
+
+    monkeypatch.setattr(OllamaSchematicReviewer, "_request", request)
+    reviewer = OllamaSchematicReviewer("vision:test", description_source=True, withhold_checks=True)
+    project = tmp_path / "project"
+    project.mkdir()
+    schematic, image = project / "test.kicad_sch", tmp_path / "drawing.png"
+    schematic.write_text(SCHEMATIC)
+    image.write_bytes(b"\x89PNG\r\n\x1a\nimage-content")
+    report = {
+        "checks": {"erc": "PASS", "rail_presentation": "PASS"},
+        "layout": {"observed_body_overlap_count": 0},
+        "terminal_inventory": [],
+        "intended_circuit": {"id": "test"},
+    }
+    reviewer.review(SchematicAssessment(schematic, [image], report), "", tmp_path / "r.json")
+    payload = calls[-1][1]
+    assert "images" not in payload["messages"][1]
+    handoff = json.loads(payload["messages"][1]["content"])
+    assert handoff["schematic_description"].startswith("SCHEMATIC DRAWING")
+    assert set(handoff["independent_assessment"]) == {"terminal_inventory", "intended_circuit"}
+    system = payload["messages"][0]["content"]
+    assert "Check results are withheld" in system and "Machine PASS results" not in system
+    with pytest.raises(ValueError, match="either"):
+        OllamaSchematicReviewer("vision:test", svg_source=True, description_source=True)
+
+
+def test_description_names_parts_wires_and_power_symbol_directions():
+    from pathlib import Path
+
+    from ai_kicad.pivot.schematic_description import describe_schematic
+
+    folder = (
+        Path(__file__).resolve().parents[2]
+        / "fixtures/pivot/experiments/review_loop_corpus_v9_2026-11-13_qwen35_256k_run1"
+        / "inverting_gain/candidates/000"
+    )
+    text = next((folder / "project").glob("*.kicad_sch")).read_text()
+    inventory = json.loads((folder / "assessment.json").read_text())["terminal_inventory"]
+    description = describe_schematic(parse(text), inventory)
+    assert "U1C NE5532" in description and "drawn without a body" in description
+    assert "VMINUS supply arrow at (157.48, 129.54) on pin C2.2, pointing up" in description
+    assert "net VMINUS: 1 segment(s), 10.16 mm, joins C2.2, U1.4" in description
+    assert '"U1C" (U1C Reference)' in description
