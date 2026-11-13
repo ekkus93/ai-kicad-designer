@@ -76,6 +76,11 @@ def main() -> None:
         action="store_true",
         help="do not show the reviewer the check verdicts (they still gate acceptance)",
     )
+    parser.add_argument(
+        "--with-images",
+        action="store_true",
+        help="with --svg or --description, also send the PNG renders",
+    )
     parser.add_argument("--designs", nargs="*", help="run only these corpus designs (default: all)")
     args = parser.parse_args()
     args.review_brief = args.review_brief.resolve()
@@ -92,6 +97,7 @@ def main() -> None:
         svg_source=args.svg,
         description_source=args.description,
         withhold_checks=args.withhold_checks,
+        with_images=args.with_images,
     )
     results = {}
     for design in CORPUS:
@@ -141,6 +147,7 @@ def main() -> None:
         "svg_source": args.svg,
         "description_source": args.description,
         "withhold_checks": args.withhold_checks,
+        "with_images": args.with_images,
         "model_timeout_seconds": args.model_timeout,
         "review_brief": str(args.review_brief.relative_to(ROOT)),
         "budgets": service.budgets,

@@ -455,3 +455,39 @@ def test_description_names_parts_wires_and_power_symbol_directions():
     assert "VMINUS supply arrow at (157.48, 129.54) on pin C2.2, pointing up" in description
     assert "net VMINUS: 1 segment(s), 10.16 mm, joins C2.2, U1.4" in description
     assert '"U1C" (U1C Reference)' in description
+
+
+def test_svg_with_images_sends_both_the_svg_text_and_the_pngs(tmp_path, monkeypatch):
+    calls = []
+
+    def request(self, path, payload=None):
+        calls.append((path, payload))
+        return {
+            "/api/show": {"capabilities": ["vision", "completion"]},
+            "/api/tags": {"models": [{"name": "vision:test", "digest": "123"}]},
+            "/api/version": {"version": "test"},
+            "/api/chat": {"message": {"content": "{}"}, "done_reason": "stop"},
+        }[path]
+
+    monkeypatch.setattr(OllamaSchematicReviewer, "_request", request)
+    reviewer = OllamaSchematicReviewer("vision:test", svg_source=True, with_images=True)
+    project, renders = tmp_path / "project", tmp_path / "review-images"
+    project.mkdir()
+    renders.mkdir()
+    schematic, image = project / "test.kicad_sch", renders / "drawing.png"
+    schematic.write_text(SCHEMATIC)
+    image.write_bytes(b"\x89PNG\r\n\x1a\nimage-content")
+    (renders / "test.svg").write_text('<svg><text x="1" y="2">R1</text></svg>')
+    reviewer.review(
+        SchematicAssessment(schematic, [image], {"checks": {"erc": "PASS"}}),
+        "",
+        tmp_path / "review.json",
+    )
+    payload = calls[-1][1]
+    assert payload["think"] is False
+    assert base64.b64decode(payload["messages"][1]["images"][0]) == image.read_bytes()
+    handoff = json.loads(payload["messages"][1]["content"])
+    assert handoff["schematic_svg"].startswith("<svg>")
+    assert "rendered images are attached too" in payload["messages"][0]["content"]
+    with pytest.raises(ValueError, match="text source"):
+        OllamaSchematicReviewer("vision:test", with_images=True)

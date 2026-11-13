@@ -355,6 +355,9 @@ def main() -> None:
         "--description", action="store_true", help="review a plain-text drawing description"
     )
     parser.add_argument(
+        "--with-images", action="store_true", help="with --svg/--description, also send PNGs"
+    )
+    parser.add_argument(
         "--prepare-only", action="store_true", help="build and assess cases without the model"
     )
     parser.add_argument(
@@ -394,6 +397,7 @@ def main() -> None:
             think=args.think,
             svg_source=args.svg,
             description_source=args.description,
+            with_images=args.with_images,
             review_brief=brief_text,
         )
     rows = []
