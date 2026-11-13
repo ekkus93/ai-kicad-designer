@@ -10,6 +10,7 @@ from .schematic_review_brief import (
     brief_allows_power_symbol_rails,
     brief_requires_field_ownership,
     brief_requires_page_balance,
+    brief_requires_level_power_block,
     brief_requires_power_block,
     brief_requires_text_and_ground_checks,
     brief_requires_readability_checks,
@@ -46,6 +47,7 @@ class NativeSchematicReviewService:
         self.field_ownership = brief_requires_field_ownership(review_brief)
         self.text_and_ground_checks = brief_requires_text_and_ground_checks(review_brief)
         self.power_block = brief_requires_power_block(review_brief)
+        self.level_power_block = brief_requires_level_power_block(review_brief)
         # The loop checks its wall-clock budget between operations; one KiCad or model call
         # may still be running when it expires.
         self.timeout_seconds = max_seconds + 600
@@ -66,6 +68,7 @@ class NativeSchematicReviewService:
             field_ownership=self.field_ownership,
             text_and_ground_checks=self.text_and_ground_checks,
             power_block=self.power_block,
+            level_power_block=self.level_power_block,
         )
         reviewer = OllamaSchematicReviewer(
             self.model,

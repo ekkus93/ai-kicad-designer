@@ -1,0 +1,171 @@
+{
+  "schema_version": "schematic-review-brief.v9",
+  "brief_id": "owner-readability.v9",
+  "scope": "Single-sheet schematics generated from a pinned intended circuit. Keep component references, values, and electrical connectivity unchanged while improving presentation. Layout (v8): a power unit's two decoupling capacitors are mirrored across it, rail pins on top and the return below, each level with and wired straight to its supply pin; power flags sit where their rails enter through a connector when there is room, otherwise on their own wires; supply arrows point up except at connectors.",
+  "source_documents": [
+    "docs/MCP_ARCHITECTURE_SPEC.md#6.5",
+    "docs/SCHEMATIC_LAYOUT_SPEC.md#4",
+    "docs/SCHEMATIC_LAYOUT_SPEC.md#5",
+    "docs/SCHEMATIC_LAYOUT_SPEC.md#6",
+    "TODO owner direction confirmed 2026-10-25",
+    "Owner direction 2026-10-27: accept power symbols for rails, as conventional 555 schematics draw them",
+    "Owner direction 2026-11-12: add measured readability gates for defects the v3 checks and model review missed (review_qualification_v3_2026-11-12_qwen35_256k_run1); rail detours use a ratio with a minimum detour",
+    "Owner direction 2026-11-12: centre the drawing on the page and gate page balance; the 65% utilization target never failed and is removed",
+    "Owner direction 2026-11-12: gate reference/value text that reads as another part's (historical R1/R2 text, led_series detached value)",
+    "Owner direction 2026-11-12: measure U1C's label and place it beside its pins on either side; gate text cut off from its part by another net's wire; gate sideways grounds that could point down",
+    "Owner direction 2026-11-13: follow an outside review's layout fixes over earlier owner choices: a balanced decoupling block, power flags at the connector, the power unit's label above it",
+    "Owner direction 2026-11-13: follow the outside review of v8: shorten the VMINUS wire by placing C2 level with pin 4 rather than keeping both capacitors at the same height"
+  ],
+  "criteria": [
+    {
+      "criterion_id": "label_association",
+      "requirement": "Every required component reference and value is legible and clearly associated with its own symbol.",
+      "measurements": [
+        {
+          "check_id": "field_locality",
+          "operator": "<=",
+          "threshold": 25.4,
+          "unit": "mm",
+          "source": "schematic review engine default maximum field-envelope distance",
+          "qualification": "independent_gate"
+        },
+        {
+          "check_id": "field_separation",
+          "operator": "==",
+          "threshold": 0,
+          "unit": "overlapping field pairs",
+          "source": "native field-envelope observer",
+          "qualification": "independent_gate"
+        },
+        {
+          "check_id": "field_owner_association",
+          "operator": "<=",
+          "threshold": 5.08,
+          "unit": "mm",
+          "source": "independent native symbol-anchor and text-envelope observer",
+          "qualification": "independent_gate"
+        },
+        {
+          "check_id": "field_nearest_owner",
+          "operator": "==",
+          "threshold": 0,
+          "unit": "visible reference/value fields more than 5.08 mm from their own unit's drawing (body, pin stubs, or a bodyless unit's pin column) and nearer another part's drawing",
+          "source": "independent native text-envelope and symbol body/pin-stub geometry",
+          "qualification": "independent_gate"
+        },
+        {
+          "check_id": "field_wire_separation",
+          "operator": "==",
+          "threshold": 0,
+          "unit": "visible reference/value fields whose straight line to the nearest point of their own unit's drawing meets a wire of another net",
+          "source": "independent native text-envelope, symbol body/pin-stub and wire geometry",
+          "qualification": "independent_gate"
+        }
+      ],
+      "visual_rubric": [
+        "Read each reference and value on the full-page image or its supplied detail image; flag fields that are too small, clipped, visually stranded, or ambiguous despite passing distance checks.",
+        "Confirm each field is visually closest and clearly related to its owning symbol, not a neighboring symbol."
+      ],
+      "qualification_status": "not_yet_qualified",
+      "limitation": "The 25.4 mm locality limit and non-overlap checks catch specific geometric defects; they do not establish human legibility or association by themselves. The 5.08 mm owner-advantage heuristic catches gross geometric mismatches; it does not prove human association. The nearest-owner gate measures gaps to drawn bodies and pin stubs; the wire-separation gate only counts wires of other nets, so a part's own wiring looping between it and its text still passes."
+    },
+    {
+      "criterion_id": "page_composition",
+      "requirement": "The page has balanced functional grouping, clear reading flow, and enough space to follow the circuit without crowding.",
+      "measurements": [
+        {
+          "check_id": "observed_page_margin_pass",
+          "operator": "==",
+          "threshold": 1,
+          "unit": "boolean",
+          "source": "independent observed-layout sheet-margin check",
+          "qualification": "independent_gate"
+        },
+        {
+          "check_id": "bodyless_unit_clearance",
+          "operator": "==",
+          "threshold": 0,
+          "unit": "wires crossing, or running along, the pin-name column of a unit drawn without a body",
+          "source": "independent native wire and bodyless-unit pin-column geometry",
+          "qualification": "independent_gate"
+        },
+        {
+          "check_id": "page_balance",
+          "operator": "<=",
+          "threshold": 0.25,
+          "unit": "offset of the drawing's centre (wires, symbol bodies and visible text) from the usable frame centre, as a fraction of the frame's half-width and half-height; the drawing must also lie inside the frame and clear of the title block",
+          "source": "independent native drawing extent against the usable A4 frame",
+          "qualification": "independent_gate"
+        }
+      ],
+      "visual_rubric": [
+        "Inspect the full page for recognizable functional groups and a natural signal-flow direction.",
+        "Flag excessive unused space, crowding, fragmented motifs, confusing crossings, or a page that requires zooming to understand the main organization.",
+        "Use the detail image to confirm that local labels, pins, wires, and branches remain easy to follow."
+      ],
+      "qualification_status": "not_yet_qualified",
+      "limitation": "Balance is measured as the centre of the drawing's bounding box; it does not judge grouping, reading flow or crowding inside the drawing, which remain visual judgments. Small circuits still use little of an A4 sheet; no minimum fill is set. The bodyless-unit clearance gate only covers wires through a power unit's pin-name column."
+    },
+    {
+      "criterion_id": "visible_local_rails",
+      "requirement": "Every terminal of an asserted REF/VCC rail is visibly connected to that rail: either by continuous wires to a shared rail, or by a matching power symbol (ground glyph for return rails, supply arrow otherwise) on each separately drawn terminal group. Repeated same-name net labels alone are not accepted.",
+      "measurements": [
+        {
+          "check_id": "electrical_equivalence",
+          "operator": "==",
+          "threshold": 1,
+          "unit": "boolean",
+          "source": "independent native netlist comparison to the pinned intended circuit",
+          "qualification": "independent_gate"
+        },
+        {
+          "check_id": "rail_presentation",
+          "operator": "==",
+          "threshold": 1,
+          "unit": "boolean",
+          "source": "independent native wire-geometry grouping of asserted-net terminals; each separated group must touch a power symbol whose value names that rail",
+          "qualification": "independent_gate"
+        },
+        {
+          "check_id": "power_symbol_clearance",
+          "operator": "==",
+          "threshold": 0,
+          "unit": "power-symbol glyph or value boxes touching another symbol, field, label, visible pin number or foreign wire",
+          "source": "native power-symbol geometry from the locked KiCad 10.0.6 power library",
+          "qualification": "independent_gate"
+        },
+        {
+          "check_id": "rail_route_detour",
+          "operator": "<=",
+          "threshold": 1.15,
+          "unit": "ratio of a rail wire group's length to the rectilinear spanning tree of the terminals and power symbols it joins; only detours longer than 7.62 mm count",
+          "source": "independent native wire grouping against the observed terminal inventory",
+          "qualification": "independent_gate"
+        },
+        {
+          "check_id": "power_symbol_direction",
+          "operator": "==",
+          "threshold": 0,
+          "unit": "supply arrows pointing down or ground glyphs pointing up on the page",
+          "source": "native power-symbol orientation from the locked KiCad 10.0.6 power library",
+          "qualification": "independent_gate"
+        },
+        {
+          "check_id": "ground_symbol_direction",
+          "operator": "==",
+          "threshold": 0,
+          "unit": "ground glyphs pointing sideways where pointing down would neither point into their own pin nor touch another drawn item at any value-text spot the compiler tries",
+          "source": "independent native power-symbol geometry and the power-symbol clearance measurement",
+          "qualification": "independent_gate"
+        }
+      ],
+      "visual_rubric": [
+        "For each REF or VCC net in the intended circuit, confirm that every terminal either joins a visible common wire trunk or ends at a clearly drawn power symbol naming that rail; flag terminals connected only by text labels.",
+        "Check that power symbols read naturally (ground glyphs below or beside their terminals, supply arrows above or beside them), do not crowd nearby parts or text, and that names are legible.",
+        "Check that branch junctions are visibly unambiguous and do not visually merge distinct supply or return nets."
+      ],
+      "qualification_status": "not_yet_qualified",
+      "limitation": "Netlist equivalence proves electrical identity. The rail-presentation gate proves that every separated rail group is joined by wire or marked by a matching power symbol; power-symbol clearance uses conservative glyph and text boxes. Neither proves human readability, and the visual rubric is not yet qualified. Power symbols are global connections: the KiCad netlist, not the drawing, establishes that they join the intended terminals. The rail-route detour gate measures rail wiring only, not signal nets; sideways power symbols are allowed."
+    }
+  ]
+}

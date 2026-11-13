@@ -178,6 +178,14 @@ class SchematicReviewBriefV8(SchematicReviewBriefV7):
     brief_id: Literal["owner-readability.v8"]
 
 
+class SchematicReviewBriefV9(SchematicReviewBriefV8):
+    """Brief v8 with the bottom pin's decoupling capacitor level with that pin, wired by
+    one straight run, instead of at the top capacitor's height."""
+
+    schema_version: Literal["schematic-review-brief.v9"]
+    brief_id: Literal["owner-readability.v9"]
+
+
 BRIEF_MODELS = {
     "schematic-review-brief.v2": SchematicReviewBriefV2,
     "schematic-review-brief.v3": SchematicReviewBriefV3,
@@ -186,6 +194,7 @@ BRIEF_MODELS = {
     "schematic-review-brief.v6": SchematicReviewBriefV6,
     "schematic-review-brief.v7": SchematicReviewBriefV7,
     "schematic-review-brief.v8": SchematicReviewBriefV8,
+    "schematic-review-brief.v9": SchematicReviewBriefV9,
 }
 ReviewBrief = (
     SchematicReviewBrief
@@ -196,6 +205,7 @@ ReviewBrief = (
     | SchematicReviewBriefV6
     | SchematicReviewBriefV7
     | SchematicReviewBriefV8
+    | SchematicReviewBriefV9
 )
 
 
@@ -246,6 +256,13 @@ def brief_requires_power_block(path: Path | None) -> bool:
     if path is None or path.suffix.lower() != ".json":
         return False
     return isinstance(load_review_brief(path), SchematicReviewBriefV8)
+
+
+def brief_requires_level_power_block(path: Path | None) -> bool:
+    """Whether the versioned brief draws the bottom decoupling capacitor level (v9)."""
+    if path is None or path.suffix.lower() != ".json":
+        return False
+    return isinstance(load_review_brief(path), SchematicReviewBriefV9)
 
 
 def format_review_brief(brief: ReviewBrief) -> str:

@@ -1424,7 +1424,12 @@ def _shift_form(block: str, dx: int, dy: int, angle: int | None = None) -> str:
 
 
 def gather_power_flags_text(
-    text: str, inventory: list[dict], context: dict, check, to_connector: bool = True
+    text: str,
+    inventory: list[dict],
+    context: dict,
+    check,
+    to_connector: bool = True,
+    clear_of_pin: bool = False,
 ) -> tuple[str, dict | None]:
     """Move one rail's power flag to the connector where that rail enters (brief v8).
 
@@ -1435,8 +1440,10 @@ def gather_power_flags_text(
     protected layout check accepts the drawing. A flag with no such position (or every
     flag, without ``to_connector``) that sits on a decoupling capacitor's rail pin moves
     onto that capacitor's wire to its supply pin instead, pointing across the wire, so
-    the pin is free for the rail's own symbol. At most one flag moves per call, so the
-    caller can observe the drawing again.
+    the pin is free for the rail's own symbol. With ``clear_of_pin`` (brief v9) it sits
+    at least three grid steps from that pin and points down first, leaving room for the
+    rail's symbol and name above the pin. At most one flag moves per call, so the caller
+    can observe the drawing again.
     """
     from .power_symbols import (
         FLAG_CLEARANCE,
@@ -1575,11 +1582,23 @@ def gather_power_flags_text(
                     spots.append(
                         (abs(point[0] - capacitor[0]) + abs(point[1] - capacitor[1]), point, way)
                     )
-            for _distance, point, way in sorted(spots):
+            reach = 3 * PITCH if clear_of_pin else 0
+            tries = sorted(
+                (
+                    rank if clear_of_pin else 0,
+                    distance < reach,
+                    distance,
+                    point,
+                    angle,
+                )
+                for distance, point, way in spots
+                for rank, angle in enumerate((180, 0) if way[1] == 0 else (90, 270))
+            )
+            for _rank, _near, _distance, point, angle in tries:
                 drawn = base
                 if not any(point in segment for segment in _wire_segments(parse(drawn))):
                     drawn = _split_wire_at(drawn, point)
-                for angle in (180, 0) if way[1] == 0 else (90, 270):
+                for angle in (angle,):
                     moved = _shift_form(
                         block, point[0] - capacitor[0], point[1] - capacitor[1], angle
                     )
@@ -1662,9 +1681,13 @@ def _pin_points_of(tree: list) -> set[Point]:
 
 
 def balance_power_block_text(
-    text: str, inventory: list[dict], context: dict, check
+    text: str, inventory: list[dict], context: dict, check, level_with_pin: bool = False
 ) -> tuple[str, dict | None]:
     """Mirror a power unit's two decoupling capacitors across it, at the same height (v8).
+
+    With ``level_with_pin`` (brief v9), the bottom pin's capacitor keeps the mirrored
+    distance but sits with its rail pin level with the bottom pin's end, so its wire is
+    one straight run instead of rising to the top capacitor's height.
 
     For a unit drawn without a body (an op-amp's power unit) whose top and bottom pins
     are each a declared decoupling pair, the bottom pin's capacitor is moved to the far
@@ -1727,7 +1750,7 @@ def balance_power_block_text(
             path = _flag_paths(_wire_segments(parse(drawn)), pin, {end})
             return bool(path) and _path_length(path) == abs(pin[0] - end[0]) + abs(pin[1] - end[1])
 
-        target = (x0 - side * distance, upper[1])
+        target = (x0 - side * distance, bottom[1] if level_with_pin else upper[1])
         if lower == target and monotone(text, bottom, lower):
             continue
         dx, dy = target[0] - lower[0], target[1] - lower[1]
@@ -1745,7 +1768,11 @@ def balance_power_block_text(
         # the unit's pin names.
         middle = x0 + (target[0] - x0) // (2 * PITCH) * PITCH
         net = next(name for name in context if (bottom, lower) in context[name]["local_pairs"])
-        redrawn = _redraw_pair_wire(moved, bottom, target, middle, net)
+        redrawn = (
+            None
+            if target[1] == bottom[1]
+            else _redraw_pair_wire(moved, bottom, target, middle, net)
+        )
         if redrawn is not None and check(redrawn) is None:
             moved = redrawn
         if not (monotone(moved, bottom, target) and monotone(moved, top, upper)):
@@ -1916,6 +1943,7 @@ class NativeSchematicEngine:
         field_ownership: bool = False,
         text_and_ground_checks: bool = False,
         power_block: bool = False,
+        level_power_block: bool = False,
     ):
         self.resolved = assets()
         self.design = validate(design, self.resolved)
@@ -1949,6 +1977,10 @@ class NativeSchematicEngine:
             raise ValueError("the power block layout requires the brief v7+ checks")
         self.power_block = power_block
         self.power_entry_flags = power_block
+        # Brief v9: the bottom pin's capacitor sits level with that pin, wired straight.
+        if level_power_block and not power_block:
+            raise ValueError("the level power block requires the brief v8 power block")
+        self.level_power_block = level_power_block
         self.power_symbols = power_symbol_definitions() if power_symbol_rails else {}
         self.environment = dict(os.environ, LC_ALL="C", TZ="UTC")
         self.renderer = shutil.which("rsvg-convert")
@@ -2072,12 +2104,22 @@ class NativeSchematicEngine:
 
                 def gather(text, terminals, rails, check):
                     return gather_power_flags_text(
-                        text, terminals, rails, check, to_connector=flags == "connector"
+                        text,
+                        terminals,
+                        rails,
+                        check,
+                        to_connector=flags == "connector",
+                        clear_of_pin=self_level_block,
+                    )
+
+                def block(text, terminals, rails, check):
+                    return balance_power_block_text(
+                        text, terminals, rails, check, level_with_pin=self_level_block
                     )
 
                 stages = [
                     ("power_flag_move", gather, flags is not None),
-                    ("power_block_move", balance_power_block_text, self_power_block),
+                    ("power_block_move", block, self_power_block),
                     ("decoupling_move", straighten_decoupling_text, True),
                 ]
                 for key, stage, enabled in stages:
@@ -2091,6 +2133,7 @@ class NativeSchematicEngine:
                 return text, terminals, rails, steps
 
             self_power_block = getattr(self, "power_block", False)
+            self_level_block = getattr(self, "level_power_block", False)
             # A flag gathered at a connector can take the only spot that connector's rail
             # symbol fits; then flags move only along their own wires, and failing that
             # they stay where the compiler drew them.

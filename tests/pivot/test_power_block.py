@@ -82,3 +82,30 @@ def test_flag_on_a_capacitor_pin_moves_onto_its_own_wire():
     assert point != c1
     segments = _wire_segments(parse(moved))
     assert any(point in segment for segment in segments)
+
+
+def test_brief_v9_places_the_bottom_capacitor_level_with_its_pin():
+    """Under v9, C2 keeps the mirrored 10.16 mm from U1C's pin line but sits with its
+    VMINUS pin level with pin 4's end, so the pair wire is one straight run."""
+    from ai_kicad.pivot.schematic_review_brief import brief_requires_level_power_block
+
+    v9 = ROOT / "fixtures/pivot/schematic_review_brief_v9.json"
+    assert brief_requires_level_power_block(v9) and brief_requires_power_block(v9)
+    assert not brief_requires_level_power_block(
+        ROOT / "fixtures/pivot/schematic_review_brief_v8.json"
+    )
+    text, inventory = _accepted()
+    pin8, pin4 = _at(inventory, "U1", "8"), _at(inventory, "U1", "4")
+    c1, c2 = _at(inventory, "C1", "1"), _at(inventory, "C2", "2")
+    context = {
+        "VPLUS": {"flags": [], "local_pairs": [(pin8, c1)]},
+        "VMINUS": {"flags": [], "local_pairs": [(pin4, c2)]},
+    }
+    moved, move = balance_power_block_text(
+        text, inventory, context, lambda _text: None, level_with_pin=True
+    )
+    assert move is not None and move["reference"] == "C2"
+    target = (2 * pin8[0] - c1[0], pin4[1])
+    assert (c2[0] + round(move["dx_mm"] * MM), c2[1] + round(move["dy_mm"] * MM)) == target
+    path = _flag_paths(_wire_segments(parse(moved)), pin4, {target})
+    assert sum(abs(a[0] - b[0]) + abs(a[1] - b[1]) for a, b in path) == target[0] - pin4[0]
