@@ -56,6 +56,16 @@ def main() -> None:
         "--output-tokens", type=int, default=2048, help="per-reply output cap (num_predict)"
     )
     parser.add_argument("--model-timeout", type=float, default=180)
+    parser.add_argument(
+        "--think",
+        action="store_true",
+        help="let the reviewer reason before answering (raise --output-tokens to fit it)",
+    )
+    parser.add_argument(
+        "--svg",
+        action="store_true",
+        help="send the reviewer the rendered SVG source as text instead of PNG images",
+    )
     parser.add_argument("--designs", nargs="*", help="run only these corpus designs (default: all)")
     args = parser.parse_args()
     args.review_brief = args.review_brief.resolve()
@@ -68,6 +78,8 @@ def main() -> None:
         context_tokens=args.context_tokens,
         output_tokens=args.output_tokens,
         model_timeout_seconds=args.model_timeout,
+        think=args.think,
+        svg_source=args.svg,
     )
     results = {}
     for design in CORPUS:
@@ -113,6 +125,8 @@ def main() -> None:
         "model": args.model,
         "context_tokens": args.context_tokens,
         "output_tokens": args.output_tokens,
+        "think": args.think,
+        "svg_source": args.svg,
         "model_timeout_seconds": args.model_timeout,
         "review_brief": str(args.review_brief.relative_to(ROOT)),
         "budgets": service.budgets,

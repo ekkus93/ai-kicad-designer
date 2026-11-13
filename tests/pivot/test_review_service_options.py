@@ -63,3 +63,20 @@ def test_v7_brief_turns_on_text_and_ground_checks():
     )
     assert v7.field_ownership and v7.text_and_ground_checks
     assert v6.field_ownership and not v6.text_and_ground_checks
+
+
+def test_review_service_passes_think_and_svg_source_to_reviewer(monkeypatch, tmp_path):
+    seen = {}
+
+    def fake_reviewer(model, **options):
+        seen.update(options)
+        raise _Stop
+
+    monkeypatch.setattr(service_module, "NativeSchematicEngine", lambda *a, **k: None)
+    monkeypatch.setattr(service_module, "OllamaSchematicReviewer", fake_reviewer)
+    service = NativeSchematicReviewService(
+        Path("/unused/AppRun"), "model", think=True, svg_source=True
+    )
+    with pytest.raises(_Stop):
+        service.review(Path("fixtures/m2b/rc_lowpass.json"), tmp_path)
+    assert seen["think"] is True and seen["svg_source"] is True

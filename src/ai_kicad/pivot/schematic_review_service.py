@@ -34,11 +34,17 @@ class NativeSchematicReviewService:
         context_tokens: int = 16384,
         output_tokens: int = 2048,
         model_timeout_seconds: float = 180,
+        think: bool = False,
+        svg_source: bool = False,
     ):
         self.launcher = launcher
         self.model = model
         self.context_tokens = context_tokens
         self.output_tokens = output_tokens
+        # Let the model reason before answering; its reasoning counts against output_tokens.
+        self.think = think
+        # Review the SVG source as text instead of the PNG renders.
+        self.svg_source = svg_source
         self.model_timeout_seconds = model_timeout_seconds
         self.max_field_distance_mm, self.brief_text = resolve_review_brief(review_brief, None)
         self.power_symbol_rails = brief_allows_power_symbol_rails(review_brief)
@@ -75,6 +81,8 @@ class NativeSchematicReviewService:
             context_tokens=self.context_tokens,
             output_tokens=self.output_tokens,
             timeout_seconds=self.model_timeout_seconds,
+            think=self.think,
+            svg_source=self.svg_source,
             **({"review_brief": self.brief_text} if self.brief_text else {}),
         )
         return run_schematic_review(engine, reviewer, output, **self.budgets)

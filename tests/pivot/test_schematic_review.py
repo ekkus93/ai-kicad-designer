@@ -364,3 +364,38 @@ def test_vision_adapter_sends_actual_images_and_schema(tmp_path, monkeypatch):
 def test_vision_adapter_refuses_nonlocal_endpoint():
     with pytest.raises(ValueError, match="local Ollama"):
         OllamaSchematicReviewer("model", endpoint="https://example.com")
+
+
+def test_svg_source_review_sends_the_svg_text_and_no_images(tmp_path, monkeypatch):
+    calls = []
+
+    def request(self, path, payload=None):
+        calls.append((path, payload))
+        return {
+            "/api/show": {"capabilities": ["vision", "completion", "thinking"]},
+            "/api/tags": {"models": [{"name": "vision:test", "digest": "123"}]},
+            "/api/version": {"version": "test"},
+            "/api/chat": {"message": {"content": "{}"}, "done_reason": "stop"},
+        }[path]
+
+    monkeypatch.setattr(OllamaSchematicReviewer, "_request", request)
+    reviewer = OllamaSchematicReviewer("vision:test", think=True, svg_source=True)
+    project, renders = tmp_path / "project", tmp_path / "review-images"
+    project.mkdir()
+    renders.mkdir()
+    schematic, image = project / "test.kicad_sch", renders / "drawing.png"
+    schematic.write_text(SCHEMATIC)
+    image.write_bytes(b"\x89PNG\r\n\x1a\nimage-content")
+    (renders / "test.svg").write_text('<svg><text x="1" y="2">R1</text></svg>')
+    reviewer.review(
+        SchematicAssessment(schematic, [image], {"checks": {"erc": "PASS"}}),
+        "",
+        tmp_path / "review.json",
+    )
+    payload = calls[-1][1]
+    assert payload["think"] is True
+    assert "images" not in payload["messages"][1]
+    handoff = json.loads(payload["messages"][1]["content"])
+    assert handoff["schematic_svg"] == '<svg><text x="1" y="2">R1</text></svg>'
+    assert "plotted SVG" in payload["messages"][0]["content"]
+    assert reviewer.identity["svg_source"] and reviewer.identity["think"]
