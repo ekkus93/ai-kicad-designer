@@ -1,0 +1,206 @@
+{
+  "schema_version": "review-loop-corpus.v1",
+  "source_commit": "a2c7d198a36e2c18ff531eeecde4af4753926998",
+  "implementation_sha256": {
+    "src/ai_kicad/pivot/schematic_review.py": "7c7fb229c031cb9653e15673e772a03890f63f66656fd58a072742a893b05356",
+    "src/ai_kicad/pivot/schematic_review_native.py": "6c22eae24a058cbe6bfea65996211c4ee4a675f7ffe7d2feacc17a963818d2a2",
+    "src/ai_kicad/pivot/schematic_review_service.py": "3545c644cb926537f4f89108c38eb85a32b8eeb65706221854db01b6c2383dbb"
+  },
+  "model": "qwen35-256k:latest",
+  "context_tokens": 262144,
+  "output_tokens": 2048,
+  "model_timeout_seconds": 600.0,
+  "review_brief": "fixtures/pivot/schematic_review_brief_v7.json",
+  "budgets": {
+    "max_reviews": 8,
+    "max_seconds": 1800,
+    "max_model_tokens": 120000
+  },
+  "results": {
+    "rc_lowpass": {
+      "design": "fixtures/m2b/rc_lowpass.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks pass. Visual inspection confirms legible labels, clear field association, balanced page composition, and correct rail presentation for the intended circuit. No unresolved issues found.",
+      "reviews": 1,
+      "model_tokens": 10762,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/RcLowpass.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/RcLowpass.kicad_sch"
+    },
+    "rc_highpass": {
+      "design": "fixtures/m2b/rc_highpass.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks pass. Visual inspection confirms legible labels, clear field association, balanced page composition, and correct rail presentation without unresolved issues.",
+      "reviews": 1,
+      "model_tokens": 10744,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/RcHighpass.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/RcHighpass.kicad_sch"
+    },
+    "led_series": {
+      "design": "fixtures/m2b/led_series.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks pass. The schematic shows a simple LED circuit with J1 (Input), R1 (1k resistor), D1 (LED), and J2 (Return). All component references, values, and labels are legible and clearly associated with their symbols. The page composition is balanced with sufficient space. No unresolved issues found.",
+      "reviews": 1,
+      "model_tokens": 10383,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/LedSeries.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/LedSeries.kicad_sch"
+    },
+    "led_long_text": {
+      "design": "fixtures/m2b/led_long_text.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks pass. Visual inspection confirms legible labels, clear field association, balanced page composition, and correct rail presentation with no unresolved issues.",
+      "reviews": 1,
+      "model_tokens": 10425,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/LedLongText.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/LedLongText.kicad_sch"
+    },
+    "led_reverse_supply": {
+      "design": "fixtures/m2b/led_reverse_supply.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks pass. The schematic shows a simple LED circuit with clear labels and proper rail presentation. No unresolved issues found.",
+      "reviews": 1,
+      "model_tokens": 10368,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/LedReverseSupply.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/LedReverseSupply.kicad_sch"
+    },
+    "dual_buffer": {
+      "design": "fixtures/m2b/dual_buffer.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks pass. Visual inspection confirms legible labels, clear rail presentation with proper power symbols, balanced page composition, and no unresolved issues.",
+      "reviews": 1,
+      "model_tokens": 12604,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/DualBufferM2b.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/DualBufferM2b.kicad_sch"
+    },
+    "dual_rail_reference": {
+      "design": "fixtures/m2b/dual_rail_reference.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks pass. Visual inspection confirms legible labels, clear rail presentation with proper power symbols, balanced page composition, and no unresolved issues.",
+      "reviews": 1,
+      "model_tokens": 13604,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/DualRailReference.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/DualRailReference.kicad_sch"
+    },
+    "inverting_gain": {
+      "design": "fixtures/m2b/inverting_gain.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks pass. Visual inspection confirms legible labels, clear rail presentation with proper power symbols, balanced page composition, and no unresolved issues.",
+      "reviews": 1,
+      "model_tokens": 13695,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/InvertingGain.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/InvertingGain.kicad_sch"
+    },
+    "noninverting_gain": {
+      "design": "fixtures/m2b/noninverting_gain.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks pass. Visual inspection confirms legible labels, clear rail presentation with proper power symbols, balanced page composition, and no unresolved issues.",
+      "reviews": 1,
+      "model_tokens": 13695,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/NoninvertingGain.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/NoninvertingGain.kicad_sch"
+    },
+    "rc_to_buffer": {
+      "design": "fixtures/m2b/rc_to_buffer.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks pass. Visual inspection confirms legible labels, clear rail presentation with proper power symbols, balanced page composition, and no unresolved issues.",
+      "reviews": 1,
+      "model_tokens": 13775,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/RcToBuffer.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/RcToBuffer.kicad_sch"
+    },
+    "sallen_key": {
+      "design": "fixtures/m2b/sallen_key.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks pass. Visual inspection confirms legible labels, clear rail presentation with proper power symbols, balanced page composition, and no unresolved issues.",
+      "reviews": 1,
+      "model_tokens": 14894,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/SallenKey.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/SallenKey.kicad_sch"
+    },
+    "linear_regulator": {
+      "design": "fixtures/m2b/linear_regulator.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks pass. Visual inspection confirms legible labels, clear rail presentation with proper power symbols, and balanced page composition. No unresolved issues found.",
+      "reviews": 1,
+      "model_tokens": 11754,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/LinearRegulator.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/LinearRegulator.kicad_sch"
+    },
+    "timer_astable": {
+      "design": "fixtures/m2b/timer_astable.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks pass. Visual inspection confirms legible labels, clear rail presentation with proper power symbols, balanced page composition, and no unresolved issues.",
+      "reviews": 1,
+      "model_tokens": 13255,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/TimerAstable.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/TimerAstable.kicad_sch"
+    },
+    "reference_555_led_flasher_v8": {
+      "design": "fixtures/pivot/reference_555_led_flasher_v8/design.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks pass. Visual inspection confirms legible labels, clear rail presentation with proper power symbols, balanced page composition, and no unresolved issues.",
+      "reviews": 1,
+      "model_tokens": 14470,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/Reference555LedFlasher.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/Reference555LedFlasher.kicad_sch"
+    },
+    "timer_astable_gnd": {
+      "design": "fixtures/pivot/timer_astable_gnd/design.json",
+      "status": "ACCEPTED_FOR_REVIEW",
+      "reason": "All independent checks pass. Visual inspection confirms legible labels, clear rail presentation with proper power symbols, balanced page composition, and no unresolved issues.",
+      "reviews": 1,
+      "model_tokens": 13260,
+      "requested_edits": [],
+      "rejected_replies": 0,
+      "accepted_schematic": "candidates/000/project/TimerAstable.kicad_sch",
+      "best_passing_schematic": "candidates/000/project/TimerAstable.kicad_sch"
+    }
+  },
+  "accepted": [
+    "dual_buffer",
+    "dual_rail_reference",
+    "inverting_gain",
+    "led_long_text",
+    "led_reverse_supply",
+    "led_series",
+    "linear_regulator",
+    "noninverting_gain",
+    "rc_highpass",
+    "rc_lowpass",
+    "rc_to_buffer",
+    "reference_555_led_flasher_v8",
+    "sallen_key",
+    "timer_astable",
+    "timer_astable_gnd"
+  ],
+  "locked_host_qualification": false,
+  "independent_readability_assessment": "PENDING",
+  "human_electrical_review": "PENDING"
+}
