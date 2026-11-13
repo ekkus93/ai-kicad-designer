@@ -241,6 +241,20 @@ def _pin_number_boxes(text: str, tree: list) -> list[tuple[str, Box]]:
     return boxes
 
 
+def _power_unit_field_centres(tree: list) -> set[Point]:
+    """Visible Reference/Value positions of units drawn without a body (op-amp power units)."""
+    from .field_layout import _label_bodies, _symbol
+
+    centres = set()
+    for part, (_body, kind) in _label_bodies(tree).items():
+        if kind != "power_unit":
+            continue
+        for prop in children(_symbol(tree, part), "property"):
+            if prop[1] in {"Reference", "Value"} and not children(prop, "hide"):
+                centres.add((_nm(one(prop, "at")[1]), _nm(one(prop, "at")[2])))
+    return centres
+
+
 def _collisions(text: str, tree: list, item: dict) -> list[str]:
     """Drawn items and foreign wires touched by one power symbol's glyph or value."""
     from .field_layout import power_unit_text_spots
@@ -277,11 +291,19 @@ def _collisions(text: str, tree: list, item: dict) -> list[str]:
         if _overlaps(boxes[1], (left - PITCH, top, right + PITCH, bottom)):
             hits.append(f"{owner} pin names")
     # The glyph and its name also keep a grid step clear of a part's reference and value
-    # and of another rail name, so the two do not run together ("REF -> VCC"). Net labels, and rail names
-    # drawn the same way side by side (as on a connector's adjacent pins), may sit closer.
+    # and of another rail name, so the two do not run together ("REF -> VCC"). Net labels,
+    # and rail names drawn the same way side by side (as on a connector's adjacent pins),
+    # may sit closer, except in a v8 placement, which keeps clear of net labels too. A v8
+    # placement also ignores an op-amp power unit's own text, which is placed afterwards.
     angles = {other["reference"]: other["angle"] for other in power_symbols(tree)}
+    v8 = item.get("v8_placement", False)
+    unit_text = _power_unit_field_centres(tree) if v8 else set()
     for owner, (left, top, right, bottom) in text_boxes:
-        if owner == item.get("reference") or owner.startswith(("#FLG", "label-")):
+        if owner == item.get("reference") or owner.startswith("#FLG"):
+            continue
+        if owner.startswith("label-") and not v8:
+            continue
+        if ((left + right) // 2, (top + bottom) // 2) in unit_text:
             continue
         if angles.get(owner, item["angle"] + 1) == item["angle"]:
             continue
@@ -592,6 +614,7 @@ def use_power_symbols_text(
     local_pairs: list[tuple[Point, Point]] = (),
     layout_check: Callable[[str], str | None] | None = None,
     prune_rail_wiring: bool = True,
+    upright_supply: bool = False,
 ) -> str:
     """Present one rail conventionally: a power symbol at each terminal, no rail wiring.
 
@@ -664,6 +687,7 @@ def use_power_symbols_text(
             layout_check,
             project,
             terminal_inventory,
+            upright_supply=upright_supply,
         )
     if prune_rail_wiring and not removed_wires and not label_points:
         raise ValueError(f"use_power_symbols made no change; {net} has no rail wiring or labels")
@@ -724,6 +748,7 @@ def use_power_symbols_text(
         layout_check,
         project,
         terminal_inventory,
+        upright_supply=upright_supply,
     )
 
 
@@ -838,6 +863,7 @@ def _place_rail_symbols(
     layout_check: Callable[[str], str | None] | None,
     project: tuple[str, str],
     terminal_inventory: list[dict] = (),
+    upright_supply: bool = False,
 ) -> str:
     """Give every unmarked wire group of one rail a clear power symbol.
 
@@ -851,8 +877,10 @@ def _place_rail_symbols(
     forbidden = (0, -1) if lib_id == "power:GND" else (0, 1)
     conventional = (-forbidden[0], -forbidden[1])
     # Ground hangs down wherever it fits, with its name beside the glyph if need be,
-    # before it is turned sideways. Supply symbols keep their sideways placements.
-    upright = conventional if lib_id == "power:GND" else None
+    # before it is turned sideways. Supply symbols keep their sideways placements unless
+    # ``upright_supply`` (brief v8) asks for arrows pointing up wherever they fit too,
+    # except at a connector, whose rows of pins leave room only beside them.
+    ground_upright = conventional if lib_id == "power:GND" else None
     used = {item["reference"] for item in power_symbols(tree)}
     serial = 1
     for indexes, group_segments in _point_group_wiring_of(tree, points):
@@ -886,6 +914,7 @@ def _place_rail_symbols(
         # Drafting convention: a rail that enters through a connector is marked there, at
         # the connector pin or, when that is crowded, on the group's wire close to it.
         connector_pins = _connector_pin_points(tree) & set(members)
+        upright = conventional if upright_supply and not connector_pins else ground_upright
         candidates = sorted(set(members) | {p for s in group_segments for p in s})
         # The compiler's own label points are known-clear for the label-form observers.
         candidates.sort(
@@ -1002,6 +1031,7 @@ def _place_rail_symbols(
                 "net": net,
                 "reference": reference,
                 "value": _value_position(lib_id, point, angle, net, side),
+                "v8_placement": upright_supply,
             }
             if _collisions(trial_text, trial_tree, item):
                 continue

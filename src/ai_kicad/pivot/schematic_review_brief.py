@@ -169,6 +169,15 @@ class SchematicReviewBriefV7(SchematicReviewBriefV6):
         return self
 
 
+class SchematicReviewBriefV8(SchematicReviewBriefV7):
+    """Brief v7 checks with the v8 layout: a power unit's decoupling capacitors mirrored
+    into one block, power flags gathered where their rails enter, and supply arrows
+    pointing up away from connectors."""
+
+    schema_version: Literal["schematic-review-brief.v8"]
+    brief_id: Literal["owner-readability.v8"]
+
+
 BRIEF_MODELS = {
     "schematic-review-brief.v2": SchematicReviewBriefV2,
     "schematic-review-brief.v3": SchematicReviewBriefV3,
@@ -176,6 +185,7 @@ BRIEF_MODELS = {
     "schematic-review-brief.v5": SchematicReviewBriefV5,
     "schematic-review-brief.v6": SchematicReviewBriefV6,
     "schematic-review-brief.v7": SchematicReviewBriefV7,
+    "schematic-review-brief.v8": SchematicReviewBriefV8,
 }
 ReviewBrief = (
     SchematicReviewBrief
@@ -185,6 +195,7 @@ ReviewBrief = (
     | SchematicReviewBriefV5
     | SchematicReviewBriefV6
     | SchematicReviewBriefV7
+    | SchematicReviewBriefV8
 )
 
 
@@ -228,6 +239,13 @@ def brief_requires_text_and_ground_checks(path: Path | None) -> bool:
     if path is None or path.suffix.lower() != ".json":
         return False
     return isinstance(load_review_brief(path), SchematicReviewBriefV7)
+
+
+def brief_requires_power_block(path: Path | None) -> bool:
+    """Whether the versioned brief uses the v8 power-block layout."""
+    if path is None or path.suffix.lower() != ".json":
+        return False
+    return isinstance(load_review_brief(path), SchematicReviewBriefV8)
 
 
 def format_review_brief(brief: ReviewBrief) -> str:

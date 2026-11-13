@@ -623,6 +623,7 @@ def connect_rail_text(
                     rail.get("local_pairs", []),
                     rail.get("layout_check"),
                     prune_rail_wiring=False,
+                    upright_supply=rail.get("upright_supply", False),
                 )
             except ValueError as error:
                 if joined:
@@ -640,6 +641,7 @@ def connect_rail_text(
                 rail.get("local_pairs", []),
                 rail.get("layout_check"),
                 prune_rail_wiring=False,
+                upright_supply=rail.get("upright_supply", False),
             )
         except ValueError as error:
             raise ValueError(
@@ -1385,6 +1387,387 @@ def _path_length(path: list[tuple[Point, Point]]) -> int:
     return sum(abs(a[0] - b[0]) + abs(a[1] - b[1]) for a, b in path)
 
 
+def _flag_terminals(context: dict) -> list[dict]:
+    """Power-flag pins as fixed terminals, so a move's reroute keeps every flag wired."""
+    return [
+        {
+            "net": net,
+            "reference": f"flag:{net}:{index}",
+            "pin": "1",
+            "x_mm": point[0] / 1_000_000,
+            "y_mm": point[1] / 1_000_000,
+        }
+        for net in sorted(context)
+        for index, point in enumerate(context[net].get("flags", []))
+    ]
+
+
+# How far past the free end of a connector's rail wire a gathered power flag may sit.
+FLAG_ENTRY_EXTENSION = 3
+
+
+def _shift_form(block: str, dx: int, dy: int, angle: int | None = None) -> str:
+    """Move every ``(at x y ...)`` of a form by (dx, dy); optionally set its first angle."""
+    pattern = re.compile(r"\(at\s+([-+0-9.eE]+)\s+([-+0-9.eE]+)(\s+[-+0-9.eE]+)?")
+    first = True
+
+    def shift(match: re.Match) -> str:
+        nonlocal first
+        x, y = _nm(match[1]) + dx, _nm(match[2]) + dy
+        tail = match[3] or ""
+        if first and angle is not None:
+            tail = f" {angle}"
+        first = False
+        return f"(at {x / 1_000_000:.6f} {y / 1_000_000:.6f}{tail}"
+
+    return pattern.sub(shift, block)
+
+
+def gather_power_flags_text(
+    text: str, inventory: list[dict], context: dict, check, to_connector: bool = True
+) -> tuple[str, dict | None]:
+    """Move one rail's power flag to the connector where that rail enters (brief v8).
+
+    A PWR_FLAG marks where power enters, so a rail that reaches a connector pin has its
+    flag at that connector: on the pin's wire, or a few grid steps past the wire's free
+    end. Positions are tried nearest the pin first, in every direction; one stands only
+    if the flag is clear of every other drawn item by ``FLAG_CLEARANCE`` and the
+    protected layout check accepts the drawing. A flag with no such position (or every
+    flag, without ``to_connector``) that sits on a decoupling capacitor's rail pin moves
+    onto that capacitor's wire to its supply pin instead, pointing across the wire, so
+    the pin is free for the rail's own symbol. At most one flag moves per call, so the
+    caller can observe the drawing again.
+    """
+    from .power_symbols import (
+        FLAG_CLEARANCE,
+        _append_forms,
+        _connector_pin_points,
+        _flag_clearance,
+        _forms,
+        _prune_dangling,
+        _sign,
+        _split_wire_at,
+        _wire_form,
+    )
+
+    def at(item: dict) -> Point:
+        return (round(item["x_mm"] * 1_000_000), round(item["y_mm"] * 1_000_000))
+
+    tree = parse(text)
+    connectors = _connector_pin_points(tree)
+    segments = _wire_segments(tree)
+    flag_forms = {}
+    for start, end, node in _forms(text):
+        if node[0] == "symbol" and one(node, "lib_id")[1] == "power:PWR_FLAG":
+            position = one(node, "at")
+            flag_forms[(_nm(position[1]), _nm(position[2]))] = (start, end, node)
+    for net in sorted(context) if to_connector else []:
+        pins = sorted(
+            at(item) for item in inventory if item["net"] == net and at(item) in connectors
+        )
+        if not pins:
+            continue
+        pin = pins[0]
+        group, frontier = [], [pin]
+        while frontier:
+            point = frontier.pop()
+            for segment in segments:
+                if segment not in group and point_on_segment(point, *segment):
+                    group.append(segment)
+                    frontier.extend(segment)
+        if not group:
+            continue
+        near = {pin} | {point for segment in group for point in segment}
+        for flag in context[net].get("flags", []):
+            if flag in near or any(point_on_segment(flag, *segment) for segment in group):
+                continue
+            if flag not in flag_forms:
+                continue
+            start, end, node = flag_forms[flag]
+            block = text[start:end]
+            reference = next(p[2] for p in children(node, "property") if p[1] == "Reference")
+            removed = _prune_dangling(text[:start] + text[end:])
+            # Grid points on the connector's rail wire, then past each free end of it.
+            spots: list[tuple[int, int, Point, tuple[Point, Point] | None]] = []
+            for first, second in group:
+                length = abs(first[0] - second[0]) + abs(first[1] - second[1])
+                way = (_sign(second[0] - first[0]), _sign(second[1] - first[1]))
+                for offset in range(0, length + 1, PITCH):
+                    point = (first[0] + way[0] * offset, first[1] + way[1] * offset)
+                    spots.append(
+                        (0, abs(point[0] - pin[0]) + abs(point[1] - pin[1]), point, None, way)
+                    )
+            ends = [point for segment in group for point in segment]
+            for first, second in group:
+                for tip, base in ((first, second), (second, first)):
+                    if tip == pin or ends.count(tip) != 1:
+                        continue
+                    way = (_sign(tip[0] - base[0]), _sign(tip[1] - base[1]))
+                    for steps in range(1, FLAG_ENTRY_EXTENSION + 1):
+                        point = (tip[0] + way[0] * steps * PITCH, tip[1] + way[1] * steps * PITCH)
+                        spots.append(
+                            (
+                                steps,
+                                abs(point[0] - pin[0]) + abs(point[1] - pin[1]),
+                                point,
+                                (tip, point),
+                                way,
+                            )
+                        )
+            for _steps, _distance, point, extension, way in sorted(set(spots)):
+                if point == pin:
+                    continue
+                drawn = removed
+                if extension is not None:
+                    drawn = _append_forms(drawn, [_wire_form(*extension, net)])
+                elif not any(point in segment for segment in _wire_segments(parse(drawn))):
+                    drawn = _split_wire_at(drawn, point)
+                # Across the wire only: a flag pointing along it would take the free end
+                # that the rail's own symbol needs.
+                for angle in (0, 180) if way[1] == 0 else (90, 270):
+                    moved = _shift_form(block, point[0] - flag[0], point[1] - flag[1], angle)
+                    trial = _append_forms(drawn, [moved])
+                    trial_tree = parse(trial)
+                    symbol = next(
+                        item
+                        for item in children(trial_tree, "symbol")
+                        if any(
+                            p[1] == "Reference" and p[2] == reference
+                            for p in children(item, "property")
+                        )
+                    )
+                    clearance = _flag_clearance(trial, trial_tree, symbol, angle)
+                    if clearance is None or clearance < FLAG_CLEARANCE:
+                        continue
+                    if check(trial) is not None:
+                        continue
+                    return trial, {
+                        "net": net,
+                        "flag": reference,
+                        "from_mm": [flag[0] / 1_000_000, flag[1] / 1_000_000],
+                        "to_mm": [point[0] / 1_000_000, point[1] / 1_000_000],
+                        "angle": angle,
+                        "extension_mm": (
+                            abs(extension[1][0] - extension[0][0])
+                            + abs(extension[1][1] - extension[0][1])
+                        )
+                        / 1_000_000
+                        if extension
+                        else 0,
+                    }
+    # Otherwise a flag on a decoupling capacitor's rail pin moves onto that capacitor's
+    # own wire, nearest the capacitor, pointing across the wire.
+    for net in sorted(context):
+        for consumer, capacitor in context[net].get("local_pairs", []):
+            if capacitor not in context[net].get("flags", []) or capacitor not in flag_forms:
+                continue
+            path = _flag_paths(segments, capacitor, {consumer})
+            start, end, node = flag_forms[capacitor]
+            block = text[start:end]
+            reference = next(p[2] for p in children(node, "property") if p[1] == "Reference")
+            base = text[:start] + text[end:]
+            spots = []
+            for first, second in path:
+                length = abs(first[0] - second[0]) + abs(first[1] - second[1])
+                way = (_sign(second[0] - first[0]), _sign(second[1] - first[1]))
+                for offset in range(PITCH, length, PITCH):
+                    point = (first[0] + way[0] * offset, first[1] + way[1] * offset)
+                    spots.append(
+                        (abs(point[0] - capacitor[0]) + abs(point[1] - capacitor[1]), point, way)
+                    )
+            for _distance, point, way in sorted(spots):
+                drawn = base
+                if not any(point in segment for segment in _wire_segments(parse(drawn))):
+                    drawn = _split_wire_at(drawn, point)
+                for angle in (180, 0) if way[1] == 0 else (90, 270):
+                    moved = _shift_form(
+                        block, point[0] - capacitor[0], point[1] - capacitor[1], angle
+                    )
+                    trial = _append_forms(drawn, [moved])
+                    trial_tree = parse(trial)
+                    symbol = next(
+                        item
+                        for item in children(trial_tree, "symbol")
+                        if any(
+                            p[1] == "Reference" and p[2] == reference
+                            for p in children(item, "property")
+                        )
+                    )
+                    clearance = _flag_clearance(trial, trial_tree, symbol, angle)
+                    if clearance is None or clearance < FLAG_CLEARANCE:
+                        continue
+                    if check(trial) is not None:
+                        continue
+                    return trial, {
+                        "net": net,
+                        "flag": reference,
+                        "from_mm": [capacitor[0] / 1_000_000, capacitor[1] / 1_000_000],
+                        "to_mm": [point[0] / 1_000_000, point[1] / 1_000_000],
+                        "angle": angle,
+                        "on": "decoupling wire",
+                    }
+    return text, None
+
+
+def _redraw_pair_wire(text: str, pin: Point, end: Point, middle: int, net: str) -> str | None:
+    """Replace the wire path from ``pin`` to ``end`` with a Z through x = ``middle``.
+
+    Only wires lying wholly on the old path are removed, and only when nothing else
+    attaches to the path's interior; otherwise ``None``.
+    """
+    from .power_symbols import _append_forms, _wire_form, _without_forms
+
+    tree = parse(text)
+    segments = _wire_segments(tree)
+    path = _flag_paths(segments, pin, {end})
+    if not path:
+        return None
+    covered = {tuple(sorted(edge)) for edge in path}
+    interior = {point for edge in path for point in edge} - {pin, end}
+
+    def on_path(segment: tuple[Point, Point]) -> bool:
+        first, second = segment
+        stops = sorted(
+            {first, second} | {p for p in interior if point_on_segment(p, first, second)}
+        )
+        return all(tuple(sorted(pair)) in covered for pair in zip(stops, stops[1:]))
+
+    removed = [segment for segment in segments if on_path(segment)]
+    kept = [segment for segment in segments if segment not in removed]
+    if any(point_on_segment(point, *segment) for segment in kept for point in interior):
+        return None
+    if any(point in interior for point in _pin_points_of(tree)):
+        return None
+    position = -1
+
+    def drop(node: list) -> bool:
+        nonlocal position
+        if node[0] == "wire":
+            position += 1
+            return segments[position] in removed
+        if node[0] == "junction":
+            return _nm_point(one(node, "at")) in interior
+        return False
+
+    text = "".join(_without_forms(text, drop))
+    corners = [pin, (middle, pin[1]), (middle, end[1]), end]
+    forms = [_wire_form(a, b, net) for a, b in zip(corners, corners[1:]) if a != b]
+    return _append_forms(text, forms)
+
+
+def _pin_points_of(tree: list) -> set[Point]:
+    from .power_symbols import _pin_points
+
+    return _pin_points(tree)
+
+
+def balance_power_block_text(
+    text: str, inventory: list[dict], context: dict, check
+) -> tuple[str, dict | None]:
+    """Mirror a power unit's two decoupling capacitors across it, at the same height (v8).
+
+    For a unit drawn without a body (an op-amp's power unit) whose top and bottom pins
+    are each a declared decoupling pair, the bottom pin's capacitor is moved to the far
+    side of the unit from the top pin's capacitor, at the same height and the same
+    distance from the pin line, so the two read as one block: rail pins on top, the
+    shared return below. The move stands only if each pair wire runs no longer than
+    the rectilinear distance between its ends and the protected layout check accepts
+    it. Both capacitors must already have their paired pin on top; at most one move is
+    made, so the caller can observe the new drawing before the next.
+    """
+    from .field_layout import _label_bodies
+
+    def at(item: dict) -> Point:
+        return (round(item["x_mm"] * 1_000_000), round(item["y_mm"] * 1_000_000))
+
+    owner = {at(item): item["reference"] for item in inventory}
+    pins_of: dict[str, list[Point]] = {}
+    for point, name in owner.items():
+        pins_of.setdefault(name, []).append(point)
+    pairs = {
+        consumer: capacitor
+        for net in context
+        for consumer, capacitor in context[net].get("local_pairs", [])
+    }
+    terminals = inventory + _flag_terminals(context)
+    tree = parse(text)
+    segments = _wire_segments(tree)
+    for (reference, _unit), (body, kind) in sorted(_label_bodies(tree).items()):
+        if kind != "power_unit":
+            continue
+        unit_pins = sorted(
+            point
+            for point, name in owner.items()
+            if name == reference
+            and body[0] <= point[0] <= body[2]
+            and body[1] <= point[1] <= body[3]
+        )
+        line = {point[0] for point in unit_pins}
+        if len(line) != 1:
+            continue
+        top = min(unit_pins, key=lambda point: point[1])
+        bottom = max(unit_pins, key=lambda point: point[1])
+        if top not in pairs or bottom not in pairs:
+            continue
+        upper, lower = pairs[top], pairs[bottom]
+        caps = []
+        for paired in (upper, lower):
+            name = owner.get(paired)
+            others = [point for point in pins_of.get(name, []) if point != paired]
+            if len(others) != 1 or others[0][0] != paired[0] or others[0][1] <= paired[1]:
+                break
+            caps.append(name)
+        if len(caps) != 2 or caps[0] == caps[1]:
+            continue
+        x0 = top[0]
+        side = 1 if upper[0] > x0 else -1
+        distance = abs(upper[0] - x0)
+
+        def monotone(drawn: str, pin: Point, end: Point) -> bool:
+            path = _flag_paths(_wire_segments(parse(drawn)), pin, {end})
+            return bool(path) and _path_length(path) == abs(pin[0] - end[0]) + abs(pin[1] - end[1])
+
+        target = (x0 - side * distance, upper[1])
+        if lower == target and monotone(text, bottom, lower):
+            continue
+        dx, dy = target[0] - lower[0], target[1] - lower[1]
+        action = MoveSymbols(
+            operation="move_symbols",
+            references=[caps[1]],
+            dx_mm=dx / 1_000_000,
+            dy_mm=dy / 1_000_000,
+        )
+        try:
+            moved = move_symbols_text(text, action, terminals)
+        except ValueError:
+            continue
+        # The pair wire rises midway between the pin line and the capacitor, clear of
+        # the unit's pin names.
+        middle = x0 + (target[0] - x0) // (2 * PITCH) * PITCH
+        net = next(name for name in context if (bottom, lower) in context[name]["local_pairs"])
+        redrawn = _redraw_pair_wire(moved, bottom, target, middle, net)
+        if redrawn is not None and check(redrawn) is None:
+            moved = redrawn
+        if not (monotone(moved, bottom, target) and monotone(moved, top, upper)):
+            continue
+        if check(moved) is not None:
+            continue
+        before = _flag_paths(segments, bottom, {lower})
+        return moved, {
+            "unit": reference,
+            "reference": caps[1],
+            "dx_mm": dx / 1_000_000,
+            "dy_mm": dy / 1_000_000,
+            "mirrors": caps[0],
+            "pair_wire_mm": [
+                _path_length(before) / 1_000_000,
+                _path_length(_flag_paths(_wire_segments(parse(moved)), bottom, {target}))
+                / 1_000_000,
+            ],
+        }
+    return text, None
+
+
 def straighten_decoupling_text(
     text: str, inventory: list[dict], context: dict, check
 ) -> tuple[str, dict | None]:
@@ -1405,17 +1788,7 @@ def straighten_decoupling_text(
     owner = {at(item): item["reference"] for item in inventory}
     # Power flags are not design terminals, but a moved part's rails must stay wired to
     # them, so the move reroutes to each flag's pin as to a fixed terminal.
-    terminals = inventory + [
-        {
-            "net": net,
-            "reference": f"flag:{net}:{index}",
-            "pin": "1",
-            "x_mm": point[0] / 1_000_000,
-            "y_mm": point[1] / 1_000_000,
-        }
-        for net in sorted(context)
-        for index, point in enumerate(context[net].get("flags", []))
-    ]
+    terminals = inventory + _flag_terminals(context)
     tree = parse(text)
     segments = _wire_segments(tree)
     outward = _pin_directions(tree)
@@ -1542,6 +1915,7 @@ class NativeSchematicEngine:
         page_balance: bool = False,
         field_ownership: bool = False,
         text_and_ground_checks: bool = False,
+        power_block: bool = False,
     ):
         self.resolved = assets()
         self.design = validate(design, self.resolved)
@@ -1568,6 +1942,13 @@ class NativeSchematicEngine:
         if text_and_ground_checks and not field_ownership:
             raise ValueError("text and ground checks require the brief v6+ field ownership gate")
         self.text_and_ground_checks = text_and_ground_checks
+        # Brief v8: a power unit's decoupling capacitors are mirrored into one block, power
+        # flags gathered where their rails enter, and supply arrows point up away from
+        # connectors.
+        if power_block and not text_and_ground_checks:
+            raise ValueError("the power block layout requires the brief v7+ checks")
+        self.power_block = power_block
+        self.power_entry_flags = power_block
         self.power_symbols = power_symbol_definitions() if power_symbol_rails else {}
         self.environment = dict(os.environ, LC_ALL="C", TZ="UTC")
         self.renderer = shutil.which("rsvg-convert")
@@ -1675,20 +2056,55 @@ class NativeSchematicEngine:
                 context = rail_context_for_design(self.design, observed)
                 for entry in context.values():
                     entry["layout_check"] = check
+                    entry["upright_supply"] = getattr(self, "power_block", False)
                 return terminal_inventory_for_design(self.design, observed), context
 
             inventory, context = inventory_of(schematic)
-            # Decoupling capacitors whose wire detours are moved beside their pins first.
-            straightened = []
+            # Decoupling capacitors whose wire detours are moved beside their pins first;
+            # under brief v8 the power flags are gathered at the connectors where their
+            # rails enter and a power unit's two capacitors are mirrored into one block.
             moved_path = work / schematic.name
-            for _round in range(4):
-                base, move = straighten_decoupling_text(base, inventory, context, check)
-                if move is None:
+            original = (base, inventory, context)
+
+            def arrange(flags: str | None) -> tuple[str, list[dict], dict, list[dict]]:
+                text, terminals, rails = original
+                steps: list[dict] = []
+
+                def gather(text, terminals, rails, check):
+                    return gather_power_flags_text(
+                        text, terminals, rails, check, to_connector=flags == "connector"
+                    )
+
+                stages = [
+                    ("power_flag_move", gather, flags is not None),
+                    ("power_block_move", balance_power_block_text, self_power_block),
+                    ("decoupling_move", straighten_decoupling_text, True),
+                ]
+                for key, stage, enabled in stages:
+                    for _round in range(4 if enabled else 0):
+                        text, move = stage(text, terminals, rails, check)
+                        if move is None:
+                            break
+                        steps.append({key: move})
+                        moved_path.write_text(text)
+                        terminals, rails = inventory_of(moved_path)
+                return text, terminals, rails, steps
+
+            self_power_block = getattr(self, "power_block", False)
+            # A flag gathered at a connector can take the only spot that connector's rail
+            # symbol fits; then flags move only along their own wires, and failing that
+            # they stay where the compiler drew them.
+            modes = (
+                ["connector", "wire", None] if getattr(self, "power_entry_flags", False) else [None]
+            )
+            straightened: list[dict] = []
+            for mode in modes:
+                base, inventory, context, steps = arrange(mode)
+                straightened += steps
+                best, plans = _search_rail_plans(base, nets, inventory, context, check)
+                if best is not None or not any("power_flag_move" in step for step in steps):
                     break
-                straightened.append({"decoupling_move": move})
-                moved_path.write_text(base)
-                inventory, context = inventory_of(moved_path)
-            best, plans = _search_rail_plans(base, nets, inventory, context, check)
+                straightened.append({"power_flag_moves_undone": f"no valid rail plan ({mode})"})
             if best is None:
                 blockers = sorted(
                     {
