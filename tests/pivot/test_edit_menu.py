@@ -418,3 +418,86 @@ def test_free_form_reviewer_prompt_and_schema_are_unchanged(monkeypatch, tmp_pat
     sent = []
     reviewer = _fake_ollama(monkeypatch, sent)("m")
     assert "ChooseEdit" not in json.dumps(reviewer.review_model.model_json_schema())
+
+
+def test_optional_entries_only_when_every_check_passes_and_at_most_two():
+    quality = {
+        "wire_length_mm": 500.0,
+        "rail_detour_mm": 0,
+        "bends": 10,
+        "perimeter_paths": [],
+        "perimeter_length_mm": 0,
+        "text_clearance_mm": 1.0,
+        "field_ownership_mm": 2.0,
+        "page_offset": 0.1,
+        "occupied_area_fraction": 0.2,
+        "power_symbols": {},
+    }
+    base = Assessment("sha256:base", dict(PASSING), quality=quality)
+
+    def shorter(action):
+        return Assessment(
+            "sha256:" + action["reference"],
+            dict(PASSING),
+            quality=dict(quality, wire_length_mm=400.0),
+        )
+
+    optional = [
+        Proposal("rail_symbol", {"reference": f"N{n}"}, {"net": f"N{n}"}, [], n, "d")
+        for n in range(4)
+    ]
+    menu = build_menu(base, optional, shorter, MenuPolicy(), ValidationCache())
+    assert len(menu["entries"]) == 2
+    assert all(
+        entry["optional"] and entry["gains"] == ["wire_length_mm"] for entry in menu["entries"]
+    )
+    # With a failing check, entries that address nothing are not offered.
+    failing = Assessment("sha256:base", dict(PASSING, field_locality="FAIL"), quality=quality)
+    assert build_menu(failing, optional, shorter, MenuPolicy(), ValidationCache())["entries"] == []
+
+    # An optional edit with no measured gain is not offered.
+    def same(action):
+        return Assessment("sha256:x" + action["reference"], dict(PASSING), quality=quality)
+
+    menu = build_menu(base, optional, same, MenuPolicy(), ValidationCache())
+    assert menu["entries"] == []
+    assert menu["record"]["rejected"][0]["reason"] == "optional edit shows no measured quality gain"
+
+
+def test_rail_proposals_name_the_failing_rails():
+    from ai_kicad.pivot.edit_menu import rail_proposals
+
+    report = {
+        "checks": {"rail_presentation": "PASS", "power_symbol_clearance": "FAIL"},
+        "intended_circuit": {"power_assertions": [{"net": "VCC"}, {"net": "REF"}]},
+        "readability_witnesses": {},
+    }
+    proposals = rail_proposals(report)
+    assert {(p.action["operation"], p.target["net"]) for p in proposals} == {
+        ("use_power_symbols", "REF"),
+        ("use_power_symbols", "VCC"),
+        ("connect_rail", "REF"),
+        ("connect_rail", "VCC"),
+    }
+    assert all(p.addresses == ["power_symbol_clearance"] for p in proposals)
+    assert all("power_symbol_clearance" in p.must_pass for p in proposals)
+
+
+class EmptyMenuEngine(MenuEngine):
+    def assess(self, schematic, directory, render=True):
+        image = directory / "review.png"
+        image.write_bytes(b"png")
+        return SchematicAssessment(schematic, [image], {"checks": dict(PASSING)})
+
+    def edit_menu(self, assessment, directory, policy, cache, thresholds=None):
+        self.menus += 1
+        return {"entries": [], "record": {"native_validations": 0}}
+
+
+def test_model_may_accept_with_an_empty_menu(tmp_path):
+    reviewer = MenuReviewer([{}])
+    result = run_schematic_review(
+        EmptyMenuEngine(), reviewer, tmp_path / "run", edit_mode="menu_only"
+    )
+    assert reviewer.inputs[0][0]["entries"] == []
+    assert result["status"] == "ACCEPTED_FOR_REVIEW"

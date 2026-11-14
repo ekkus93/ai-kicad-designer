@@ -496,7 +496,9 @@ class OllamaSchematicReviewer:
                 "entry in a scratch copy and it passed KiCad ERC and netlist equivalence; "
                 "'fixes' lists what it resolves and predicted_quality_delta its effect on the "
                 "drawing-quality measures (wire length, bends, detours, perimeter wires, text "
-                "clearance). Request an entry with "
+                "clearance). Entries marked optional fix no check; they are offered only when "
+                "every check passes and measurably improve the drawing (quality_gains). An "
+                "empty menu means the editor found no safe edit. Request an entry with "
                 '{"operation": "choose_edit", "id": "<entry id>"}. Free-form edits are refused. '
                 + (
                     "Choose at most one entry per revision, then wait for rechecks. "

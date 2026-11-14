@@ -71,6 +71,7 @@ from .edit_menu import (
     _named,
     build_menu,
     field_relocation_proposals,
+    rail_proposals,
     symbol_nudge_proposals,
 )
 from .quality_measures import measure_quality
@@ -2702,6 +2703,8 @@ class NativeSchematicEngine:
         tree = parse(text)
         proposals = field_relocation_proposals(text, tree, assessment.report)
         proposals += symbol_nudge_proposals(tree, assessment.report)
+        if getattr(self, "power_symbol_rails", False):
+            proposals += rail_proposals(assessment.report)
         counter = iter(range(1000))
         adapter = ACTION_ADAPTER
         before = self._geometric_field_witnesses(text)

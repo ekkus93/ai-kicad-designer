@@ -99,6 +99,9 @@ class Proposal:
     addresses: list[str]
     cost: float
     description: str
+    # Checks the trial must pass for this entry to be shown (rail entries: clearance and
+    # direction of power symbols).
+    must_pass: list[str] = field(default_factory=list)
 
     @property
     def target_key(self) -> tuple:
@@ -181,6 +184,101 @@ def units_named_by_failing_checks(report: dict) -> dict[tuple[str, int], list[st
             if isinstance(item, dict) and "reference" in item and "unit" in item:
                 named.setdefault((item["reference"], int(item["unit"])), set()).add(name)
     return {key: sorted(value) for key, value in sorted(named.items())}
+
+
+RAIL_CHECKS = (
+    "rail_presentation",
+    "visible_rail_continuity",
+    "power_symbol_clearance",
+    "power_symbol_direction",
+    "ground_symbol_direction",
+    "rail_route_detour",
+)
+# A rail entry is shown only when the power symbols it leaves are clear and conventional.
+RAIL_MUST_PASS = ["power_symbol_clearance", "power_symbol_direction", "ground_symbol_direction"]
+
+
+def _nets_named(witnesses) -> set[str]:
+    named = set()
+    for item in witnesses or []:
+        if isinstance(item, dict) and isinstance(item.get("net"), str):
+            named.add(item["net"])
+    return named
+
+
+def rail_proposals(report: dict) -> list[Proposal]:
+    """Power-symbol placement and reroutes of asserted rails.
+
+    With a failing rail check, every rail it names (or every asserted rail, when its
+    witnesses name none) is offered `use_power_symbols` (draw or re-place that rail's power
+    symbols) and `connect_rail` with `replace_existing` (reroute it). With every check
+    passing, the same edits are offered as optional improvements for rails whose drawn
+    route detours or that have long perimeter wires; build_menu keeps them only when they
+    measurably improve the drawing.
+    """
+    checks = report.get("checks", {})
+    rails = sorted(
+        {item["net"] for item in report.get("intended_circuit", {}).get("power_assertions", [])}
+    )
+    failing = [name for name in RAIL_CHECKS if checks.get(name) == "FAIL"]
+    targets: dict[str, list[str]] = {}
+    for name in failing:
+        named = _nets_named(report.get("readability_witnesses", {}).get(name)) & set(rails)
+        for net in named or rails:
+            targets.setdefault(net, []).append(name)
+    if not any(value == "FAIL" for value in checks.values()):
+        quality = report.get("quality") or {}
+        detoured = {
+            item["net"] for item in quality.get("rail_detours", []) if item["excess_mm"] > 0
+        }
+        if quality.get("perimeter_paths"):
+            detoured |= set(rails)
+        for net in sorted(detoured & set(rails)):
+            targets.setdefault(net, [])
+    proposals = []
+    for net, addresses in sorted(targets.items()):
+        proposals.append(
+            Proposal(
+                edit_class="rail_symbol",
+                action={"operation": "use_power_symbols", "net": net},
+                target={"net": net},
+                addresses=sorted(addresses),
+                cost=1,
+                description=f"draw rail {net} with a power symbol at each terminal group",
+                must_pass=RAIL_MUST_PASS,
+            )
+        )
+        proposals.append(
+            Proposal(
+                edit_class="rail_reroute",
+                action={"operation": "connect_rail", "net": net, "replace_existing": True},
+                target={"net": net},
+                addresses=sorted(addresses),
+                cost=2,
+                description=f"reroute rail {net}, replacing its existing wiring",
+                must_pass=RAIL_MUST_PASS,
+            )
+        )
+    return proposals
+
+
+def quality_gains(delta: dict | None, thresholds: dict | None = None) -> list[str]:
+    """Measures an edit clearly improves (the mirror of compare_quality's worse rule)."""
+    from .quality_measures import DEFAULT_QUALITY_THRESHOLDS
+
+    if not delta or not delta["not_worse"]:
+        return []
+    thresholds = thresholds or DEFAULT_QUALITY_THRESHOLDS
+    deltas, gains = delta["deltas"], []
+    if (deltas.get("wire_length_mm") or 0) <= -thresholds["wire_length_min_mm"]:
+        gains.append("wire_length_mm")
+    if (deltas.get("rail_detour_mm") or 0) <= -thresholds["rail_detour_min_mm"]:
+        gains.append("rail_detour_mm")
+    if (deltas.get("perimeter_length_mm") or 0) < 0:
+        gains.append("perimeter_paths")
+    if (deltas.get("bends") or 0) <= -thresholds["bends_added"]:
+        gains.append("bends")
+    return gains
 
 
 # Nudge offsets in grid steps: one and two steps along each axis.
@@ -361,7 +459,12 @@ def build_menu(
     for proposal in sorted(proposals, key=lambda p: (p.cost, canonical_action(p.action))):
         unique.setdefault(canonical_action(proposal.action), proposal)
     considered, screened_out, passed = 0, 0, []
-    for proposal in _interleave(list(unique.values())):
+    checks = base.report.get("checks", {})
+    all_passing = bool(checks) and all(value == "PASS" for value in checks.values())
+    # Fixes for failing checks come first; optional improvements only when all pass.
+    addressing = [p for p in unique.values() if p.addresses]
+    optional = [p for p in unique.values() if not p.addresses] if all_passing else []
+    for proposal in _interleave(addressing) + _interleave(optional):
         if considered >= policy.geometric_proposals:
             break
         considered += 1
@@ -369,8 +472,8 @@ def build_menu(
             passed.append(proposal)
         else:
             screened_out += 1
-    checks = base.report.get("checks", {})
     entries, per_class, rejected = [], {}, []
+    optional_shown = 0
     validations, exhausted = 0, None
     covered: set[tuple] = set()
     # Validate one proposal per target before a second for any target.
@@ -379,6 +482,8 @@ def build_menu(
         if len(entries) >= policy.total:
             break
         if per_class.get(proposal.edit_class, 0) >= policy.per_class:
+            continue
+        if not proposal.addresses and optional_shown >= policy.optional_when_passing:
             continue
         key = cache.key(base.revision, proposal.action)
         if key in cache.results:
@@ -417,18 +522,32 @@ def build_menu(
                     and "error" not in trial_quality
                     else None
                 )
+                gains = quality_gains(delta, quality_thresholds)
+                left_failing = sorted(
+                    name
+                    for name in proposal.must_pass
+                    if name in trial_checks and trial_checks[name] != "PASS"
+                )
                 if trial.revision == base.revision:
                     outcome = {"ok": False, "reason": "no change"}
                 elif broken:
                     outcome = {"ok": False, "reason": f"breaks {', '.join(broken)}"}
                 elif newly_failing:
                     outcome = {"ok": False, "reason": f"makes {', '.join(newly_failing)} fail"}
-                elif not fixes:
+                elif left_failing:
+                    outcome = {"ok": False, "reason": f"leaves {', '.join(left_failing)} failing"}
+                elif proposal.addresses and not fixes:
                     outcome = {"ok": False, "reason": "resolves nothing a failing check reports"}
+                elif not proposal.addresses and not gains:
+                    outcome = {
+                        "ok": False,
+                        "reason": "optional edit shows no measured quality gain",
+                    }
                 else:
                     outcome = {
                         "ok": True,
                         "fixes": fixes,
+                        "gains": gains,
                         "revision": trial.revision,
                         "predicted_delta": delta,
                     }
@@ -438,13 +557,16 @@ def build_menu(
             continue
         covered.add(proposal.target_key)
         per_class[proposal.edit_class] = per_class.get(proposal.edit_class, 0) + 1
+        optional_shown += not proposal.addresses
         entries.append(
             {
                 "id": f"{proposal.edit_class}-{len(entries) + 1}",
                 "class": proposal.edit_class,
                 "target": proposal.target,
                 "description": proposal.description,
+                "optional": not proposal.addresses,
                 "fixes": outcome["fixes"],
+                "gains": outcome.get("gains", []),
                 "predicted_delta": outcome["predicted_delta"],
                 "action": proposal.action,
                 "scratch_revision": outcome["revision"],
@@ -478,7 +600,9 @@ def menu_for_reviewer(menu: dict) -> list[dict]:
                 "class": entry["class"],
                 "target": entry["target"],
                 "description": entry["description"],
+                "optional": entry.get("optional", False),
                 "fixes": entry["fixes"],
+                "quality_gains": entry.get("gains", []),
                 "predicted_quality_delta": delta["deltas"] if delta else None,
                 "predicted_quality_worse": sorted(delta["worse"]) if delta else None,
             }

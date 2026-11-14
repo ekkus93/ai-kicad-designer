@@ -446,12 +446,20 @@ These features are **planned**, not prerequisites for P4 except when a specific 
 
       `test_edit_menu.py`'s KiCad menu test now sees field and nudge entries.
     - **Pivot suite:** 512 passed, 1 deselected. The run had one failure, in my own `test_native_menu_for_a_detached_power_unit_label`, which assumed the 8-validation budget would not be reached once nudges were added. I fixed it by allowing `native validation limit reached`, and `test_edit_menu.py` then passed 13/13.
-  - [ ] **P6-011i3** Add rail power-symbol placement and direction entries, and rail reroutes where feasible. When every check passes, add up to 2 optional improvements within the cap (spec R3). **Acceptance:**
+  - [x] **P6-011i3** Add rail power-symbol placement and direction entries, and rail reroutes where feasible. When every check passes, add up to 2 optional improvements within the cap (spec R3). **Acceptance:**
     - **Rail entries:** each keeps connectivity and passes the power-symbol clearance and direction checks.
     - **Optional improvements:** offered only when every hard and presentation check passes. Each is measurable, with a predicted R2 gain.
     - **Empty menu:** allowed; a test shows the model may accept with no entries.
 
     **Deps:** P6-011i2.
+    **Evidence (2026-11-14):**
+    - **Rail entries:** `rail_proposals` (`src/ai_kicad/pivot/edit_menu.py`) offers `use_power_symbols` (class `rail_symbol`) and `connect_rail` with `replace_existing` (class `rail_reroute`) for the rails a failing rail check names, or every asserted rail when its witnesses name none. Each rail proposal carries `must_pass` = power-symbol clearance and power-symbol and ground direction, so an entry leaving one failing is rejected.
+    - **Optional improvements:** offered only when every check passes, for rails that detour or when perimeter wires exist. They are capped at `optional_when_passing` (2) within the total, ranked after fixes, and kept only with a measured gain (`quality_gains`: shorter wire, smaller detour, less perimeter wire or fewer bends) and nothing worse. Entries record `optional` and `gains`, and the reviewer sees both with a prompt explaining optional entries and an empty menu.
+    - **Tests:**
+      - `test_edit_menu.py`: optional entries only when all checks pass, at most two, and only with a gain; rail proposals name the failing rails with `must_pass`; `test_model_may_accept_with_an_empty_menu`.
+      - `test_symbol_nudges.py`, with KiCad: on dual_buffer with U1C moved down 3.81 mm, every rail entry's scratch assessment passes ERC, equivalence, power-symbol clearance and both direction checks, and fixes power-symbol clearance.
+      - `test_symbol_nudges.py`, with KiCad: the October rc_to_buffer 004 passes every brief-v3 check, and the menu offers 1–2 optional entries, each with a gain and nothing worse. In the trial run these were REF `use_power_symbols` and REF reroute, each cutting wire length and bends.
+    - **Pivot suite:** 518 passed, 1 deselected.
   - [ ] **P6-011j** Send structured refusals, refuse equivalent requests, and apply the R4 batch rules (spec R4). **Acceptance:**
     - **Reason classes:** each of `connectivity`, `no_change`, `quality`, `infeasible_route`, `invalid_request`, `repeat` and `budget_exhausted` has a test, with its values and up to three alternatives from the menu.
     - **Equivalence:** coordinate edits within one grid step per axis on the same target, and rail edits with the same canonical net, operation, scope and options, are refused on the same base revision.

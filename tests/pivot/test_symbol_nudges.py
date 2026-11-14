@@ -163,3 +163,71 @@ def test_malformed_reference_list_is_refused_with_a_structured_reason(dual_buffe
             engine.apply(source, tmp_path / "002", [action])
     finally:
         engine.structured_refusals = True
+
+
+@KICAD
+def test_rail_entries_pass_power_symbol_clearance_and_direction(dual_buffer, tmp_path):
+    """With U1C moved down 3.81 mm its supply symbols touch other items. Rail entries must
+    keep connectivity and leave power-symbol clearance and direction passing."""
+    engine, source, _ = dual_buffer
+    shift = ACTION_ADAPTER.validate_python(
+        {
+            "operation": "move_units",
+            "units": [{"reference": "U1", "unit": 3}],
+            "dx_mm": 0,
+            "dy_mm": 3.81,
+        }
+    )
+    moved = engine.apply(source, tmp_path / "001", [shift])
+    assessment = engine.assess(moved, tmp_path / "001")
+    menu = engine.edit_menu(assessment, tmp_path / "menu", MenuPolicy(), ValidationCache())
+    rails = [
+        entry for entry in menu["entries"] if entry["class"] in ("rail_symbol", "rail_reroute")
+    ]
+    assert rails, menu["record"]
+    scratch = {}
+    for path in (tmp_path / "menu").glob("*/assessment.json"):
+        report = json.loads(path.read_text())
+        scratch["sha256:" + report["schematic_sha256"]] = report["checks"]
+    for entry in rails:
+        checks = scratch[entry["scratch_revision"]]
+        for name in (
+            "erc",
+            "electrical_equivalence",
+            "power_symbol_clearance",
+            "power_symbol_direction",
+            "ground_symbol_direction",
+        ):
+            assert checks[name] == "PASS", (entry["description"], name)
+        assert "power_symbol_clearance" in entry["fixes"]
+        assert entry["optional"] is False
+
+
+@KICAD
+def test_optional_improvements_when_every_check_passes(tmp_path):
+    """The October rc_to_buffer 004 (review_loop_corpus_2026-10-26_qwen_run1) passes every
+    brief-v3 check but routes its rails around the drawing. The menu may offer at most two
+    optional improvements, each with a measured quality gain and nothing worse."""
+    import shutil
+
+    from ai_kicad.pivot.schematic_review_native import NativeSchematicEngine
+
+    engine = NativeSchematicEngine(
+        json.loads((ROOT / "fixtures/m2b/rc_to_buffer.json").read_text()),
+        Path(os.environ["AI_KICAD_APPRUN"]),
+        power_symbol_rails=True,
+    )
+    project = (
+        ROOT / "fixtures/pivot/experiments/review_loop_corpus_2026-10-26_qwen_run1"
+        "/rc_to_buffer/candidates/004/project"
+    )
+    shutil.copytree(project, tmp_path / "c/project")
+    assessment = engine.assess(next((tmp_path / "c/project").glob("*.kicad_sch")), tmp_path / "c")
+    assert all(value == "PASS" for value in assessment.report["checks"].values())
+    menu = engine.edit_menu(assessment, tmp_path / "menu", MenuPolicy(), ValidationCache())
+    entries = menu["entries"]
+    assert 1 <= len(entries) <= 2
+    for entry in entries:
+        assert entry["optional"] is True and entry["fixes"] == []
+        assert entry["gains"]
+        assert entry["predicted_delta"]["not_worse"]
