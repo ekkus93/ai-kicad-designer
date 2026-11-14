@@ -32,6 +32,7 @@ Target = tuple[str, int, str]
 GRID = 1_270_000
 # Gaps between a part's body (or anchor) and the near edge of its relocated text.
 FIELD_GAPS = (GRID, 2 * GRID)
+SIDE_WORDS = {"right": "right of", "left": "left of", "above": "above", "below": "below"}
 # Slides along the body side, in grid steps, for each gap.
 FIELD_SLIDES = (0, -1, 1, -2, 2)
 
@@ -143,9 +144,77 @@ def resolved_items(base: dict, trial: dict, proposal: Proposal) -> list[str]:
     for name in proposal.addresses:
         if name in items:
             continue
-        if key in before.get(name, set()) and key not in after.get(name, set()):
-            items.append(f"{name}: {key[0]} unit {key[1]} {key[2]}")
+        if len(key) == 3:
+            if key in before.get(name, set()) and key not in after.get(name, set()):
+                items.append(f"{name}: {key[0]} unit {key[1]} {key[2]}")
+            continue
+        old, new = unit_witnesses(base, name), unit_witnesses(trial, name)
+        if len(new) < len(old):
+            items.append(f"{name}: {len(old) - len(new)} fewer of {len(old)} reported")
     return items
+
+
+def unit_witnesses(report: dict, check: str) -> list:
+    """What a failing check reports, as a comparable list (field checks or readability)."""
+    if check in FIELD_CHECKS:
+        return sorted(FIELD_CHECKS[check](report))
+    return list(report.get("readability_witnesses", {}).get(check, []))
+
+
+def units_named_by_failing_checks(report: dict) -> dict[tuple[str, int], list[str]]:
+    """Units each failing check names: field owners, nearest other parts, and readability
+    witnesses that carry a reference and unit."""
+    checks = report.get("checks", {})
+    named: dict[tuple[str, int], set[str]] = {}
+    for name, targets in field_witnesses(report).items():
+        for reference, unit, _field in targets:
+            named.setdefault((reference, unit), set()).add(name)
+    if checks.get("field_owner_association") == "FAIL":
+        for item in report.get("field_owner_association", {}).get("witnesses", []):
+            if item.get("nearest_other_reference"):
+                key = (item["nearest_other_reference"], int(item["nearest_other_unit"]))
+                named.setdefault(key, set()).add("field_owner_association")
+    for name, witnesses in report.get("readability_witnesses", {}).items():
+        if checks.get(name) != "FAIL":
+            continue
+        for item in witnesses:
+            if isinstance(item, dict) and "reference" in item and "unit" in item:
+                named.setdefault((item["reference"], int(item["unit"])), set()).add(name)
+    return {key: sorted(value) for key, value in sorted(named.items())}
+
+
+# Nudge offsets in grid steps: one and two steps along each axis.
+NUDGES = [(dx, 0) for dx in (1, -1, 2, -2)] + [(0, dy) for dy in (1, -1, 2, -2)]
+
+
+def symbol_nudge_proposals(tree: list, report: dict) -> list[Proposal]:
+    """Grid nudges of each unit a failing check names, by canonical (reference, unit)."""
+    instances = {(item["reference"], item["unit"]): item for item in _instances(tree)}
+    proposals = []
+    for (reference, unit), checks in units_named_by_failing_checks(report).items():
+        instance = instances.get((reference, unit))
+        if instance is None or reference.startswith("#"):
+            continue
+        for dx, dy in NUDGES:
+            proposals.append(
+                Proposal(
+                    edit_class="symbol_nudge",
+                    action={
+                        "operation": "move_units",
+                        "units": [{"reference": reference, "unit": unit}],
+                        "dx_mm": round(dx * GRID / 1e6, 2),
+                        "dy_mm": round(dy * GRID / 1e6, 2),
+                    },
+                    target={"reference": reference, "unit": unit},
+                    addresses=checks,
+                    cost=abs(dx) + abs(dy),
+                    description=(
+                        f"nudge {instance['name']} (unit {unit}) by "
+                        f"({dx * GRID / 1e6:+.2f}, {dy * GRID / 1e6:+.2f}) mm with its wiring"
+                    ),
+                )
+            )
+    return proposals
 
 
 def _text_box(centre: tuple[int, int], text: str, page_angle: int) -> Box:
@@ -246,8 +315,9 @@ def field_relocation_proposals(text: str, tree: list, report: dict) -> list[Prop
                                 addresses=sorted(checks),
                                 cost=distance / 1e6,
                                 description=(
-                                    f"move {instance['name']} {name} '{label}' {side} of its "
-                                    f"{frame} to ({centre[0] / 1e6:.2f}, {centre[1] / 1e6:.2f})"
+                                    f"move {instance['name']} {name} '{label}' "
+                                    f"{SIDE_WORDS[side]} its {frame} to "
+                                    f"({centre[0] / 1e6:.2f}, {centre[1] / 1e6:.2f})"
                                 ),
                             )
                         )

@@ -117,6 +117,7 @@ class NativeSchematicReviewService:
             power_block=self.power_block,
             level_power_block=self.level_power_block,
             quality_thresholds=self.quality_thresholds,
+            structured_refusals=self.profile is not None,
         )
         reviewer = OllamaSchematicReviewer(
             self.model,

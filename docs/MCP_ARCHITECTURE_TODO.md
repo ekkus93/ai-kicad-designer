@@ -426,12 +426,26 @@ These features are **planned**, not prerequisites for P4 except when a specific 
       The same drawing built a 3-entry menu from 3 native validations in 2.2 s.
     - **Pivot suite:** 508 passed, 1 deselected.
     **Note:** In a batch, only the first menu choice is guaranteed to match its scratch result, because later entries were pre-checked against the drawing before the earlier ones. Each later choice is still applied and checked in turn, and its `matches_scratch` is recorded.
-  - [ ] **P6-011i2** Add unit-safe symbol nudges, addressing parts by canonical `(reference, unit)` (spec R3). **Acceptance:**
+  - [x] **P6-011i2** Add unit-safe symbol nudges, addressing parts by canonical `(reference, unit)` (spec R3). **Acceptance:**
     - Every nudge entry keeps connectivity and passes collision checks.
     - A multi-unit part (a dual op-amp) is nudged by unit.
     - Malformed references such as `['U1','unit','3']` are refused with a structured reason.
 
     **Deps:** P6-011i1.
+    **Evidence (2026-11-14):**
+    - **Action:** `MoveUnits` (`move_units`) names units as `{reference, unit}`. It is menu-only: it is parsed by `ACTION_ADAPTER` for menu entries and is not in the free-form `SchematicAction`, so the v1–v9 schema is unchanged.
+    - **Editor:** `move_symbols_text` moves only the named units' symbols and pins, with their private wiring. The other units of the same reference stay as fixed pins.
+    - **Proposals:** `symbol_nudge_proposals` offers ±1.27 and ±2.54 mm nudges of every unit a failing check names: field owners, the nearest other part of an association witness, and readability witnesses with a reference and unit. The menu validates nudges natively. A nudge "fixes" a check when the check passes or reports fewer witnesses.
+    - **Structured refusal:** under the v10 profile (`structured_refusals`), a `move_symbols` reference list naming non-parts is refused as `invalid_request: malformed reference list ['U1', 'unit', '3']: 'unit', '3' are not a part reference …`, with how to name a unit. Without the profile the editor keeps its earlier message. The loop records editor refusals as `refusal` with `reason_class`.
+    - **Tests:** `tests/pivot/test_symbol_nudges.py`, 5 tests:
+      - `MoveUnits` validation
+      - nudge targets from the historical inverting_gain 000 (U1C, R1, C2)
+      - with KiCad, on dual_buffer (NE5532 dual op-amp): `move_units` U1 unit 1 moves only that unit, and ERC and equivalence pass
+      - with KiCad, after moving U1C down 3.81 mm (field association and power-symbol clearance fail), every nudge entry targets U1 unit 3 and its scratch assessment passes ERC, netlist equivalence, observed layout and field separation
+      - the malformed-list refusal, with and without the profile
+
+      `test_edit_menu.py`'s KiCad menu test now sees field and nudge entries.
+    - **Pivot suite:** 512 passed, 1 deselected. The run had one failure, in my own `test_native_menu_for_a_detached_power_unit_label`, which assumed the 8-validation budget would not be reached once nudges were added. I fixed it by allowing `native validation limit reached`, and `test_edit_menu.py` then passed 13/13.
   - [ ] **P6-011i3** Add rail power-symbol placement and direction entries, and rail reroutes where feasible. When every check passes, add up to 2 optional improvements within the cap (spec R3). **Acceptance:**
     - **Rail entries:** each keeps connectivity and passes the power-symbol clearance and direction checks.
     - **Optional improvements:** offered only when every hard and presentation check passes. Each is measurable, with a predicted R2 gain.

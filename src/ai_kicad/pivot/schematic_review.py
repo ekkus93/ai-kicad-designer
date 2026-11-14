@@ -115,9 +115,48 @@ SchematicAction = Annotated[
     | RegenerateSchematic,
     Field(discriminator="operation"),
 ]
-# ChooseEdit is not in SchematicAction, so the review schema sent under briefs v1-v9 is
-# unchanged; only the menu-only review models accept it.
-ACTION_ADAPTER = TypeAdapter(SchematicAction)
+
+
+class UnitRef(StrictModel):
+    """One unit of a part, by canonical reference and unit number."""
+
+    reference: str = Field(pattern=r"^[A-Za-z#][A-Za-z0-9_#]{0,31}$")
+    unit: int = Field(ge=1, le=16)
+
+
+class MoveUnits(StrictModel):
+    """Move chosen units, by (reference, unit), with their private wiring (menu entries)."""
+
+    operation: Literal["move_units"]
+    units: list[UnitRef] = Field(min_length=1, max_length=12)
+    dx_mm: float = Field(ge=-297, le=297, allow_inf_nan=False)
+    dy_mm: float = Field(ge=-210, le=210, allow_inf_nan=False)
+
+    @model_validator(mode="after")
+    def require_distinct_nonzero_move(self) -> MoveUnits:
+        keys = [(item.reference, item.unit) for item in self.units]
+        if len(set(keys)) != len(keys):
+            raise ValueError("move_units units must be distinct")
+        if self.dx_mm == 0 and self.dy_mm == 0:
+            raise ValueError("move_units made no change; choose nonzero movement")
+        return self
+
+
+# ChooseEdit and MoveUnits are not in SchematicAction, so the review schema sent under
+# briefs v1-v9 is unchanged. Menu entries may use either; only menu resolution parses them.
+ACTION_ADAPTER = TypeAdapter(
+    Annotated[
+        MoveField
+        | AddWirePath
+        | ConnectRail
+        | MoveSymbols
+        | UsePowerSymbols
+        | TranslateSheet
+        | RegenerateSchematic
+        | MoveUnits,
+        Field(discriminator="operation"),
+    ]
+)
 
 
 class SchematicReview(StrictModel):
@@ -743,6 +782,7 @@ def run_schematic_review(
                         }
                 except (ValueError, KeyError) as error:
                     refused_edits[edit_key] = f"edit refused: {error}"
+                    entry["refusal"] = {"reason_class": "invalid_request", "message": str(error)}
                     entry["edit_outcome"] = edit_outcome(
                         assessment.report,
                         None,

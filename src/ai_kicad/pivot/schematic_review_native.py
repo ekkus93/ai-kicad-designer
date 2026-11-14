@@ -14,7 +14,6 @@ import subprocess
 import tempfile
 from uuid import uuid4
 
-from pydantic import TypeAdapter
 
 from ai_kicad.ir import InputError
 from ai_kicad.kicad import ToolFailure, run_headless
@@ -38,7 +37,9 @@ from .schematic_review import (
     MoveField,
     AddWirePath,
     ConnectRail,
+    ACTION_ADAPTER,
     MoveSymbols,
+    MoveUnits,
     RegenerateSchematic,
     SchematicAction,
     SchematicAssessment,
@@ -70,6 +71,7 @@ from .edit_menu import (
     _named,
     build_menu,
     field_relocation_proposals,
+    symbol_nudge_proposals,
 )
 from .quality_measures import measure_quality
 from .readability_checks import (
@@ -177,9 +179,11 @@ def edit_schematic_text(
                 rail=(rail_context or {}).get(action.net),
                 replace_existing=action.replace_existing,
             )
-        elif isinstance(action, MoveSymbols):
+        elif isinstance(action, MoveSymbols | MoveUnits):
             if terminal_inventory is None:
-                raise ValueError("move_symbols requires independently observed terminal positions")
+                raise ValueError(
+                    f"{action.operation} requires independently observed terminal positions"
+                )
             text = move_symbols_text(text, action, terminal_inventory)
         elif isinstance(action, UsePowerSymbols):
             if terminal_inventory is None or rail_context is None:
@@ -682,26 +686,80 @@ def _needs_ground_symbol(text: str, net: str) -> bool:
     )
 
 
-def move_symbols_text(text: str, action: MoveSymbols, terminal_inventory: list[dict]) -> str:
-    """Move a symbol group with its private wiring; reroute nets shared with other symbols."""
-    dx, dy = round(action.dx_mm * 1_000_000), round(action.dy_mm * 1_000_000)
-    if dx % PITCH or dy % PITCH:
-        raise ValueError(f"move_symbols offsets must use the KiCad {PITCH / 1_000_000:g} mm grid")
-    moved = set(action.references)
-    tree = parse(text)
-    found = {
+def malformed_reference_lists(tree: list, actions: list) -> None:
+    """Refuse a move_symbols reference list that names things that are not parts.
+
+    Models sometimes spell one unit of a multi-unit part as ['U1', 'unit', '3']. The
+    refusal says why and how to name a unit, instead of a bare "not found".
+    """
+    known = {
         prop[2]
         for symbol in children(tree, "symbol")
         for prop in children(symbol, "property")
-        if prop[1] == "Reference" and prop[2] in moved
+        if prop[1] == "Reference"
     }
-    if found != moved:
-        raise ValueError(f"move_symbols references not found: {sorted(moved - found)}")
+    for action in actions:
+        if not isinstance(action, MoveSymbols):
+            continue
+        unknown = [name for name in action.references if name not in known]
+        if unknown:
+            raise ValueError(
+                f"invalid_request: malformed reference list {action.references}: "
+                f"{', '.join(repr(name) for name in unknown)} "
+                f"{'is' if len(unknown) == 1 else 'are'} not a part reference on this "
+                "drawing. move_symbols moves every unit of each listed reference; a single "
+                "unit of a multi-unit part is named by (reference, unit), as in the edit "
+                "menu's symbol nudges"
+            )
+
+
+def move_symbols_text(
+    text: str,
+    action: MoveSymbols | MoveUnits,
+    terminal_inventory: list[dict],
+) -> str:
+    """Move a symbol group with its private wiring; reroute nets shared with other symbols.
+
+    `move_symbols` moves every unit of each reference; `move_units` moves only the named
+    (reference, unit) units and the pins they draw.
+    """
+    dx, dy = round(action.dx_mm * 1_000_000), round(action.dy_mm * 1_000_000)
+    if dx % PITCH or dy % PITCH:
+        raise ValueError(
+            f"{action.operation} offsets must use the KiCad {PITCH / 1_000_000:g} mm grid"
+        )
+    tree = parse(text)
 
     def pin_point(item: dict) -> Point:
         return (round(item["x_mm"] * 1_000_000), round(item["y_mm"] * 1_000_000))
 
-    moved_pins = {pin_point(item) for item in terminal_inventory if item["reference"] in moved}
+    units: set[tuple[str, int]] | None = None
+    if isinstance(action, MoveUnits):
+        from .schematic_description import _instances
+
+        units = {(item.reference, item.unit) for item in action.units}
+        placed = {(item["reference"], item["unit"]): item for item in _instances(tree)}
+        missing = sorted(units - set(placed))
+        if missing:
+            raise ValueError(f"move_units units not found: {missing}")
+        moved = {reference for reference, _unit in units}
+        unit_pins = {pin["point"] for key in units for pin in placed[key]["pins"]}
+        moved_pins = {
+            pin_point(item)
+            for item in terminal_inventory
+            if item["reference"] in moved and pin_point(item) in unit_pins
+        }
+    else:
+        moved = set(action.references)
+        found = {
+            prop[2]
+            for symbol in children(tree, "symbol")
+            for prop in children(symbol, "property")
+            if prop[1] == "Reference" and prop[2] in moved
+        }
+        if found != moved:
+            raise ValueError(f"move_symbols references not found: {sorted(moved - found)}")
+        moved_pins = {pin_point(item) for item in terminal_inventory if item["reference"] in moved}
     # Pin-mounted decorations such as power flags travel with the pin they mark.
     pins_by_reference: dict[str, set[Point]] = {}
     for item in terminal_inventory:
@@ -711,7 +769,15 @@ def move_symbols_text(text: str, action: MoveSymbols, terminal_inventory: list[d
         for reference, pins in pins_by_reference.items()
         if reference not in moved and pins <= moved_pins
     }
-    fixed_pins = {pin_point(item) for item in terminal_inventory if item["reference"] not in moved}
+    if units is None:
+        fixed_pins = {
+            pin_point(item) for item in terminal_inventory if item["reference"] not in moved
+        }
+    else:
+        # The other units of a moved reference stay, with their pins.
+        fixed_pins = {
+            pin_point(item) for item in terminal_inventory if pin_point(item) not in moved_pins
+        }
     segments, owners, roots = _wire_trees(tree)
     labels = [(_nm_point(one(label, "at")), label) for label in children(tree, "label")]
     junctions = [_nm_point(one(node, "at")) for node in children(tree, "junction")]
@@ -766,7 +832,15 @@ def move_symbols_text(text: str, action: MoveSymbols, terminal_inventory: list[d
             elif wire_index in carried_wires:
                 rewritten.append((start, end, _translate_block(block, action.dx_mm, action.dy_mm)))
         elif node[0] == "symbol":
-            if any(p[1] == "Reference" and p[2] in moved for p in children(node, "property")):
+            reference = next(
+                (p[2] for p in children(node, "property") if p[1] == "Reference"), None
+            )
+            unit = int(one(node, "unit")[1]) if children(node, "unit") else 1
+            if reference in moved and (
+                units is None
+                or (reference, unit) in units
+                or reference not in {name for name, _unit in units}
+            ):
                 rewritten.append((start, end, _translate_block(block, action.dx_mm, action.dy_mm)))
         elif node[0] in {"label", "junction", "no_connect"}:
             point = _nm_point(one(node, "at"))
@@ -779,6 +853,11 @@ def move_symbols_text(text: str, action: MoveSymbols, terminal_inventory: list[d
     shifted = [
         dict(item, x_mm=item["x_mm"] + action.dx_mm, y_mm=item["y_mm"] + action.dy_mm)
         if item["reference"] in moved
+        and (
+            units is None
+            or pin_point(item) in moved_pins
+            or item["reference"] not in {name for name, _unit in units}
+        )
         else item
         for item in terminal_inventory
     ]
@@ -1956,8 +2035,11 @@ class NativeSchematicEngine:
         power_block: bool = False,
         level_power_block: bool = False,
         quality_thresholds: dict | None = None,
+        structured_refusals: bool = False,
     ):
         self.resolved = assets()
+        # Brief v10: editor refusals name their reason class (spec R4).
+        self.structured_refusals = structured_refusals
         # Spec R2: report-only drawing-quality measures, recorded under every brief.
         self.quality_thresholds = quality_thresholds
         self.design = validate(design, self.resolved)
@@ -2619,13 +2701,17 @@ class NativeSchematicEngine:
         text = assessment.schematic.read_text()
         tree = parse(text)
         proposals = field_relocation_proposals(text, tree, assessment.report)
+        proposals += symbol_nudge_proposals(tree, assessment.report)
         counter = iter(range(1000))
-        adapter = TypeAdapter(SchematicAction)
+        adapter = ACTION_ADAPTER
         before = self._geometric_field_witnesses(text)
 
         def precheck(proposal) -> bool:
             # Cheap geometric screen: the target leaves every check that reports it, and no
-            # field check reports anything new.
+            # field check reports anything new. A nudge reroutes wiring, which needs the
+            # assessed netlist, so it goes straight to native validation.
+            if proposal.edit_class != "field_relocation":
+                return True
             try:
                 after = self._geometric_field_witnesses(
                     edit_schematic_text(text, [adapter.validate_python(proposal.action)])
@@ -2689,10 +2775,12 @@ class NativeSchematicEngine:
         wire_actions = [
             action
             for action in actions
-            if isinstance(action, AddWirePath | ConnectRail | MoveSymbols | UsePowerSymbols)
+            if isinstance(
+                action, AddWirePath | ConnectRail | MoveSymbols | MoveUnits | UsePowerSymbols
+            )
         ]
         if any(
-            not isinstance(action, MoveSymbols) and action.net not in asserted_nets
+            not isinstance(action, MoveSymbols | MoveUnits) and action.net not in asserted_nets
             for action in wire_actions
         ):
             raise ValueError(
@@ -2718,7 +2806,7 @@ class NativeSchematicEngine:
             for action in wire_actions:
                 if isinstance(action, AddWirePath):
                     resolve_wire_path_points(action, inventory)
-            if any(isinstance(action, MoveSymbols) for action in wire_actions):
+            if any(isinstance(action, MoveSymbols | MoveUnits) for action in wire_actions):
                 listed = {(item["reference"], item["pin"]) for item in inventory}
                 inventory += [
                     {
@@ -2731,6 +2819,8 @@ class NativeSchematicEngine:
                     for (reference, pin), point in sorted(observed["pin_positions"].items())
                     if (reference, pin) not in listed
                 ]
+        if getattr(self, "structured_refusals", False):
+            malformed_reference_lists(parse(schematic.read_text()), actions)
         regenerations = [i for i, a in enumerate(actions) if isinstance(a, RegenerateSchematic)]
         if regenerations and regenerations != [0]:
             raise ValueError("regeneration may occur once, as the first action")
