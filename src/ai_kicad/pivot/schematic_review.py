@@ -15,12 +15,14 @@ from urllib.request import Request, urlopen
 from pydantic import Field, ValidationError, model_validator
 
 from .evidence import StrictModel
+from .quality_measures import compare_quality, quality_overlay
 from .review_status import (
     CONNECTIVITY_CHECKS as CONNECTIVITY_CHECKS,
     broken_connectivity,
     candidate_summary,
     edit_outcome,
     ignored_erc_checks,
+    primary_effect,
     run_primary_effect,
 )
 
@@ -461,6 +463,24 @@ class OllamaSchematicReviewer:
         return response["message"]["content"]
 
 
+def _quality(assessment: SchematicAssessment | None) -> dict | None:
+    """The candidate's R2 measures, or None when the engine did not measure them."""
+    quality = assessment.report.get("quality") if assessment is not None else None
+    return quality if isinstance(quality, dict) and "error" not in quality else None
+
+
+def quality_change(
+    before: SchematicAssessment | None,
+    after: SchematicAssessment | None,
+    thresholds: dict | None = None,
+) -> dict | None:
+    """R2 comparison of two candidates, or None when either was not measured."""
+    first, second = _quality(before), _quality(after)
+    if first is None or second is None:
+        return None
+    return compare_quality(first, second, thresholds)
+
+
 def run_schematic_review(
     engine: SchematicEngine,
     reviewer: SchematicReviewer,
@@ -469,8 +489,14 @@ def run_schematic_review(
     max_reviews: int = 6,
     max_seconds: float = 600,
     max_model_tokens: int = 60000,
+    quality_thresholds: dict | None = None,
+    quality_rollback: bool = False,
 ) -> dict:
-    """Save every candidate and promote only joint machine/model acceptance."""
+    """Save every candidate and promote only joint machine/model acceptance.
+
+    R2 quality is report-only by default. `quality_rollback` is an opt-in enforcement mode,
+    off by default: it rolls back a check-neutral edit that makes an R2 measure worse.
+    """
     if not 1 <= max_reviews <= 30 or max_seconds <= 0 or max_model_tokens <= 0:
         raise ValueError("invalid schematic review budget")
     output.mkdir(parents=True, exist_ok=False)
@@ -594,6 +620,9 @@ def run_schematic_review(
                     outcomes.append(entry["edit_outcome"])
                     raise ValueError(refused_edits[edit_key]) from error
                 broken = broken_connectivity(assessment.report, trial.report)
+                change = quality_change(assessment, trial, quality_thresholds)
+                effect = primary_effect(assessment.report, trial.report)
+                entry["quality_delta"] = change
                 reason_class = None
                 if trial.revision in seen:
                     reason_class = "no_change"
@@ -606,11 +635,24 @@ def run_schematic_review(
                         f"edit rolled back: it made {', '.join(broken)} fail, so it changed "
                         "connectivity; the drawing is unchanged. Choose a different edit"
                     )
+                elif (
+                    quality_rollback
+                    and effect == "LAYOUT_CHANGE"
+                    and change is not None
+                    and not change["not_worse"]
+                ):
+                    reason_class = "quality"
+                    refused_edits[edit_key] = (
+                        "edit rolled back: it fixed no check and made "
+                        f"{', '.join(sorted(change['worse']))} worse; the drawing is unchanged. "
+                        "Choose a different edit"
+                    )
                 entry["edit_outcome"] = edit_outcome(
                     assessment.report,
                     trial.report,
                     disposition="ROLLED_BACK" if reason_class else "KEPT",
                     reason_class=reason_class,
+                    overlay=quality_overlay(effect, change),
                 )
                 outcomes.append(entry["edit_outcome"])
                 if edit_key in refused_edits:
@@ -681,9 +723,35 @@ def run_schematic_review(
                             )
                         )
                         break
-                    step_outcomes.append(
-                        edit_outcome(current.report, trial.report, disposition="KEPT")
+                    change = quality_change(current, trial, quality_thresholds)
+                    effect = primary_effect(current.report, trial.report)
+                    if (
+                        quality_rollback
+                        and effect == "LAYOUT_CHANGE"
+                        and change is not None
+                        and not change["not_worse"]
+                    ):
+                        stop = (
+                            f"action {number + 1} ({action.operation}) not kept: it fixed no "
+                            f"check and made {', '.join(sorted(change['worse']))} worse"
+                        )
+                        step_outcomes.append(
+                            edit_outcome(
+                                current.report,
+                                trial.report,
+                                disposition="ROLLED_BACK",
+                                reason_class="quality",
+                            )
+                        )
+                        break
+                    outcome = edit_outcome(
+                        current.report,
+                        trial.report,
+                        disposition="KEPT",
+                        overlay=quality_overlay(effect, change),
                     )
+                    outcome["quality_delta"] = change
+                    step_outcomes.append(outcome)
                     current = trial
                     kept.append(number + 1)
                 entry["applied_actions"] = kept
@@ -728,8 +796,13 @@ def run_schematic_review(
     def summary(candidate):
         if candidate is None:
             return None
+        # QUALITY_NOT_WORSE compares a candidate with candidate 000.
         return candidate_summary(
-            candidate, output, verdicts=verdicts, accepted_revision=accepted_revision, quality=None
+            candidate,
+            output,
+            verdicts=verdicts,
+            accepted_revision=accepted_revision,
+            quality=quality_change(initial_assessment, candidate, quality_thresholds),
         )
 
     # Top-level levels describe the last safely committed current candidate.
@@ -747,6 +820,11 @@ def run_schematic_review(
             "best_passing": summary(best_assessment),
         },
         "run_primary_effect": run_primary_effect(outcomes),
+        "quality_vs_initial": quality_change(initial_assessment, assessment, quality_thresholds),
+        "best_passing_quality_vs_initial": quality_change(
+            initial_assessment, best_assessment, quality_thresholds
+        ),
+        "quality_rollback": quality_rollback,
         "erc_ignored_checks": (
             ignored_erc_checks(assessment.report) if assessment is not None else None
         ),

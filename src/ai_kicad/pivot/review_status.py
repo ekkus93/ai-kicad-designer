@@ -166,16 +166,24 @@ def corpus_status_fields(result: dict) -> dict:
     """The R1 fields a corpus summary keeps for one design."""
     levels = result.get("status_levels")
     counts: dict[str, int] = {}
+    overlays: dict[str, int] = {}
     for outcome in iteration_outcomes(result):
         key = outcome["disposition"]
         if outcome["reason_class"]:
             key += ":" + outcome["reason_class"]
         counts[key] = counts.get(key, 0) + 1
+        if outcome.get("quality_overlay"):
+            name = outcome["quality_overlay"]
+            overlays[name] = overlays.get(name, 0) + 1
+    quality = result.get("quality_vs_initial")
     return {
         "status_levels": {name: level["status"] for name, level in levels.items()}
         if levels
         else None,
         "run_primary_effect": result.get("run_primary_effect"),
         "edit_dispositions": dict(sorted(counts.items())),
+        "edit_overlays": dict(sorted(overlays.items())),
+        "quality_delta": quality["deltas"] if quality else None,
+        "quality_worse": sorted(quality["worse"]) if quality else None,
         "erc_ignored_checks": result.get("erc_ignored_checks"),
     }

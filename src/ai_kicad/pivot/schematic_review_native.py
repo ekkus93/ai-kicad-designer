@@ -61,6 +61,7 @@ from .power_symbols import (
     power_symbols,
     rail_presentation,
 )
+from .quality_measures import measure_quality
 from .readability_checks import (
     FRAME,
     content_extent,
@@ -1944,8 +1945,11 @@ class NativeSchematicEngine:
         text_and_ground_checks: bool = False,
         power_block: bool = False,
         level_power_block: bool = False,
+        quality_thresholds: dict | None = None,
     ):
         self.resolved = assets()
+        # Spec R2: report-only drawing-quality measures, recorded under every brief.
+        self.quality_thresholds = quality_thresholds
         self.design = validate(design, self.resolved)
         self.launcher = launcher.resolve()
         self.source = source.resolve() if source else None
@@ -2413,6 +2417,14 @@ class NativeSchematicEngine:
             "schematic_sha256": file_hash(schematic),
             "image_sha256": {p.name: file_hash(p) for p in images},
         }
+        # R2 quality measures are reported only; they never change a check.
+        try:
+            text = schematic.read_text()
+            report["quality"] = measure_quality(
+                parse(text), text, report, getattr(self, "quality_thresholds", None)
+            )
+        except (ValueError, KeyError, IndexError, TypeError) as error:
+            report["quality"] = {"error": f"quality measures failed: {error}"}
         write_json(directory / "assessment.json", report)
         return SchematicAssessment(schematic, images, report)
 
