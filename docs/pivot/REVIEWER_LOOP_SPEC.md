@@ -1,11 +1,12 @@
 # Reviewer loop: spec for the next round of work
 
 **Status:** decisions recorded 2026-11-14; ready for implementation. Branch `mcp`.
-**Tracks:** `docs/MCP_ARCHITECTURE_TODO.md` P6-011g to P6-011l, under P6-011.
+**Tracks:** `docs/MCP_ARCHITECTURE_TODO.md` P6-011g to P6-011s, under P6-011.
 **Sources:**
 - the independent review `docs/ai_kicad_reviewer_independent_review_for_claude.md`, with recommendation IDs such as P0.3 and P1.4
 - the applied-edit index `docs/pivot/REVIEWER_APPLIED_EDITS.md`
 - the qualification runs `review_qualification_v9_*_2026-11-13_*`
+- the baseline review `docs/ai_kicad_baseline_review_for_claude.md` and ratings `docs/ai_kicad_baseline_ratings_chatgpt.json` (ChatGPT, 2026-11-14), the source of R7
 - the questions and their answers: `docs/ai_kicad_reviewer_loop_spec_questions.md`. The answers came from ChatGPT at the owner's request, and the owner added the corrections in §5. They are design decisions, not evidence that any drawing, label or result has been signed off.
 
 ## 1. Goal
@@ -237,6 +238,67 @@ The harness's "known-good" drawings predate the v8/v9 layout rules, and its defe
 
    It does **not** satisfy human electrical review or design-requirements checks.
 
+### R7 — Generator layout fixes from the baseline review
+
+ChatGPT rated the v10 baseline (`review_baseline_v10_2026-11-14_run1`): 5 good and 10 with defects, although every drawing passes every check. Most of the defects are made by the generator, and the reviewer's menu edits (one label or one part by a grid step) cannot fix them. R7 fixes them in the generator. Its IDs (B01–B15) are the baseline's codes; `ratings/decision.json` maps them to designs.
+
+**Rules for all of R7:**
+- **Where the changes go:** placement changes are pivot-side steps after the protected compiler, as in briefs v8 and v9. The protected M2 composer and observers are not changed (§6).
+- **Brief v11:** every R7 layout change is behind a new immutable brief v11, which keeps v10's checks, reviewer profile and thresholds. Briefs v1–v10 keep their drawings byte-for-byte.
+- **Safety:** every R7 step must keep the exact intended netlist, ERC and every brief check passing. A step that cannot place its block without breaking a check leaves the drawing as the compiler made it, and records why.
+- **Design data:** the intended circuits in `fixtures/m2b/` are not edited.
+
+#### R7.1 — Connector orientation and signal flow (review P0)
+
+- **Pin facing:** a single-pin connector whose pin faces away from the part it feeds is mirrored or moved to the other side of that part before routing, so its wire does not make a U-turn around the connector. This covers B04, B08 and B11 (inputs and returns) and keeps B06 and B13 as good as they are.
+- **Flow:** inputs and supply entry sit left of their block; outputs sit right of the block that drives them:
+  - the regulator (B03): VIN connector left of U1, VOUT connector right of U1
+  - the 555 timers (B05, B10, B15): the output connector near U1 pin 3, without the output wire wrapping around the timer
+- **Measure:** a connector's *U-turn* is its wire leaving the connector pin away from its far end and coming back. An R7 drawing has no U-turn longer than 2.54 mm unless a documented constraint (a recorded blocker) requires it.
+
+#### R7.2 — Functional blocks before routing (review P0)
+
+- **Blocks:** the netlist is partitioned into blocks: connectors, the analog signal chain, the regulator, the 555 timing ladder, the power unit with its decoupling, and parked (unused) op-amp units. The partition comes from part roles and nets, not from per-design coordinates.
+- **Placement:** blocks are placed as units, in left-to-right signal order, before detailed routing. Routing must not move a part out of its block.
+- **Parked units:** a parked op-amp unit sits next to its active sibling, not in a far quadrant (B09, B12, B14).
+
+#### R7.3 — Per-net structural detour measure (review P1)
+
+- **Measure:** for each net, and each pair of connected pins on it, the drawn path length over the Manhattan distance, plus whether the path leaves the bounding box of the parts it joins and comes back. It is reported per net and pin pair with the path, beside the R2 measures.
+- **Policy:** report-only, like R2. It never trades away correct connectivity.
+- **Use:** the R7.7 tests use it to show U-turns and wrap-arounds are gone, and that B06 and B13 do not get worse.
+
+#### R7.4 — Supply and return blocks for any circuit (review P1)
+
+- **Decoupling:** each decoupling capacitor is placed beside the supply pin it serves, between that pin and its return, with matching local power symbols. The v8/v9 power block for op-amp power units is the first case of this rule.
+- **Power sections:** a power unit, its capacitors and its rail symbols form one compact block with consistent symbol directions. This covers the sideways VPLUS/VMINUS/REF symbols in B09 and B14 and the loop in B12.
+- **555 control pin:** the 555 control-pin capacitor is placed as a local bypass from pin 5 to the return, distinct from supply decoupling, without a long detour (B05).
+
+#### R7.5 — Drawing conventions (review P2)
+
+- **Ground symbols:** return symbols at an IC point down where a downward position is clear. The right-pointing ground or REF symbol under U1 in B10 and B15 is the case to fix.
+- **Labels:** a generated reference midpoint (VREF in B12) carries a local net label near its node, and a parked op-amp unit is labelled as unused. Both are text and labels only and do not change connectivity.
+- **Values:** a part value that mixes the value with other words (B04's `12.4k precision`) is reported as a design-data issue in the result. The generator does not rewrite intended-circuit data.
+
+#### R7.6 — Design-review flags (review "engineering-design questions")
+
+- **Flags:** the result carries `design_review_flags`, which are report-only and never a check or a reason to change topology in a layout review. They cover:
+  - a 555 without a local supply bypass from VCC to the return (B05, B10, B15)
+  - a resistor-divider reference used as a midpoint rail (Thevenin impedance reported; B12)
+  - a linear regulator whose datasheet stability, dropout and thermal checks are not recorded (B03)
+  - op-amp common-mode and output swing against the defined rails, not verified
+- **Status:** `DESIGN_REQUIREMENTS_CHECKED` stays `PENDING` (R1).
+
+#### R7.7 — Acceptance tests on the rated baseline (review "acceptance tests")
+
+Each R7 task proves itself on the rated drawings, regenerated under brief v11:
+- **U-turns:** B04, B08 and B11 have no connector U-turn longer than 2.54 mm without a recorded constraint.
+- **Regulator flow:** in B03, VIN and its connector are left of U1, and VOUT and J2 are right of U1, with the capacitors by their pins.
+- **555 output:** in B05, B10 and B15, the output net reaches its connector without routing around the timer.
+- **Power blocks:** in B07, B09, B12 and B14, the power unit and decoupling form one readable block, separate from the signal lines, with exact connectivity.
+- **No regressions:** B06 and B13 do not get worse on the R2 and R7.3 measures, and B01, B02 and B07 stay at least as clear.
+- **Re-rating:** a new baseline regenerated under v11 is rated blind the same way as v10 (ChatGPT by owner decision), and the ratings are recorded. Fewer drawings rated defective than in v10 is evidence, not a gate.
+
 ## 4. Acceptance criteria
 
 - **Safety:** no accepted, kept or current candidate has a connectivity regression. Every edit that breaks connectivity is rolled back. This is met for single edits by `ccf9e5cc`; it is kept under R3 and R4.
@@ -266,6 +328,6 @@ The answers to Q1–Q17 are in `docs/ai_kicad_reviewer_loop_spec_questions.md` a
 
 ## 6. Out of scope here
 
-- **Electrical design review (review P2.2):** for example op-amp bias compensation, regulator dropout, or loading on the divider-based VREF. This is a separate pass with its own requirements. The reviewer may note such concerns as text, but must not request topology changes during a layout review.
+- **Electrical design review (review P2.2):** for example op-amp bias compensation, regulator dropout, or loading on the divider-based VREF. This is a separate pass with its own requirements. R7.6 only reports flags for it. The reviewer may note such concerns as text, but must not request topology changes during a layout review.
 - **Protected code:** changes to the protected M2 composer or observers. Placement changes stay in pivot-side steps.
 - **PCB, footprints and fabrication.**

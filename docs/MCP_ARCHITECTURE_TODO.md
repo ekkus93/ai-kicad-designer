@@ -552,6 +552,63 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - **Separate modes:** menu-only, free-form and hybrid results, if run, are reported separately.
 
     **Deps:** P6-011l3, P6-011l4.
+  - **Note (2026-11-14):** The owner asked for the generator recommendations of ChatGPT's baseline review (`docs/ai_kicad_baseline_review_for_claude.md`) to be added as tasks P6-011m to P6-011s, implementing spec R7. Order: m → n → o → p → q → r → s. They run ahead of the reviewer qualification tasks (l2–l4, k2), because the generator makes most of the defects the review found.
+  - [ ] **P6-011m** Add immutable brief v11 and the R7.3 per-net structural detour measure (spec R7, R7.3). **Acceptance:**
+    - **Brief:** v11 and its schema keep v10's checks, profile and thresholds, and add the R7 layout flags. A test shows v1–v10 drawings unchanged byte-for-byte on at least three designs.
+    - **Measure:** reported for every candidate, per net and connected pin pair, with path length, Manhattan distance and whether the path leaves and re-enters the box of the parts it joins.
+    - **Hand check:** the measure flags the connector U-turns of the v10 baseline's B04, B08 and B11 and the 555 output wrap of B05, B10 and B15, and nothing on B06 or B13 above 2.54 mm. Checked by hand against the drawings.
+    - **Policy:** report-only, with no change to any check.
+
+    **Deps:** P6-011k1.
+  - [ ] **P6-011n** Orient connectors by pin facing and signal flow (spec R7.1). **Acceptance:**
+    - **Placement:** a pivot-side step under v11 mirrors or moves single-pin connectors whose pin faces away from the part they feed, and places output connectors right of their driving block.
+    - **Rated drawings, regenerated under v11:**
+      - B04, B08 and B11 have no connector U-turn longer than 2.54 mm without a recorded constraint
+      - B03 has VIN left of U1 and VOUT/J2 right of U1
+      - B05, B10 and B15 reach their output connector without wrapping around the timer
+      - B06 and B13 are not worse on R2 or R7.3
+    - **Safety:** every regenerated drawing keeps the exact netlist, ERC and every check passing.
+    - **Generality:** no design-specific coordinates.
+
+    **Deps:** P6-011m.
+  - [ ] **P6-011o** Place functional blocks before routing (spec R7.2). **Acceptance:**
+    - **Partition:** a block partition from part roles and nets (connectors, signal chain, regulator, 555 timing ladder, power unit with decoupling, parked units) is recorded per drawing and tested on every corpus design.
+    - **Placement:** blocks are placed as units in signal order, and routing keeps parts inside their blocks.
+    - **Parked units:** in B09, B12 and B14 the parked unit sits next to its active sibling.
+    - **Safety:** all corpus designs keep the exact netlist, ERC and every check passing, and no design-specific coordinates are used.
+
+    **Deps:** P6-011n.
+  - [ ] **P6-011p** Build supply and return blocks for any circuit (spec R7.4). **Acceptance:**
+    - **Decoupling:** each decoupling capacitor sits beside the supply pin it serves, with matching local power symbols.
+    - **Power blocks:** in B07, B09, B12 and B14 the power unit, its capacitors and its rail symbols form one block with consistent symbol directions, separate from the signal lines.
+    - **555 control pin:** the 555 control-pin capacitor is a short local bypass from pin 5 to the return (B05).
+    - **Safety:** the exact netlist, ERC and every check still pass. B01, B02 and B07 are not worse on R2 or R7.3.
+
+    **Deps:** P6-011o.
+  - [ ] **P6-011q** Apply the R7.5 drawing conventions (spec R7.5). **Acceptance:**
+    - **Ground symbols:** IC return symbols point down where a downward position is clear, fixing B10 and B15's sideways symbol under U1.
+    - **Labels:** a generated reference midpoint (B12's VREF) gets a local net label near its node, and parked units are labelled unused, with connectivity unchanged.
+    - **Values:** values mixing extra words (B04) are reported as a design-data issue, and the design file is unchanged.
+    - **Safety:** every check still passes.
+
+    **Deps:** P6-011p.
+  - [ ] **P6-011r** Report R7.6 design-review flags (spec R7.6). **Acceptance:**
+    - **Flags:** every result carries `design_review_flags` for:
+      - 555 supply bypass missing (B05, B10, B15)
+      - a divider reference, with its Thevenin impedance (B12: 10k/10k gives 5 kΩ)
+      - regulator datasheet checks unrecorded (B03)
+      - op-amp swing unverified
+    - **Tests:** each flag is tested on its corpus design and is absent where it does not apply.
+    - **No effect:** no flag changes a check, an edit or `DESIGN_REQUIREMENTS_CHECKED` (still `PENDING`).
+
+    **Deps:** P6-011k1.
+  - [ ] **P6-011s** Regenerate and re-rate the baseline under brief v11 (spec R7.7). **Acceptance:**
+    - **Baseline:** a new baseline (`review_baseline_v11_<date>_runN`) is built with `tools/pivot/build_review_baseline.py`.
+    - **Acceptance tests:** every R7.7 test is run and recorded against it.
+    - **Re-rating:** ChatGPT rates it blind, by owner decision, as for v10. The ratings and the v10 → v11 comparison per drawing are committed.
+    - **No overclaiming:** fewer defective ratings is reported as evidence, not as qualification.
+
+    **Deps:** P6-011n, P6-011o, P6-011p, P6-011q, P6-011r; ChatGPT ratings supplied by the owner.
 
 ## P7 — Conditional native KiCad extension/fork gate
 
