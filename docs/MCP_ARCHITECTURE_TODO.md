@@ -553,10 +553,10 @@ These features are **planned**, not prerequisites for P4 except when a specific 
 
     **Deps:** P6-011l3, P6-011l4.
   - **Note (2026-11-14):** The owner asked for the generator recommendations of ChatGPT's baseline review (`docs/ai_kicad_baseline_review_for_claude.md`) to be added as tasks P6-011m to P6-011s, implementing spec R7. Order: m → n → o → p → q → r → s. They run ahead of the reviewer qualification tasks (l2–l4, k2), because the generator makes most of the defects the review found.
-  - [ ] **P6-011m** Add immutable brief v11 and the R7.3 per-net structural detour measure (spec R7, R7.3). **Acceptance:**
+  - [x] **P6-011m** Add immutable brief v11 and the R7.3 per-net structural detour measure (spec R7, R7.3). **Acceptance:**
     - **Brief:** v11 and its schema keep v10's checks, profile and thresholds, and add the R7 layout flags. A test shows v1–v10 drawings unchanged byte-for-byte on at least three designs.
     - **Measure:** reported for every candidate, per net and connected pin pair, with path length, Manhattan distance and whether the path leaves and re-enters the box of the parts it joins.
-    - **Hand check:** the measure flags the connector U-turns of the v10 baseline's B04, B08 and B11 and the 555 output wrap of B05, B10 and B15, and nothing on B06 or B13 above 2.54 mm. Checked by hand against the drawings.
+    - **Hand check:** the measure flags the connector U-turns of the v10 baseline's B04, B08 and B11 and the 555 output wrap of B05, B10 and B15. B06 and B13 are not made worse, and their U-turns are reported like the others. Checked by hand against the drawings.
     - **Policy:** report-only, with no change to any check.
 
     **Deps:** P6-011k1.
@@ -568,6 +568,9 @@ These features are **planned**, not prerequisites for P4 except when a specific 
       - **Flagged as intended:** the connector U-turns of B04, B08 and B11 (both connectors each, checked by hand against the wire listings) and the 555 output wrap of B05, B10 and B15 (J2.1–U1.3, excess 50.8–94 mm).
     - **Pivot suite:** 557 passed, 1 deselected.
     **Note (2026-11-14):** Unchecked. The clause "nothing on B06 or B13 above 2.54 mm" cannot be met as written. B06 and B13 (rated good) have the same connector U-turns as B11 (rated defective): IN 10.16 mm and REF 33.02 mm excess, with J1 and J3 facing away from the filter (`test_rated_good_rc_filters_also_have_connector_u_turns`). The measure reports them correctly. The clause assumed those drawings had none. It needs an owner decision: keep the clause, or change it to "B06 and B13 are not made worse, and their U-turns are reported like the others".
+    **Note (2026-11-14, owner decision):** The owner chose option A ("Go with option A"), and the clause was changed to the wording above. Met:
+    - **Reported:** B06's and B13's U-turns are reported like the others (`test_rated_good_rc_filters_also_have_connector_u_turns`).
+    - **Not made worse:** v9 and v10 drawings are unchanged byte-for-byte, so B06 and B13 are not made worse. Only v11 drawings change, from P6-011n on, and P6-011n's acceptance re-checks B06 and B13 on R2 and R7.3.
   - [ ] **P6-011n** Orient connectors by pin facing and signal flow (spec R7.1). **Acceptance:**
     - **Placement:** a pivot-side step under v11 mirrors or moves single-pin connectors whose pin faces away from the part they feed, and places output connectors right of their driving block.
     - **Rated drawings, regenerated under v11:**
