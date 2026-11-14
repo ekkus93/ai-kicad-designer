@@ -491,6 +491,7 @@ def run_schematic_review(
     max_model_tokens: int = 60000,
     quality_thresholds: dict | None = None,
     quality_rollback: bool = False,
+    run_record: dict | None = None,
 ) -> dict:
     """Save every candidate and promote only joint machine/model acceptance.
 
@@ -825,6 +826,7 @@ def run_schematic_review(
             initial_assessment, best_assessment, quality_thresholds
         ),
         "quality_rollback": quality_rollback,
+        "run_record": run_record,
         "erc_ignored_checks": (
             ignored_erc_checks(assessment.report) if assessment is not None else None
         ),

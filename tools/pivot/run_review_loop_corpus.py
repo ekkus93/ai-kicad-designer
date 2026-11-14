@@ -88,6 +88,11 @@ def main() -> None:
         default=1,
         help="edits per review, applied and checked one at a time (default 1)",
     )
+    parser.add_argument(
+        "--experimental-free-form-edits",
+        action="store_true",
+        help="with a brief v10 profile, allow free-form edits instead of menu-only (recorded)",
+    )
     parser.add_argument("--designs", nargs="*", help="run only these corpus designs (default: all)")
     args = parser.parse_args()
     args.review_brief = args.review_brief.resolve()
@@ -106,6 +111,7 @@ def main() -> None:
         withhold_checks=args.withhold_checks,
         with_images=args.with_images,
         max_actions=args.max_actions,
+        experimental_free_form_edits=args.experimental_free_form_edits,
     )
     results = {}
     for design in CORPUS:
@@ -146,6 +152,7 @@ def main() -> None:
             for path in (
                 "src/ai_kicad/pivot/schematic_review.py",
                 "src/ai_kicad/pivot/review_status.py",
+                "src/ai_kicad/pivot/quality_measures.py",
                 "src/ai_kicad/pivot/schematic_review_native.py",
                 "src/ai_kicad/pivot/schematic_review_service.py",
             )
@@ -161,6 +168,16 @@ def main() -> None:
         "max_actions": args.max_actions,
         "model_timeout_seconds": args.model_timeout,
         "review_brief": str(args.review_brief.relative_to(ROOT)),
+        "review_brief_sha256": file_hash(args.review_brief),
+        "review_profile": service.profile.profile_id if service.profile else None,
+        "edit_mode": service.edit_mode,
+        "effective_reviewer_options": {
+            "think": service.think,
+            "svg_source": service.svg_source,
+            "with_images": service.with_images,
+            "withhold_checks": service.withhold_checks,
+            "max_actions": service.max_actions,
+        },
         "budgets": service.budgets,
         "results": results,
         "accepted": sorted(name for name, item in results.items() if item["accepted_schematic"]),

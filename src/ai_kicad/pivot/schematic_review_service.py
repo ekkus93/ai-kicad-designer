@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from .schematic_review import OllamaSchematicReviewer, run_schematic_review
+from .schematic_review import OllamaSchematicReviewer, file_hash, run_schematic_review
 from .schematic_review_brief import (
     brief_allows_power_symbol_rails,
     brief_requires_field_ownership,
@@ -14,6 +14,7 @@ from .schematic_review_brief import (
     brief_requires_power_block,
     brief_requires_text_and_ground_checks,
     brief_requires_readability_checks,
+    brief_review_profile,
     resolve_review_brief,
 )
 from .schematic_review_native import NativeSchematicEngine
@@ -40,6 +41,7 @@ class NativeSchematicReviewService:
         withhold_checks: bool = False,
         with_images: bool = False,
         max_actions: int = 1,
+        experimental_free_form_edits: bool = False,
     ):
         self.launcher = launcher
         self.model = model
@@ -66,6 +68,32 @@ class NativeSchematicReviewService:
         self.text_and_ground_checks = brief_requires_text_and_ground_checks(review_brief)
         self.power_block = brief_requires_power_block(review_brief)
         self.level_power_block = brief_requires_level_power_block(review_brief)
+        # Brief v10: a versioned reviewer-loop profile selects the reviewer settings, the
+        # edit mode and the report-only R2 thresholds (spec R0, R5).
+        self.review_brief = review_brief
+        self.profile = brief_review_profile(review_brief)
+        self.quality_thresholds = None
+        self.edit_mode = "free_form"
+        if self.profile is not None:
+            chosen = self.profile.reviewer.model_dump()
+            defaults = {
+                "svg_source": False,
+                "with_images": False,
+                "think": False,
+                "withhold_checks": False,
+                "max_actions": 1,
+            }
+            for name, default in defaults.items():
+                passed = getattr(self, name)
+                if passed != default and passed != chosen[name]:
+                    raise ValueError(f"{name}={passed!r} conflicts with the brief's v10 profile")
+                setattr(self, name, chosen[name])
+            self.quality_thresholds = dict(self.profile.quality.thresholds)
+            self.edit_mode = self.profile.edit_mode
+        if experimental_free_form_edits:
+            if self.profile is None:
+                raise ValueError("experimental free-form edits need a brief v10 profile")
+            self.edit_mode = "free_form_experimental"
         # The loop checks its wall-clock budget between operations; one KiCad or model call
         # may still be running when it expires.
         self.timeout_seconds = max_seconds + 600
@@ -87,6 +115,7 @@ class NativeSchematicReviewService:
             text_and_ground_checks=self.text_and_ground_checks,
             power_block=self.power_block,
             level_power_block=self.level_power_block,
+            quality_thresholds=self.quality_thresholds,
         )
         reviewer = OllamaSchematicReviewer(
             self.model,
@@ -101,4 +130,35 @@ class NativeSchematicReviewService:
             max_actions=self.max_actions,
             **({"review_brief": self.brief_text} if self.brief_text else {}),
         )
-        return run_schematic_review(engine, reviewer, output, **self.budgets)
+        run_record = {
+            "review_brief": str(self.review_brief) if self.review_brief else None,
+            "review_brief_sha256": (
+                file_hash(self.review_brief)
+                if self.review_brief and self.review_brief.is_file()
+                else None
+            ),
+            "review_profile": self.profile.profile_id if self.profile else None,
+            "edit_mode": self.edit_mode,
+            "model": self.model,
+            "model_digest": reviewer.identity.get("digest"),
+            "options": {
+                "context_tokens": self.context_tokens,
+                "output_tokens": self.output_tokens,
+                "think": self.think,
+                "svg_source": self.svg_source,
+                "description_source": self.description_source,
+                "withhold_checks": self.withhold_checks,
+                "with_images": self.with_images,
+                "max_actions": self.max_actions,
+                "model_timeout_seconds": self.model_timeout_seconds,
+            },
+            "toolchain": getattr(engine, "toolchain", None),
+        }
+        return run_schematic_review(
+            engine,
+            reviewer,
+            output,
+            **self.budgets,
+            quality_thresholds=self.quality_thresholds,
+            run_record=run_record,
+        )

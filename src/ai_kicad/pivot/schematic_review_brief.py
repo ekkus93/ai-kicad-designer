@@ -186,6 +186,73 @@ class SchematicReviewBriefV9(SchematicReviewBriefV8):
     brief_id: Literal["owner-readability.v9"]
 
 
+class ReviewerProfile(StrictModel):
+    """Reviewer inputs and output limits (spec R5)."""
+
+    svg_source: bool
+    with_images: bool
+    think: bool
+    withhold_checks: bool
+    max_actions: int = Field(ge=1, le=4)
+
+
+class QualityPolicy(StrictModel):
+    """R2 measures: report-only under v10, with the starting thresholds (spec R2)."""
+
+    policy: Literal["report_only"]
+    thresholds: dict[str, float]
+
+    @model_validator(mode="after")
+    def require_every_threshold(self) -> QualityPolicy:
+        from .quality_measures import DEFAULT_QUALITY_THRESHOLDS
+
+        if set(self.thresholds) != set(DEFAULT_QUALITY_THRESHOLDS):
+            raise ValueError(
+                "quality thresholds must name exactly "
+                + ", ".join(sorted(DEFAULT_QUALITY_THRESHOLDS))
+            )
+        return self
+
+
+class MenuPolicy(StrictModel):
+    """R3 edit menu caps and per-round pre-check budget."""
+
+    per_class: int = Field(ge=1, le=8)
+    total: int = Field(ge=1, le=16)
+    optional_when_passing: int = Field(ge=0, le=4)
+    geometric_proposals: int = Field(ge=1, le=64)
+    native_validations: int = Field(ge=1, le=32)
+    seconds: float = Field(gt=0, le=600)
+
+
+class RefusalPolicy(StrictModel):
+    """R4: requests within one grid step per axis of a refused edit are equivalent."""
+
+    equivalence_grid_mm: float = Field(gt=0, le=5.08)
+
+
+class ReviewProfileV10(StrictModel):
+    """Behaviour brief v10 turns on (spec R0): menu-only edits, report-only quality."""
+
+    profile_id: Literal["reviewer-loop.v10"]
+    reviewer: ReviewerProfile
+    edit_mode: Literal["menu_only"]
+    quality: QualityPolicy
+    menu: MenuPolicy
+    refusals: RefusalPolicy
+
+
+class SchematicReviewBriefV10(SchematicReviewBriefV9):
+    """Brief v9 checks and layout, plus the reviewer-loop v10 profile: SVG text and PNGs,
+    reasoning off, check verdicts withheld, menu-only edits, up to 4 edits per review, and
+    report-only R2 quality measures. Free-form edits are available only behind an explicit
+    experimental flag outside the brief."""
+
+    schema_version: Literal["schematic-review-brief.v10"]
+    brief_id: Literal["owner-readability.v10"]
+    review_profile: ReviewProfileV10
+
+
 BRIEF_MODELS = {
     "schematic-review-brief.v2": SchematicReviewBriefV2,
     "schematic-review-brief.v3": SchematicReviewBriefV3,
@@ -195,6 +262,7 @@ BRIEF_MODELS = {
     "schematic-review-brief.v7": SchematicReviewBriefV7,
     "schematic-review-brief.v8": SchematicReviewBriefV8,
     "schematic-review-brief.v9": SchematicReviewBriefV9,
+    "schematic-review-brief.v10": SchematicReviewBriefV10,
 }
 ReviewBrief = (
     SchematicReviewBrief
@@ -206,6 +274,7 @@ ReviewBrief = (
     | SchematicReviewBriefV7
     | SchematicReviewBriefV8
     | SchematicReviewBriefV9
+    | SchematicReviewBriefV10
 )
 
 
@@ -263,6 +332,14 @@ def brief_requires_level_power_block(path: Path | None) -> bool:
     if path is None or path.suffix.lower() != ".json":
         return False
     return isinstance(load_review_brief(path), SchematicReviewBriefV9)
+
+
+def brief_review_profile(path: Path | None) -> ReviewProfileV10 | None:
+    """The v10 reviewer-loop profile, or None for earlier briefs."""
+    if path is None or path.suffix.lower() != ".json":
+        return None
+    brief = load_review_brief(path)
+    return brief.review_profile if isinstance(brief, SchematicReviewBriefV10) else None
 
 
 def format_review_brief(brief: ReviewBrief) -> str:

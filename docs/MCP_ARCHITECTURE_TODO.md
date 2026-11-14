@@ -325,7 +325,7 @@ These features are **planned**, not prerequisites for P4 except when a specific 
       - corpus fields
     - **Pivot suite:** `AI_KICAD_APPRUN=/tmp/AppDir/AppRun .venv/bin/python -m pytest -q tests/pivot --deselect …ngspice… --ignore tests/pivot/test_direct_backend.py`: 460 passed, 1 deselected. The loop is brief-independent, so v1–v9 decisions are unchanged.
     **Note:** `QUALITY_NOT_WORSE` is `PENDING` until P6-011h computes R2. When a batch stops because a passing presentation check broke (the existing batch rule), the outcome uses reason class `presentation_regression`, which is not in the R4 list; P6-011j settles batch reasons.
-  - [ ] **P6-011h** Compute the R2 quality measures for every candidate, with per-edit and per-run deltas and the `LOCAL_FIX_ONLY` / `QUALITY_REGRESSION` overlays. Under v10 they are report-only (spec R2). **Acceptance:**
+  - [x] **P6-011h** Compute the R2 quality measures for every candidate, with per-edit and per-run deltas and the `LOCAL_FIX_ONLY` / `QUALITY_REGRESSION` overlays. Under v10 they are report-only (spec R2). **Acceptance:**
     - **Measures:** wire length, numeric rail detour with its path, topology-aware bends, perimeter paths against the routing envelope, text clearance, field ownership, page balance and power-symbol flags.
     - **Hand counts:** the measures match hand counts on at least three drawings, one of them the October rc_to_buffer case (547 → 880 mm of wire), which must report a worse delta.
     - **Perimeter predicate:** defined and tested with positive and negative fixture drawings. The symbol-core box and routing envelope are recorded.
@@ -335,12 +335,56 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - **Thresholds:** stored in the brief.
 
     **Deps:** P6-011g.
-  - [ ] **P6-011k1** Create immutable brief v10, or a versioned profile it names, for the new behaviour (spec R0, R5). **Acceptance:**
+    **Evidence (2026-11-14):**
+    - **Code:** `src/ai_kicad/pivot/quality_measures.py`:
+      - every R2 measure, including numeric per-rail detour with its path and topology-aware bends
+      - perimeter runs against the routing envelope, outside the symbol-core box
+      - power-symbol flags, and the recorded symbol-core box and routing envelope
+      - `compare_quality` and `quality_overlay`
+
+      `NativeSchematicEngine.assess` records `report["quality"]` for every candidate under every brief, without changing a check. `run_schematic_review` records `quality_delta` per edit, the overlay on each outcome, `quality_vs_initial`, `best_passing_quality_vs_initial` and `QUALITY_NOT_WORSE` (current against 000). `quality_rollback=False` is the default. The corpus summary gains `quality_delta`, `quality_worse` and `edit_overlays` per design. The thresholds are stored in brief v10 (`review_profile.quality.thresholds`, P6-011k1).
+    - **Hand counts:**
+      - `rc_lowpass` 000 (`review_loop_corpus_v3_2026-11-12_qwen35_256k_run1`), counted from its wire listing: 198.12 mm, 5 bends, one 53.34 mm REF run along the bottom.
+      - The October `rc_to_buffer` 000 and 004 (`review_loop_corpus_2026-10-26_qwen_run1`): 547.37 → 880.11 mm and 21 → 29 bends, equal to the protected observer's independent counts. The three perimeter runs (VMINUS bottom 100.33 and left 66.04, VPLUS top 118.11) were checked by hand in the wire listing. The comparison reports wire length, bends, perimeter paths and rail detour as worse.
+      - The `inverting_gain` 001 → 003 field fix is not worse.
+    - **Observer cross-check:** wire length and bend count match the observer's `observed_wire_length_mm` and `observed_bend_count` on all 389 historical corpus candidates checked (0 mismatches).
+    - **Perimeter predicate fixtures:** a loop above two parts qualifies; a pin-row wire between parts and a short edge run do not.
+    - **Tests:** `tests/pivot/test_quality_measures.py`, 33 tests, including:
+      - each threshold just under and just over its limit
+      - no penalty for power-symbol count alone
+      - a worse check-neutral edit kept and labelled `QUALITY_REGRESSION` by default
+      - a worse fix labelled `LOCAL_FIX_ONLY`
+      - the enforcement mode rolling back a worse neutral edit with reason `quality` and the measure named in the model's feedback, while keeping a worse fix
+
+      A real KiCad assessment (`test_native_move_that_merges_ref_and_vminus_is_rolled_back`) records the measures without error.
+    - **Pivot suite:** 495 passed, 1 deselected.
+  - [x] **P6-011k1** Create immutable brief v10, or a versioned profile it names, for the new behaviour (spec R0, R5). **Acceptance:**
     - **Settings:** v10 and its schema select SVG plus PNGs, reasoning off, verdicts withheld, menu-only edits, up to 4 edits, R2 report-only with its thresholds, and R4 equivalence. Free-form editing is available only behind an explicit experimental flag.
     - **Reproducibility:** briefs v1–v9 behave exactly as before, shown by the existing brief-gating tests plus a new test that v9 does not enable any v10 behaviour.
     - **Run records:** each run records the brief SHA-256, model digest, options and toolchain.
 
     **Deps:** P6-011h.
+    **Evidence (2026-11-14):**
+    - **Brief:** `fixtures/pivot/schematic_review_brief_v10.json` with schema `fixtures/pivot/schematic_review_brief.v10.schema.json`. `SchematicReviewBriefV10` extends v9 (same criteria) with a strict `review_profile`:
+      - `reviewer`: `svg_source`, `with_images`, no `think`, `withhold_checks`, `max_actions` 4
+      - `edit_mode`: only `menu_only` is allowed
+      - `quality`: only `report_only` is allowed, with every threshold required
+      - `menu`: caps and budget
+      - `refusals`: `equivalence_grid_mm` 1.27
+    - **Service:** `NativeSchematicReviewService` applies the profile. A conflicting explicit option raises an error. Free-form editing needs `experimental_free_form_edits=True` (`--experimental-free-form-edits` in the corpus runner), which records `edit_mode: free_form_experimental`.
+    - **Run records:** every run passes a `run_record` into `result.json`: brief path and SHA-256, profile, edit mode, model and digest, options and toolchain. The corpus summary also records the brief SHA-256, profile, edit mode and effective reviewer options.
+    - **Tests:** `tests/pivot/test_brief_v10.py`, 8 tests:
+      - profile values
+      - v10 keeps v9's criteria and layout flags
+      - schema matches the typed contract
+      - strict validation (missing threshold, `enforce`, `free_form` rejected)
+      - `test_v9_enables_no_v10_behaviour`
+      - profile application and conflict
+      - the experimental flag
+      - run-record contents
+
+      Existing brief-gating tests pass. Pivot suite: 495 passed, 1 deselected.
+    **Note:** Menu-only enforcement (refusing free-form edits) and the menu caps take effect in P6-011i1; the R4 equivalence grid takes effect in P6-011j.
   - [ ] **P6-011i1** Build the edit-menu framework with field relocation and `choose_edit` (spec R3). **Acceptance:**
     - **Native validation:** every displayed entry passed native ERC and netlist equivalence in scratch.
     - **Caps:** 3 per class and 8 in total.
