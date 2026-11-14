@@ -185,6 +185,8 @@ class MenuReview(SchematicReview):
 
 class MenuReviewBatch(SchematicReview):
     actions: list[ChooseEdit] = Field(max_length=MAX_BATCH_ACTIONS)
+    # A dependent bundle is committed all-or-none against the same starting drawing (R4).
+    bundle: bool = False
 
 
 def review_model(max_actions: int, menu_only: bool = False) -> type[SchematicReview]:
@@ -534,6 +536,12 @@ class OllamaSchematicReviewer:
             from .edit_menu import menu_for_reviewer
 
             handoff["edit_menu"] = menu_for_reviewer(assessment.menu or {"entries": []})
+            exhausted = ((assessment.menu or {}).get("record") or {}).get("budget_exhausted")
+            if exhausted:
+                handoff["edit_menu_notice"] = {
+                    "reason_class": "budget_exhausted",
+                    "message": f"the menu shows only entries verified before the {exhausted}",
+                }
         user = {"role": "user", "content": json.dumps(handoff, allow_nan=False)}
         if svg_text is None and description is None or self.with_images:
             user["images"] = [base64.b64encode(p.read_bytes()).decode() for p in assessment.images]
@@ -563,6 +571,14 @@ class OllamaSchematicReviewer:
         if response.get("done_reason") == "length":
             raise ValueError("model response exceeded its output token limit")
         return response["message"]["content"]
+
+
+class EditRefused(ValueError):
+    """An edit the loop refused or rolled back, with its structured R4 record."""
+
+    def __init__(self, message: str, refusal: dict):
+        super().__init__(message)
+        self.refusal = refusal
 
 
 def _quality(assessment: SchematicAssessment | None) -> dict | None:
@@ -596,12 +612,23 @@ def run_schematic_review(
     run_record: dict | None = None,
     edit_mode: str = "free_form",
     menu_policy=None,
+    structured_refusals: bool = False,
+    refusal_grid_mm: float | None = None,
 ) -> dict:
     """Save every candidate and promote only joint machine/model acceptance.
 
     R2 quality is report-only by default. `quality_rollback` is an opt-in enforcement mode,
     off by default: it rolls back a check-neutral edit that makes an R2 measure worse.
+
+    With `structured_refusals` (brief v10) a refused or rolled-back edit is reported to the
+    model as JSON: reason class, evidence and up to three menu alternatives. With
+    `refusal_grid_mm`, a request equivalent to a refused one on the same drawing (same
+    target, within one grid step per axis) counts as a repeat. Every refusal is recorded in
+    the iteration either way.
     """
+    from .edit_menu import alternatives as menu_alternatives
+    from .edit_menu import classify_editor_error, equivalent_edit
+
     if not 1 <= max_reviews <= 30 or max_seconds <= 0 or max_model_tokens <= 0:
         raise ValueError("invalid schematic review budget")
     output.mkdir(parents=True, exist_ok=False)
@@ -622,7 +649,9 @@ def run_schematic_review(
     if edit_mode not in ("free_form", "free_form_experimental", "menu_only"):
         raise ValueError(f"unknown edit mode {edit_mode!r}")
     menu_cache = None
-    if edit_mode == "menu_only":
+    # The experimental free-form mode also builds the menu, for refusal alternatives.
+    builds_menu = edit_mode in ("menu_only", "free_form_experimental")
+    if builds_menu:
         from .edit_menu import MenuPolicy, ValidationCache
 
         menu_policy = menu_policy or MenuPolicy()
@@ -681,8 +710,25 @@ def run_schematic_review(
             "independent_checks_pass": assessment.passed,
         }
         history.append(entry)
+
+        def refuse(reason_class: str, message: str, evidence: dict, refused=()) -> EditRefused:
+            """Record a structured refusal on this drawing and return it to raise."""
+            refusal = {
+                "reason_class": reason_class,
+                "message": message,
+                "evidence": evidence,
+                "alternatives": menu_alternatives(
+                    assessment.menu,
+                    [a.model_dump(mode="json") for a in refused],
+                    refusal_grid_mm,
+                    with_actions=edit_mode != "menu_only",
+                ),
+            }
+            entry["refusal"] = refusal
+            return EditRefused(message, refusal)
+
         try:
-            if edit_mode == "menu_only":
+            if builds_menu:
                 # R3: pre-checked feasible edits for this drawing, rebuilt every round (the
                 # cache keeps validations of an unchanged drawing).
                 menu_dir = output / "menus" / f"{index:03d}"
@@ -697,6 +743,17 @@ def run_schematic_review(
                 else:
                     assessment.menu = {"entries": [], "record": {"unsupported": True}}
                 write_json(menu_dir / "menu.json", assessment.menu)
+                exhausted = assessment.menu["record"].get("budget_exhausted")
+                if exhausted:
+                    entry["menu_notice"] = {
+                        "reason_class": "budget_exhausted",
+                        "message": f"edit menu shows only the entries verified before the "
+                        f"{exhausted}",
+                        "evidence": {
+                            key: assessment.menu["record"].get(key)
+                            for key in ("native_validations", "seconds", "proposals_considered")
+                        },
+                    }
                 entry["menu"] = {
                     "ids": [item["id"] for item in assessment.menu["entries"]],
                     "record": {
@@ -749,8 +806,7 @@ def run_schematic_review(
                         if free
                         else f"no edit-menu entry {', '.join(missing)} on this drawing"
                     ) + f"; offered ids are {sorted(offered) or 'none'}"
-                    entry["refusal"] = {"reason_class": "invalid_request", "message": message}
-                    raise ValueError(message)
+                    raise refuse("invalid_request", message, {"offered": sorted(offered)})
                 for number, action in enumerate(actions):
                     chosen[number] = offered[action.id]
                 actions = [ACTION_ADAPTER.validate_python(chosen[n]["action"]) for n in chosen]
@@ -760,15 +816,30 @@ def run_schematic_review(
                 assessment.revision,
                 json.dumps([action.model_dump(mode="json") for action in actions]),
             )
-            if edit_key in refused_edits:
-                # The same edit on the same drawing was already refused; asking again is no
-                # progress, and the editor is not run.
-                entry["repeated_refused_edit"] = refused_edits[edit_key]
-                status = "NO_PROGRESS"
-                reason = (
-                    "model repeated an edit already refused on this drawing: "
-                    + (refused_edits[edit_key])
+            earlier = refused_edits.get(edit_key)
+            if earlier is None and refusal_grid_mm is not None:
+                requested = json.loads(edit_key[1])
+                earlier = next(
+                    (
+                        message
+                        for (revision, edit), message in refused_edits.items()
+                        if revision == assessment.revision
+                        and equivalent_edit(requested, json.loads(edit), refusal_grid_mm)
+                    ),
+                    None,
                 )
+            if earlier is not None:
+                # The same (or an equivalent) edit on the same drawing was already refused;
+                # asking again is no progress, and the editor is not run.
+                entry["repeated_refused_edit"] = earlier
+                refuse(
+                    "repeat",
+                    "edit repeats one already refused on this drawing",
+                    {"earlier": earlier},
+                    actions,
+                )
+                status = "NO_PROGRESS"
+                reason = "model repeated an edit already refused on this drawing: " + earlier
                 break
             if len(actions) == 1:
                 # Apply, then check at once: an edit that breaks connectivity or changes
@@ -784,27 +855,37 @@ def run_schematic_review(
                         }
                 except (ValueError, KeyError) as error:
                     refused_edits[edit_key] = f"edit refused: {error}"
-                    entry["refusal"] = {"reason_class": "invalid_request", "message": str(error)}
+                    reason_class = classify_editor_error(str(error))
                     entry["edit_outcome"] = edit_outcome(
                         assessment.report,
                         None,
                         disposition="ROLLED_BACK",
-                        reason_class="invalid_request",
+                        reason_class=reason_class,
                     )
                     outcomes.append(entry["edit_outcome"])
-                    raise ValueError(refused_edits[edit_key]) from error
+                    raise refuse(
+                        reason_class, refused_edits[edit_key], {"editor": str(error)}, actions
+                    ) from error
                 broken = broken_connectivity(assessment.report, trial.report)
                 change = quality_change(assessment, trial, quality_thresholds)
                 effect = primary_effect(assessment.report, trial.report)
                 entry["quality_delta"] = change
-                reason_class = None
+                reason_class, evidence = None, {}
                 if trial.revision in seen:
                     reason_class = "no_change"
+                    evidence = {"revision": trial.revision}
                     refused_edits[edit_key] = (
                         "edit rolled back: it made no change to the drawing; choose a different edit"
                     )
                 elif broken:
                     reason_class = "connectivity"
+                    evidence = {
+                        name: {
+                            "before": assessment.report["checks"][name],
+                            "after": trial.report.get("checks", {}).get(name, "MISSING"),
+                        }
+                        for name in broken
+                    }
                     refused_edits[edit_key] = (
                         f"edit rolled back: it made {', '.join(broken)} fail, so it changed "
                         "connectivity; the drawing is unchanged. Choose a different edit"
@@ -816,6 +897,7 @@ def run_schematic_review(
                     and not change["not_worse"]
                 ):
                     reason_class = "quality"
+                    evidence = change["worse"]
                     refused_edits[edit_key] = (
                         "edit rolled back: it fixed no check and made "
                         f"{', '.join(sorted(change['worse']))} worse; the drawing is unchanged. "
@@ -831,7 +913,7 @@ def run_schematic_review(
                 outcomes.append(entry["edit_outcome"])
                 if edit_key in refused_edits:
                     entry["rolled_back_candidate"] = str(directory.relative_to(output))
-                    raise ValueError(refused_edits[edit_key])
+                    raise refuse(reason_class, refused_edits[edit_key], evidence, actions)
                 candidate_dir = directory
                 assessment, feedback = trial, ""
                 seen.add(assessment.revision)
@@ -842,6 +924,9 @@ def run_schematic_review(
                 # Several edits: apply and check one at a time; keep each good edit and stop
                 # at the first that is refused or makes a passing check fail.
                 current, kept, stop = assessment, [], ""
+                stop_class, stop_evidence = None, {}
+                bundle = bool(getattr(review, "bundle", False))
+                entry["bundle"] = bundle
                 step_outcomes = entry["edit_outcomes"] = []
                 for number, action in enumerate(actions):
                     step = (
@@ -863,17 +948,21 @@ def run_schematic_review(
                             )
                     except (ValueError, KeyError) as error:
                         stop = f"action {number + 1} ({action.operation}) refused: {error}"
+                        stop_class = classify_editor_error(str(error))
+                        stop_evidence = {"action": number + 1, "editor": str(error)}
                         step_outcomes.append(
                             edit_outcome(
                                 current.report,
                                 None,
                                 disposition="ROLLED_BACK",
-                                reason_class="invalid_request",
+                                reason_class=stop_class,
                             )
                         )
                         break
                     if trial.revision == current.revision or trial.revision in seen:
                         stop = f"action {number + 1} ({action.operation}) made no change"
+                        stop_class = "no_change"
+                        stop_evidence = {"action": number + 1, "revision": trial.revision}
                         step_outcomes.append(
                             edit_outcome(
                                 current.report,
@@ -894,16 +983,27 @@ def run_schematic_review(
                             f"{', '.join(broken)} fail"
                         )
                         # A batch also stops when a passing presentation check breaks.
+                        stop_class = (
+                            "connectivity"
+                            if broken_connectivity(current.report, trial.report)
+                            else "presentation_regression"
+                        )
+                        stop_evidence = {
+                            "action": number + 1,
+                            **{
+                                name: {
+                                    "before": "PASS",
+                                    "after": trial.report.get("checks", {}).get(name, "MISSING"),
+                                }
+                                for name in broken
+                            },
+                        }
                         step_outcomes.append(
                             edit_outcome(
                                 current.report,
                                 trial.report,
                                 disposition="ROLLED_BACK",
-                                reason_class=(
-                                    "connectivity"
-                                    if broken_connectivity(current.report, trial.report)
-                                    else "presentation_regression"
-                                ),
+                                reason_class=stop_class,
                             )
                         )
                         break
@@ -919,6 +1019,8 @@ def run_schematic_review(
                             f"action {number + 1} ({action.operation}) not kept: it fixed no "
                             f"check and made {', '.join(sorted(change['worse']))} worse"
                         )
+                        stop_class = "quality"
+                        stop_evidence = {"action": number + 1, **change["worse"]}
                         step_outcomes.append(
                             edit_outcome(
                                 current.report,
@@ -938,13 +1040,25 @@ def run_schematic_review(
                     step_outcomes.append(outcome)
                     current = trial
                     kept.append(number + 1)
+                if bundle and stop and kept:
+                    # A dependent bundle commits all-or-none: undo the steps that passed.
+                    for item in step_outcomes:
+                        if item["disposition"] == "KEPT":
+                            item.update(
+                                primary_effect=None,
+                                quality_overlay=None,
+                                disposition="ROLLED_BACK",
+                                reason_class=stop_class,
+                            )
+                    stop = f"bundle not committed: {stop}"
+                    kept, current = [], assessment
                 entry["applied_actions"] = kept
                 outcomes.extend(step_outcomes)
                 if stop:
                     entry["stopped"] = stop
                 if not kept:
                     refused_edits[edit_key] = stop
-                    raise ValueError(stop)
+                    raise refuse(stop_class, stop, stop_evidence, actions)
                 candidate_dir = current.schematic.parent.parent
                 source = current.schematic
                 assessment = current
@@ -958,9 +1072,18 @@ def run_schematic_review(
                 feedback = f"Applied actions {kept} of {len(actions)}." + (
                     f" {stop}" if stop else ""
                 )
+                if stop and structured_refusals:
+                    # The kept edits are committed; the stopping one is reported structurally.
+                    refusal = refuse(stop_class, stop, stop_evidence, actions[len(kept) :]).refusal
+                    feedback = json.dumps(
+                        {"applied_actions": kept, "of": len(actions), "refusal": refusal},
+                        sort_keys=True,
+                    )
         except (ValidationError, ValueError) as error:
             feedback = str(error)
-            entry["rejected_response"] = feedback
+            if isinstance(error, EditRefused) and structured_refusals:
+                feedback = json.dumps({"refusal": error.refusal}, sort_keys=True)
+            entry["rejected_response"] = str(error)
             rejected[feedback] = rejected.get(feedback, 0) + 1
             if rejected[feedback] >= 2:
                 status, reason = "NO_PROGRESS", "model repeated an invalid review: " + feedback

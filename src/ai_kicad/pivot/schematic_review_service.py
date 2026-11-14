@@ -168,4 +168,8 @@ class NativeSchematicReviewService:
             menu_policy=(
                 MenuPolicy.from_profile(self.profile.menu) if self.profile is not None else None
             ),
+            structured_refusals=self.profile is not None,
+            refusal_grid_mm=(
+                self.profile.refusals.equivalence_grid_mm if self.profile is not None else None
+            ),
         )

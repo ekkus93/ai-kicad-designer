@@ -460,7 +460,7 @@ These features are **planned**, not prerequisites for P4 except when a specific 
       - `test_symbol_nudges.py`, with KiCad: on dual_buffer with U1C moved down 3.81 mm, every rail entry's scratch assessment passes ERC, equivalence, power-symbol clearance and both direction checks, and fixes power-symbol clearance.
       - `test_symbol_nudges.py`, with KiCad: the October rc_to_buffer 004 passes every brief-v3 check, and the menu offers 1–2 optional entries, each with a gain and nothing worse. In the trial run these were REF `use_power_symbols` and REF reroute, each cutting wire length and bends.
     - **Pivot suite:** 518 passed, 1 deselected.
-  - [ ] **P6-011j** Send structured refusals, refuse equivalent requests, and apply the R4 batch rules (spec R4). **Acceptance:**
+  - [x] **P6-011j** Send structured refusals, refuse equivalent requests, and apply the R4 batch rules (spec R4). **Acceptance:**
     - **Reason classes:** each of `connectivity`, `no_change`, `quality`, `infeasible_route`, `invalid_request`, `repeat` and `budget_exhausted` has a test, with its values and up to three alternatives from the menu.
     - **Equivalence:** coordinate edits within one grid step per axis on the same target, and rail edits with the same canonical net, operation, scope and options, are refused on the same base revision.
     - **Batches:** dependent bundles commit all-or-none; independent actions commit one at a time.
@@ -473,6 +473,31 @@ These features are **planned**, not prerequisites for P4 except when a specific 
       Each stops or recovers as specified, with an alternative offered where one exists. The replays are evidence for the loop contract only, not for live-model recovery.
 
     **Deps:** P6-011i3.
+    **Evidence (2026-11-14):**
+    - **Loop:** with `structured_refusals` and `refusal_grid_mm` (set from the v10 profile), `run_schematic_review` raises `EditRefused` with a structured record: `reason_class`, `message`, `evidence` and up to three `alternatives` from the current drawing's menu, same target first. The record goes to the model as JSON and is stored in the iteration's `refusal`.
+      - Editor errors are classified by `classify_editor_error` into `no_change`, `infeasible_route` or `invalid_request`.
+      - A menu built short of its budget adds a `budget_exhausted` notice to the iteration and to the reviewer handoff.
+      - Without the profile (v1–v9) the feedback text is unchanged and only identical edits repeat.
+      - The experimental free-form mode also builds a menu, so its refusals carry alternatives with their actions.
+    - **Equivalence:** `equivalent_action` and `equivalent_edit` (`edit_menu.py`) compare targets, and treat coordinates as equivalent when they snap to within one grid step per axis. Rail edits must match exactly in net, operation and options. The refusal cache is keyed by the base revision.
+    - **Batches:** `MenuReviewBatch.bundle` commits all-or-none: earlier passing steps become `ROLLED_BACK` and the drawing is unchanged. Independent actions commit one at a time, and the structured feedback reports `applied_actions` plus the stopping refusal.
+    - **Tests:** `tests/pivot/test_refusals.py`, 16 tests:
+      - one per reason class, with values and alternatives (menu IDs only in menu-only mode)
+      - equivalent coordinate repeats one grid step away refused without running the editor, and two steps allowed
+      - v9-style exact matching with plain-text feedback
+      - the equivalence rules
+      - independent and bundled batches
+      - four KiCad replays pinned to historical revisions, listed below
+
+      The four replays:
+      - **J1 no-op:** the October `led_reverse_supply` J1 `move_field` no-op (`review_loop_corpus_v3_2026-10-31_qwen35_32k_run2`, candidate 003, `sha256:7a3ad94a…8903`), repeated as logged. It is refused as `no_change` with three J1 field-relocation alternatives, then stops as `repeat` after one refusal.
+      - **Wrong unit:** a wrong-unit `move_field` (J1 unit 2) is refused as `invalid_request`.
+      - **Zero-length route:** an `add_wire_path` on `noninverting_gain` 003 (`sha256:3242f050…d3ca`) is refused as `invalid_request` ("repeats waypoint").
+      - **Unsafe net merge:** the 2026-10-27 `move_symbols(U1, -1.27)` merge is rolled back as `connectivity` with `electrical_equivalence` PASS→FAIL. The scripted reviewer then takes the first alternative (a U1C field relocation), which is kept.
+
+      These replays test the loop contract only, not live-model recovery.
+    - **Pivot suite:** 534 passed, 1 deselected.
+    **Note:** A batch that stops because a passing presentation check broke still reports reason class `presentation_regression`, which is outside the seven R4 classes. That stopping rule existed before R4, and the class names what happened.
   - [ ] **P6-011l1** Build the v10 baseline corpus, the defect labels and the rating page (spec R6.1, R6.2). **Acceptance:**
     - **Drawings:** the 15 designs, regenerated under v10, plus variants and supported hold-outs.
     - **Rating page:** records blind good-or-defects ratings from the owner and ChatGPT in a machine-readable file.

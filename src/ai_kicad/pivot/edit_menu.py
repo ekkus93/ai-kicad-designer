@@ -608,3 +608,97 @@ def menu_for_reviewer(menu: dict) -> list[dict]:
             }
         )
     return shown
+
+
+def _within(first: float, second: float, grid_mm: float) -> bool:
+    """Whether two coordinates, snapped to the grid, are at most one grid step apart."""
+    return abs(round(first / grid_mm) - round(second / grid_mm)) <= 1
+
+
+def equivalent_action(first: dict, second: dict, grid_mm: float) -> bool:
+    """Same operation and target, with coordinates within one grid step per axis (R4).
+
+    Rail and other non-coordinate edits are equivalent only when their canonical
+    parameters are identical.
+    """
+    if first.get("operation") != second.get("operation"):
+        return False
+    operation = first["operation"]
+    if operation == "move_field":
+        keys = ("reference", "unit", "field", "angle")
+        return all(first.get(k) == second.get(k) for k in keys) and all(
+            _within(first[axis], second[axis], grid_mm) for axis in ("x_mm", "y_mm")
+        )
+    if operation in ("move_symbols", "move_units", "translate_sheet"):
+        target = "references" if operation == "move_symbols" else "units"
+        if operation != "translate_sheet":
+            canonical = (
+                (lambda items: sorted(items))
+                if operation == "move_symbols"
+                else (lambda items: sorted((i["reference"], i["unit"]) for i in items))
+            )
+            if canonical(first[target]) != canonical(second[target]):
+                return False
+        return all(_within(first[axis], second[axis], grid_mm) for axis in ("dx_mm", "dy_mm"))
+    if operation == "add_wire_path":
+        keys = ("net", "from_ref", "from_pin", "to_ref", "to_pin")
+        if any(first.get(k) != second.get(k) for k in keys):
+            return False
+        a, b = first.get("waypoints", []), second.get("waypoints", [])
+        return len(a) == len(b) and all(
+            _within(p["x_mm"], q["x_mm"], grid_mm) and _within(p["y_mm"], q["y_mm"], grid_mm)
+            for p, q in zip(a, b)
+        )
+    return canonical_action(first) == canonical_action(second)
+
+
+def equivalent_edit(first: list[dict], second: list[dict], grid_mm: float) -> bool:
+    """Two requested edit lists are equivalent when pairwise equivalent, in order."""
+    return len(first) == len(second) and all(
+        equivalent_action(a, b, grid_mm) for a, b in zip(first, second)
+    )
+
+
+# Editor messages and the R4 reason class each one reports.
+_INFEASIBLE = ("no obstacle-free", "no clear position", "block it", "unreachable")
+
+
+def classify_editor_error(message: str) -> str:
+    """R4 reason class of an editor refusal."""
+    if "made no change" in message:
+        return "no_change"
+    if any(token in message for token in _INFEASIBLE):
+        return "infeasible_route"
+    return "invalid_request"
+
+
+def alternatives(
+    menu: dict | None, refused: list[dict], grid_mm: float | None, with_actions: bool
+) -> list[dict]:
+    """Up to three menu entries other than the refused edit, same target first."""
+    if not menu:
+        return []
+    targets = set()
+    for action in refused:
+        for key in ("reference", "net"):
+            if key in action:
+                targets.add(action[key])
+        for item in action.get("units", []):
+            targets.add(item["reference"])
+        targets.update(action.get("references", []))
+    chosen = []
+    for entry in menu.get("entries", []):
+        action = entry["action"]
+        if grid_mm is not None and any(
+            equivalent_action(action, item, grid_mm) for item in refused
+        ):
+            continue
+        if any(canonical_action(action) == canonical_action(item) for item in refused):
+            continue
+        target = entry["target"].get("reference") or entry["target"].get("net")
+        shown = {"id": entry["id"], "description": entry["description"], "fixes": entry["fixes"]}
+        if with_actions and action["operation"] != "move_units":
+            shown["action"] = action
+        chosen.append((target not in targets, shown))
+    chosen.sort(key=lambda item: item[0])
+    return [shown for _other, shown in chosen[:3]]
