@@ -198,6 +198,122 @@ R2's rollback, R3's menu, R4's equivalence rule and R5's defaults all change how
   - l4: hold-out circuits
 - **P6-011k (default profile)** has a circular dependency. The new baseline must be generated under some brief, but k defines that brief and depends on l. *Proposal:* k creates the brief/profile first, and its qualification moves into l.
 
+## Answers for Claude — independent reviewer recommendations (2026-11-14)
+
+These answers are proposed implementation decisions supplied by ChatGPT at the owner's request. They are **not** evidence that the owner has separately signed off on the benchmark labels, design-requirements review, or final acceptance of any schematic. They are intended to unblock implementation and to update the draft spec and TODO accordingly. Preserve the original questions above for traceability.
+
+### Q1 — Status names and the QUALITY_NOT_WORSE gate
+
+**Decision: keep the seven names, but make QUALITY_NOT_WORSE report-only for v10 qualification.** Clearly document their exact evidence and the distinction between a review-loop verdict and production readiness. NATIVE_VALID checks KiCad's load/export/plot; ELECTRICALLY_EQUIVALENT requires *both* native netlist equivalence and ERC; PRESENTATION_PASS covers only enabled deterministic checks; MODEL_ACCEPTED is the model's actual verdict; DESIGN_REQUIREMENTS_CHECKED and HUMAN_REVIEWED remain PENDING until independently supported. Missing or incomplete evidence is PENDING, not PASS.
+
+Keep the legacy ACCEPTED_FOR_REVIEW status for compatibility, but do not imply it certifies design suitability, PCB readiness, human review, or measured improvement. QUALITY_NOT_WORSE should be recorded on every run, without initially gating that legacy status. Reconsider the gate only after Q4/Q6 calibration demonstrates that its tolerances predict blind human judgments. Hard electrical-safety gates already apply regardless of R2.
+
+### Q2 — Numerical R2 tolerances and perimeter bounding box
+
+Use these **initially advisory** thresholds; store both raw values and pass/worse flags, rather than collapsing them into a single opaque score:
+
+| Measure | Tentative worse threshold | Caveats |
+|---|---|---|
+| Total wire length | Increase greater than **max(12.7 mm, 5% of previous value)** | Evaluate *in context*; a slightly longer local route can improve readability. |
+| Asserted-rail detour | Excess grows by more than **max(5.08 mm, 10% of prior detour)** | First implement a numeric per-net excess and record witnesses/paths; do not use old binary PASS/FAIL as a distance. |
+| Wire bends | **More than 2** additional bends | Count topology-aware non-collinear junctions consistently, not raw export segments. |
+| Long perimeter wire | Any **new** qualifying perimeter path of at least **50.8 mm** within **2.54 mm** of the route envelope, or >25.4 mm additional total perimeter-path length | Record the path and endpoints; do not punish legitimate short edge connectors. |
+| Minimum text-to-wire clearance | Decrease greater than **0.635 mm** | Any actual collision/overlap remains a hard failure regardless of tolerance. |
+| Field ownership | Worst owning-symbol advantage degrades by more than **1.27 mm** | Normalize the sign convention explicitly (larger separation from non-owner should be better); any owner-association check failure remains a hard presentation failure. |
+| Page balance | Center-offset fraction worsens by **>0.03** of page width or height | Also record occupied-area fraction; don't force tiny circuits to fill the page. |
+| Power-symbol count | **No automatic count-only penalty** | Flag orphaned, ambiguous, redundant-on-one-terminal-group, or colliding symbols; per-net count changes are diagnostic, since replacing long wires may legitimately increase symbols. |
+
+**Bounding boxes:** calculate a **symbol-core box** from component bodies, connector bodies, and pin anchors (exclude wires and text) for functional placement and grouping. Separately calculate a **routing envelope** from wire/power-symbol geometry (exclude field/text extents) for detecting perimeter-hugging routes. Record both. Do *not* base the perimeter rule solely on a box containing the very wires being penalized; that metric is easy to game and can misclassify a far-away perimeter path as normal. For each suspect path, additionally check whether it unnecessarily skirts the symbol-core box and whether a shorter feasible connection/symbol alternative exists. Define the exact geometric predicate with positive/negative fixture drawings before enabling any rollback.
+
+The thresholds are starting hypotheses, not human-validated quality standards. Report every individual worsening, even if the composite quality score improves.
+
+### Q3 — Menu size per issue class
+
+**Start with up to 3 entries per relevant class**, ranked by expected issue resolution and measured cost. Also enforce **8 total menu entries** in a normal review to limit prompt noise and preprocessing cost. If fewer safe options exist, show fewer; do not invent fillers. Prioritize failing checks, then optional readability improvements. Deduplicate equivalent moves and show what each option fixes, its predicted R2 delta, and its exact target (reference plus unit).
+
+### Q4 — Reviewer qualification bar
+
+Set a **pre-registered first qualification bar**, evaluated on a *new, frozen, blind and independently labelled* set, not on previously seen examples:
+
+- **Known-good acceptance:** at least **80%** of independently verified good drawings.
+- **Defect detection:** reject or correctly flag at least **80%** of labelled defective drawings, with both aggregate and per-defect-class rates reported.
+- **Defect naming:** identify the **correct component/net AND the substantive defect type** in at least **70%** of correctly rejected defect cases; vague rail/label language does not count.
+- **Safety:** **zero** accepted/kept electrical connectivity regressions and zero knowingly accepted ERC/equivalence failures. Any such failure disqualifies the profile. Report confident false connectivity assertions separately; target **zero** on the qualification sample, rather than silently ignoring them.
+- **Edit usefulness:** for at least **10 nontrivial edited A/B pairs**, among non-ties the post-edit drawing must be preferred in **at least 60%**, with no unreported serious regression.
+- **Coverage:** aim for **at least 30 independently rated good** and **30 defective** cases spanning at least **six circuit families/defect classes**; report confidence intervals and run at least **three deterministic seeds** for model selection where practical. If sample counts fall short, label the result PILOT rather than QUALIFIED.
+
+Freeze the bar *before* looking at model comparison scores. Track per-class misses so an overall average cannot hide a failure on rail, field, or connectivity defects. Requalification is required for material changes to the model digest, prompt, input modality, brief, or editor.
+
+### Q5 — Hold-out circuits and library/composer changes
+
+Use **a transistor low-side switch**, **an enable-controlled LDO**, **a microcontroller power/decoupling and reset block**, and **an instrumentation/differential amplifier** as contrasting hold-outs. Prioritize the first three for genuinely different layout motifs; the instrumentation amplifier is still partly an op-amp-family test. Include both power-symbol and signal-path challenges.
+
+**Do not alter protected M2 composer/observer implementations merely to pass R6.** Build the main benchmark using currently supported circuit capabilities. If a hold-out needs new functionality, permit separately scoped *pivot-side* symbol/fixture/composer support, with explicit evidence and its own tests, before freezing the hold-out corpus. Keep such extension work out of the model qualification score until it is stable; publish the unsupported count rather than silently dropping difficult cases. Do not train/prompt-tune against the frozen hold-outs once they are locked.
+
+### Q6 — Blind A/B raters and disagreements
+
+Use **two independent ratings when possible: the owner and ChatGPT**, with order randomized, identities/candidate numbers hidden, and the original intended circuit supplied equally to both. Record a per-criterion rubric (0–4 scale or win/tie/loss with short supporting observations), raw scores, rationales, image hashes and rater identity/version. Neither rater sees the other's score beforehand.
+
+Disagreements are **not silently overridden**. Require both independent ratings in the record, mark a disagreement, and adjudicate consequential disagreements in a third pass (ideally by an independent electronics engineer). The owner can make the final project/product judgment, but the reported benchmark should retain raw independent outcomes and show results both before and after adjudication. ChatGPT's opinion is a second review, **not** a substitute for measured KiCad correctness or required human electrical sign-off.
+
+### Q7 — Free-form edits versus menu choices
+
+**For the first controlled R3/R6 qualification, use menu-only editing.** That isolates whether the reviewer can choose good, feasible edits without failures due to invented coordinates. Keep free-form editing **available behind an explicit experimental flag/profile**, validated by the *same* transactional native-equivalence, ERC and geometry checks, and benchmark it separately. After obtaining a qualified menu-only baseline, compare menu-only, free-form-only, and hybrid modes on identical frozen cases. Do not pool their metrics.
+
+### Q8 — Quality rollback enforcement
+
+**Option B: report and label quality regressions first; do not automatically roll back on R2-only deterioration in v10.** The current heuristic would otherwise reject useful topology-aware regrouping when that improvement is not yet measured. Continue mandatory rollback for any native load/export/plot failure, ERC or equivalence regression, changed target circuit, or disallowed hard geometric collision.
+
+Record whether a candidate (a) fixes a failing check, (b) introduces any R2 worsening, and (c) is preferred in the blind A/B. A fix that worsens a metric should carry LOCAL_FIX_ONLY (or an explicit quality-regression overlay), not an unqualified improvement. A check-neutral layout change that worsens a metric remains flagged, even if provisionally kept; promote R2 rollback to an enforceable policy only after R6 validates the metrics. **Update P6-011h's acceptance text** so it tests advisory labeling first and policy-enforced rollback in a separately enabled mode—not unconditional quality rollback on v10.
+
+### Q9 — Brief v10 and reproducibility
+
+**Yes.** Put behavior-changing review settings (R2 policy, R3 menu/menu-only mode, R4 refusal equivalence, R5 input/default configuration) behind an immutable **brief v10** or a versioned service profile explicitly referenced by v10. Keep briefs v1–v9 behaviorally reproducible. The new R1 status *reporting fields* may be emitted by all versions without altering their editing or model decisions, but do not retroactively rewrite historical result artifacts. Record the brief SHA, model digest, CLI options, toolchain and qualification corpus revision.
+
+### Q10 — Which candidate's statuses describe an unaccepted run?
+
+**Use the last safely committed current candidate for the top-level statuses**, whether accepted or not, matching the existing loop semantics. Also report candidate 000 and **best independently passing** candidate explicitly, with their own statuses, hashes and metrics. A rejected/rolled-back scratch candidate must never become current. If no later safe candidate exists, current is 000.
+
+QUALITY_NOT_WORSE for the top-level current candidate always compares **current versus candidate 000** (not versus the last edit); per-edit R2 deltas compare against the immediately preceding safely committed candidate. Also compute *best-passing versus 000* separately. Do not substitute a better candidate in the top-level status without labeling which revision it describes.
+
+### Q11 — Offer menu improvements when all checks pass?
+
+**Yes, but only concrete, safe, measurable suggestions.** After all hard and presentation checks pass, offer up to **2 optional proposals** (within the overall menu cap) for grouping, eliminating a perimeter route, reducing clear wire detours or clarifying ownership/labels. Include their predicted deltas and avoid cosmetic churn. If no defensible improvement is found, leave the menu empty and allow acceptance; do not require the model to fabricate a flaw or coordinates. A reported image issue not covered by the editor should be logged for future rule development rather than treated as grounds for speculative unsafe edits.
+
+### Q12 — Pre-check budget
+
+**Yes.** Use an explicit budget: at most **12 cheap geometric proposals considered, 8 full native scratch validations, and roughly 20 seconds total** per review for generating the menu (configurable per host). Rank and prune cheaply first; fully verify *every displayed entry* via native KiCad ERC/netlist equivalence before offering it. Never describe a geometry-only candidate as “pre-checked feasible.” If the budget expires, emit the subset already verified plus a structured budget-exhausted reason. Cache assessments by immutable base-revision hash, action, and toolchain/brief version; invalidate on source changes. Record the time and number of KiCad invocations so the cap can be tuned empirically.
+
+### Q13 — Compare models for R5 defaults?
+
+**Option B: qualify multiple models.** Use the current qwen35-256k configuration as the **provisional baseline**, not the declared winner. Compare at least **two genuinely distinct model families/configurations** on the same frozen R6 cases—for example the existing Qwen3.5 9B profile and devstral-small-2:24b, optionally adding a Qwen context/window variant as an ablation. Verify actual model sizes/digests rather than assuming names denote different weights. Hold prompt, image inputs, reasoning mode (off for the baseline), sample conditions and edit policy constant, then report detection/naming quality, A/B improvement, latency, token use and memory requirements. Choose the smallest/fastest model that meets Q4's safety and quality bar; more context alone should not win. Do not change the default based only on historical October runs.
+
+### Q14 — Automatically generated injected-defect labels?
+
+**Yes** for deterministic synthetic injections, generated from their exact injection manifests (component reference/unit/pin, defect type, position, and original/intended revision). Require visual/native verification that the injection actually produced the alleged defect; an injection that makes no observable change is not a positive case. Hand-check a **stratified 20% sample, with at least 2 from each defect category** (or all if a category has fewer than 2) plus every ambiguous or failed probe. Historical and baseline defects must be independently written/verified, not inferred only from a programmatic mutation. Store label provenance so scorer reliability can be audited.
+
+### Q15 — Split and reorder tasks?
+
+**Yes.** Split P6-011i into **i1** field relocation/choose_edit, **i2** unit-safe symbol nudges, **i3** power symbols and rail reroutes. Split P6-011l into **l1** baseline and labels, **l2** label-based scoring, **l3** blind A/B ratings plus loop/edit metrics, **l4** hold-outs. Split P6-011k into **k1** creation of an immutable v10 profile and **k2** model/profile qualification (the latter can be done within l3/l4 to avoid duplicate requirements). A workable order is **g → h(reporting) → k1 → i1/i2/i3 → j → l1 → l2 → l3 → l4 → k2/final qualification**, with h's quality-enforcement mode deferred until l3 demonstrates calibration. Document each dependency as evidence-based, not a circular checkbox. Maintain the protected-component boundaries.
+
+### Q16 — Scripted replay acceptable for refusals?
+
+**Yes for testing the loop/controller contract**, including equivalence normalization, same-base-revision replay, structured reason codes, rollback, and alternative suggestions. Replay the October J1 move_field no-op and also wrong-unit, zero-length-route, and unsafe-net-merge cases. Pin exact prior revision hashes and expected responses so the test is deterministic. **No**, replay alone is not evidence that a *live model* will recover or choose a better operation; that needs separately measured live blind runs. Keep these two test claims distinct.
+
+### Q17 — Does R6 A/B satisfy independent readability assessment?
+
+**Yes, conditionally.** A blind, independently recorded R6 A/B assessment can count for P6-011b/P6-011f's **readability** evidence if it uses the defined rubric, covers multiple circuit families and final drawings (not just edited successes), includes at least **15 baseline examples plus 10 before/after pairs**, and preserves disagreements and concrete defect notes. It does **not** automatically satisfy the separate **human electrical review** or design-requirements verification; those remain PENDING until a qualified person reviews the underlying circuits and records evidence. Cross-link the actual rating dataset and protocol in the TODO before checking either task.
+
+### Additional decisions to resolve the spec's non-question notes
+
+1. **Outcome classes:** keep *primary effect* separate from *quality effect*. Prefer primary precedence **FUNCTIONAL_REPAIR > PRESENTATION_FIX > LAYOUT_CHANGE**, with LOCAL_FIX_ONLY/quality regression recorded as a secondary overlay when an otherwise helpful fix worsens R2. If the existing enum cannot represent two dimensions, add separate fields rather than hiding a functional repair behind LOCAL_FIX_ONLY. ROLLED_BACK is a disposition, not a kept-edit outcome.
+2. **Batches:** validate *each* proposed edit on a scratch or staged revision; never expose a failed stage as current. For an explicitly dependent multi-action bundle, commit all-or-none against the same starting revision. For independent sequential actions, commit each safe edit individually and report per-edit and final net deltas. A batch never relaxes native/ERC/equivalence safety.
+3. **Equivalent operations:** canonicalize action type, net, reference/unit, target field, coordinates and grid first. For coordinate operations, equivalence means same target and snapped movement/placement within **one 1.27 mm grid step per axis** (unless the applicable project grid differs, in which case use the recorded actual grid). For non-coordinate rail operations, compare canonical net, operation, scope and options; changes in meaningful parameters are not duplicates. Refusal-cache scope is the exact base-revision hash, not the whole run.
+4. **Historical mapping:** rc_corrupted regeneration = FUNCTIONAL_REPAIR; inverting_gain power-unit field move = PRESENTATION_FIX; noninverting_gain unsafe 003→004 = ROLLED_BACK/connectivity (not a valid kept edit). October rail-continuity fixes can be PRESENTATION_FIX **with a measured quality-regression overlay** even when all configured checks later pass.
+5. **Qualification evidence:** record negative results, unavailable hold-outs, both original and accepted candidate SHAs, objective checks, independent ratings and the model's raw action IDs. “Accepted” without native and rating evidence is not proof of a better engineering drawing.
+
+**Requested follow-up for Claude:** reflect these decisions in the draft spec and TODO acceptance criteria before implementation, especially the intentional changes to R2 quality rollback, R3 menu-only first qualification, explicit candidate provenance, and the k/l dependency cycle. Do not mark implementation tasks complete merely because these recommendations have been documented.
+
 ## Other points from the review (no decision needed, for awareness)
 
 - **Outcome class order:** when an edit's outcome classes compete, the spec says to use the "most significant" class without defining an order. The assumed order is functional repair > presentation fix > local fix only > layout change, with a separate `ROLLED_BACK` for refused edits. It also needs deciding whether a batch is classed per edit or as a whole.
