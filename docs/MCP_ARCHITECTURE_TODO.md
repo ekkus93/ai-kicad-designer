@@ -305,20 +305,108 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - Every accepted drawing is unchanged by the review. The false rail claim appeared on three drawings, dual_rail_reference for the first time.
 
     The independent readability assessment and human electrical review are still PENDING, so P6-011f stays unchecked.
-  - [ ] **P6-011g** Report separate status levels and edit outcome classes for every review-loop result, as in `docs/pivot/REVIEWER_LOOP_SPEC.md` R1. The levels are `NATIVE_VALID`, `ELECTRICALLY_EQUIVALENT`, `PRESENTATION_PASS`, `QUALITY_NOT_WORSE`, `MODEL_ACCEPTED`, `DESIGN_REQUIREMENTS_CHECKED` and `HUMAN_REVIEWED`, plus the ignored ERC categories. Each applied edit records `FUNCTIONAL_REPAIR`, `PRESENTATION_FIX`, `LAYOUT_CHANGE` or `LOCAL_FIX_ONLY`. **Acceptance:** every `result.json` and corpus summary carries the levels with their basis. `ACCEPTED_FOR_REVIEW` is documented as implying only electrical equivalence, presentation pass and model acceptance. Tests cover each level's derivation, and the noninverting_gain, rc_corrupted and inverting_gain historical cases classify as in the outside review. **Deps:** owner answer to spec Q1.
-  - [ ] **P6-011h** Compute the R2 quality measures for every candidate, record per-edit and per-run deltas, label `LOCAL_FIX_ONLY` edits and roll back edits that fix no check but make the drawing worse. The measures are wire length, rail detour, bends, perimeter wires, text clearance, field ownership, page balance and power symbols. **Acceptance:** the measures match hand counts on at least three drawings. Replaying the October rc_to_buffer case (547 → 880 mm of wire) reports a worse delta. A test shows a quality-only regression rolled back with its reason sent to the model. The corpus summary reports the delta per design. **Deps:** P6-011g; owner answer to spec Q2.
-  - [ ] **P6-011i** Give the reviewer a pre-checked menu of feasible edits, and accept `choose_edit` by ID (spec R3). The classes are field relocation, symbol nudge, rail-symbol placement and, where one exists, rail reroute. Each entry is applied in scratch, with connectivity verified and its R2 delta attached. **Acceptance:** every menu entry keeps connectivity when applied. Multi-unit parts are addressed by `(reference, unit)`, and malformed references are refused with a structured reason. A loop test chooses an entry by ID and the resulting drawing matches the entry's scratch result. Free-form edits keep working and still pass the R1/R2 checks. **Deps:** P6-011h; owner answers to spec Q3 and Q7.
-  - [ ] **P6-011j** Send structured refusals with reason class, failing measures and up to three menu alternatives, and refuse requests equivalent to an already refused edit (same operation and target, parameters within one grid step), as in spec R4. **Acceptance:** each reason class (`connectivity`, `no_change`, `quality`, `infeasible_route`, `invalid_request`, `repeat`) has a test. The October led_reverse_supply case, which repeated the same no-op `move_field` on J1, stops after one refusal with an alternative offered. **Deps:** P6-011i.
-  - [ ] **P6-011k** Make the default reviewer configuration a reproducible profile and record its qualification: SVG text plus PNGs, reasoning off, check verdicts withheld, up to 4 edits per review (spec R5). **Acceptance:** a new brief or service profile selects these settings; brief v9 runs reproduce unchanged; the profile's qualification on the P6-011l benchmark is recorded. **Deps:** P6-011l.
-  - [ ] **P6-011l** Build the replacement benchmark (spec R6). It needs:
-    - **Baseline:** a new known-good corpus regenerated under the current brief and marked good, or given a defect list, by the owner, with ChatGPT if they choose
-    - **Defect labels:** a hand-written label (part, problem, location) for every historical and injected defect case
-    - **Scoring:** scoring by label instead of cue regexes
-    - **Loop metrics:** blind A/B edit-quality ratings, connectivity-regression and rollback rates, and R2 net deltas
-    - **Hold-outs:** circuits outside the 555 and op-amp families
+  - **Note (2026-11-14):** The owner approved changing the requirement text of P6-011g to P6-011l after `docs/ai_kicad_reviewer_loop_spec_questions.md` was answered. The original six tasks were split and reworded to match the decisions in `docs/pivot/REVIEWER_LOOP_SPEC.md`. Order: g → h → k1 → i1 → i2 → i3 → j → l1 → l2 → l3 → l4 → k2. None of these is implemented yet.
+  - [ ] **P6-011g** Report the R1 status levels, edit outcome fields and ERC disclosure for every review-loop result (spec R1). **Acceptance:**
+    - Every `result.json` and corpus summary carries `NATIVE_VALID`, `ELECTRICALLY_EQUIVALENT`, `PRESENTATION_PASS`, `QUALITY_NOT_WORSE` (reported only), `MODEL_ACCEPTED`, `DESIGN_REQUIREMENTS_CHECKED` and `HUMAN_REVIEWED`, each with its basis. Missing evidence gives `PENDING`.
+    - The top-level levels describe the last safely committed current candidate. Candidate 000 and the best passing candidate are reported separately, with their own levels and SHA-256.
+    - Each edit records its primary effect, quality overlay and disposition separately.
+    - Tests reproduce the spec's historical mapping: rc_corrupted, inverting_gain, noninverting_gain 003→004.
+    - Reporting is emitted under every brief, without changing any v1–v9 editing or model decision. Existing pivot tests pass.
+    - `ACCEPTED_FOR_REVIEW` is documented as in R1.
 
-    **Acceptance:** the labelled case set and the rating records are committed. The harness reports false-rejection rate, defect detection and naming rate by label, connectivity regression rate (must be 0), rollback rate by reason and edit-quality win rate. A qualification bar agreed with the owner (spec Q4) is stated before any reviewer is declared qualified. Feeds P6-011b and P6-011f. **Deps:** owner answers to spec Q4–Q6; owner review of the new baseline.
+    **Deps:** none.
+  - [ ] **P6-011h** Compute the R2 quality measures for every candidate, with per-edit and per-run deltas and the `LOCAL_FIX_ONLY` / `QUALITY_REGRESSION` overlays. Under v10 they are report-only (spec R2). **Acceptance:**
+    - **Measures:** wire length, numeric rail detour with its path, topology-aware bends, perimeter paths against the routing envelope, text clearance, field ownership, page balance and power-symbol flags.
+    - **Hand counts:** the measures match hand counts on at least three drawings, one of them the October rc_to_buffer case (547 → 880 mm of wire), which must report a worse delta.
+    - **Perimeter predicate:** defined and tested with positive and negative fixture drawings. The symbol-core box and routing envelope are recorded.
+    - **No R2-only rollback by default:** under v10 no edit is rolled back for R2 alone. A test shows a worse check-neutral edit kept and labelled `QUALITY_REGRESSION`.
+    - **Enforcement mode:** an opt-in mode, off by default, rolls such an edit back with a `quality` reason. It is tested separately.
+    - **Corpus summary:** reports the delta per design, and edits by disposition and overlay.
+    - **Thresholds:** stored in the brief.
 
+    **Deps:** P6-011g.
+  - [ ] **P6-011k1** Create immutable brief v10, or a versioned profile it names, for the new behaviour (spec R0, R5). **Acceptance:**
+    - **Settings:** v10 and its schema select SVG plus PNGs, reasoning off, verdicts withheld, menu-only edits, up to 4 edits, R2 report-only with its thresholds, and R4 equivalence. Free-form editing is available only behind an explicit experimental flag.
+    - **Reproducibility:** briefs v1–v9 behave exactly as before, shown by the existing brief-gating tests plus a new test that v9 does not enable any v10 behaviour.
+    - **Run records:** each run records the brief SHA-256, model digest, options and toolchain.
+
+    **Deps:** P6-011h.
+  - [ ] **P6-011i1** Build the edit-menu framework with field relocation and `choose_edit` (spec R3). **Acceptance:**
+    - **Native validation:** every displayed entry passed native ERC and netlist equivalence in scratch.
+    - **Caps:** 3 per class and 8 in total.
+    - **Budget:** 12 geometric proposals, 8 native validations and about 20 s per round, all configurable. Exhausting it shows the verified subset with `budget_exhausted`.
+    - **Caching:** validations are cached by base-revision SHA-256, canonical action, toolchain and brief.
+    - **Records:** time and KiCad invocation counts per round.
+    - **Entries:** each has an ID, exact target, what it fixes and its predicted R2 delta.
+    - **Choosing:** a loop test chooses an entry by ID, and the result matches the entry's scratch result.
+    - **Menu-only:** under v10, free-form edits are refused with `invalid_request`.
+
+    **Deps:** P6-011k1.
+  - [ ] **P6-011i2** Add unit-safe symbol nudges, addressing parts by canonical `(reference, unit)` (spec R3). **Acceptance:**
+    - Every nudge entry keeps connectivity and passes collision checks.
+    - A multi-unit part (a dual op-amp) is nudged by unit.
+    - Malformed references such as `['U1','unit','3']` are refused with a structured reason.
+
+    **Deps:** P6-011i1.
+  - [ ] **P6-011i3** Add rail power-symbol placement and direction entries, and rail reroutes where feasible. When every check passes, add up to 2 optional improvements within the cap (spec R3). **Acceptance:**
+    - **Rail entries:** each keeps connectivity and passes the power-symbol clearance and direction checks.
+    - **Optional improvements:** offered only when every hard and presentation check passes. Each is measurable, with a predicted R2 gain.
+    - **Empty menu:** allowed; a test shows the model may accept with no entries.
+
+    **Deps:** P6-011i2.
+  - [ ] **P6-011j** Send structured refusals, refuse equivalent requests, and apply the R4 batch rules (spec R4). **Acceptance:**
+    - **Reason classes:** each of `connectivity`, `no_change`, `quality`, `infeasible_route`, `invalid_request`, `repeat` and `budget_exhausted` has a test, with its values and up to three alternatives from the menu.
+    - **Equivalence:** coordinate edits within one grid step per axis on the same target, and rail edits with the same canonical net, operation, scope and options, are refused on the same base revision.
+    - **Batches:** dependent bundles commit all-or-none; independent actions commit one at a time.
+    - **Scripted replays:** deterministic replays pinned to exact revision hashes cover:
+      - the October led_reverse_supply J1 `move_field` no-op
+      - a wrong-unit request
+      - a zero-length route
+      - an unsafe net merge
+
+      Each stops or recovers as specified, with an alternative offered where one exists. The replays are evidence for the loop contract only, not for live-model recovery.
+
+    **Deps:** P6-011i3.
+  - [ ] **P6-011l1** Build the v10 baseline corpus, the defect labels and the rating page (spec R6.1, R6.2). **Acceptance:**
+    - **Drawings:** the 15 designs, regenerated under v10, plus variants and supported hold-outs.
+    - **Rating page:** records blind good-or-defects ratings from the owner and ChatGPT in a machine-readable file.
+    - **Injected labels:** generated from injection manifests and verified to produce an observable defect. A stratified 20 % sample (at least 2 per category) plus every ambiguous probe is hand-checked.
+    - **Historical and baseline labels:** hand-written.
+    - **Provenance:** every label records its source.
+    - **Committed:** the ratings and labels.
+
+    **Deps:** P6-011k1; owner and ChatGPT ratings.
+  - [ ] **P6-011l2** Score reviewer replies by label instead of cue regexes (spec R6.3). **Acceptance:**
+    - **Naming:** a rejection names a defect only with the correct part or net and defect type.
+    - **Rates reported:** false rejection, detection and naming, overall and per defect class.
+    - **Hand check:** a hand-checked sample of scores agrees with the scorer.
+    - **Regexes retired:** the cue regexes are no longer used for scoring.
+
+    **Deps:** P6-011l1.
+  - [ ] **P6-011l3** Record blind A/B ratings and loop edit-quality metrics, and calibrate R2 (spec R6.4, R6.7). **Acceptance:**
+    - **Rating protocol:** two independent raters per pair, randomized order, hidden identities, the six-criterion rubric. Raw ratings, rationales and image hashes are committed.
+    - **Disagreements:** marked, and consequential ones adjudicated. Results are reported before and after adjudication.
+    - **Loop metrics:** the connectivity regression rate (0), the rollback rate by reason, R2 net deltas, and the win rate over at least 10 non-trivial pairs.
+    - **Calibration:** a recorded comparison of R2 worse flags against ratings states whether R2 enforcement or a `QUALITY_NOT_WORSE` gate is justified.
+    - **Readability evidence:** if the rating set meets spec R6.7 (at least 15 baseline drawings and 10 pairs), cross-link it under P6-011b and P6-011f as readability evidence. Human electrical review stays separate.
+
+    **Deps:** P6-011l2, P6-011j; owner and ChatGPT ratings.
+  - [ ] **P6-011l4** Add the hold-out circuits (spec R6.5). They are a transistor low-side switch, an enable-controlled LDO, a microcontroller power, decoupling and reset block, and an instrumentation or differential amplifier. **Acceptance:**
+    - **Rated and frozen:** each supported hold-out is generated under v10, rated as in l1, and frozen.
+    - **New support:** any pivot-side symbol or composer support it needs has its own tests.
+    - **Protected code:** protected M2 code is unchanged.
+    - **Unsupported count:** unsupported hold-outs are counted and published.
+    - **No tuning:** prompts and rules are not tuned after freezing.
+
+    **Deps:** P6-011l1.
+  - [ ] **P6-011k2** Qualify the v10 profile and choose its model (spec R5, §4). **Acceptance:**
+    - **Bar frozen first:** the §4 bar is frozen and committed before comparison scores are seen.
+    - **Models:** `qwen35-256k` and `devstral-small-2:24b` (optionally `qwythos-codex-q4`) run on the same frozen cases, with digests recorded and the prompt, inputs, reasoning and edit policy held constant.
+    - **Reported:** detection and naming per class, the A/B win rate, latency, tokens, memory and confidence intervals, with three seeds where practical.
+    - **Choice:** the smallest and fastest model meeting the bar becomes the default. Below the coverage counts the result is labelled PILOT.
+    - **Separate modes:** menu-only, free-form and hybrid results, if run, are reported separately.
+
+    **Deps:** P6-011l3, P6-011l4.
 
 ## P7 — Conditional native KiCad extension/fork gate
 
