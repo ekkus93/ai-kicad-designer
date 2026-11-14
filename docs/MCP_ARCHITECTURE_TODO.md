@@ -507,6 +507,13 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - **Committed:** the ratings and labels.
 
     **Deps:** P6-011k1; owner and ChatGPT ratings.
+    **Progress (2026-11-14):** `tools/pivot/build_review_baseline.py` built `fixtures/pivot/experiments/review_baseline_v10_2026-11-14_run1` at `25a319c9` with brief v10. Its contents:
+    - **Drawings:** all 15 corpus designs regenerated and rendered. Every independent check passes on all 15, which does not make them good.
+    - **Injected defects:** 60 (four per drawing), each labelled from its injection manifest in `injected_labels.json` with part, defect type, location and provenance. All 60 were verified observable: the drawing and its rendered image both changed, the text or sheet moved at least one grid step, and at least one check changed.
+    - **Hand-check sample:** `hand_check_sample.json` holds the stratified sample of 12 cases, all `PENDING_OWNER_CHECK`.
+    - **Rating page:** `rating_page.html` shows code-named image copies in `blind/`. The code-to-design key is kept separately in `blind_key.json`. Answers save as `baseline-ratings.v1` JSON, to go in `ratings/<rater>.json`.
+    - **Tests:** `tests/pivot/test_review_baseline.py`, 5 tests, cover label generation, the observable-change rule, the sheet label, the stratified sample and the page.
+    **Note:** Still unchecked. It needs your and ChatGPT's ratings, hand-written historical labels and your hand check of the sample. Variants and hold-outs are not built yet: the 30 good / 30 defective bar needs more than these 15 drawings, and P6-011l4 adds the hold-outs.
   - [ ] **P6-011l2** Score reviewer replies by label instead of cue regexes (spec R6.3). **Acceptance:**
     - **Naming:** a rejection names a defect only with the correct part or net and defect type.
     - **Rates reported:** false rejection, detection and naming, overall and per defect class.
