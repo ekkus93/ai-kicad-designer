@@ -600,7 +600,7 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - **Safety:** every check still passes.
 
     **Deps:** P6-011p.
-  - [ ] **P6-011r** Report R7.6 design-review flags (spec R7.6). **Acceptance:**
+  - [x] **P6-011r** Report R7.6 design-review flags (spec R7.6). **Acceptance:**
     - **Flags:** every result carries `design_review_flags` for:
       - 555 supply bypass missing (B05, B10, B15)
       - a divider reference, with its Thevenin impedance (B12: 10k/10k gives 5 kΩ)
@@ -610,6 +610,22 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - **No effect:** no flag changes a check, an edit or `DESIGN_REQUIREMENTS_CHECKED` (still `PENDING`).
 
     **Deps:** P6-011k1.
+    **Evidence (2026-11-14):**
+    - **Code:** `src/ai_kicad/pivot/design_flags.py` (`design_review_flags`) applies generic rules by part type and pin role to the intended circuit:
+      - a 555 with no capacitor between its pin-8 and pin-1 nets
+      - two resistors joining one net to two different rails, with the Thevenin impedance from their values
+      - any `Regulator_Linear:` part
+      - any `Amplifier_Operational:` part, with its pin-8 and pin-4 rails
+
+      Every native assessment records `design_review_flags`, and every loop result carries the current candidate's flags.
+    - **Tests:** `tests/pivot/test_design_flags.py`, 9 tests:
+      - each flag appears on exactly its corpus designs: 555 bypass on timer_astable, timer_astable_gnd and the 555 LED flasher; divider on dual_rail_reference with 5000 Ω; regulator on linear_regulator; op-amp swing on the six op-amp designs
+      - no flag on the RC and LED designs
+      - a 555 with an added VCC–REF capacitor is not flagged
+      - resistance parsing
+      - a loop result with flags is still accepted, with `DESIGN_REQUIREMENTS_CHECKED` `PENDING`
+      - a KiCad assessment of linear_regulator carries its flag, with every check passing and no flag among the checks
+    - **Pivot suite:** 566 passed, 1 deselected.
   - [ ] **P6-011s** Regenerate and re-rate the baseline under brief v11 (spec R7.7). **Acceptance:**
     - **Baseline:** a new baseline (`review_baseline_v11_<date>_runN`) is built with `tools/pivot/build_review_baseline.py`.
     - **Acceptance tests:** every R7.7 test is run and recorded against it.

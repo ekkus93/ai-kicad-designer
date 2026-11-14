@@ -74,6 +74,7 @@ from .edit_menu import (
     rail_proposals,
     symbol_nudge_proposals,
 )
+from .design_flags import design_review_flags
 from .net_detours import pin_pair_detours
 from .quality_measures import measure_quality
 from .readability_checks import (
@@ -2523,6 +2524,8 @@ class NativeSchematicEngine:
             )
         except (ValueError, KeyError, IndexError, TypeError) as error:
             report["quality"] = {"error": f"quality measures failed: {error}"}
+        # R7.6 design-review questions from the intended circuit: reported only.
+        report["design_review_flags"] = design_review_flags(self.design)
         # R7.3 per-net, per-pin-pair detours: reported only.
         try:
             report["net_detours"] = pin_pair_detours(parse(text), terminal_inventory)

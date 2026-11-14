@@ -1127,6 +1127,10 @@ def run_schematic_review(
             "best_passing": summary(best_assessment),
         },
         "run_primary_effect": run_primary_effect(outcomes),
+        # Report-only electrical design questions (R7.6); they never affect a check.
+        "design_review_flags": (
+            assessment.report.get("design_review_flags", []) if assessment is not None else None
+        ),
         "quality_vs_initial": quality_change(initial_assessment, assessment, quality_thresholds),
         "best_passing_quality_vs_initial": quality_change(
             initial_assessment, best_assessment, quality_thresholds
