@@ -290,6 +290,7 @@ def orient_connectors_text(
     layout_check: Callable[[str], str | None],
     fields_ok: Callable[[str], bool],
     skip: frozenset[str] = frozenset(),
+    return_connectors: frozenset[str] = frozenset(),
 ) -> tuple[str, list[dict]]:
     """Mirror or move each single-pin connector whose wire U-turns or wraps (R7.1).
 
@@ -298,6 +299,7 @@ def orient_connectors_text(
     """
     nets = {(item["reference"], item["pin"]): item["net"] for item in inventory}
     moves = []
+    returns = set(return_connectors or ())
     for connector in sorted(_single_pin_connectors(parse(text)), key=lambda c: c["reference"]):
         reference = connector["reference"]
         if reference in skip:
@@ -323,6 +325,10 @@ def orient_connectors_text(
         facing_left = old_pin[0] < (body[0] + body[2]) // 2
         before = _cost(text, nets, net, reference)
         candidates = [("mirror in place", True, None, target)]
+        if reference in returns:
+            # A return connector belongs with its power interface (R7.2): the block step
+            # moves it there as a unit, so here it may only be mirrored.
+            ranked = []
         # Beside each of the three nearest pins of its net, the pin facing that pin.
         for pin_target in ranked[:3]:
             for steps in PLACEMENT_REACH:

@@ -2142,11 +2142,12 @@ class NativeSchematicEngine:
             attempt, excluded, number = first, set(), 0
             while chosen is None and number < 8:
                 number += 1
-                flow = json.loads((attempt / "presentation.json").read_text())["connector_flow"]
+                recorded = json.loads((attempt / "presentation.json").read_text())
+                flow = recorded["connector_flow"] + recorded.get("block_moves", [])
                 applied = {item["connector"]: item["change"] for item in flow if item.get("change")}
                 if not applied:
                     break
-                on_net = {item["connector"]: item.get("net") for item in flow}
+                on_net = {item["connector"]: item["net"] for item in flow if item.get("net")}
                 # Blame connectors the problem names, or whose net it names.
                 named = [
                     name
@@ -2154,7 +2155,13 @@ class NativeSchematicEngine:
                     if f"'{name}'" in (problem or "")
                     or f"'net': '{on_net.get(name)}'" in (problem or "")
                 ]
-                blamed = named or list(applied)
+                # Unnamed problems blame the later block moves before the connector moves.
+                block_parts = [
+                    item["connector"]
+                    for item in recorded.get("block_moves", [])
+                    if item.get("change")
+                ]
+                blamed = named or block_parts or list(applied)
                 if number >= 6:
                     # Last resort: leave the blamed connectors as the compiler drew them.
                     excluded |= set(blamed)
@@ -2169,12 +2176,11 @@ class NativeSchematicEngine:
                 if problem is None:
                     chosen = (attempt, schematic)
             if chosen is None:
-                # Nothing worked: every connector as the compiler drew it.
+                # Nothing worked: every connector and block as the compiler drew it.
+                recorded = json.loads((first / "presentation.json").read_text())
                 everything = {
                     item["connector"]
-                    for item in json.loads((first / "presentation.json").read_text())[
-                        "connector_flow"
-                    ]
+                    for item in recorded["connector_flow"] + recorded.get("block_moves", [])
                 }
                 attempt = Path(folder) / "all-skipped"
                 attempt.mkdir()
@@ -2195,39 +2201,21 @@ class NativeSchematicEngine:
         return directory / schematic.relative_to(source)
 
     def _finished_problem(self, schematic: Path, directory: Path) -> str | None:
-        """What the observer or a pure-geometry check reports on a finished drawing."""
-        from .connector_flow import current_inventory
+        """What the independent checks report on a finished drawing, or None.
 
-        text = schematic.read_text()
-        found = {
-            name: sorted(items)
-            for name, items in self._geometric_field_witnesses(text).items()
-            if items
-        }
-        if found:
-            return f"field checks report {found}"
-        drawn = parse(text)
-        readability = {}
-        nets = getattr(self, "_connector_nets", None)
-        if getattr(self, "readability_checks", False) and nets is not None:
-            readability["rail_route_detour"] = rail_route_detours(
-                drawn,
-                current_inventory(text, nets),
-                sorted({item["net"] for item in self.design["power_assertions"]}),
-            )
-            readability["bodyless_unit_clearance"] = wires_through_bodyless_units(drawn)
-            readability["power_symbol_direction"] = power_symbols_against_convention(drawn)
-            if getattr(self, "page_balance", False):
-                readability["page_balance"] = page_balance_witnesses(drawn)
-            if getattr(self, "text_and_ground_checks", False):
-                readability["ground_symbol_direction"] = grounds_that_could_point_down(text)
-        if getattr(self, "power_symbol_rails", False):
-            readability["power_symbol_clearance"] = power_symbol_collisions(text)
-        failing = {name: items for name, items in readability.items() if items}
-        if failing:
-            return f"checks report {sorted(failing)}: {str(failing)[:300]}"
-        check = getattr(self, "_connector_check", None)
-        return check(text) if check else None
+        The drawing is assessed exactly as a candidate would be (KiCad ERC, netlist
+        equivalence, the observer and every brief check), without rendering, in a scratch
+        folder. The diagnostics name the parts and nets, so the blamed move can be found.
+        """
+        with tempfile.TemporaryDirectory(dir=directory, prefix=".finished-") as folder:
+            try:
+                report = self.assess(schematic, Path(folder), render=False).report
+            except (OSError, RuntimeError, ValueError, KeyError) as error:
+                return f"assessment failed: {error}"
+        failing = sorted(name for name, value in report["checks"].items() if value != "PASS")
+        if not failing:
+            return None
+        return f"checks fail {failing}: " + " | ".join(report.get("diagnostics", []))[:900]
 
     def _compile_once(self, directory: Path, skip: frozenset) -> Path:
         scene, composition = compose_with_evidence(self.design, self.resolved)
@@ -2257,6 +2245,15 @@ class NativeSchematicEngine:
         text, turns = aim_power_flags_text(schematic.read_text())
         schematic.write_text(text)
         presentation["power_flag_turns"] = turns
+        if (getattr(self, "generator_layout", None) or {}).get("block_placement") and getattr(
+            self, "_connector_check", None
+        ):
+            # Brief v11 (spec R7.2): once rails are drawn with local symbols, parked units
+            # and return connectors move to their blocks, before field text is placed.
+            text, moves, blocks = self._place_blocks(schematic, skip)
+            schematic.write_text(text)
+            presentation["block_moves"] = moves
+            presentation["blocks"] = blocks
         text, moves = tighten_vertical_fields_text(
             schematic.read_text(),
             power_unit_both_sides=getattr(self, "text_and_ground_checks", False),
@@ -2294,11 +2291,69 @@ class NativeSchematicEngine:
                 (item["reference"], item["pin"]): item["net"] for item in inventory
             }
 
-            def fields_ok(candidate: str) -> bool:
+            def fields_ok(candidate: str, tolerate: str | None = None) -> bool:
+                # Nothing new reported, except about the text of `tolerate` (a moved part
+                # whose text a later step places again).
                 after = self._geometric_field_witnesses(candidate)
-                return all(after[name] <= before.get(name, set()) for name in after)
+                return all(
+                    not {w for w in after[name] - before.get(name, set()) if w[0] != tolerate}
+                    for name in after
+                )
 
-            return orient_connectors_text(base, inventory, check, fields_ok, skip)
+            self._fields_ok = fields_ok
+            self._compiler_inventory = inventory
+            from .blocks import partition
+
+            returns = frozenset(
+                block["members"][0][0]
+                for block in partition(self.design, parse(base))
+                if block["role"] == "power_interface" and block.get("returns")
+            )
+            return orient_connectors_text(base, inventory, check, fields_ok, skip, returns)
+
+    def _place_blocks(self, schematic: Path, skip: frozenset) -> tuple[str, list[dict], list]:
+        """Move parked units and return connectors as units (R7.2), after the connectors."""
+        from .block_moves import place_blocks_text
+
+        def checks_of(candidate: str) -> dict:
+            with tempfile.TemporaryDirectory(dir=schematic.parent, prefix=".block-") as folder:
+                trial = Path(folder) / "project" / schematic.name
+                trial.parent.mkdir()
+                trial.write_text(candidate)
+                return self.assess(trial, Path(folder), render=False).report["checks"]
+
+        try:
+            baseline = checks_of(schematic.read_text())
+        except (OSError, RuntimeError, ValueError, KeyError):
+            baseline = {}
+
+        def native_ok(candidate: str) -> str | None:
+            # Every check that passes on the drawing before the move must still pass, and
+            # the connectivity checks must pass, on a scratch copy assessed in full.
+            try:
+                checks = checks_of(candidate)
+            except (OSError, RuntimeError, ValueError, KeyError) as error:
+                return str(error)
+            broken = [
+                name
+                for name, value in checks.items()
+                if value != "PASS"
+                and (
+                    baseline.get(name) == "PASS"
+                    or name in ("native_tools", "erc", "electrical_equivalence")
+                )
+            ]
+            return f"{', '.join(sorted(broken))} fail" if broken else None
+
+        return place_blocks_text(
+            schematic.read_text(),
+            self.design,
+            self._compiler_inventory,
+            self._connector_check,
+            self._fields_ok,
+            skip,
+            native_ok,
+        )
 
     def _plan_rails(self, schematic: Path, directory: Path) -> tuple[str, list[dict]]:
         """Draw the asserted rails with the fewest power symbols over every plan.
@@ -2668,6 +2723,18 @@ class NativeSchematicEngine:
             report["quality"] = {"error": f"quality measures failed: {error}"}
         # R7.6 design-review questions from the intended circuit: reported only.
         report["design_review_flags"] = design_review_flags(self.design)
+        # R7.2 blocks, their signal order and containment, and return-connector
+        # distances from their power interface: reported only.
+        try:
+            from .blocks import block_layout, return_connector_distances
+
+            drawn_tree = parse(text)
+            report["block_layout"] = block_layout(self.design, drawn_tree)
+            report["return_connector_distances"] = return_connector_distances(
+                self.design, drawn_tree
+            )
+        except (ValueError, KeyError, IndexError, TypeError) as error:
+            report["block_layout"] = {"error": f"block layout failed: {error}"}
         # R7.3 per-net, per-pin-pair detours: reported only.
         try:
             report["net_detours"] = pin_pair_detours(parse(text), terminal_inventory)
