@@ -15,6 +15,14 @@ from urllib.request import Request, urlopen
 from pydantic import Field, ValidationError, model_validator
 
 from .evidence import StrictModel
+from .review_status import (
+    CONNECTIVITY_CHECKS as CONNECTIVITY_CHECKS,
+    broken_connectivity,
+    candidate_summary,
+    edit_outcome,
+    ignored_erc_checks,
+    run_primary_effect,
+)
 
 
 class MoveField(StrictModel):
@@ -107,9 +115,6 @@ class SchematicReview(StrictModel):
     actions: list[SchematicAction] = Field(max_length=1)
     rationale: str = Field(min_length=1, max_length=4000)
 
-
-# Checks that establish connectivity; an edit that makes one of them fail is rolled back.
-CONNECTIVITY_CHECKS = ("native_tools", "erc", "electrical_equivalence")
 
 # The most edits one review may request when the loop applies them one at a time.
 MAX_BATCH_ACTIONS = 4
@@ -480,6 +485,9 @@ def run_schematic_review(
     tokens = 0
     # Edits refused on a given drawing revision: (revision, edit) -> reason.
     refused_edits: dict[tuple[str, str], str] = {}
+    # R1 reporting: the generated drawing, the reviewer's last verdict per revision and the
+    # outcome of every edit.
+    initial_assessment, verdicts, outcomes = None, {}, []
     candidate_dir = output / "candidates" / "000"
     candidate_dir.mkdir(parents=True)
     try:
@@ -491,6 +499,7 @@ def run_schematic_review(
             "reason": str(error),
             "accepted_schematic": None,
             "iterations": [],
+            "status_levels": None,
             "human_electrical_review": "PENDING",
         }
         write_json(output / "result.json", result)
@@ -509,6 +518,8 @@ def run_schematic_review(
                 status, reason = "NO_PROGRESS", "candidate repeats an earlier revision"
                 break
             seen.add(assessment.revision)
+            if initial_assessment is None:
+                initial_assessment = assessment
             if assessment.passed:
                 best_passing = str(assessment.schematic.relative_to(output))
                 best_assessment = assessment
@@ -533,6 +544,7 @@ def run_schematic_review(
             entry["review"] = review.model_dump(mode="json")
             if review.base_revision != assessment.revision:
                 raise ValueError("stale model review: base_revision does not match image revision")
+            verdicts[assessment.revision] = review.decision
             if tokens > max_model_tokens or time.monotonic() - started > max_seconds:
                 reason = "wall-clock or model-token budget exhausted"
                 break
@@ -573,22 +585,34 @@ def run_schematic_review(
                     trial = engine.assess(source, directory)
                 except (ValueError, KeyError) as error:
                     refused_edits[edit_key] = f"edit refused: {error}"
+                    entry["edit_outcome"] = edit_outcome(
+                        assessment.report,
+                        None,
+                        disposition="ROLLED_BACK",
+                        reason_class="invalid_request",
+                    )
+                    outcomes.append(entry["edit_outcome"])
                     raise ValueError(refused_edits[edit_key]) from error
-                broken = sorted(
-                    name
-                    for name in CONNECTIVITY_CHECKS
-                    if assessment.report.get("checks", {}).get(name) == "PASS"
-                    and trial.report.get("checks", {}).get(name) != "PASS"
-                )
+                broken = broken_connectivity(assessment.report, trial.report)
+                reason_class = None
                 if trial.revision in seen:
+                    reason_class = "no_change"
                     refused_edits[edit_key] = (
                         "edit rolled back: it made no change to the drawing; choose a different edit"
                     )
                 elif broken:
+                    reason_class = "connectivity"
                     refused_edits[edit_key] = (
                         f"edit rolled back: it made {', '.join(broken)} fail, so it changed "
                         "connectivity; the drawing is unchanged. Choose a different edit"
                     )
+                entry["edit_outcome"] = edit_outcome(
+                    assessment.report,
+                    trial.report,
+                    disposition="ROLLED_BACK" if reason_class else "KEPT",
+                    reason_class=reason_class,
+                )
+                outcomes.append(entry["edit_outcome"])
                 if edit_key in refused_edits:
                     entry["rolled_back_candidate"] = str(directory.relative_to(output))
                     raise ValueError(refused_edits[edit_key])
@@ -602,6 +626,7 @@ def run_schematic_review(
                 # Several edits: apply and check one at a time; keep each good edit and stop
                 # at the first that is refused or makes a passing check fail.
                 current, kept, stop = assessment, [], ""
+                step_outcomes = entry["edit_outcomes"] = []
                 for number, action in enumerate(review.actions):
                     step = (
                         directory
@@ -612,9 +637,25 @@ def run_schematic_review(
                         trial = engine.assess(engine.apply(current.schematic, step, [action]), step)
                     except (ValueError, KeyError) as error:
                         stop = f"action {number + 1} ({action.operation}) refused: {error}"
+                        step_outcomes.append(
+                            edit_outcome(
+                                current.report,
+                                None,
+                                disposition="ROLLED_BACK",
+                                reason_class="invalid_request",
+                            )
+                        )
                         break
                     if trial.revision == current.revision or trial.revision in seen:
                         stop = f"action {number + 1} ({action.operation}) made no change"
+                        step_outcomes.append(
+                            edit_outcome(
+                                current.report,
+                                trial.report,
+                                disposition="ROLLED_BACK",
+                                reason_class="no_change",
+                            )
+                        )
                         break
                     broken = sorted(
                         name
@@ -626,10 +667,27 @@ def run_schematic_review(
                             f"action {number + 1} ({action.operation}) not kept: it made "
                             f"{', '.join(broken)} fail"
                         )
+                        # A batch also stops when a passing presentation check breaks.
+                        step_outcomes.append(
+                            edit_outcome(
+                                current.report,
+                                trial.report,
+                                disposition="ROLLED_BACK",
+                                reason_class=(
+                                    "connectivity"
+                                    if broken_connectivity(current.report, trial.report)
+                                    else "presentation_regression"
+                                ),
+                            )
+                        )
                         break
+                    step_outcomes.append(
+                        edit_outcome(current.report, trial.report, disposition="KEPT")
+                    )
                     current = trial
                     kept.append(number + 1)
                 entry["applied_actions"] = kept
+                outcomes.extend(step_outcomes)
                 if stop:
                     entry["stopped"] = stop
                 if not kept:
@@ -664,12 +722,39 @@ def run_schematic_review(
             best_assessment.verify_unchanged()
         except (RuntimeError, OSError):
             best_passing = None
+            best_assessment = None
+    accepted_revision = assessment.revision if accepted and assessment is not None else None
+
+    def summary(candidate):
+        if candidate is None:
+            return None
+        return candidate_summary(
+            candidate, output, verdicts=verdicts, accepted_revision=accepted_revision, quality=None
+        )
+
+    # Top-level levels describe the last safely committed current candidate.
+    current_summary = summary(assessment)
     result = {
         "schema_version": "schematic-review-loop.v1",
         "status": status,
         "reason": reason,
         "accepted_schematic": accepted,
         "best_passing_schematic": best_passing,
+        "status_levels": current_summary["levels"] if current_summary else None,
+        "candidates_reported": {
+            "current": current_summary,
+            "initial": summary(initial_assessment),
+            "best_passing": summary(best_assessment),
+        },
+        "run_primary_effect": run_primary_effect(outcomes),
+        "erc_ignored_checks": (
+            ignored_erc_checks(assessment.report) if assessment is not None else None
+        ),
+        "accepted_for_review_implies": [
+            "ELECTRICALLY_EQUIVALENT",
+            "PRESENTATION_PASS",
+            "MODEL_ACCEPTED",
+        ],
         "reviewer": reviewer.identity,
         "iterations": history,
         "model_tokens": tokens,

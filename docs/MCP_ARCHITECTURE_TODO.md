@@ -306,7 +306,7 @@ These features are **planned**, not prerequisites for P4 except when a specific 
 
     The independent readability assessment and human electrical review are still PENDING, so P6-011f stays unchecked.
   - **Note (2026-11-14):** The owner approved changing the requirement text of P6-011g to P6-011l after `docs/ai_kicad_reviewer_loop_spec_questions.md` was answered. The original six tasks were split and reworded to match the decisions in `docs/pivot/REVIEWER_LOOP_SPEC.md`. Order: g → h → k1 → i1 → i2 → i3 → j → l1 → l2 → l3 → l4 → k2. None of these is implemented yet.
-  - [ ] **P6-011g** Report the R1 status levels, edit outcome fields and ERC disclosure for every review-loop result (spec R1). **Acceptance:**
+  - [x] **P6-011g** Report the R1 status levels, edit outcome fields and ERC disclosure for every review-loop result (spec R1). **Acceptance:**
     - Every `result.json` and corpus summary carries `NATIVE_VALID`, `ELECTRICALLY_EQUIVALENT`, `PRESENTATION_PASS`, `QUALITY_NOT_WORSE` (reported only), `MODEL_ACCEPTED`, `DESIGN_REQUIREMENTS_CHECKED` and `HUMAN_REVIEWED`, each with its basis. Missing evidence gives `PENDING`.
     - The top-level levels describe the last safely committed current candidate. Candidate 000 and the best passing candidate are reported separately, with their own levels and SHA-256.
     - Each edit records its primary effect, quality overlay and disposition separately.
@@ -315,6 +315,16 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - `ACCEPTED_FOR_REVIEW` is documented as in R1.
 
     **Deps:** none.
+    **Evidence (2026-11-14):**
+    - **Code:** `src/ai_kicad/pivot/review_status.py` computes the levels, edit outcomes and corpus fields. `run_schematic_review` emits `status_levels` (for the last committed current candidate), `candidates_reported` (current, initial and best passing, each with revision SHA-256 and levels), `edit_outcome`/`edit_outcomes` per iteration, `run_primary_effect`, `erc_ignored_checks` (from KiCad's ERC report) and `accepted_for_review_implies`. `tools/pivot/run_review_loop_corpus.py` adds compressed levels, primary effect, disposition counts and ignored ERC checks to each design's summary entry. The `ACCEPTED_FOR_REVIEW` meaning is documented in the module docstring and in every result.
+    - **Tests:** `tests/pivot/test_review_status.py`, 9 tests:
+      - level derivation, and `PENDING` for missing evidence
+      - an ERC failure alone failing `ELECTRICALLY_EQUIVALENT`
+      - the three historical cases from their stored assessments: `schematic_review_loop_2026-10-25_run1/rc_corrupted` 000→001 is `FUNCTIONAL_REPAIR`; `review_loop_corpus_v3_2026-10-31_qwen35_32k_run1/inverting_gain` 001→003 is `PRESENTATION_FIX` and 000→001 is `LAYOUT_CHANGE`; `review_loop_corpus_2026-10-27_qwen35_256k_run1/noninverting_gain` 003→004 is `ROLLED_BACK`/`connectivity` with no primary effect
+      - loop results for accepted and unaccepted runs
+      - corpus fields
+    - **Pivot suite:** `AI_KICAD_APPRUN=/tmp/AppDir/AppRun .venv/bin/python -m pytest -q tests/pivot --deselect …ngspice… --ignore tests/pivot/test_direct_backend.py`: 460 passed, 1 deselected. The loop is brief-independent, so v1–v9 decisions are unchanged.
+    **Note:** `QUALITY_NOT_WORSE` is `PENDING` until P6-011h computes R2. When a batch stops because a passing presentation check broke (the existing batch rule), the outcome uses reason class `presentation_regression`, which is not in the R4 list; P6-011j settles batch reasons.
   - [ ] **P6-011h** Compute the R2 quality measures for every candidate, with per-edit and per-run deltas and the `LOCAL_FIX_ONLY` / `QUALITY_REGRESSION` overlays. Under v10 they are report-only (spec R2). **Acceptance:**
     - **Measures:** wire length, numeric rail detour with its path, topology-aware bends, perimeter paths against the routing envelope, text clearance, field ownership, page balance and power-symbol flags.
     - **Hand counts:** the measures match hand counts on at least three drawings, one of them the October rc_to_buffer case (547 → 880 mm of wire), which must report a worse delta.

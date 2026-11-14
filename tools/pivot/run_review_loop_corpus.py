@@ -13,6 +13,7 @@ import json
 from pathlib import Path
 import subprocess
 
+from ai_kicad.pivot.review_status import corpus_status_fields
 from ai_kicad.pivot.schematic_review import file_hash, write_json
 from ai_kicad.pivot.schematic_review_service import NativeSchematicReviewService
 from tools.pivot.experiment_paths import create_experiment_dir
@@ -132,6 +133,7 @@ def main() -> None:
             ),
             "accepted_schematic": result.get("accepted_schematic"),
             "best_passing_schematic": result.get("best_passing_schematic"),
+            **corpus_status_fields(result),
         }
         print(name, result["status"], edits, flush=True)
     summary = {
@@ -143,6 +145,7 @@ def main() -> None:
             path: file_hash(ROOT / path)
             for path in (
                 "src/ai_kicad/pivot/schematic_review.py",
+                "src/ai_kicad/pivot/review_status.py",
                 "src/ai_kicad/pivot/schematic_review_native.py",
                 "src/ai_kicad/pivot/schematic_review_service.py",
             )
