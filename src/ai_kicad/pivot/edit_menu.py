@@ -1,0 +1,416 @@
+"""A menu of pre-checked feasible edits for the reviewer (reviewer loop spec R3).
+
+The editor proposes candidate edits from geometry, screens the best-ranked ones with cheap
+geometric checks, and validates the survivors natively: each is applied in a scratch copy
+and run through KiCad ERC and netlist equivalence. Only entries that keep connectivity,
+change the drawing, break no passing check and resolve something a failing check reports
+are shown. A geometry-only candidate is never described as feasible.
+
+The budget limits menu building inside one review round. It does not limit the number of
+rounds; the per-design budgets do that.
+"""
+
+from __future__ import annotations
+
+from dataclasses import asdict, dataclass, field
+import json
+import time
+from typing import Callable
+
+from ai_kicad.m2_text_layout import property_page_angle, text_extents
+from ai_kicad.m2a_core import _nm
+from ai_kicad.sexpr import children, one
+
+from .field_layout import PAGE_CONTENT, TEXT_PADDING, _obstacles, _symbol
+from .power_symbols import _overlaps
+from .quality_measures import compare_quality
+from .review_status import broken_connectivity
+from .schematic_description import _instances
+
+Box = tuple[int, int, int, int]
+Target = tuple[str, int, str]
+GRID = 1_270_000
+# Gaps between a part's body (or anchor) and the near edge of its relocated text.
+FIELD_GAPS = (GRID, 2 * GRID)
+# Slides along the body side, in grid steps, for each gap.
+FIELD_SLIDES = (0, -1, 1, -2, 2)
+
+
+def _named(witnesses: list[dict]) -> set[Target]:
+    return {(item["reference"], int(item["unit"]), item["field"]) for item in witnesses}
+
+
+def _collided(pairs: list) -> set[Target]:
+    named = set()
+    for pair in pairs:
+        for item in pair:
+            # Collision witnesses read "J1:1.Reference".
+            owner, name = str(item).rsplit(".", 1)
+            reference, unit = owner.rsplit(":", 1)
+            named.add((reference, int(unit), name))
+    return named
+
+
+# Field checks and the (reference, unit, field) set each one reports in an assessment.
+FIELD_CHECKS: dict[str, Callable[[dict], set[Target]]] = {
+    "field_locality": lambda r: _named(r.get("field_locality", {}).get("witnesses", [])),
+    "field_owner_association": lambda r: _named(
+        r.get("field_owner_association", {}).get("witnesses", [])
+    ),
+    "field_nearest_owner": lambda r: _named(
+        r.get("readability_witnesses", {}).get("field_nearest_owner", [])
+    ),
+    "field_wire_separation": lambda r: _named(
+        r.get("readability_witnesses", {}).get("field_wire_separation", [])
+    ),
+    "field_separation": lambda r: _collided(r.get("field_collision_witnesses", [])),
+}
+
+
+def field_witnesses(report: dict) -> dict[str, set[Target]]:
+    """Fields each failing field check reports."""
+    checks = report.get("checks", {})
+    return {name: read(report) for name, read in FIELD_CHECKS.items() if checks.get(name) == "FAIL"}
+
+
+def canonical_action(action: dict) -> str:
+    """A stable key for an action: sorted keys, coordinates rounded to 1 um."""
+
+    def normal(value):
+        if isinstance(value, float):
+            return round(value, 3)
+        if isinstance(value, dict):
+            return {key: normal(item) for key, item in sorted(value.items())}
+        if isinstance(value, list):
+            return [normal(item) for item in value]
+        return value
+
+    return json.dumps(normal(action), sort_keys=True)
+
+
+@dataclass
+class Proposal:
+    """A cheap geometric candidate edit, before native validation."""
+
+    edit_class: str
+    action: dict
+    target: dict
+    addresses: list[str]
+    cost: float
+    description: str
+
+    @property
+    def target_key(self) -> tuple:
+        return tuple(self.target.values())
+
+
+@dataclass
+class MenuPolicy:
+    per_class: int = 3
+    total: int = 8
+    optional_when_passing: int = 2
+    geometric_proposals: int = 12
+    native_validations: int = 8
+    seconds: float = 20.0
+
+    @classmethod
+    def from_profile(cls, menu) -> MenuPolicy:
+        return cls(**(menu.model_dump() if hasattr(menu, "model_dump") else dict(menu)))
+
+
+@dataclass
+class ValidationCache:
+    """Native validations keyed by base revision, canonical action and context."""
+
+    context: str = ""
+    results: dict = field(default_factory=dict)
+    hits: int = 0
+
+    def key(self, base_revision: str, action: dict) -> tuple[str, str, str]:
+        return base_revision, canonical_action(action), self.context
+
+
+def resolved_items(base: dict, trial: dict, proposal: Proposal) -> list[str]:
+    """Failing checks the trial passes, and the proposal's target no longer reported."""
+    checks, trial_checks = base.get("checks", {}), trial.get("checks", {})
+    items = [
+        name
+        for name, value in sorted(checks.items())
+        if value != "PASS" and trial_checks.get(name) == "PASS"
+    ]
+    before, after = field_witnesses(base), field_witnesses(trial)
+    key = proposal.target_key
+    for name in proposal.addresses:
+        if name in items:
+            continue
+        if key in before.get(name, set()) and key not in after.get(name, set()):
+            items.append(f"{name}: {key[0]} unit {key[1]} {key[2]}")
+    return items
+
+
+def _text_box(centre: tuple[int, int], text: str, page_angle: int) -> Box:
+    width, height = text_extents(text, page_angle)
+    half_width, half_height = width // 2 + TEXT_PADDING, height // 2 + TEXT_PADDING
+    return (
+        centre[0] - half_width,
+        centre[1] - half_height,
+        centre[0] + half_width,
+        centre[1] + half_height,
+    )
+
+
+def field_relocation_proposals(text: str, tree: list, report: dict) -> list[Proposal]:
+    """Clear grid spots beside the owning body or anchor for each field a check reports."""
+    instances = {(item["reference"], item["unit"]): item for item in _instances(tree)}
+    targets: dict[Target, list[str]] = {}
+    for name, named in field_witnesses(report).items():
+        for target in named:
+            targets.setdefault(target, []).append(name)
+    proposals = []
+    for (reference, unit, name), checks in sorted(targets.items()):
+        instance = instances.get((reference, unit))
+        if instance is None:
+            continue
+        props = {prop[1]: prop for prop in children(_symbol(tree, (reference, unit)), "property")}
+        prop = props.get(name)
+        if prop is None:
+            continue
+        at = one(prop, "at")
+        current = (_nm(at[1]), _nm(at[2]))
+        angle = int(float(at[3]))
+        page_angle = property_page_angle(instance["angle"], angle)
+        label = instance["name"] if name == "Reference" else prop[2]
+        obstacles = _obstacles(text, tree, (reference, unit))
+        sibling = props.get("Value" if name == "Reference" else "Reference")
+        if sibling is not None and not children(sibling, "hide"):
+            sibling_at = one(sibling, "at")
+            obstacles.append(
+                _text_box(
+                    (_nm(sibling_at[1]), _nm(sibling_at[2])),
+                    instance["name"] if name == "Value" else sibling[2],
+                    property_page_angle(instance["angle"], int(float(sibling_at[3]))),
+                )
+            )
+        width, height = text_extents(label, page_angle)
+        half_width, half_height = width // 2, height // 2
+        origin = instance["origin"]
+        frames = [("body", instance["body"])]
+        if instance["origin"] != (
+            (instance["body"][0] + instance["body"][2]) // 2,
+            (instance["body"][1] + instance["body"][3]) // 2,
+        ):
+            # Association is measured from the symbol anchor; try spots around it too.
+            frames.append(("anchor", (*origin, *origin)))
+        seen = set()
+        for frame, (left, top, right, bottom) in frames:
+            middle = ((left + right) // 2, (top + bottom) // 2)
+            for gap in FIELD_GAPS:
+                sides = {
+                    "right": (right + gap + half_width, middle[1], (0, 1)),
+                    "left": (left - gap - half_width, middle[1], (0, 1)),
+                    "above": (middle[0], top - gap - half_height, (1, 0)),
+                    "below": (middle[0], bottom + gap + half_height, (1, 0)),
+                }
+                for side, (x, y, (sx, sy)) in sides.items():
+                    for slide in FIELD_SLIDES:
+                        centre = (
+                            round((x + sx * slide * GRID) / GRID) * GRID,
+                            round((y + sy * slide * GRID) / GRID) * GRID,
+                        )
+                        if centre in seen or centre == current:
+                            continue
+                        seen.add(centre)
+                        box = _text_box(centre, label, page_angle)
+                        inside = (
+                            PAGE_CONTENT[0] <= box[0]
+                            and PAGE_CONTENT[1] <= box[1]
+                            and box[2] <= PAGE_CONTENT[2]
+                            and box[3] <= PAGE_CONTENT[3]
+                        )
+                        if not inside or any(_overlaps(box, other) for other in obstacles):
+                            continue
+                        distance = abs(centre[0] - origin[0]) + abs(centre[1] - origin[1])
+                        proposals.append(
+                            Proposal(
+                                edit_class="field_relocation",
+                                action={
+                                    "operation": "move_field",
+                                    "reference": reference,
+                                    "unit": unit,
+                                    "field": name,
+                                    "x_mm": centre[0] / 1e6,
+                                    "y_mm": centre[1] / 1e6,
+                                    "angle": angle,
+                                },
+                                target={"reference": reference, "unit": unit, "field": name},
+                                addresses=sorted(checks),
+                                cost=distance / 1e6,
+                                description=(
+                                    f"move {instance['name']} {name} '{label}' {side} of its "
+                                    f"{frame} to ({centre[0] / 1e6:.2f}, {centre[1] / 1e6:.2f})"
+                                ),
+                            )
+                        )
+    return proposals
+
+
+def _interleave(proposals: list[Proposal]) -> list[Proposal]:
+    """Cheapest first within each target, alternating between targets."""
+    by_target: dict[tuple, list[Proposal]] = {}
+    for proposal in proposals:
+        by_target.setdefault(proposal.target_key, []).append(proposal)
+    queues = [sorted(items, key=lambda p: p.cost) for _key, items in sorted(by_target.items())]
+    ordered = []
+    while any(queues):
+        for queue in queues:
+            if queue:
+                ordered.append(queue.pop(0))
+    return ordered
+
+
+def build_menu(
+    base,
+    proposals: list[Proposal],
+    validate: Callable[[dict], object],
+    policy: MenuPolicy,
+    cache: ValidationCache,
+    *,
+    precheck: Callable[[Proposal], bool] | None = None,
+    quality_thresholds: dict | None = None,
+    clock: Callable[[], float] = time.monotonic,
+    kicad_commands_per_validation: int = 1,
+) -> dict:
+    """Rank, screen and natively validate proposals; return the menu and its record.
+
+    `precheck(proposal)` is a cheap geometric screen; at most `geometric_proposals`
+    proposals are screened. `validate(action)` applies the action in scratch and returns
+    its assessment, or raises ValueError when the editor refuses it.
+    """
+    started = clock()
+    unique: dict[str, Proposal] = {}
+    for proposal in sorted(proposals, key=lambda p: (p.cost, canonical_action(p.action))):
+        unique.setdefault(canonical_action(proposal.action), proposal)
+    considered, screened_out, passed = 0, 0, []
+    for proposal in _interleave(list(unique.values())):
+        if considered >= policy.geometric_proposals:
+            break
+        considered += 1
+        if precheck is None or precheck(proposal):
+            passed.append(proposal)
+        else:
+            screened_out += 1
+    checks = base.report.get("checks", {})
+    entries, per_class, rejected = [], {}, []
+    validations, exhausted = 0, None
+    covered: set[tuple] = set()
+    # Validate one proposal per target before a second for any target.
+    passed.sort(key=lambda p: p.target_key in covered)
+    for proposal in passed:
+        if len(entries) >= policy.total:
+            break
+        if per_class.get(proposal.edit_class, 0) >= policy.per_class:
+            continue
+        key = cache.key(base.revision, proposal.action)
+        if key in cache.results:
+            cache.hits += 1
+            outcome = cache.results[key]
+        else:
+            if validations >= policy.native_validations:
+                exhausted = "native validation limit reached"
+                break
+            if clock() - started >= policy.seconds:
+                exhausted = "menu time budget reached"
+                break
+            validations += 1
+            try:
+                trial = validate(proposal.action)
+            except (ValueError, KeyError) as error:
+                outcome = {"ok": False, "reason": f"editor refused: {error}"}
+            else:
+                trial_checks = trial.report.get("checks", {})
+                broken = broken_connectivity(base.report, trial.report)
+                newly_failing = sorted(
+                    name
+                    for name, value in checks.items()
+                    if value == "PASS" and trial_checks.get(name) != "PASS"
+                )
+                fixes = resolved_items(base.report, trial.report, proposal)
+                base_quality, trial_quality = (
+                    base.report.get("quality"),
+                    trial.report.get("quality"),
+                )
+                delta = (
+                    compare_quality(base_quality, trial_quality, quality_thresholds)
+                    if isinstance(base_quality, dict)
+                    and isinstance(trial_quality, dict)
+                    and "error" not in base_quality
+                    and "error" not in trial_quality
+                    else None
+                )
+                if trial.revision == base.revision:
+                    outcome = {"ok": False, "reason": "no change"}
+                elif broken:
+                    outcome = {"ok": False, "reason": f"breaks {', '.join(broken)}"}
+                elif newly_failing:
+                    outcome = {"ok": False, "reason": f"makes {', '.join(newly_failing)} fail"}
+                elif not fixes:
+                    outcome = {"ok": False, "reason": "resolves nothing a failing check reports"}
+                else:
+                    outcome = {
+                        "ok": True,
+                        "fixes": fixes,
+                        "revision": trial.revision,
+                        "predicted_delta": delta,
+                    }
+            cache.results[key] = outcome
+        if not outcome["ok"]:
+            rejected.append({"action": proposal.action, "reason": outcome["reason"]})
+            continue
+        covered.add(proposal.target_key)
+        per_class[proposal.edit_class] = per_class.get(proposal.edit_class, 0) + 1
+        entries.append(
+            {
+                "id": f"{proposal.edit_class}-{len(entries) + 1}",
+                "class": proposal.edit_class,
+                "target": proposal.target,
+                "description": proposal.description,
+                "fixes": outcome["fixes"],
+                "predicted_delta": outcome["predicted_delta"],
+                "action": proposal.action,
+                "scratch_revision": outcome["revision"],
+            }
+        )
+    return {
+        "entries": entries,
+        "record": {
+            "proposals_generated": len(unique),
+            "proposals_considered": considered,
+            "screened_out": screened_out,
+            "native_validations": validations,
+            "kicad_invocations": validations * kicad_commands_per_validation,
+            "cache_hits": cache.hits,
+            "seconds": round(clock() - started, 3),
+            "budget_exhausted": exhausted,
+            "rejected": rejected,
+            "policy": asdict(policy),
+        },
+    }
+
+
+def menu_for_reviewer(menu: dict) -> list[dict]:
+    """What the reviewer sees: ID, target, what it fixes and the predicted R2 delta."""
+    shown = []
+    for entry in menu["entries"]:
+        delta = entry["predicted_delta"]
+        shown.append(
+            {
+                "id": entry["id"],
+                "class": entry["class"],
+                "target": entry["target"],
+                "description": entry["description"],
+                "fixes": entry["fixes"],
+                "predicted_quality_delta": delta["deltas"] if delta else None,
+                "predicted_quality_worse": sorted(delta["worse"]) if delta else None,
+            }
+        )
+    return shown

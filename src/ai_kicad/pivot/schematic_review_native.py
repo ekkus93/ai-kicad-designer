@@ -14,6 +14,8 @@ import subprocess
 import tempfile
 from uuid import uuid4
 
+from pydantic import TypeAdapter
+
 from ai_kicad.ir import InputError
 from ai_kicad.kicad import ToolFailure, run_headless
 from ai_kicad.m2_text_layout import overlaps, property_page_angle, text_extents
@@ -60,6 +62,14 @@ from .power_symbols import (
     power_symbol_definitions,
     power_symbols,
     rail_presentation,
+)
+from .edit_menu import (
+    MenuPolicy,
+    ValidationCache,
+    _collided,
+    _named,
+    build_menu,
+    field_relocation_proposals,
 )
 from .quality_measures import measure_quality
 from .readability_checks import (
@@ -2225,7 +2235,7 @@ class NativeSchematicEngine:
         source.write_bytes(self.source.read_bytes())
         return source
 
-    def assess(self, schematic: Path, directory: Path) -> SchematicAssessment:
+    def assess(self, schematic: Path, directory: Path, render: bool = True) -> SchematicAssessment:
         diagnostics = []
         generated_table, symbol_hashes = write_locked_symbol_table(
             directory, self.resolved, self.power_symbols
@@ -2396,7 +2406,8 @@ class NativeSchematicEngine:
                             "angle": int(float(at[3])),
                         }
                     )
-        images = self._render(schematic, directory)
+        # Menu scratch validations skip rendering; nothing reviews their images.
+        images = self._render(schematic, directory) if render else []
         terminal_inventory = terminal_inventory_for_design(self.design, observed)
         report = {
             "checks": checks,
@@ -2595,6 +2606,73 @@ class NativeSchematicEngine:
                 str(output),
             ]
         )
+
+    def edit_menu(
+        self,
+        assessment: SchematicAssessment,
+        directory: Path,
+        policy: MenuPolicy,
+        cache: ValidationCache,
+        quality_thresholds: dict | None = None,
+    ) -> dict:
+        """Pre-checked feasible edits for the current drawing (spec R3)."""
+        text = assessment.schematic.read_text()
+        tree = parse(text)
+        proposals = field_relocation_proposals(text, tree, assessment.report)
+        counter = iter(range(1000))
+        adapter = TypeAdapter(SchematicAction)
+        before = self._geometric_field_witnesses(text)
+
+        def precheck(proposal) -> bool:
+            # Cheap geometric screen: the target leaves every check that reports it, and no
+            # field check reports anything new.
+            try:
+                after = self._geometric_field_witnesses(
+                    edit_schematic_text(text, [adapter.validate_python(proposal.action)])
+                )
+            except (ValueError, KeyError):
+                return False
+            key = proposal.target_key
+            if any(key in after.get(name, set()) for name in proposal.addresses):
+                return False
+            return all(after[name] <= before.get(name, set()) for name in after)
+
+        def validate(action: dict) -> SchematicAssessment:
+            step = directory / f"{next(counter):03d}"
+            source = self.apply(assessment.schematic, step, [adapter.validate_python(action)])
+            return self.assess(source, step, render=False)
+
+        return build_menu(
+            assessment,
+            proposals,
+            validate,
+            policy,
+            cache,
+            precheck=precheck,
+            quality_thresholds=quality_thresholds,
+            # run_headless issues three kicad-cli commands: netlist export, ERC and SVG.
+            kicad_commands_per_validation=3,
+        )
+
+    def _geometric_field_witnesses(self, text: str) -> dict[str, set]:
+        """The fields each pure-geometry field check would report for `text`."""
+        drawn = parse(text)
+        inspected = parse(label_view_text(text)) if power_symbols(drawn) else drawn
+        found = {
+            "field_locality": _named(
+                measure_field_locality(inspected, self.maximum_field_distance_mm)["witnesses"]
+            ),
+            "field_owner_association": _named(measure_field_association(inspected)["witnesses"]),
+            "field_separation": _collided(field_collision_witnesses(inspected)),
+        }
+        strict = getattr(self, "text_and_ground_checks", False)
+        if getattr(self, "field_ownership", False):
+            found["field_nearest_owner"] = _named(
+                fields_nearer_another_part(drawn, include_bodyless=strict)
+            )
+        if strict:
+            found["field_wire_separation"] = _named(fields_across_a_wire(drawn))
+        return found
 
     def apply(self, schematic: Path, directory: Path, actions: list[SchematicAction]) -> Path:
         if directory.exists():

@@ -385,7 +385,7 @@ These features are **planned**, not prerequisites for P4 except when a specific 
 
       Existing brief-gating tests pass. Pivot suite: 495 passed, 1 deselected.
     **Note:** Menu-only enforcement (refusing free-form edits) and the menu caps take effect in P6-011i1; the R4 equivalence grid takes effect in P6-011j.
-  - [ ] **P6-011i1** Build the edit-menu framework with field relocation and `choose_edit` (spec R3). **Acceptance:**
+  - [x] **P6-011i1** Build the edit-menu framework with field relocation and `choose_edit` (spec R3). **Acceptance:**
     - **Native validation:** every displayed entry passed native ERC and netlist equivalence in scratch.
     - **Caps:** 3 per class and 8 in total.
     - **Budget:** 12 geometric proposals, 8 native validations and about 20 s per round, all configurable. Exhausting it shows the verified subset with `budget_exhausted`.
@@ -396,6 +396,36 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - **Menu-only:** under v10, free-form edits are refused with `invalid_request`.
 
     **Deps:** P6-011k1.
+    **Evidence (2026-11-14):**
+    - **Menu module:** `src/ai_kicad/pivot/edit_menu.py`:
+      - field-relocation proposals: grid spots beside the owning body and, for association, around the symbol anchor, clear of every obstacle
+      - a cheap geometric screen (`NativeSchematicEngine._geometric_field_witnesses`, which re-runs the pure-geometry field checks on the edited text)
+      - `build_menu`, which interleaves targets, caps screening at `geometric_proposals`, validates natively within `native_validations` and `seconds`, and keeps only entries that keep connectivity, change the drawing, break no passing check and resolve a reported field
+      - `ValidationCache`, keyed by base revision, canonical action and a context of thresholds, brief SHA-256 and toolchain
+    - **Engine:** `NativeSchematicEngine.edit_menu` validates each proposal by `apply` plus `assess(render=False)` in `menus/NNN/scratch/`. Each validation counts three `kicad-cli` commands: netlist, ERC and SVG.
+    - **Loop and reviewer:**
+      - The loop has `edit_mode` and `menu_policy`. In menu-only mode it builds a menu every round (`menus/NNN/menu.json`), refuses free-form edits and unknown IDs with `invalid_request`, resolves `choose_edit` to the entry's action, and records `menu_choice.matches_scratch`.
+      - `ChooseEdit` exists only in the menu-only review models, so the free-form JSON schema sent under v1–v9 is byte-identical. Its SHA-256 prefixes were checked before and after.
+      - `OllamaSchematicReviewer(menu_only=True)` sends the menu (no raw actions) and a menu-only prompt.
+      - The service turns this on from the v10 profile.
+    - **Tests:** `tests/pivot/test_edit_menu.py`, 13 tests:
+      - caps per class and in total
+      - the geometric screen cap
+      - the native-validation cap showing the verified subset, with `budget_exhausted`
+      - the time budget
+      - rejection reasons (connectivity, no change, new failure, resolves nothing, editor refusal)
+      - entry contents
+      - caching
+      - choosing by ID matching scratch
+      - menu-only refusal of free-form edits and of unknown IDs
+      - no menu in free-form mode
+      - the reviewer's menu handoff and `ChooseEdit`-only schema
+      - an unchanged free-form schema
+      - a KiCad test on `review_loop_corpus_v3_2026-10-31_qwen35_32k_run1/inverting_gain` 000, where every entry's scratch assessment passes ERC and netlist equivalence, the choice matches its scratch revision, and the edit is kept
+
+      The same drawing built a 3-entry menu from 3 native validations in 2.2 s.
+    - **Pivot suite:** 508 passed, 1 deselected.
+    **Note:** In a batch, only the first menu choice is guaranteed to match its scratch result, because later entries were pre-checked against the drawing before the earlier ones. Each later choice is still applied and checked in turn, and its `matches_scratch` is recorded.
   - [ ] **P6-011i2** Add unit-safe symbol nudges, addressing parts by canonical `(reference, unit)` (spec R3). **Acceptance:**
     - Every nudge entry keeps connectivity and passes collision checks.
     - A multi-unit part (a dual op-amp) is nudged by unit.

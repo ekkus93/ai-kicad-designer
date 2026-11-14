@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from .edit_menu import MenuPolicy
 from .schematic_review import OllamaSchematicReviewer, file_hash, run_schematic_review
 from .schematic_review_brief import (
     brief_allows_power_symbol_rails,
@@ -128,6 +129,7 @@ class NativeSchematicReviewService:
             withhold_checks=self.withhold_checks,
             with_images=self.with_images,
             max_actions=self.max_actions,
+            menu_only=self.edit_mode == "menu_only",
             **({"review_brief": self.brief_text} if self.brief_text else {}),
         )
         run_record = {
@@ -161,4 +163,8 @@ class NativeSchematicReviewService:
             **self.budgets,
             quality_thresholds=self.quality_thresholds,
             run_record=run_record,
+            edit_mode=self.edit_mode,
+            menu_policy=(
+                MenuPolicy.from_profile(self.profile.menu) if self.profile is not None else None
+            ),
         )
