@@ -277,7 +277,8 @@ def test_compile_gives_labels_room_before_and_after_the_rails():
 
     from ai_kicad.pivot.schematic_review_native import NativeSchematicEngine
 
-    source = inspect.getsource(NativeSchematicEngine._compile)
+    # The presentation steps run in _compile_once; _compile adds the v11 retries around it.
+    source = inspect.getsource(NativeSchematicEngine._compile_once)
     first = source.index("clear_label_pin_numbers_text")
     rails = source.index("self._plan_rails")
     assert first < rails < source.index("clear_label_pin_numbers_text", rails)

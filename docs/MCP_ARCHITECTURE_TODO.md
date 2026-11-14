@@ -571,7 +571,7 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     **Note (2026-11-14, owner decision):** The owner chose option A ("Go with option A"), and the clause was changed to the wording above. Met:
     - **Reported:** B06's and B13's U-turns are reported like the others (`test_rated_good_rc_filters_also_have_connector_u_turns`).
     - **Not made worse:** v9 and v10 drawings are unchanged byte-for-byte, so B06 and B13 are not made worse. Only v11 drawings change, from P6-011n on, and P6-011n's acceptance re-checks B06 and B13 on R2 and R7.3.
-  - [ ] **P6-011n** Orient connectors by pin facing and signal flow (spec R7.1). **Acceptance:**
+  - [x] **P6-011n** Orient connectors by pin facing and signal flow (spec R7.1). **Acceptance:**
     - **Placement:** a pivot-side step under v11 mirrors or moves single-pin connectors whose pin faces away from the part they feed, and places output connectors right of their driving block.
     - **Rated drawings, regenerated under v11:**
       - B04, B08 and B11 have no connector U-turn longer than 2.54 mm without a recorded constraint
@@ -582,6 +582,23 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - **Generality:** no design-specific coordinates.
 
     **Deps:** P6-011m.
+    **Evidence (2026-11-14):**
+    - **Step:** `src/ai_kicad/pivot/connector_flow.py` (`orient_connectors_text`) runs under brief v11 right after the protected compiler (`NativeSchematicEngine._compile_once`), using one KiCad netlist of the compiler output. It acts on each single-pin connector whose wire U-turns or wraps, or that reaches its net only by a label.
+      - **Candidates:** mirror it in place, or move it beside one of the three nearest pins of its net with its pin facing that pin.
+      - **Rerouting:** the editor's obstacle-checked router reroutes the net. A private label stub is replaced by a direct wire, with its power flags moved onto the new wire, which is split at each flag.
+      - **Acceptance:** a candidate is kept only if the protected observer accepts it, no field check reports anything new, and the net's detour falls by more than a grid step. Otherwise the reason is recorded.
+    - **Finished-drawing check:** `_compile` re-checks the finished drawing with the observer and every pure-geometry check: field checks, rail detour, bodyless clearance, power-symbol direction and clearance, page balance and ground direction. On a problem, it excludes the blamed connector's placement (the one named, or the one on the named net) so the next best is tried, then drops that connector, then all connectors. Every attempt is recorded in `presentation.json`.
+    - **Corpus:** `fixtures/pivot/experiments/connector_flow_v11_2026-11-14_run1` at `abf921c2` (`tools/pivot/run_generator_check.py`). All 15 corpus designs pass every check under v11.
+    - **Tests:** `tests/pivot/test_connector_flow.py`, 20 tests (KiCad, v11):
+      - all checks pass on B03, B04, B05, B06, B08, B10, B11, B13 and B15
+      - no connector U-turn over 2.54 mm in B04, B08 or B11 without a recorded constraint
+      - in B03, J1 and C1 are left of U1, and J2 and C2 are right of it
+      - in B05, B10 and B15, J2.1–U1.3 has excess ≤ 2.54 mm without leaving the parts' box
+      - B06 and B13 are not worse on R2 (`compare_quality`) or on total R7.3 excess
+      - unit tests of mirroring and wire splitting
+    - **No design-specific code:** the step uses only part types, pin geometry and nets.
+    - **Pivot suite:** 585 passed, 1 deselected, and 1 failed: `test_field_layout.py::test_compile_gives_labels_room_before_and_after_the_rails` read `_compile`'s source, and the steps moved to `_compile_once`. The test now reads `_compile_once` and passes.
+    **Note:** The connectors kept as drawn are recorded with their reasons: the regulator's and 555s' J3 (return) and the 555s' J1 (supply). In the LED flasher (B05), the OUT net still loops from U1 to the LED on the far left. That is block placement (P6-011o). Multi-pin connectors (dual_rail_reference, rc_to_buffer, sallen_key) are outside R7.1's single-pin scope.
   - [ ] **P6-011o** Place functional blocks before routing (spec R7.2). **Acceptance:**
     - **Partition:** a block partition from part roles and nets (connectors, signal chain, regulator, 555 timing ladder, power unit with decoupling, parked units) is recorded per drawing and tested on every corpus design.
     - **Placement:** blocks are placed as units in signal order, and routing keeps parts inside their blocks.
