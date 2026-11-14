@@ -2122,6 +2122,114 @@ class NativeSchematicEngine:
         )
 
     def _compile(self, directory: Path) -> Path:
+        """Compile and present the design. Under brief v11 the connector-flow moves are
+        verified on the finished drawing: if the protected observer objects to it, or a
+        pure-geometry field check reports anything, it is regenerated excluding the blamed
+        connector's chosen placement (so its next-best one is tried), then without the
+        blamed connectors, and finally with every connector as the compiler drew it
+        (spec R7 safety). Every attempt is recorded in presentation.json."""
+        if not (getattr(self, "generator_layout", None) or {}).get("connector_flow"):
+            return self._compile_once(directory, frozenset())
+        attempts, chosen = [], None
+        directory.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=directory, prefix=".compile-") as folder:
+            first = Path(folder) / "0"
+            first.mkdir()
+            schematic = self._compile_once(first, frozenset())
+            problem = self._finished_problem(schematic, first)
+            attempts.append({"skip": [], "problem": problem})
+            chosen = (first, schematic) if problem is None else None
+            attempt, excluded, number = first, set(), 0
+            while chosen is None and number < 8:
+                number += 1
+                flow = json.loads((attempt / "presentation.json").read_text())["connector_flow"]
+                applied = {item["connector"]: item["change"] for item in flow if item.get("change")}
+                if not applied:
+                    break
+                on_net = {item["connector"]: item.get("net") for item in flow}
+                # Blame connectors the problem names, or whose net it names.
+                named = [
+                    name
+                    for name in applied
+                    if f"'{name}'" in (problem or "")
+                    or f"'net': '{on_net.get(name)}'" in (problem or "")
+                ]
+                blamed = named or list(applied)
+                if number >= 6:
+                    # Last resort: leave the blamed connectors as the compiler drew them.
+                    excluded |= set(blamed)
+                else:
+                    # Try each blamed connector's next-best placement.
+                    excluded |= {f"{name}|{applied[name]}" for name in blamed}
+                attempt = Path(folder) / str(number)
+                attempt.mkdir()
+                schematic = self._compile_once(attempt, frozenset(excluded))
+                problem = self._finished_problem(schematic, attempt)
+                attempts.append({"skip": sorted(excluded), "problem": problem})
+                if problem is None:
+                    chosen = (attempt, schematic)
+            if chosen is None:
+                # Nothing worked: every connector as the compiler drew it.
+                everything = {
+                    item["connector"]
+                    for item in json.loads((first / "presentation.json").read_text())[
+                        "connector_flow"
+                    ]
+                }
+                attempt = Path(folder) / "all-skipped"
+                attempt.mkdir()
+                schematic = self._compile_once(attempt, frozenset(everything))
+                attempts.append(
+                    {
+                        "skip": sorted(everything),
+                        "problem": self._finished_problem(schematic, attempt),
+                    }
+                )
+                chosen = (attempt, schematic)
+            source, schematic = chosen
+            presentation = json.loads((source / "presentation.json").read_text())
+            presentation["connector_flow_attempts"] = attempts
+            write_json(source / "presentation.json", presentation)
+            for item in source.iterdir():
+                shutil.move(str(item), directory / item.name)
+        return directory / schematic.relative_to(source)
+
+    def _finished_problem(self, schematic: Path, directory: Path) -> str | None:
+        """What the observer or a pure-geometry check reports on a finished drawing."""
+        from .connector_flow import current_inventory
+
+        text = schematic.read_text()
+        found = {
+            name: sorted(items)
+            for name, items in self._geometric_field_witnesses(text).items()
+            if items
+        }
+        if found:
+            return f"field checks report {found}"
+        drawn = parse(text)
+        readability = {}
+        nets = getattr(self, "_connector_nets", None)
+        if getattr(self, "readability_checks", False) and nets is not None:
+            readability["rail_route_detour"] = rail_route_detours(
+                drawn,
+                current_inventory(text, nets),
+                sorted({item["net"] for item in self.design["power_assertions"]}),
+            )
+            readability["bodyless_unit_clearance"] = wires_through_bodyless_units(drawn)
+            readability["power_symbol_direction"] = power_symbols_against_convention(drawn)
+            if getattr(self, "page_balance", False):
+                readability["page_balance"] = page_balance_witnesses(drawn)
+            if getattr(self, "text_and_ground_checks", False):
+                readability["ground_symbol_direction"] = grounds_that_could_point_down(text)
+        if getattr(self, "power_symbol_rails", False):
+            readability["power_symbol_clearance"] = power_symbol_collisions(text)
+        failing = {name: items for name, items in readability.items() if items}
+        if failing:
+            return f"checks report {sorted(failing)}: {str(failing)[:300]}"
+        check = getattr(self, "_connector_check", None)
+        return check(text) if check else None
+
+    def _compile_once(self, directory: Path, skip: frozenset) -> Path:
         scene, composition = compose_with_evidence(self.design, self.resolved)
         schematic = emit(self.design, self.resolved, scene, directory)
         verify_serialized_scene(self.design, scene, schematic)
@@ -2131,6 +2239,11 @@ class NativeSchematicEngine:
         # again after the rails, which may move a part to where its labels have room;
         # rails are drawn before the field text so it is placed around the final wiring.
         presentation = {}
+        if (getattr(self, "generator_layout", None) or {}).get("connector_flow"):
+            # Brief v11 (spec R7.1): connectors face the parts they feed, before the rest.
+            text, moves = self._orient_connectors(schematic, directory, skip)
+            schematic.write_text(text)
+            presentation["connector_flow"] = moves
         text, label_moves = clear_label_pin_numbers_text(schematic.read_text())
         schematic.write_text(text)
         presentation["label_moves"] = label_moves
@@ -2157,6 +2270,35 @@ class NativeSchematicEngine:
             presentation["page_centring"] = centring
         write_json(directory / "presentation.json", presentation)
         return schematic
+
+    def _orient_connectors(
+        self, schematic: Path, directory: Path, skip: frozenset = frozenset()
+    ) -> tuple[str, list[dict]]:
+        """Mirror or move single-pin connectors whose wire U-turns or wraps (R7.1)."""
+        from .connector_flow import orient_connectors_text
+
+        base = schematic.read_text()
+        with tempfile.TemporaryDirectory(dir=directory, prefix=".connector-flow-") as folder:
+            work = Path(folder)
+            table, _hashes = write_locked_symbol_table(work, self.resolved, self.power_symbols)
+            run_headless(schematic, self.launcher, work, self.symbol_table or table)
+            netlist = work / "reports/netlist.xml"
+            check = _layout_checker(self.design, schematic.name, netlist)
+            inventory = terminal_inventory_for_design(self.design, observe(schematic, netlist))
+            before = self._geometric_field_witnesses(base)
+            # The finished drawing is checked again against the compiler's netlist.
+            kept = work.parent / f".connector-netlist-{uuid4().hex}.xml"
+            shutil.copyfile(netlist, kept)
+            self._connector_check = _layout_checker(self.design, schematic.name, kept)
+            self._connector_nets = {
+                (item["reference"], item["pin"]): item["net"] for item in inventory
+            }
+
+            def fields_ok(candidate: str) -> bool:
+                after = self._geometric_field_witnesses(candidate)
+                return all(after[name] <= before.get(name, set()) for name in after)
+
+            return orient_connectors_text(base, inventory, check, fields_ok, skip)
 
     def _plan_rails(self, schematic: Path, directory: Path) -> tuple[str, list[dict]]:
         """Draw the asserted rails with the fewest power symbols over every plan.
