@@ -560,6 +560,14 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - **Policy:** report-only, with no change to any check.
 
     **Deps:** P6-011k1.
+    **Progress (2026-11-14):**
+    - **Brief:** `fixtures/pivot/schematic_review_brief_v11.json` and its schema. `SchematicReviewBriefV11` keeps v10's criteria, profile and thresholds and adds `generator_layout` (connector_flow, block_placement, supply_blocks, conventions). The service passes these to the engine (`generator_layout`) only for v11; the steps themselves arrive in P6-011n to P6-011q.
+    - **Measure:** `src/ai_kicad/pivot/net_detours.py` (`pin_pair_detours`). For every wired pin pair on a net it records the shortest drawn path, the Manhattan distance, the excess, whether the path leaves the joined parts' box, and the pins where it starts by moving away from the other pin (a U-turn). Every assessment records it as `net_detours`. It is report-only.
+    - **Tests:** `tests/pivot/test_brief_v11.py`, 18 tests:
+      - **Unchanged drawings:** v9 and v10 draw byte-for-byte the committed v10 baseline drawings for rc_lowpass, dual_buffer and timer_astable (KiCad).
+      - **Flagged as intended:** the connector U-turns of B04, B08 and B11 (both connectors each, checked by hand against the wire listings) and the 555 output wrap of B05, B10 and B15 (J2.1–U1.3, excess 50.8–94 mm).
+    - **Pivot suite:** 557 passed, 1 deselected.
+    **Note (2026-11-14):** Unchecked. The clause "nothing on B06 or B13 above 2.54 mm" cannot be met as written. B06 and B13 (rated good) have the same connector U-turns as B11 (rated defective): IN 10.16 mm and REF 33.02 mm excess, with J1 and J3 facing away from the filter (`test_rated_good_rc_filters_also_have_connector_u_turns`). The measure reports them correctly. The clause assumed those drawings had none. It needs an owner decision: keep the clause, or change it to "B06 and B13 are not made worse, and their U-turns are reported like the others".
   - [ ] **P6-011n** Orient connectors by pin facing and signal flow (spec R7.1). **Acceptance:**
     - **Placement:** a pivot-side step under v11 mirrors or moves single-pin connectors whose pin faces away from the part they feed, and places output connectors right of their driving block.
     - **Rated drawings, regenerated under v11:**

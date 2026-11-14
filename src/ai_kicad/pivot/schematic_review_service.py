@@ -9,6 +9,7 @@ from .edit_menu import MenuPolicy
 from .schematic_review import OllamaSchematicReviewer, file_hash, run_schematic_review
 from .schematic_review_brief import (
     brief_allows_power_symbol_rails,
+    brief_generator_layout,
     brief_requires_field_ownership,
     brief_requires_page_balance,
     brief_requires_level_power_block,
@@ -73,6 +74,8 @@ class NativeSchematicReviewService:
         # edit mode and the report-only R2 thresholds (spec R0, R5).
         self.review_brief = review_brief
         self.profile = brief_review_profile(review_brief)
+        layout = brief_generator_layout(review_brief)
+        self.generator_layout = layout.model_dump() if layout is not None else None
         self.quality_thresholds = None
         self.edit_mode = "free_form"
         if self.profile is not None:
@@ -119,6 +122,7 @@ class NativeSchematicReviewService:
             level_power_block=self.level_power_block,
             quality_thresholds=self.quality_thresholds,
             structured_refusals=self.profile is not None,
+            generator_layout=self.generator_layout,
         )
 
     def review(self, design: Path, output: Path) -> dict:

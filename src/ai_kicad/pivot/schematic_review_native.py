@@ -74,6 +74,7 @@ from .edit_menu import (
     rail_proposals,
     symbol_nudge_proposals,
 )
+from .net_detours import pin_pair_detours
 from .quality_measures import measure_quality
 from .readability_checks import (
     FRAME,
@@ -2037,8 +2038,11 @@ class NativeSchematicEngine:
         level_power_block: bool = False,
         quality_thresholds: dict | None = None,
         structured_refusals: bool = False,
+        generator_layout: dict | None = None,
     ):
         self.resolved = assets()
+        # Brief v11: pivot-side generator layout steps (spec R7); None under v1-v10.
+        self.generator_layout = dict(generator_layout) if generator_layout else None
         # Brief v10: editor refusals name their reason class (spec R4).
         self.structured_refusals = structured_refusals
         # Spec R2: report-only drawing-quality measures, recorded under every brief.
@@ -2519,6 +2523,11 @@ class NativeSchematicEngine:
             )
         except (ValueError, KeyError, IndexError, TypeError) as error:
             report["quality"] = {"error": f"quality measures failed: {error}"}
+        # R7.3 per-net, per-pin-pair detours: reported only.
+        try:
+            report["net_detours"] = pin_pair_detours(parse(text), terminal_inventory)
+        except (ValueError, KeyError, IndexError, TypeError) as error:
+            report["net_detours"] = {"error": f"net detours failed: {error}"}
         write_json(directory / "assessment.json", report)
         return SchematicAssessment(schematic, images, report)
 

@@ -1,0 +1,368 @@
+{
+  "$defs": {
+    "GeneratorLayout": {
+      "additionalProperties": false,
+      "description": "Brief v11: pivot-side generator layout steps from the baseline review (spec R7).",
+      "properties": {
+        "connector_flow": {
+          "title": "Connector Flow",
+          "type": "boolean"
+        },
+        "block_placement": {
+          "title": "Block Placement",
+          "type": "boolean"
+        },
+        "supply_blocks": {
+          "title": "Supply Blocks",
+          "type": "boolean"
+        },
+        "conventions": {
+          "title": "Conventions",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "connector_flow",
+        "block_placement",
+        "supply_blocks",
+        "conventions"
+      ],
+      "title": "GeneratorLayout",
+      "type": "object"
+    },
+    "MenuPolicy": {
+      "additionalProperties": false,
+      "description": "R3 edit menu caps and per-round pre-check budget.",
+      "properties": {
+        "per_class": {
+          "maximum": 8,
+          "minimum": 1,
+          "title": "Per Class",
+          "type": "integer"
+        },
+        "total": {
+          "maximum": 16,
+          "minimum": 1,
+          "title": "Total",
+          "type": "integer"
+        },
+        "optional_when_passing": {
+          "maximum": 4,
+          "minimum": 0,
+          "title": "Optional When Passing",
+          "type": "integer"
+        },
+        "geometric_proposals": {
+          "maximum": 64,
+          "minimum": 1,
+          "title": "Geometric Proposals",
+          "type": "integer"
+        },
+        "native_validations": {
+          "maximum": 32,
+          "minimum": 1,
+          "title": "Native Validations",
+          "type": "integer"
+        },
+        "seconds": {
+          "exclusiveMinimum": 0,
+          "maximum": 600,
+          "title": "Seconds",
+          "type": "number"
+        }
+      },
+      "required": [
+        "per_class",
+        "total",
+        "optional_when_passing",
+        "geometric_proposals",
+        "native_validations",
+        "seconds"
+      ],
+      "title": "MenuPolicy",
+      "type": "object"
+    },
+    "QualityPolicy": {
+      "additionalProperties": false,
+      "description": "R2 measures: report-only under v10, with the starting thresholds (spec R2).",
+      "properties": {
+        "policy": {
+          "const": "report_only",
+          "title": "Policy",
+          "type": "string"
+        },
+        "thresholds": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "title": "Thresholds",
+          "type": "object"
+        }
+      },
+      "required": [
+        "policy",
+        "thresholds"
+      ],
+      "title": "QualityPolicy",
+      "type": "object"
+    },
+    "RefusalPolicy": {
+      "additionalProperties": false,
+      "description": "R4: requests within one grid step per axis of a refused edit are equivalent.",
+      "properties": {
+        "equivalence_grid_mm": {
+          "exclusiveMinimum": 0,
+          "maximum": 5.08,
+          "title": "Equivalence Grid Mm",
+          "type": "number"
+        }
+      },
+      "required": [
+        "equivalence_grid_mm"
+      ],
+      "title": "RefusalPolicy",
+      "type": "object"
+    },
+    "ReviewCriterion": {
+      "additionalProperties": false,
+      "description": "One owner-facing requirement and the machine/rubric evidence for it.",
+      "properties": {
+        "criterion_id": {
+          "enum": [
+            "label_association",
+            "page_composition",
+            "visible_local_rails"
+          ],
+          "title": "Criterion Id",
+          "type": "string"
+        },
+        "requirement": {
+          "minLength": 1,
+          "title": "Requirement",
+          "type": "string"
+        },
+        "measurements": {
+          "items": {
+            "$ref": "#/$defs/ReviewMeasurement"
+          },
+          "title": "Measurements",
+          "type": "array"
+        },
+        "visual_rubric": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Visual Rubric",
+          "type": "array"
+        },
+        "qualification_status": {
+          "enum": [
+            "qualified",
+            "not_yet_qualified"
+          ],
+          "title": "Qualification Status",
+          "type": "string"
+        },
+        "limitation": {
+          "minLength": 1,
+          "title": "Limitation",
+          "type": "string"
+        }
+      },
+      "required": [
+        "criterion_id",
+        "requirement",
+        "measurements",
+        "visual_rubric",
+        "qualification_status",
+        "limitation"
+      ],
+      "title": "ReviewCriterion",
+      "type": "object"
+    },
+    "ReviewMeasurement": {
+      "additionalProperties": false,
+      "description": "A reported measurable constraint, with its qualification level explicit.",
+      "properties": {
+        "check_id": {
+          "minLength": 1,
+          "title": "Check Id",
+          "type": "string"
+        },
+        "operator": {
+          "enum": [
+            "<=",
+            ">=",
+            "=="
+          ],
+          "title": "Operator",
+          "type": "string"
+        },
+        "threshold": {
+          "minimum": 0,
+          "title": "Threshold",
+          "type": "number"
+        },
+        "unit": {
+          "minLength": 1,
+          "title": "Unit",
+          "type": "string"
+        },
+        "source": {
+          "minLength": 1,
+          "title": "Source",
+          "type": "string"
+        },
+        "qualification": {
+          "enum": [
+            "independent_gate",
+            "profile_target"
+          ],
+          "title": "Qualification",
+          "type": "string"
+        }
+      },
+      "required": [
+        "check_id",
+        "operator",
+        "threshold",
+        "unit",
+        "source",
+        "qualification"
+      ],
+      "title": "ReviewMeasurement",
+      "type": "object"
+    },
+    "ReviewProfileV10": {
+      "additionalProperties": false,
+      "description": "Behaviour brief v10 turns on (spec R0): menu-only edits, report-only quality.",
+      "properties": {
+        "profile_id": {
+          "const": "reviewer-loop.v10",
+          "title": "Profile Id",
+          "type": "string"
+        },
+        "reviewer": {
+          "$ref": "#/$defs/ReviewerProfile"
+        },
+        "edit_mode": {
+          "const": "menu_only",
+          "title": "Edit Mode",
+          "type": "string"
+        },
+        "quality": {
+          "$ref": "#/$defs/QualityPolicy"
+        },
+        "menu": {
+          "$ref": "#/$defs/MenuPolicy"
+        },
+        "refusals": {
+          "$ref": "#/$defs/RefusalPolicy"
+        }
+      },
+      "required": [
+        "profile_id",
+        "reviewer",
+        "edit_mode",
+        "quality",
+        "menu",
+        "refusals"
+      ],
+      "title": "ReviewProfileV10",
+      "type": "object"
+    },
+    "ReviewerProfile": {
+      "additionalProperties": false,
+      "description": "Reviewer inputs and output limits (spec R5).",
+      "properties": {
+        "svg_source": {
+          "title": "Svg Source",
+          "type": "boolean"
+        },
+        "with_images": {
+          "title": "With Images",
+          "type": "boolean"
+        },
+        "think": {
+          "title": "Think",
+          "type": "boolean"
+        },
+        "withhold_checks": {
+          "title": "Withhold Checks",
+          "type": "boolean"
+        },
+        "max_actions": {
+          "maximum": 4,
+          "minimum": 1,
+          "title": "Max Actions",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "svg_source",
+        "with_images",
+        "think",
+        "withhold_checks",
+        "max_actions"
+      ],
+      "title": "ReviewerProfile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Brief v10 checks, reviewer profile and thresholds, plus the R7 generator layout\nsteps: connectors oriented by pin facing and signal flow, functional blocks placed\nbefore routing, supply and return blocks, and drawing conventions.",
+  "properties": {
+    "schema_version": {
+      "const": "schematic-review-brief.v11",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "brief_id": {
+      "const": "owner-readability.v11",
+      "title": "Brief Id",
+      "type": "string"
+    },
+    "scope": {
+      "minLength": 1,
+      "title": "Scope",
+      "type": "string"
+    },
+    "source_documents": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Source Documents",
+      "type": "array"
+    },
+    "criteria": {
+      "items": {
+        "$ref": "#/$defs/ReviewCriterion"
+      },
+      "maxItems": 3,
+      "minItems": 3,
+      "title": "Criteria",
+      "type": "array"
+    },
+    "review_profile": {
+      "$ref": "#/$defs/ReviewProfileV10"
+    },
+    "generator_layout": {
+      "$ref": "#/$defs/GeneratorLayout"
+    }
+  },
+  "required": [
+    "schema_version",
+    "brief_id",
+    "scope",
+    "source_documents",
+    "criteria",
+    "review_profile",
+    "generator_layout"
+  ],
+  "title": "SchematicReviewBriefV11",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ai-kicad-designer.local/schemas/schematic-review-brief.v11.json"
+}

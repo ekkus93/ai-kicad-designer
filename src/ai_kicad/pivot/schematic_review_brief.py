@@ -253,6 +253,26 @@ class SchematicReviewBriefV10(SchematicReviewBriefV9):
     review_profile: ReviewProfileV10
 
 
+class GeneratorLayout(StrictModel):
+    """Brief v11: pivot-side generator layout steps from the baseline review (spec R7)."""
+
+    connector_flow: bool
+    block_placement: bool
+    supply_blocks: bool
+    conventions: bool
+
+
+class SchematicReviewBriefV11(SchematicReviewBriefV10):
+    """Brief v10 checks, reviewer profile and thresholds, plus the R7 generator layout
+    steps: connectors oriented by pin facing and signal flow, functional blocks placed
+    before routing, supply and return blocks, and drawing conventions."""
+
+    schema_version: Literal["schematic-review-brief.v11"]
+    brief_id: Literal["owner-readability.v11"]
+    review_profile: ReviewProfileV10
+    generator_layout: GeneratorLayout
+
+
 BRIEF_MODELS = {
     "schematic-review-brief.v2": SchematicReviewBriefV2,
     "schematic-review-brief.v3": SchematicReviewBriefV3,
@@ -263,6 +283,7 @@ BRIEF_MODELS = {
     "schematic-review-brief.v8": SchematicReviewBriefV8,
     "schematic-review-brief.v9": SchematicReviewBriefV9,
     "schematic-review-brief.v10": SchematicReviewBriefV10,
+    "schematic-review-brief.v11": SchematicReviewBriefV11,
 }
 ReviewBrief = (
     SchematicReviewBrief
@@ -275,6 +296,7 @@ ReviewBrief = (
     | SchematicReviewBriefV8
     | SchematicReviewBriefV9
     | SchematicReviewBriefV10
+    | SchematicReviewBriefV11
 )
 
 
@@ -340,6 +362,14 @@ def brief_review_profile(path: Path | None) -> ReviewProfileV10 | None:
         return None
     brief = load_review_brief(path)
     return brief.review_profile if isinstance(brief, SchematicReviewBriefV10) else None
+
+
+def brief_generator_layout(path: Path | None) -> GeneratorLayout | None:
+    """The v11 generator layout steps, or None for earlier briefs."""
+    if path is None or path.suffix.lower() != ".json":
+        return None
+    brief = load_review_brief(path)
+    return brief.generator_layout if isinstance(brief, SchematicReviewBriefV11) else None
 
 
 def format_review_brief(brief: ReviewBrief) -> str:

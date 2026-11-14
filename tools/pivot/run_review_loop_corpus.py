@@ -153,6 +153,8 @@ def main() -> None:
                 "src/ai_kicad/pivot/schematic_review.py",
                 "src/ai_kicad/pivot/review_status.py",
                 "src/ai_kicad/pivot/quality_measures.py",
+                "src/ai_kicad/pivot/net_detours.py",
+                "src/ai_kicad/pivot/edit_menu.py",
                 "src/ai_kicad/pivot/schematic_review_native.py",
                 "src/ai_kicad/pivot/schematic_review_service.py",
             )
