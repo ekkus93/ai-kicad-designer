@@ -104,8 +104,9 @@ class NativeSchematicReviewService:
             "max_model_tokens": max_model_tokens,
         }
 
-    def review(self, design: Path, output: Path) -> dict:
-        engine = NativeSchematicEngine(
+    def engine(self, design: Path) -> NativeSchematicEngine:
+        """The native engine this service's brief configures for one design."""
+        return NativeSchematicEngine(
             json.loads(design.read_text()),
             self.launcher,
             maximum_field_distance_mm=self.max_field_distance_mm,
@@ -119,6 +120,9 @@ class NativeSchematicReviewService:
             quality_thresholds=self.quality_thresholds,
             structured_refusals=self.profile is not None,
         )
+
+    def review(self, design: Path, output: Path) -> dict:
+        engine = self.engine(design)
         reviewer = OllamaSchematicReviewer(
             self.model,
             context_tokens=self.context_tokens,
