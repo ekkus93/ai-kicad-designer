@@ -599,7 +599,7 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - **No design-specific code:** the step uses only part types, pin geometry and nets.
     - **Pivot suite:** 585 passed, 1 deselected, and 1 failed: `test_field_layout.py::test_compile_gives_labels_room_before_and_after_the_rails` read `_compile`'s source, and the steps moved to `_compile_once`. The test now reads `_compile_once` and passes.
     **Note:** The connectors kept as drawn are recorded with their reasons: the regulator's and 555s' J3 (return) and the 555s' J1 (supply). In the LED flasher (B05), the OUT net still loops from U1 to the LED on the far left. That is block placement (P6-011o). Multi-pin connectors (dual_rail_reference, rc_to_buffer, sallen_key) are outside R7.1's single-pin scope.
-  - [ ] **P6-011o** Place functional blocks before routing (spec R7.2). **Acceptance:**
+  - [x] **P6-011o** Place functional blocks before routing (spec R7.2). **Acceptance:**
     - **Partition:** a block partition from part roles and nets (connectors, signal chain, regulator, 555 timing ladder, power unit with decoupling, parked units) is recorded per drawing and tested on every corpus design.
     - **Placement:** blocks are placed as units in signal order, and routing keeps parts inside their blocks.
     - **Parked units:** in B09, B12 and B14 the parked unit sits next to its active sibling.
@@ -609,6 +609,23 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - **Safety:** all corpus designs keep the exact netlist, ERC and every check passing, and no design-specific coordinates are used.
 
     **Deps:** P6-011n.
+    **Evidence (2026-11-14):**
+    - **Partition:** `src/ai_kicad/pivot/blocks.py` (`partition`) splits parts into blocks by part type, pin role and net: signal and power interfaces, regulator, timer, power unit, parked unit, amplifier, indicator and passives. It is recorded per drawing as `presentation.json` `blocks`. `block_layout` (signal order from the leftmost signal connector over non-rail nets, plus containment) and `return_connector_distances` are recorded in every assessment.
+    - **Block moves:** `src/ai_kicad/pivot/block_moves.py` (`place_blocks_text`) runs under v11 after the rails are drawn and before field text and centring. It moves each parked unit next to its active sibling, and each return connector beside its supply connector.
+      - **As a unit:** each move uses the editor's `move_units`, which carries the part's power symbols, flags, labels and private wires, and reroutes nets it shares.
+      - **Validation:** each candidate must pass the layout check and field checks, still fit the page and pass a full scratch assessment (no check that passed may fail, and the connectivity checks must pass). A moved connector's own text is re-placed when crowded.
+      - **Return connectors:** the connector step now only mirrors them, so the block step owns their placement.
+      - **Fallback:** the `_compile` fallback now verifies the finished drawing with a full assessment, blames block moves before connector moves, and records each attempt.
+    - **Corpus:** `fixtures/pivot/experiments/block_placement_v11_2026-11-14_run1` at `2a43e272`. All 15 designs pass every check, with no signal-order witnesses and no block intrusions on any design.
+      - **Parked units:** moved on all six op-amp designs. Gap to the active unit compared with v10: B09 rc_to_buffer 63.5 → 38.1 mm, B12 dual_rail_reference 109.2 → 10.2 mm, B14 sallen_key 36.8 → 10.2 mm. No part lies between the two units.
+      - **Return connectors:** J3 joined J1 on the regulator (34.29 → 17.78 mm) and on both 555 timers, a second circuit family (26.67 → 5.08 mm). The LED flasher's J3 found no valid spot and stays, with its reasons recorded.
+    - **Tests:** `tests/pivot/test_block_placement.py`, 26 tests:
+      - the partition of every corpus design covers every part once, with the expected roles
+      - the return-distance measure
+      - KiCad, v11, on rc_to_buffer, dual_rail_reference, sallen_key, linear_regulator and timer_astable: every check passes, signal order holds with no intrusions, and the partition is recorded
+      - parked units next to their siblings and nearer than in v10
+      - J3 moved as a unit to J1, with netlist equivalence and ERC passing
+    - **Pivot suite:** 612 passed, 1 deselected.
   - [ ] **P6-011p** Build supply and return blocks for any circuit (spec R7.4). **Acceptance:**
     - **Decoupling:** each decoupling capacitor sits beside the supply pin it serves, with matching local power symbols.
     - **Power blocks:** in B07, B09, B12 and B14 the power unit, its capacitors and its rail symbols form one block with consistent symbol directions, separate from the signal lines.
