@@ -261,6 +261,9 @@ ChatGPT rated the v10 baseline (`review_baseline_v10_2026-11-14_run1`): 5 good a
 - **Blocks:** the netlist is partitioned into blocks: connectors, the analog signal chain, the regulator, the 555 timing ladder, the power unit with its decoupling, and parked (unused) op-amp units. The partition comes from part roles and nets, not from per-design coordinates.
 - **Placement:** blocks are placed as units, in left-to-right signal order, before detailed routing. Routing must not move a part out of its block.
 - **Parked units:** a parked op-amp unit sits next to its active sibling, not in a far quadrant (B09, B12, B14).
+- **Power interface:** supply, output and return connectors form one power-interface group. The return connector sits with the supply entry, or on the return row, not wherever the nearest pin of its net happens to be. This comes from ChatGPT's review of the v11 regulator (`docs/ai_kicad_connector_flow_v11_linear_regulator_review_for_claude.md`), where J3 stayed stranded at the top left.
+- **Moving as a unit:** a connector or block moves together with its power symbols, power flags, labels and private wires, as one candidate. The candidate is validated as a unit and rolled back as a unit.
+- **Interface measure:** report each return connector's distance from its power-interface block. It is report-only, and tested on more than one circuit family, so the rule is not specific to the L7805.
 
 #### R7.3 — Per-net structural detour measure (review P1)
 
@@ -279,6 +282,7 @@ ChatGPT rated the v10 baseline (`review_baseline_v10_2026-11-14_run1`): 5 good a
 - **Ground symbols:** return symbols at an IC point down where a downward position is clear. The right-pointing ground or REF symbol under U1 in B10 and B15 is the case to fix.
 - **Labels:** a generated reference midpoint (VREF in B12) carries a local net label near its node, and a parked op-amp unit is labelled as unused. Both are text and labels only and do not change connectivity.
 - **Values:** a part value that mixes the value with other words (B04's `12.4k precision`) is reported as a design-data issue in the result. The generator does not rewrite intended-circuit data.
+- **Jogs and junctions:** short unnecessary jogs (such as the regulator's U1 pin-2 return) are straightened, and collinear wire segments are merged. A junction dot that marks no real branch is removed. No dot that KiCad needs for connectivity is ever removed, and each simplification is kept only if KiCad's netlist and ERC are unchanged. Source: ChatGPT's v11 regulator review.
 
 #### R7.6 — Design-review flags (review "engineering-design questions")
 

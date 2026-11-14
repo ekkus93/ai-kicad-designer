@@ -603,6 +603,9 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - **Partition:** a block partition from part roles and nets (connectors, signal chain, regulator, 555 timing ladder, power unit with decoupling, parked units) is recorded per drawing and tested on every corpus design.
     - **Placement:** blocks are placed as units in signal order, and routing keeps parts inside their blocks.
     - **Parked units:** in B09, B12 and B14 the parked unit sits next to its active sibling.
+    - **Power interface (added 2026-11-14 with owner approval, from ChatGPT's v11 regulator review):** return connectors are grouped with the supply entry or the return row. In the v11 regulator, J3 sits with J1 or on the REF row instead of stranded at the top left. Shown on at least one other circuit family besides the L7805 regulator.
+    - **Moving as a unit:** a connector moves together with its power symbols, flags, labels and private wires as one candidate. A test shows such a group move keeps native netlist equivalence and ERC.
+    - **Interface measure:** each return connector's distance from its power-interface block is reported.
     - **Safety:** all corpus designs keep the exact netlist, ERC and every check passing, and no design-specific coordinates are used.
 
     **Deps:** P6-011n.
@@ -617,6 +620,7 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - **Ground symbols:** IC return symbols point down where a downward position is clear, fixing B10 and B15's sideways symbol under U1.
     - **Labels:** a generated reference midpoint (B12's VREF) gets a local net label near its node, and parked units are labelled unused, with connectivity unchanged.
     - **Values:** values mixing extra words (B04) are reported as a design-data issue, and the design file is unchanged.
+    - **Jogs and junctions (added 2026-11-14 with owner approval, from ChatGPT's v11 regulator review):** short unnecessary jogs (the regulator's U1 pin-2 return) are straightened, collinear segments are merged, and junction dots that mark no branch are removed. Each simplification is kept only when KiCad's netlist and ERC are unchanged; a test shows one such cleanup with connectivity unchanged.
     - **Safety:** every check still passes.
 
     **Deps:** P6-011p.
