@@ -1,0 +1,146 @@
+{
+  "schema_version": "baseline-rating-decision.v1",
+  "decided": "2026-11-14",
+  "decision": "Owner direction 2026-11-14: use ChatGPT's ratings as the baseline ratings (\"Just go with ChatGPT's rating\"). No owner ratings will be recorded for this baseline; the two-rater protocol of spec R6.4 is waived for it.",
+  "ratings_file": "ratings/chatgpt.json",
+  "ratings_sha256": "c881e0bf2a1506ad9e7f656bbe8f8f8d13af86992acd57f3a1a493008537b0e4",
+  "rater": "chatgpt",
+  "source_documents": [
+    "docs/ai_kicad_baseline_ratings_chatgpt.json",
+    "docs/ai_kicad_baseline_review_for_claude.md"
+  ],
+  "known_good": [
+    {
+      "code": "B01",
+      "design": "dual_buffer",
+      "revision": "sha256:d344d52da2b1724d69641f5433e4bd3b13bde2882becd1286c12db7bf4b0a90a"
+    },
+    {
+      "code": "B02",
+      "design": "noninverting_gain",
+      "revision": "sha256:24b0f56971c7910c74c28afb451fb3558f1d12496fdd17fb337f62b20cfd1769"
+    },
+    {
+      "code": "B06",
+      "design": "rc_lowpass",
+      "revision": "sha256:afcb8d22ae09137559d794c532ad4816d51477e16c800487c88dd0087c9a1f42"
+    },
+    {
+      "code": "B07",
+      "design": "inverting_gain",
+      "revision": "sha256:d4d0b90197377841c38e71b5ad4567f9d5d1a6a818e72e24042ab1f30f6ca915"
+    },
+    {
+      "code": "B13",
+      "design": "rc_highpass",
+      "revision": "sha256:4a41f00cbaa08631f89e2af0286e6ed54b98193271785b9e17e068ee3818f155"
+    }
+  ],
+  "baseline_defect_cases": [
+    {
+      "code": "B03",
+      "design": "linear_regulator",
+      "revision": "sha256:f0c8901ca14adb497dda841c0ab684ab9257a0ef67e8d08f6c13a922414fce57",
+      "defects": [
+        "J2.1 / VOUT; regulated-output connector is placed to the far left of J1 and U1 even though U1.3 is on the right; left edge of drawing",
+        "J3.1 / REF; return connector is detached from the otherwise coherent regulator and capacitor return block, making the interface needlessly scattered; upper left",
+        "J1.1 / VIN; supply wire makes a redundant up-across-down detour before U1.1 rather than proceeding directly into a left-to-right regulator block; above C1"
+      ]
+    },
+    {
+      "code": "B04",
+      "design": "led_long_text",
+      "revision": "sha256:b3946ce460146f2492c6bdb16225e4b3e4453eac34cc5f80326a236637ad9aaa",
+      "defects": [
+        "J1.1 / R123.1; input connector faces away from the series resistor, forcing a wide U-shaped path over the top; top-left to upper-right",
+        "J2.1 / D24.1; return wire travels around the bottom edge rather than using a short direct/reference connection; lower portion of drawing",
+        "R123; value field mixes the electrical value with the word precision, which should be separate metadata for downstream BOM/SPICE parsing; right of resistor"
+      ]
+    },
+    {
+      "code": "B05",
+      "design": "reference_555_led_flasher_v8",
+      "revision": "sha256:cc4b63bcb05556e22f2028ab41a0dc84e8948eed7c0e828ddb8f9e26c59a1671",
+      "defects": [
+        "U1.3 / OUT / J2.1; OUT wire routes around the top and far-left perimeter to reach the LED/output branch; outer edges of drawing",
+        "R3 / D1; LED indicator branch is too far from U1 output and visually dominates the left margin rather than forming a compact functional block; far left",
+        "C2.1 / U1.5 CONT; control-pin capacitor wire makes a long rectangular detour above U1 instead of a compact local bypass; top center",
+        "J1 / J3; supply and return entry connectors are placed below the timing network and far apart from the main signal/output flow; lower portion"
+      ]
+    },
+    {
+      "code": "B08",
+      "design": "led_reverse_supply",
+      "revision": "sha256:50e5f68bffca37d72f5c0a791043cab4fa4fa1730b3759bcb105155244adf9f4",
+      "defects": [
+        "J1.1 / R1.1; reference-side connector faces away from the LED path, so the wire goes far left/up/across to reach R1; upper perimeter",
+        "J2.1 / VNEG; negative-supply connector is connected by an unnecessarily long rectangular return path; lower-left to lower-right"
+      ]
+    },
+    {
+      "code": "B09",
+      "design": "rc_to_buffer",
+      "revision": "sha256:9f19d64fdd1fe7c5ef049c18cee355c478610cce2cfc2832f8e5a5ad507eeb41",
+      "defects": [
+        "U1B; parked amplifier is isolated at the lower left rather than grouped with U1A and identified clearly as unused; lower-left quadrant",
+        "U1C / C1 / C2; power unit and decoupling form a separate asymmetrical block with mixed sideways symbol orientations; lower-right quadrant",
+        "J1.1 / IN / R1; input travels upward and around the connector to reach the RC stage instead of following a direct input-to-filter path; upper left"
+      ]
+    },
+    {
+      "code": "B10",
+      "design": "timer_astable_gnd",
+      "revision": "sha256:1cd0e15b6929bfabb3d4262ac45d3413c736afafc37b48a9f956e6fcc1b458aa",
+      "defects": [
+        "U1.3 / OUT / J2.1; long output wire wraps around the lower-right side of U1 to a remote J2 rather than using a short right-side output; right and bottom",
+        "U1.1 / GND; right-pointing ground symbol at the IC clashes with downward ground-symbol convention elsewhere, obscuring the pin return direction; immediately below U1",
+        "J1 / J3; supply and return connectors are stranded at the upper-left, separate from the timer functional block; upper-left corner"
+      ]
+    },
+    {
+      "code": "B11",
+      "design": "led_series",
+      "revision": "sha256:8a22ae4fce7f188651423dea12481e123bde3ef999a25e57a7752fb9abdfd79c",
+      "defects": [
+        "J1.1 / R1.1; input conductor makes a large top-side U-turn because the left-side connector pin faces away from the series LED resistor; top",
+        "J2.1 / D1.1; return conductor makes a matching bottom-side U-turn instead of a short return connection; bottom"
+      ]
+    },
+    {
+      "code": "B12",
+      "design": "dual_rail_reference",
+      "revision": "sha256:26bb4593b4773a69a3f1583dd7ad1020f4251141e1a3bdb154bc5bbe3a014d08",
+      "defects": [
+        "R1.2 / R2.1 / J1.5 / VREF; divider midpoint is spread across a long horizontal bus with no explicit VREF label near the central node; center-left",
+        "U1C / C1 / C2; decoupling capacitors are tied through an awkward rectangular loop around the power unit instead of two obvious local rail-to-VREF branches; middle",
+        "U1B / VREF; parked op-amp is far below the divider yet references the same midpoint, making the intended purpose of the reference network harder to infer; lower-left"
+      ]
+    },
+    {
+      "code": "B14",
+      "design": "sallen_key",
+      "revision": "sha256:d5874fcfdd3487e161d954a6c76bf58322c43b6917c5f14e51ab6e56e551621d",
+      "defects": [
+        "U1C / C1 / C2; power section is shoved to the far right with inconsistent sideways VPLUS/VMINUS/REF symbols and disjoint capacitor orientation; lower-right",
+        "U1B; unused follower is separated from the active U1A by a large gap without a clear unused-channel label; upper-right",
+        "J1.1 / R1.1; input is routed down along the connector instead of placing the connector to feed the resistor directly from the left; upper-left"
+      ]
+    },
+    {
+      "code": "B15",
+      "design": "timer_astable",
+      "revision": "sha256:26a06ab403aee99d61529dd6bf755480bec5c58a7fc9f3b5a616146de8377cd1",
+      "defects": [
+        "U1.3 / OUT / J2.1; long output route runs right and down, then returns left under the timer before reaching J2; lower-right",
+        "U1.1 / REF; right-pointing return symbol beneath the timer conflicts with downward return symbols used at C1/C2/J3, complicating visual tracing; below U1",
+        "J1 / J3; supply and return connectors are placed off to upper-left rather than grouped into a power-entry block; upper-left"
+      ]
+    }
+  ],
+  "coverage": {
+    "good": 5,
+    "defective": 10,
+    "status": "PILOT",
+    "reason": "spec section 4 needs at least 30 good and 30 defective cases across six families"
+  }
+}

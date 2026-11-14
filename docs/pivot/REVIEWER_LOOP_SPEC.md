@@ -260,7 +260,9 @@ The answers to Q1–Q17 are in `docs/ai_kicad_reviewer_loop_spec_questions.md` a
 - **Menu budget is per round:** the menu pre-check budget limits work inside one review round only. The number of rounds per design is set by the separate per-design budgets, which stay configurable and may be raised for complicated schematics (R3.4).
 - **Labels come from raters:** the reference circuits and their checks exist, but whether a drawing is readable has to come from independent raters (R6). The owner and ChatGPT do the ratings through a rating page.
 
-**Still to be provided:** the ratings themselves (R6.1, R6.4), and a third adjudicator for consequential disagreements, if one is available.
+**Owner decision, 2026-11-14:** for the v10 baseline (`review_baseline_v10_2026-11-14_run1`), ChatGPT's ratings are used as the ratings ("Just go with ChatGPT's rating"). The two-rater protocol of R6.4 is waived for that baseline. Its 5 good and 10 defective drawings fall short of the §4 coverage, so results on it are PILOT.
+
+**Still to be provided:** the hand check of the injected-label sample, structured labels for the older historical cases, and a third adjudicator for consequential disagreements, if one is available.
 
 ## 6. Out of scope here
 

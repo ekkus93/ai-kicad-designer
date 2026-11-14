@@ -514,6 +514,13 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - **Rating page:** `rating_page.html` shows code-named image copies in `blind/`. The code-to-design key is kept separately in `blind_key.json`. Answers save as `baseline-ratings.v1` JSON, to go in `ratings/<rater>.json`.
     - **Tests:** `tests/pivot/test_review_baseline.py`, 5 tests, cover label generation, the observable-change rule, the sheet label, the stratified sample and the page.
     **Note:** Still unchecked. It needs your and ChatGPT's ratings, hand-written historical labels and your hand check of the sample. Variants and hold-outs are not built yet: the 30 good / 30 defective bar needs more than these 15 drawings, and P6-011l4 adds the hold-outs.
+    **Progress (2026-11-14, ratings):** Owner direction: "Just go with ChatGPT's rating." ChatGPT's ratings (`docs/ai_kicad_baseline_ratings_chatgpt.json`, review `docs/ai_kicad_baseline_review_for_claude.md`) are now this baseline's ratings: `ratings/chatgpt.json`, with the decision and derived sets in `ratings/decision.json`. No owner ratings will be recorded for this baseline, and the two-rater protocol is waived for it.
+    - **Known-good:** 5 drawings (dual_buffer, noninverting_gain, rc_lowpass, inverting_gain, rc_highpass).
+    - **Defective:** 10 drawings, whose rated defect lists become baseline defect cases.
+    - **Coverage:** 5 good and 10 defective, so results on this set are PILOT.
+    **Note:** Still unchecked. Two items remain:
+    - the owner's hand check of the 12-case injected-label sample
+    - structured labels for the older historical cases
   - [ ] **P6-011l2** Score reviewer replies by label instead of cue regexes (spec R6.3). **Acceptance:**
     - **Naming:** a rejection names a defect only with the correct part or net and defect type.
     - **Rates reported:** false rejection, detection and naming, overall and per defect class.

@@ -1,0 +1,120 @@
+{
+  "schema_version": "baseline-ratings.v1",
+  "rater": "chatgpt",
+  "ratings": [
+    {
+      "code": "B01",
+      "verdict": "good",
+      "defects": []
+    },
+    {
+      "code": "B02",
+      "verdict": "good",
+      "defects": []
+    },
+    {
+      "code": "B03",
+      "verdict": "defects",
+      "defects": [
+        "J2.1 / VOUT; regulated-output connector is placed to the far left of J1 and U1 even though U1.3 is on the right; left edge of drawing",
+        "J3.1 / REF; return connector is detached from the otherwise coherent regulator and capacitor return block, making the interface needlessly scattered; upper left",
+        "J1.1 / VIN; supply wire makes a redundant up-across-down detour before U1.1 rather than proceeding directly into a left-to-right regulator block; above C1"
+      ]
+    },
+    {
+      "code": "B04",
+      "verdict": "defects",
+      "defects": [
+        "J1.1 / R123.1; input connector faces away from the series resistor, forcing a wide U-shaped path over the top; top-left to upper-right",
+        "J2.1 / D24.1; return wire travels around the bottom edge rather than using a short direct/reference connection; lower portion of drawing",
+        "R123; value field mixes the electrical value with the word precision, which should be separate metadata for downstream BOM/SPICE parsing; right of resistor"
+      ]
+    },
+    {
+      "code": "B05",
+      "verdict": "defects",
+      "defects": [
+        "U1.3 / OUT / J2.1; OUT wire routes around the top and far-left perimeter to reach the LED/output branch; outer edges of drawing",
+        "R3 / D1; LED indicator branch is too far from U1 output and visually dominates the left margin rather than forming a compact functional block; far left",
+        "C2.1 / U1.5 CONT; control-pin capacitor wire makes a long rectangular detour above U1 instead of a compact local bypass; top center",
+        "J1 / J3; supply and return entry connectors are placed below the timing network and far apart from the main signal/output flow; lower portion"
+      ]
+    },
+    {
+      "code": "B06",
+      "verdict": "good",
+      "defects": []
+    },
+    {
+      "code": "B07",
+      "verdict": "good",
+      "defects": []
+    },
+    {
+      "code": "B08",
+      "verdict": "defects",
+      "defects": [
+        "J1.1 / R1.1; reference-side connector faces away from the LED path, so the wire goes far left/up/across to reach R1; upper perimeter",
+        "J2.1 / VNEG; negative-supply connector is connected by an unnecessarily long rectangular return path; lower-left to lower-right"
+      ]
+    },
+    {
+      "code": "B09",
+      "verdict": "defects",
+      "defects": [
+        "U1B; parked amplifier is isolated at the lower left rather than grouped with U1A and identified clearly as unused; lower-left quadrant",
+        "U1C / C1 / C2; power unit and decoupling form a separate asymmetrical block with mixed sideways symbol orientations; lower-right quadrant",
+        "J1.1 / IN / R1; input travels upward and around the connector to reach the RC stage instead of following a direct input-to-filter path; upper left"
+      ]
+    },
+    {
+      "code": "B10",
+      "verdict": "defects",
+      "defects": [
+        "U1.3 / OUT / J2.1; long output wire wraps around the lower-right side of U1 to a remote J2 rather than using a short right-side output; right and bottom",
+        "U1.1 / GND; right-pointing ground symbol at the IC clashes with downward ground-symbol convention elsewhere, obscuring the pin return direction; immediately below U1",
+        "J1 / J3; supply and return connectors are stranded at the upper-left, separate from the timer functional block; upper-left corner"
+      ]
+    },
+    {
+      "code": "B11",
+      "verdict": "defects",
+      "defects": [
+        "J1.1 / R1.1; input conductor makes a large top-side U-turn because the left-side connector pin faces away from the series LED resistor; top",
+        "J2.1 / D1.1; return conductor makes a matching bottom-side U-turn instead of a short return connection; bottom"
+      ]
+    },
+    {
+      "code": "B12",
+      "verdict": "defects",
+      "defects": [
+        "R1.2 / R2.1 / J1.5 / VREF; divider midpoint is spread across a long horizontal bus with no explicit VREF label near the central node; center-left",
+        "U1C / C1 / C2; decoupling capacitors are tied through an awkward rectangular loop around the power unit instead of two obvious local rail-to-VREF branches; middle",
+        "U1B / VREF; parked op-amp is far below the divider yet references the same midpoint, making the intended purpose of the reference network harder to infer; lower-left"
+      ]
+    },
+    {
+      "code": "B13",
+      "verdict": "good",
+      "defects": []
+    },
+    {
+      "code": "B14",
+      "verdict": "defects",
+      "defects": [
+        "U1C / C1 / C2; power section is shoved to the far right with inconsistent sideways VPLUS/VMINUS/REF symbols and disjoint capacitor orientation; lower-right",
+        "U1B; unused follower is separated from the active U1A by a large gap without a clear unused-channel label; upper-right",
+        "J1.1 / R1.1; input is routed down along the connector instead of placing the connector to feed the resistor directly from the left; upper-left"
+      ]
+    },
+    {
+      "code": "B15",
+      "verdict": "defects",
+      "defects": [
+        "U1.3 / OUT / J2.1; long output route runs right and down, then returns left under the timer before reaching J2; lower-right",
+        "U1.1 / REF; right-pointing return symbol beneath the timer conflicts with downward return symbols used at C1/C2/J3, complicating visual tracing; below U1",
+        "J1 / J3; supply and return connectors are placed off to upper-left rather than grouped into a power-entry block; upper-left"
+      ]
+    }
+  ]
+}
