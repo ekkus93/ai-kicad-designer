@@ -108,6 +108,9 @@ class SchematicReview(StrictModel):
     rationale: str = Field(min_length=1, max_length=4000)
 
 
+# Checks that establish connectivity; an edit that makes one of them fail is rolled back.
+CONNECTIVITY_CHECKS = ("native_tools", "erc", "electrical_equivalence")
+
 # The most edits one review may request when the loop applies them one at a time.
 MAX_BATCH_ACTIONS = 4
 
@@ -475,6 +478,8 @@ def run_schematic_review(
     best_assessment = None
     status, reason = "LIMIT_REACHED", "review budget exhausted"
     tokens = 0
+    # Edits refused on a given drawing revision: (revision, edit) -> reason.
+    refused_edits: dict[tuple[str, str], str] = {}
     candidate_dir = output / "candidates" / "000"
     candidate_dir.mkdir(parents=True)
     try:
@@ -546,10 +551,53 @@ def run_schematic_review(
                 reason = "review budget exhausted before edit and re-review"
                 break
             directory = output / "candidates" / f"{index + 1:03d}"
+            edit_key = (
+                assessment.revision,
+                json.dumps([action.model_dump(mode="json") for action in review.actions]),
+            )
+            if edit_key in refused_edits:
+                # The same edit on the same drawing was already refused; asking again is no
+                # progress, and the editor is not run.
+                entry["repeated_refused_edit"] = refused_edits[edit_key]
+                status = "NO_PROGRESS"
+                reason = (
+                    "model repeated an edit already refused on this drawing: "
+                    + (refused_edits[edit_key])
+                )
+                break
             if len(review.actions) == 1:
-                source = engine.apply(assessment.schematic, directory, review.actions)
+                # Apply, then check at once: an edit that breaks connectivity or changes
+                # nothing is refused and rolled back; the current drawing stays as it was.
+                try:
+                    source = engine.apply(assessment.schematic, directory, review.actions)
+                    trial = engine.assess(source, directory)
+                except (ValueError, KeyError) as error:
+                    refused_edits[edit_key] = f"edit refused: {error}"
+                    raise ValueError(refused_edits[edit_key]) from error
+                broken = sorted(
+                    name
+                    for name in CONNECTIVITY_CHECKS
+                    if assessment.report.get("checks", {}).get(name) == "PASS"
+                    and trial.report.get("checks", {}).get(name) != "PASS"
+                )
+                if trial.revision in seen:
+                    refused_edits[edit_key] = (
+                        "edit rolled back: it made no change to the drawing; choose a different edit"
+                    )
+                elif broken:
+                    refused_edits[edit_key] = (
+                        f"edit rolled back: it made {', '.join(broken)} fail, so it changed "
+                        "connectivity; the drawing is unchanged. Choose a different edit"
+                    )
+                if edit_key in refused_edits:
+                    entry["rolled_back_candidate"] = str(directory.relative_to(output))
+                    raise ValueError(refused_edits[edit_key])
                 candidate_dir = directory
-                assessment, feedback = None, ""
+                assessment, feedback = trial, ""
+                seen.add(assessment.revision)
+                if assessment.passed:
+                    best_passing = str(assessment.schematic.relative_to(output))
+                    best_assessment = assessment
             else:
                 # Several edits: apply and check one at a time; keep each good edit and stop
                 # at the first that is refused or makes a passing check fail.
@@ -564,6 +612,9 @@ def run_schematic_review(
                         trial = engine.assess(engine.apply(current.schematic, step, [action]), step)
                     except (ValueError, KeyError) as error:
                         stop = f"action {number + 1} ({action.operation}) refused: {error}"
+                        break
+                    if trial.revision == current.revision or trial.revision in seen:
+                        stop = f"action {number + 1} ({action.operation}) made no change"
                         break
                     broken = sorted(
                         name
@@ -582,6 +633,7 @@ def run_schematic_review(
                 if stop:
                     entry["stopped"] = stop
                 if not kept:
+                    refused_edits[edit_key] = stop
                     raise ValueError(stop)
                 candidate_dir = current.schematic.parent.parent
                 source = current.schematic

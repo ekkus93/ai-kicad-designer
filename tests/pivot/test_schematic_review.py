@@ -123,13 +123,58 @@ def test_regression_preserves_best_passing_candidate_without_accepting_it(tmp_pa
 
 
 def test_repeated_candidate_stops_without_false_convergence(tmp_path):
-    result = run_schematic_review(
-        Engine(repeat=True),
-        Reviewer([REVISION]),
-        tmp_path / "run",
-    )
+    """An edit that changes nothing is rolled back; asking for it again stops the run."""
+    engine, reviewer = Engine(repeat=True), Reviewer([REVISION, REVISION])
+    result = run_schematic_review(engine, reviewer, tmp_path / "run")
     assert result["status"] == "NO_PROGRESS"
+    assert "already refused on this drawing" in result["reason"]
     assert result["accepted_schematic"] is None
+    assert "made no change" in reviewer.inputs[1][2]
+    assert engine.applied == 1
+
+
+class ConnectivityEngine(Engine):
+    """Every edited candidate fails ERC and electrical equivalence (merged nets)."""
+
+    def assess(self, schematic, directory):
+        assessment = super().assess(schematic, directory)
+        broken = schematic.read_text() != "candidate-0"
+        checks = {name: "FAIL" if broken else "PASS" for name in ("erc", "electrical_equivalence")}
+        return SchematicAssessment(schematic, assessment.images, {"checks": checks})
+
+
+def test_edit_that_breaks_connectivity_is_rolled_back(tmp_path):
+    """A move that merges nets (noninverting_gain 003 -> 004 on 2026-10-27) must not become
+    the current drawing: the next review sees the unchanged drawing and the reason."""
+    move = {
+        "decision": "revise",
+        "issues": ["crowded"],
+        "actions": [
+            {"operation": "move_symbols", "references": ["U1"], "dx_mm": -1.27, "dy_mm": 0}
+        ],
+    }
+    engine, reviewer = ConnectivityEngine(), Reviewer([move, {}])
+    result = run_schematic_review(engine, reviewer, tmp_path / "run")
+    assert reviewer.inputs[1][0] == reviewer.inputs[0][0]
+    assert "electrical_equivalence, erc fail" in reviewer.inputs[1][2]
+    assert result["iterations"][0]["rolled_back_candidate"] == "candidates/001"
+    assert result["status"] == "ACCEPTED_FOR_REVIEW"
+    assert result["accepted_schematic"].endswith("000/project/test.kicad_sch")
+
+
+def test_repeating_a_rolled_back_edit_stops_without_running_the_editor(tmp_path):
+    move = {
+        "decision": "revise",
+        "issues": ["crowded"],
+        "actions": [
+            {"operation": "move_symbols", "references": ["U1"], "dx_mm": -1.27, "dy_mm": 0}
+        ],
+    }
+    engine = ConnectivityEngine()
+    result = run_schematic_review(engine, Reviewer([move, move]), tmp_path / "run")
+    assert result["status"] == "NO_PROGRESS"
+    assert "already refused on this drawing" in result["reason"]
+    assert engine.applied == 1
 
 
 def test_model_token_budget_cannot_be_overridden_by_acceptance(tmp_path):
@@ -548,3 +593,52 @@ def test_one_action_reviews_still_reject_a_list():
     with pytest.raises(ValidationError):
         SchematicReview.model_validate(two)
     assert len(review_model(2).model_validate(two).actions) == 2
+
+
+@pytest.mark.skipif(
+    not __import__("os").environ.get("AI_KICAD_APPRUN"),
+    reason="set AI_KICAD_APPRUN to the KiCad 10.0.6 AppRun",
+)
+def test_native_move_that_merges_ref_and_vminus_is_rolled_back(tmp_path):
+    """Replays review_loop_corpus_2026-10-27_qwen35_256k_run1/noninverting_gain: on candidate
+    003, move_symbols(U1, dx -1.27 mm) merged REF and VMINUS (C2 shorted, three ERC
+    violations) and became the current drawing. It must now be rolled back."""
+    import os
+    import shutil
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parents[2]
+    source = (
+        root
+        / "fixtures/pivot/experiments/review_loop_corpus_2026-10-27_qwen35_256k_run1"
+        / "noninverting_gain/candidates/003/project/NoninvertingGain.kicad_sch"
+    )
+
+    class FromCandidate(NativeSchematicEngine):
+        def initial(self, directory):
+            (directory / "project").mkdir(parents=True)
+            target = directory / "project" / source.name
+            shutil.copyfile(source, target)
+            return target
+
+    engine = FromCandidate(
+        json.loads((root / "fixtures/m2b/noninverting_gain.json").read_text()),
+        Path(os.environ["AI_KICAD_APPRUN"]),
+    )
+    move = {
+        "decision": "revise",
+        "issues": ["U1 crowded"],
+        "actions": [
+            {"operation": "move_symbols", "references": ["U1"], "dx_mm": -1.27, "dy_mm": 0}
+        ],
+    }
+    help_ = {"decision": "needs_help", "rationale": "stop"}
+    reviewer = Reviewer([move, help_])
+    result = run_schematic_review(engine, reviewer, tmp_path / "run")
+    first = result["iterations"][0]
+    assert first["rolled_back_candidate"] == "candidates/001"
+    assert "electrical_equivalence" in reviewer.inputs[1][2]
+    assert reviewer.inputs[1][0] == reviewer.inputs[0][0]
+    rolled = json.loads((tmp_path / "run/candidates/001/assessment.json").read_text())["checks"]
+    assert rolled["electrical_equivalence"] == "FAIL" and rolled["erc"] == "FAIL"
+    assert result["status"] == "NEEDS_HELP"
