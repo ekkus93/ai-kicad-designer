@@ -79,6 +79,38 @@ def design_review_flags(design: dict) -> list[dict]:
                     f"rails {supply[0]}/{supply[1]}, input bias and loading are not verified",
                 }
             )
+    # An LED lit through a resistor from a supply with its cathode on an IC's pin lights
+    # when that pin goes low: report it so the intended polarity can be confirmed.
+    members_of = {net["id"]: net["members"] for net in design["nets"]}
+    supplies = set(rails)
+    for cid, part in parts.items():
+        if part["asset"].startswith("Timer:"):
+            supplies.add(net_of.get((cid, TIMER_SUPPLY[0])))
+    for cid, part in sorted(parts.items(), key=lambda item: item[1]["refdes"]):
+        if part["asset"] != "Device:LED":
+            continue
+        cathode, anode = net_of.get((cid, "1")), net_of.get((cid, "2"))
+        drivers = [
+            parts[other]["refdes"]
+            for other, _pin in members_of.get(cathode, [])
+            if other != cid and not parts[other]["asset"].startswith(("Device:", "Connector"))
+        ]
+        fed = [
+            parts[other]["refdes"]
+            for other, pin in members_of.get(anode, [])
+            if parts[other]["asset"] == "Device:R"
+            and net_of.get((other, "2" if pin == "1" else "1")) in supplies
+        ]
+        if drivers and fed:
+            flags.append(
+                {
+                    "flag": "indicator_active_low",
+                    "parts": [part["refdes"], *fed, *drivers],
+                    "detail": f"{part['refdes']} is fed through {fed[0]} from the supply with its "
+                    f"cathode on {drivers[0]} ({cathode}), so it lights when {cathode} is low; "
+                    "confirm that is the intended polarity",
+                }
+            )
     for net in design["nets"]:
         resistors = [(cid, pin) for cid, pin in net["members"] if parts[cid]["asset"] == "Device:R"]
         ends = []

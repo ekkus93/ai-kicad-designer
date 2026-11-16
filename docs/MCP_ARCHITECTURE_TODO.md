@@ -704,11 +704,14 @@ These features are **planned**, not prerequisites for P4 except when a specific 
       - a loop result with flags is still accepted, with `DESIGN_REQUIREMENTS_CHECKED` `PENDING`
       - a KiCad assessment of linear_regulator carries its flag, with every check passing and no flag among the checks
     - **Pivot suite:** 566 passed, 1 deselected.
-  - [ ] **P6-011r2** Report an active-low indicator LED as a design-review flag (spec R7.6, added 2026-11-16 with owner approval from ChatGPT's flasher review). **Acceptance:**
+  - [x] **P6-011r2** Report an active-low indicator LED as a design-review flag (spec R7.6, added 2026-11-16 with owner approval from ChatGPT's flasher review). **Acceptance:**
     - **Flag:** `design_review_flags` includes `indicator_active_low` when an LED sits in series between a resistor from a supply and a driving IC pin (the 555 LED flasher), and not otherwise.
     - **No effect:** it changes no check.
 
     **Deps:** P6-011r.
+    **Evidence (2026-11-16):**
+    - **Code:** `design_review_flags` (`src/ai_kicad/pivot/design_flags.py`) reports `indicator_active_low` when an LED's cathode net carries an IC pin and its anode reaches a supply through a resistor.
+    - **Tests:** `tests/pivot/test_design_flags.py::test_each_flag_appears_exactly_on_its_designs[indicator_active_low]` finds it on exactly `reference_555_led_flasher_v8` among the 15 corpus designs (`D1` fed through `R3` from VCC, cathode on `U1` OUT). The existing tests show flags never change a check or `DESIGN_REQUIREMENTS_CHECKED`. 9 passed, 1 skipped (the KiCad test without `AI_KICAD_APPRUN`).
   - [ ] **P6-011s** Regenerate and re-rate the baseline under brief v11 (spec R7.7). **Acceptance:**
     - **Baseline:** a new baseline (`review_baseline_v11_<date>_runN`) is built with `tools/pivot/build_review_baseline.py`.
     - **Acceptance tests:** every R7.7 test is run and recorded against it.
