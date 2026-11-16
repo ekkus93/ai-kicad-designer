@@ -651,6 +651,16 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - **dual_rail_reference (B12):** its capacitors run between VPLUS/VMINUS and the VREF midpoint, which is not recognised as a return, so they are not treated as decoupling.
     - **Not yet measured:** B01, B02 and B07 against v10 on R2 and R7.3.
     - **Needed:** an owner decision, or a different approach, for the 555 control pin, most likely letting the 555 block's own layout (timing ladder and control capacitor) be re-planned as a whole, which is beyond moving one part.
+    **Progress (2026-11-16, 555 block re-plan, owner request "try the 555 block re-plan"):**
+    - **Bypass-capacitor redraw:** `_try_redraw` now redraws a bypass capacitor straight out from the pin it serves: along the pin's direction, turned so the right pin faces it, wired directly, with its return symbol on its other pin or on a 2–4 grid stub to either side. `move_units` can leave rail pins for the rail planner (`drop_nets`, used only by the disabled indicator step).
+    - **Corpus:** `fixtures/pivot/experiments/supply_blocks_v11_2026-11-16_run2` at `9e31a179`, with all 15 designs passing every check.
+      - **Fixed:** in B10 timer_astable_gnd and B15 timer_astable, C2 sits 6.35 mm straight above CONT (pin 5) on a direct wire (previously 29.21 mm with a detour).
+      - **Pivot suite:** 612 passed, 1 deselected.
+    **Note (2026-11-16):** Still unchecked. Open items:
+    - **B05 LED flasher:** C2 is unchanged at 29.21 mm. Its OUT net runs from U1 pin 3 over the top of the drawing to the LED branch at the far left, through the space above pin 5. Five attempts to move the LED branch (R3 and D1) beside the driving pin found no routable position, before or after the rails, with or without dropping its rail wiring. The step (`place_indicators_text`) is kept in the code but not run, because it cost minutes per drawing without success.
+    - **Sideways VPLUS arrows:** dual_buffer, noninverting_gain and sallen_key (B14).
+    - **dual_rail_reference (B12):** its capacitors to the VREF midpoint are not treated as decoupling.
+    - **Not yet measured:** B01, B02 and B07 against v10 on R2 and R7.3.
   - [ ] **P6-011q** Apply the R7.5 drawing conventions (spec R7.5). **Acceptance:**
     - **Ground symbols:** IC return symbols point down where a downward position is clear, fixing B10 and B15's sideways symbol under U1.
     - **Labels:** a generated reference midpoint (B12's VREF) gets a local net label near its node, and parked units are labelled unused, with connectivity unchanged.
