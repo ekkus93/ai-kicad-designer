@@ -109,6 +109,17 @@ def _replace_text(
     return None
 
 
+def _text_objection(text: str, layout_check, parts) -> str | None:
+    """The observer's objection, ignoring overlaps of the given parts' own text."""
+    objection = layout_check(text)
+    if not objection or not parts:
+        return objection
+    names = "|".join(re.escape(p[0]) for p in parts)
+    if re.search(rf"field overlaps body/label: ({names}) (Reference|Value)", objection):
+        return None
+    return objection
+
+
 def _try_moves(
     text: str,
     key: tuple[str, int],
@@ -118,8 +129,13 @@ def _try_moves(
     fields_ok: Callable[[str], bool],
     skip: frozenset[str],
     native_ok: Callable[[str], str | None] | None = None,
+    neighbours: tuple[tuple[str, int], ...] = (),
 ) -> tuple[str | None, str | None, list[str]]:
-    """The first delta, in order, whose move validates; with its label and the refusals."""
+    """The first delta, in order, whose move validates; with its label and the refusals.
+
+    `neighbours` are parts the moved one joins (a supply connector for a return
+    connector): their text may be placed again too when the move crowds it.
+    """
     from .connector_flow import current_inventory
     from .schematic_review import MoveUnits
     from .schematic_review_native import move_symbols_text
@@ -149,22 +165,32 @@ def _try_moves(
         objection = layout_check(candidate)
         # The moved part's own text is placed again by a later step, so an objection to
         # only that text does not refuse the move; the finished drawing is checked again.
-        own_text = objection and re.search(
-            rf"field overlaps body/label: {re.escape(key[0])} (Reference|Value)", objection
-        )
+        parts = (key, *neighbours)
+        own_text = objection and _text_objection(candidate, layout_check, parts) is None
         if objection and not own_text:
             reasons.append(f"{label}: layout check: {objection[:100]}")
             continue
-        if not fields_ok(candidate, key[0]):
+        if not fields_ok(candidate, tuple(p[0] for p in parts)):
             reasons.append(f"{label}: a field check would report something new")
             continue
         if own_text or not fields_ok(candidate):
-            # Its own text moved with it into a crowded spot: place the text again.
-            placed = _replace_text(candidate, key, layout_check, fields_ok)
-            if placed is None:
-                reasons.append(f"{label}: no clear spot for its reference and value")
+            # Its own text (or a neighbour's) is crowded: place it again, each part in
+            # turn, letting the parts still to come keep their text overlaps meanwhile.
+            for index, part in enumerate(parts):
+                if fields_ok(candidate) and not layout_check(candidate):
+                    break
+                later = parts[index + 1 :]
+                candidate = _replace_text(
+                    candidate,
+                    part,
+                    lambda c, later=later: _text_objection(c, layout_check, later),
+                    lambda c, t=None, later=later: fields_ok(c, tuple(p[0] for p in later)),
+                )
+                if candidate is None:
+                    break
+            if candidate is None or not fields_ok(candidate) or layout_check(candidate):
+                reasons.append(f"{label}: no clear spot for the moved parts' text")
                 continue
-            candidate = placed
         # A moved part can lose a connection the cached netlist cannot show: KiCad decides.
         failure = native_ok(candidate) if native_ok else None
         if failure:
@@ -285,7 +311,7 @@ def place_blocks_text(
             ),
         )
         candidate, label, reasons = _try_moves(
-            text, key, deltas, nets, layout_check, fields_ok, skip, native_ok
+            text, key, deltas, nets, layout_check, fields_ok, skip, native_ok, (supply,)
         )
         if candidate is not None:
             text = candidate

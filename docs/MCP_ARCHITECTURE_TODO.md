@@ -670,6 +670,10 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - B01, B02 and B07 are not yet measured against v10
 
     New on the flasher: two VCC arrows side by side at J1 and R1, and J3 apart from J1, because return-connector grouping runs before the second connector pass.
+    **Note (2026-11-16, ChatGPT flasher review items):** Three attempts at the two new P6-011p clauses did not meet them.
+    - **Clean orientation:** ranking C2's valid spots by clearance, stub and nearness changed nothing. On the NE555D symbol pins 5 and 8 are 2.54 mm apart, so any wire leaving pin 5 starts one grid step from pin 8, and a two-grid-step clearance rule can never be met. What the review objected to is a long run beside pin 8's VCC arrow, which needs a side-by-side-length rule instead. The ranking also raised 555 compile time from about 75–150 s to 300–410 s, so it was reverted. C2 stays 6.35 mm straight above pin 5 on a direct wire.
+    - **J3 grouping after the second connector pass:** grouping already ran after that pass. It failed because J3 under J1 crowded J1's text. `_try_moves` now re-places a neighbour's text too (kept). On the flasher every J3 move then broke connectivity, because J3 shares its REF wiring with C1, so the moves need REF rerouted with them. J3 stays at the bottom. Tests: `test_block_placement.py`, `test_connector_flow.py` and `test_design_flags.py`, 57 passed.
+    - **Needs:** an owner decision on whether to pursue a side-by-side-length rule and REF rerouting, or accept these as known gaps.
   - [ ] **P6-011q** Apply the R7.5 drawing conventions (spec R7.5). **Acceptance:**
     - **Ground symbols:** IC return symbols point down where a downward position is clear, fixing B10 and B15's sideways symbol under U1.
     - **Labels:** a generated reference midpoint (B12's VREF) gets a local net label near its node, and parked units are labelled unused, with connectivity unchanged.

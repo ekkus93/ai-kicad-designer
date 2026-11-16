@@ -2359,12 +2359,13 @@ class NativeSchematicEngine:
                 (item["reference"], item["pin"]): item["net"] for item in inventory
             }
 
-            def fields_ok(candidate: str, tolerate: str | None = None) -> bool:
-                # Nothing new reported, except about the text of `tolerate` (a moved part
-                # whose text a later step places again).
+            def fields_ok(candidate: str, tolerate=None) -> bool:
+                # Nothing new reported, except about the text of the parts in `tolerate`
+                # (one reference or several): moved parts whose text is placed again.
+                allowed = {tolerate} if isinstance(tolerate, str) else set(tolerate or ())
                 after = self._geometric_field_witnesses(candidate)
                 return all(
-                    not {w for w in after[name] - before.get(name, set()) if w[0] != tolerate}
+                    not {w for w in after[name] - before.get(name, set()) if w[0] not in allowed}
                     for name in after
                 )
 
