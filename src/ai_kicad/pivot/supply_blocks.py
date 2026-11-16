@@ -256,7 +256,13 @@ def _reaim(text: str, reference: str, direction: tuple[int, int], stub: int = 0)
 
 
 def _redraw_capacitor(
-    text: str, name: str, pin: str, angle: int, target: tuple[int, int], serves: tuple[int, int]
+    text: str,
+    name: str,
+    pin: str,
+    angle: int,
+    target: tuple[int, int],
+    serves: tuple[int, int],
+    sideways: int = 2,
 ) -> str:
     """Redraw a bypass capacitor: rotated to `angle`, its pin `pin` at `target`, wired
     straight to the served pin, and a fresh return symbol on its other pin."""
@@ -359,8 +365,10 @@ def _redraw_capacitor(
     else:
         # Away from the capacitor first: outward along the pin, or sideways when the pin
         # faces opposite to the glyph.
+        # `sideways` grid steps (signed: negative is left) for a pin facing opposite to
+        # the glyph; two steps outward along any other pin.
         step = (
-            (2 * GRID, 0)
+            (sideways * GRID, 0)
             if facing == (-direction[0], -direction[1])
             else (
                 2 * GRID * facing[0],
@@ -373,53 +381,73 @@ def _redraw_capacitor(
     return _append_forms(text, forms)
 
 
+def _outward(units: dict, name: str) -> tuple[int, int]:
+    """The direction a pin leaves its part's body."""
+    reference, number = name.split(".")
+    for (ref, _unit), item in units.items():
+        if ref != reference:
+            continue
+        for pin in item["pins"]:
+            if pin["number"] != number:
+                continue
+            x, y = pin["point"]
+            left, top, right, bottom = item["body"]
+            if y < top:
+                return (0, -1)
+            if y > bottom:
+                return (0, 1)
+            return (-1, 0) if x < left else (1, 0)
+    raise KeyError(name)
+
+
 def _try_redraw(text, design, row, layout_check, fields_ok, native_ok, skip):
-    """The nearest valid redraw of a bypass capacitor beside its pin, with its label."""
+    """Redraw a bypass capacitor straight out from the pin it serves (spec R7.4).
+
+    Spots run along the direction the served pin points, nearest first; at each, the
+    capacitor is turned so the right pin faces the served pin, and its return symbol sits
+    on its other pin, or on a stub to either side when that pin faces away from where the
+    glyph must point. The first spot that every check accepts is used.
+    """
     units = _units(text)
     there = _point(units, row["serves"])
-    spots = sorted(
-        {
-            (there[0] + dx * GRID, there[1] + dy * GRID)
-            for dx in range(-8, 9)
-            for dy in range(-8, 9)
-            if MINIMUM_MM * 1e6 <= (abs(dx) + abs(dy)) * GRID <= 12.7e6
-        },
-        key=lambda p: (abs(p[0] - there[0]) + abs(p[1] - there[1]), p),
-    )
+    out = _outward(units, row["serves"])
     tried = 0
-    for spot in spots:
-        for angle in (0, 180, 90, 270):
-            label = f"redraw at {spot[0] / 1e6:.2f},{spot[1] / 1e6:.2f} turned {angle}"
-            if f"{row['capacitor']}|{label}" in skip:
-                continue
-            try:
-                candidate = _redraw_capacitor(
-                    text, row["capacitor"], row["pin"], angle, spot, there
+    for steps in range(4, 11):
+        spot = (there[0] + out[0] * steps * GRID, there[1] + out[1] * steps * GRID)
+        for angle in (180, 0, 90, 270):
+            for sideways in (-2, 2, -3, 3, -4, 4):
+                label = (
+                    f"redraw at {spot[0] / 1e6:.2f},{spot[1] / 1e6:.2f} turned {angle}, "
+                    f"return stub {sideways * 1.27:+.2f} mm"
                 )
-            except (ValueError, KeyError):
-                continue
-            # Cheap geometry first: the observer, every field check, and power-symbol
-            # clearance; only then a full scratch assessment. The capacitor's own text is
-            # placed again beside its new position.
-            if layout_check(candidate):
-                continue
-            key = next(k for k in _units(candidate) if k[0] == row["capacitor"])
-            candidate = _replace_text(candidate, key, layout_check, fields_ok)
-            if candidate is None:
-                continue
-            if power_symbol_collisions(candidate):
-                continue
-            tried += 1
-            if tried > 30:
-                return None
-            if native_ok and native_ok(candidate):
-                continue
-            check = next(
-                r
-                for r in capacitor_distances(design, candidate)
-                if r["capacitor"] == row["capacitor"]
-            )
-            if check["direct"]:
+                if f"{row['capacitor']}|{label}" in skip:
+                    continue
+                try:
+                    candidate = _redraw_capacitor(
+                        text, row["capacitor"], row["pin"], angle, spot, there, sideways
+                    )
+                except (ValueError, KeyError):
+                    continue
+                # Cheap geometry first: the observer, the capacitor's text placed again,
+                # every field check and power-symbol clearance; then a full assessment.
+                if layout_check(candidate):
+                    continue
+                key = next(k for k in _units(candidate) if k[0] == row["capacitor"])
+                candidate = _replace_text(candidate, key, layout_check, fields_ok)
+                if candidate is None or power_symbol_collisions(candidate):
+                    continue
+                check = next(
+                    r
+                    for r in capacitor_distances(design, candidate)
+                    if r["capacitor"] == row["capacitor"]
+                )
+                if not check["direct"]:
+                    continue
+                tried += 1
+                if tried > 12:
+                    return None
+                if native_ok and native_ok(candidate):
+                    continue
                 return candidate, label
     return None
 
@@ -506,9 +534,7 @@ def place_supply_blocks_text(
                 }
             )
         else:
-            # Redrawing the capacitor (_try_redraw) found no valid spot on the 555s and cost
-            # about 100 s per drawing (2026-11-16), so it is not run; see P6-011p's note.
-            redrawn = None
+            redrawn = _try_redraw(text, design, row, layout_check, fields_ok, native_ok, skip)
             if redrawn is not None:
                 text, label = redrawn
                 after = next(r for r in capacitor_distances(design, text) if r["capacitor"] == name)

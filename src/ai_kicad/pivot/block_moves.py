@@ -307,3 +307,151 @@ def place_blocks_text(
                 }
             )
     return text, moves, partition(design, parse(text))
+
+
+def _clear_of_bodies(text: str, members: list[tuple[str, int]]) -> bool:
+    """The moved parts' bodies keep a grid step from every other part's body."""
+    units = _units(text)
+    mine = [units[m]["body"] for m in members]
+    others = [u["body"] for k, u in units.items() if k not in members]
+    return not any(
+        a[0] < b[2] + GRID and b[0] - GRID < a[2] and a[1] < b[3] + GRID and b[1] - GRID < a[3]
+        for a in mine
+        for b in others
+    )
+
+
+def place_indicators_text(
+    text: str,
+    design: dict,
+    inventory: list[dict],
+    layout_check: Callable[[str], str | None],
+    fields_ok: Callable[..., bool],
+    native_ok: Callable[[str], str | None] | None = None,
+    skip: frozenset[str] = frozenset(),
+) -> tuple[str, list[dict]]:
+    """Move each indicator block (an LED with its series resistor) beside the pin that
+    drives it, as one unit (spec R7.2), when its drive net detours.
+
+    Candidates put the block beside the driving part, on the driving pin's side, at grid
+    offsets nearest first; one is kept when it validates and the drive net's detour
+    shrinks by more than a grid step.
+    """
+    from .connector_flow import _net_detour, current_inventory
+    from .schematic_review import MoveUnits
+    from .schematic_review_native import move_symbols_text
+
+    nets = {(item["reference"], item["pin"]): item["net"] for item in inventory}
+    rails = frozenset(item["net"] for item in design.get("power_assertions", []))
+    moves = []
+    for block in partition(design, parse(text)):
+        if block["role"] != "indicator":
+            continue
+        members = [tuple(m) for m in block["members"]]
+        name = "+".join(m[0] for m in members)
+        own_refs = {m[0] for m in members}
+        units = _units(text)
+        drive = None
+        for reference, unit in members:
+            for pin in units[(reference, unit)]["pins"]:
+                net = nets.get((reference, pin["number"]))
+                drivers = [
+                    t
+                    for t in current_inventory(text, nets)
+                    if t["net"] == net
+                    and t["reference"] not in own_refs
+                    and not t["reference"].startswith("J")
+                ]
+                if drivers:
+                    drive = (net, drivers[0], (reference, pin["number"]))
+        if drive is None or any(m[0] in skip for m in members):
+            continue
+        net, driver, own_pin = drive
+
+        def cost(candidate: str, net=net, driver=driver, own_pin=own_pin) -> float:
+            # The block's drive pin's distance from the driving pin, plus the drive net's
+            # wired detours: it counts whether the net is wired or joined by labels.
+            terminals = {
+                (t["reference"], t["pin"]): (t["x_mm"], t["y_mm"])
+                for t in current_inventory(candidate, nets)
+            }
+            a, b = terminals[own_pin], terminals[(driver["reference"], driver["pin"])]
+            return abs(a[0] - b[0]) + abs(a[1] - b[1]) + _net_detour(candidate, nets, net)
+
+        before = cost(text)
+        if before <= 25.4:
+            continue
+        driving_part = next(u for k, u in units.items() if k[0] == driver["reference"])
+        pin_point = (round(driver["x_mm"] * 1e6), round(driver["y_mm"] * 1e6))
+        body = driving_part["body"]
+        side = 1 if pin_point[0] >= body[2] else -1 if pin_point[0] <= body[0] else 0
+        boxes = [units[m]["body"] for m in members]
+        left = min(b[0] for b in boxes)
+        right = max(b[2] for b in boxes)
+        top = min(b[1] for b in boxes)
+        deltas = set()
+        for gap in range(4, 21, 2):
+            for drop in range(-16, 17, 2):
+                if side >= 0:
+                    x = pin_point[0] + gap * GRID - left
+                else:
+                    x = pin_point[0] - gap * GRID - right
+                y = pin_point[1] + drop * GRID - top
+                deltas.add((_snap(x), _snap(y)))
+        ordered = sorted(deltas, key=lambda d: (abs(d[0]) + abs(d[1]), d))
+        reasons, chosen = [], None
+        for dx, dy in ordered[:80]:
+            label = f"move by {dx / 1e6:+.2f},{dy / 1e6:+.2f}"
+            if f"{members[0][0]}|{label}" in skip:
+                continue
+            action = MoveUnits(
+                operation="move_units",
+                units=[{"reference": r, "unit": u} for r, u in members],
+                dx_mm=dx / 1e6,
+                dy_mm=dy / 1e6,
+            )
+            try:
+                candidate = move_symbols_text(
+                    text, action, current_inventory(text, nets), drop_nets=rails
+                )
+            except (ValueError, KeyError) as error:
+                reasons.append(f"{label}: {error}")
+                continue
+            if not _fits_the_page(text, candidate):
+                continue
+            # Its rail pins are re-marked by the rail planner later, so ERC and the
+            # observer cannot judge it yet: geometry here, the finished drawing in full.
+            if not _clear_of_bodies(candidate, members):
+                reasons.append(f"{label}: overlaps another part")
+                continue
+            if not fields_ok(candidate):
+                reasons.append(f"{label}: a field check would report something new")
+                continue
+            after = cost(candidate)
+            if after >= before - 2 * GRID / 1e6:
+                reasons.append(f"{label}: drive distance {after:.2f} mm not shorter")
+                continue
+            chosen = (candidate, label, after)
+            break
+        if chosen is None:
+            moves.append(
+                {
+                    "connector": members[0][0],
+                    "block": "indicator",
+                    "parts": name,
+                    "change": None,
+                    "kept_because": reasons[:6],
+                }
+            )
+            continue
+        text = chosen[0]
+        moves.append(
+            {
+                "connector": members[0][0],
+                "block": "indicator",
+                "parts": name,
+                "change": chosen[1],
+                "drive_distance_mm": {"before": round(before, 2), "after": round(chosen[2], 2)},
+            }
+        )
+    return text, moves

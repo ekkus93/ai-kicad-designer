@@ -720,6 +720,7 @@ def move_symbols_text(
     text: str,
     action: MoveSymbols | MoveUnits,
     terminal_inventory: list[dict],
+    drop_nets: frozenset[str] = frozenset(),
 ) -> str:
     """Move a symbol group with its private wiring; reroute nets shared with other symbols.
 
@@ -812,6 +813,20 @@ def move_symbols_text(
             continue
         removed_wires |= wire_indexes
         removed_points |= attached_junctions
+        moving_nets = {item["net"] for item in terminal_inventory if pin_point(item) in moving}
+        if units is not None and moving_nets and moving_nets <= drop_nets:
+            # move_units with a rail in `drop_nets`: the moved pins are left for the rail
+            # planner to mark with a local power symbol; the rest of the rail stays joined.
+            rail_marks = {
+                _nm_point(one(symbol, "at"))
+                for symbol in children(tree, "symbol")
+                if one(symbol, "lib_id")[1].startswith("power:")
+                and touches(root, _nm_point(one(symbol, "at")))
+            }
+            remaining = sorted(fixed | attached_labels | rail_marks)
+            if len(remaining) > 1:
+                reconnect.append(remaining)
+            continue
         reconnect.append(sorted({(x + dx, y + dy) for x, y in moving} | fixed | attached_labels))
 
     # Power flags and power symbols on a carried stub travel with it, not left stranded.
@@ -2146,7 +2161,11 @@ class NativeSchematicEngine:
             while chosen is None and number < 8:
                 number += 1
                 recorded = json.loads((attempt / "presentation.json").read_text())
-                flow = recorded["connector_flow"] + recorded.get("block_moves", [])
+                flow = (
+                    recorded["connector_flow"]
+                    + recorded.get("indicator_moves", [])
+                    + recorded.get("block_moves", [])
+                )
                 applied = {item["connector"]: item["change"] for item in flow if item.get("change")}
                 if not applied:
                     break
@@ -2183,7 +2202,9 @@ class NativeSchematicEngine:
                 recorded = json.loads((first / "presentation.json").read_text())
                 everything = {
                     item["connector"]
-                    for item in recorded["connector_flow"] + recorded.get("block_moves", [])
+                    for item in recorded["connector_flow"]
+                    + recorded.get("indicator_moves", [])
+                    + recorded.get("block_moves", [])
                 }
                 attempt = Path(folder) / "all-skipped"
                 attempt.mkdir()
@@ -2253,6 +2274,9 @@ class NativeSchematicEngine:
         ):
             # Brief v11 (spec R7.2): once rails are drawn with local symbols, parked units
             # and return connectors move to their blocks, before field text is placed.
+            # place_indicators_text (LED branch beside its driving pin) found no routable
+            # move on the 555 LED flasher in five attempts and cost minutes per drawing
+            # (2026-11-16), so it is not run; see P6-011p's note.
             text, moves, blocks = self._place_blocks(schematic, skip)
             schematic.write_text(text)
             presentation["block_moves"] = moves
