@@ -321,6 +321,37 @@ def _clear_of_bodies(text: str, members: list[tuple[str, int]]) -> bool:
     )
 
 
+def indicator_drive(
+    text: str, nets: dict, members: list[tuple[str, int]], rails: frozenset[str]
+) -> tuple[str, dict, tuple[str, str]] | None:
+    """The net, driving pin and own pin by which an indicator block is driven.
+
+    Rail nets never drive a block: an LED branch's supply pin is on a rail shared with many
+    parts, and aiming the block at one of those (2026-11-16: R1 on VCC in the 555 LED
+    flasher) put it in crowded space where its signal net could not be routed.
+    """
+    from .connector_flow import current_inventory
+
+    units = _units(text)
+    own_refs = {m[0] for m in members}
+    terminals = current_inventory(text, nets)
+    for reference, unit in members:
+        for pin in units[(reference, unit)]["pins"]:
+            net = nets.get((reference, pin["number"]))
+            if net is None or net in rails:
+                continue
+            drivers = [
+                t
+                for t in terminals
+                if t["net"] == net
+                and t["reference"] not in own_refs
+                and not t["reference"].startswith("J")
+            ]
+            if drivers:
+                return net, drivers[0], (reference, pin["number"])
+    return None
+
+
 def place_indicators_text(
     text: str,
     design: dict,
@@ -349,21 +380,8 @@ def place_indicators_text(
             continue
         members = [tuple(m) for m in block["members"]]
         name = "+".join(m[0] for m in members)
-        own_refs = {m[0] for m in members}
         units = _units(text)
-        drive = None
-        for reference, unit in members:
-            for pin in units[(reference, unit)]["pins"]:
-                net = nets.get((reference, pin["number"]))
-                drivers = [
-                    t
-                    for t in current_inventory(text, nets)
-                    if t["net"] == net
-                    and t["reference"] not in own_refs
-                    and not t["reference"].startswith("J")
-                ]
-                if drivers:
-                    drive = (net, drivers[0], (reference, pin["number"]))
+        drive = indicator_drive(text, nets, members, rails)
         if drive is None or any(m[0] in skip for m in members):
             continue
         net, driver, own_pin = drive

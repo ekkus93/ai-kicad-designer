@@ -2274,9 +2274,20 @@ class NativeSchematicEngine:
         ):
             # Brief v11 (spec R7.2): once rails are drawn with local symbols, parked units
             # and return connectors move to their blocks, before field text is placed.
-            # place_indicators_text (LED branch beside its driving pin) found no routable
-            # move on the 555 LED flasher in five attempts and cost minutes per drawing
-            # (2026-11-16), so it is not run; see P6-011p's note.
+            # An LED branch joins the pin that drives it (R7.2), as a unit.
+            from .block_moves import place_indicators_text
+
+            text, moves = place_indicators_text(
+                schematic.read_text(),
+                self.design,
+                self._compiler_inventory,
+                self._connector_check,
+                self._fields_ok,
+                self._native_checker(schematic),
+                skip,
+            )
+            schematic.write_text(text)
+            presentation["indicator_moves"] = moves
             text, moves, blocks = self._place_blocks(schematic, skip)
             schematic.write_text(text)
             presentation["block_moves"] = moves

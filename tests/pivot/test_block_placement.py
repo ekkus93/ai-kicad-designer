@@ -150,3 +150,27 @@ def test_return_connector_joins_its_power_interface(v11, name):
     # and the netlist and ERC are unchanged (every check passes, above).
     assert report["checks"]["electrical_equivalence"] == "PASS"
     assert report["checks"]["erc"] == "PASS"
+
+
+def test_an_indicator_is_driven_by_its_signal_net_never_a_rail():
+    """2026-11-16 regression: the LED flasher's R3/D1 block was aimed at R1 on the VCC rail
+    (the last pin checked), where its OUT net could not be routed. A rail never drives a
+    block; the driver is U1 pin 3 on OUT."""
+    from ai_kicad.pivot.block_moves import indicator_drive
+
+    directory = (
+        ROOT
+        / "fixtures/pivot/experiments/supply_blocks_v11_2026-11-16_run2"
+        / "reference_555_led_flasher_v8"
+    )
+    text = Path(glob.glob(str(directory / "project/*.kicad_sch"))[0]).read_text()
+    report = json.loads((directory / "assessment.json").read_text())
+    nets = {(t["reference"], t["pin"]): t["net"] for t in report["terminal_inventory"]}
+    design = json.loads(FILES["reference_555_led_flasher_v8"].read_text())
+    rails = frozenset(item["net"] for item in design["power_assertions"])
+    net, driver, own_pin = indicator_drive(text, nets, [("D1", 1), ("R3", 1)], rails)
+    assert net == "OUT" and (driver["reference"], driver["pin"]) == ("U1", "3")
+    assert own_pin == ("D1", "1")
+    # R3 alone touches VCC and LED_A: its driver is D1 on LED_A, never the VCC rail.
+    net, driver, _own = indicator_drive(text, nets, [("R3", 1)], rails)
+    assert net == "LED_A" and driver["reference"] == "D1"
