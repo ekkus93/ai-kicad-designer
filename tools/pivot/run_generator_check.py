@@ -14,6 +14,7 @@ import subprocess
 
 from ai_kicad.pivot.schematic_review import file_hash, write_json
 from ai_kicad.pivot.schematic_review_service import NativeSchematicReviewService
+from ai_kicad.pivot.supply_blocks import capacitor_distances, power_block_directions
 from tools.pivot.experiment_paths import create_experiment_dir
 from tools.pivot.run_review_loop_corpus import CORPUS
 
@@ -59,6 +60,8 @@ def main() -> None:
             "signal_order_witnesses": report.get("block_layout", {}).get("signal_order_witnesses"),
             "block_intrusions": report.get("block_layout", {}).get("intrusions"),
             "return_connector_distances": report.get("return_connector_distances"),
+            "capacitor_distances": capacitor_distances(engine.design, source.read_text()),
+            "power_block_directions": power_block_directions(engine.design, source.read_text()),
             "connector_detours": [
                 {key: row[key] for key in ("net", "pins", "excess_mm", "u_turn_at")}
                 for row in report.get("net_detours", [])

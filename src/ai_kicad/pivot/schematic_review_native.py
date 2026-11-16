@@ -815,11 +815,14 @@ def move_symbols_text(
         reconnect.append(sorted({(x + dx, y + dy) for x, y in moving} | fixed | attached_labels))
 
     # Power flags and power symbols on a carried stub travel with it, not left stranded.
+    # move_units (v10+) also carries one standing directly on a moved pin; move_symbols
+    # keeps its earlier behaviour so briefs v1-v9 replay exactly.
     for symbol in children(tree, "symbol"):
         if not one(symbol, "lib_id")[1].startswith("power:"):
             continue
         point = _nm_point(one(symbol, "at"))
-        if any(touches(root, point) for root in carried_roots):
+        on_pin = units is not None and point in moved_pins
+        if on_pin or any(touches(root, point) for root in carried_roots):
             moved.add(
                 next(prop[2] for prop in children(symbol, "property") if prop[1] == "Reference")
             )
@@ -2254,6 +2257,14 @@ class NativeSchematicEngine:
             schematic.write_text(text)
             presentation["block_moves"] = moves
             presentation["blocks"] = blocks
+        if (getattr(self, "generator_layout", None) or {}).get("supply_blocks") and getattr(
+            self, "_connector_check", None
+        ):
+            # Brief v11 (spec R7.4): capacitors beside the pins they serve, then power-block
+            # symbols aimed consistently.
+            text, moves = self._place_supply(schematic, skip)
+            schematic.write_text(text)
+            presentation["block_moves"] = presentation.get("block_moves", []) + moves
         text, moves = tighten_vertical_fields_text(
             schematic.read_text(),
             power_unit_both_sides=getattr(self, "text_and_ground_checks", False),
@@ -2311,9 +2322,8 @@ class NativeSchematicEngine:
             )
             return orient_connectors_text(base, inventory, check, fields_ok, skip, returns)
 
-    def _place_blocks(self, schematic: Path, skip: frozenset) -> tuple[str, list[dict], list]:
-        """Move parked units and return connectors as units (R7.2), after the connectors."""
-        from .block_moves import place_blocks_text
+    def _native_checker(self, schematic: Path):
+        """A check that no passing check fails on a candidate, by full scratch assessment."""
 
         def checks_of(candidate: str) -> dict:
             with tempfile.TemporaryDirectory(dir=schematic.parent, prefix=".block-") as folder:
@@ -2344,6 +2354,28 @@ class NativeSchematicEngine:
                 )
             ]
             return f"{', '.join(sorted(broken))} fail" if broken else None
+
+        return native_ok
+
+    def _place_supply(self, schematic: Path, skip: frozenset) -> tuple[str, list[dict]]:
+        """Decoupling and bypass capacitors beside their pins; power-block symbols aimed."""
+        from .supply_blocks import place_supply_blocks_text
+
+        return place_supply_blocks_text(
+            schematic.read_text(),
+            self.design,
+            self._compiler_inventory,
+            self._connector_check,
+            self._fields_ok,
+            self._native_checker(schematic),
+            skip,
+        )
+
+    def _place_blocks(self, schematic: Path, skip: frozenset) -> tuple[str, list[dict], list]:
+        """Move parked units and return connectors as units (R7.2), after the connectors."""
+        from .block_moves import place_blocks_text
+
+        native_ok = self._native_checker(schematic)
 
         return place_blocks_text(
             schematic.read_text(),

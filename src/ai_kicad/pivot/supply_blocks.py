@@ -1,0 +1,579 @@
+"""Supply and return blocks for any circuit, under brief v11 (reviewer loop spec R7.4).
+
+* Decoupling and bypass capacitors (a capacitor from a supply pin's net, or a 555's control
+  pin, to the return) move beside the pin they serve, as a unit with their local return
+  symbol and private wiring.
+* In a power block (a power unit, regulator or timer with its capacitors), return glyphs
+  point down and positive-supply arrows point up where they fit; a sideways one is turned.
+  A supply arrow never points down (the brief's power-symbol direction check), so a
+  negative rail keeps its direction, and its arrows only have to agree with each other.
+
+Each change is validated like a block move: the observer and field checks, then a full
+scratch assessment in which no passing check may fail.
+"""
+
+from __future__ import annotations
+
+from typing import Callable
+
+from ai_kicad.m2_transform import transform_library_point
+from ai_kicad.sexpr import children, parse
+
+from .block_moves import GRID, _replace_text, _snap, _try_moves, _units
+from .blocks import _pin_nets, partition
+from .power_symbols import (
+    GLYPH_TIPS,
+    _angle_for,
+    _sign,
+    power_symbol_collisions,
+    power_symbols,
+)
+
+# A capacitor is beside its pin when its pin is within this many millimetres of it, on a
+# direct wire (the 25.4 mm reach the field-locality check uses); a moved one keeps at
+# least MINIMUM_MM from the pin so it never sits on the part.
+BESIDE_MM = 25.4
+MINIMUM_MM = 5.08
+# How far toward its pin a capacitor is tried, in grid steps.
+TOWARD_REACH = range(1, 21)
+OPAMP_SUPPLY = {"8": "positive", "4": "negative"}
+
+
+def served_pins(design: dict, tree: list) -> list[dict]:
+    """Each decoupling or bypass capacitor, the pin it serves, and its return net."""
+    assets = {item["refdes"]: item["asset"] for item in design["components"]}
+    pin_net = _pin_nets(design)
+    units = {(i["reference"], i["unit"]): i for i in _units_tree(tree)}
+    supply_pins: dict[str, list[tuple[str, str, str]]] = {}
+    returns: set[str] = set()
+    rails = {item["net"] for item in design.get("power_assertions", [])}
+    for (reference, _unit), item in units.items():
+        asset = assets.get(reference, "")
+        numbers = {pin["number"] for pin in item["pins"]}
+        roles: dict[str, str] = {}
+        if asset.startswith("Amplifier_Operational:") and numbers >= set(OPAMP_SUPPLY):
+            roles = {number: role for number, role in OPAMP_SUPPLY.items()}
+        elif asset.startswith("Regulator_Linear:"):
+            roles = {"1": "positive", "3": "positive"}
+            returns.add(pin_net.get((reference, "2")))
+        elif asset.startswith("Timer:"):
+            roles = {"8": "positive", "5": "control"}
+            returns.add(pin_net.get((reference, "1")))
+        for number, role in roles.items():
+            net = pin_net.get((reference, number))
+            if net:
+                supply_pins.setdefault(net, []).append((reference, number, role))
+    supply_nets = set(supply_pins)
+    returns |= rails - supply_nets
+    returns.discard(None)
+    found = []
+    for (reference, _unit), item in sorted(units.items()):
+        if assets.get(reference) != "Device:C":
+            continue
+        nets = {pin["number"]: pin_net.get((reference, pin["number"])) for pin in item["pins"]}
+        for own, net in nets.items():
+            other = nets.get("2" if own == "1" else "1")
+            if net in supply_pins and other in returns:
+                ic, number, role = supply_pins[net][0]
+                found.append(
+                    {
+                        "capacitor": reference,
+                        "pin": own,
+                        "serves": f"{ic}.{number}",
+                        "role": role,
+                        "net": net,
+                        "return_net": other,
+                    }
+                )
+                break
+    return found
+
+
+def _units_tree(tree: list) -> list[dict]:
+    from .schematic_description import _instances
+
+    return _instances(tree)
+
+
+def _point(units: dict, name: str):
+    reference, number = name.split(".")
+    for (ref, _unit), item in units.items():
+        if ref == reference:
+            for pin in item["pins"]:
+                if pin["number"] == number:
+                    return pin["point"]
+    raise KeyError(name)
+
+
+def capacitor_distances(design: dict, text: str) -> list[dict]:
+    """Each decoupling or bypass capacitor's pin distance from the pin it serves (mm)."""
+    tree = parse(text)
+    units = _units(text)
+    rows = []
+    for item in served_pins(design, tree):
+        here = _point(units, f"{item['capacitor']}.{item['pin']}")
+        there = _point(units, item["serves"])
+        rows.append(
+            {
+                **item,
+                "distance_mm": round((abs(here[0] - there[0]) + abs(here[1] - there[1])) / 1e6, 2),
+                "direct": _direct(tree, design, item),
+            }
+        )
+    return rows
+
+
+def _direct(tree: list, design: dict, item: dict) -> bool:
+    """The capacitor's pin reaches the served pin by wire with at most a grid step of
+    detour (a pin joined only through power symbols has no wire path and is not direct)."""
+    from .net_detours import pin_pair_detours
+
+    nets = _pin_nets(design)
+    inventory = []
+    for unit in _units_tree(tree):
+        for pin in unit["pins"]:
+            net = nets.get((unit["reference"], pin["number"]))
+            if net is not None:
+                inventory.append(
+                    {
+                        "net": net,
+                        "reference": unit["reference"],
+                        "pin": pin["number"],
+                        "x_mm": pin["point"][0] / 1e6,
+                        "y_mm": pin["point"][1] / 1e6,
+                    }
+                )
+    pair = sorted([f"{item['capacitor']}.{item['pin']}", item["serves"]])
+    for row in pin_pair_detours(tree, inventory):
+        if sorted(row["pins"]) == pair:
+            return row["excess_mm"] <= 2.54
+    return False
+
+
+def power_block_directions(design: dict, text: str) -> list[dict]:
+    """Power symbols drawn within a power block's area, with their direction and role."""
+    tree = parse(text)
+    units = _units(text)
+    pin_net = _pin_nets(design)
+    positive, negative = set(), set()
+    for block in partition(design, tree):
+        if block["role"] not in ("power_unit", "regulator", "timer"):
+            continue
+        for member in block["members"]:
+            for pin in units[tuple(member)]["pins"]:
+                net = pin_net.get((member[0], pin["number"]))
+                role = OPAMP_SUPPLY.get(pin["number"]) if block["role"] == "power_unit" else None
+                if block["role"] == "timer" and pin["number"] == "8":
+                    role = "positive"
+                if block["role"] == "regulator" and pin["number"] in ("1", "3"):
+                    role = "positive"
+                if role == "positive":
+                    positive.add(net)
+                elif role == "negative":
+                    negative.add(net)
+    boxes = []
+    for block in partition(design, tree):
+        if block["role"] not in ("power_unit", "regulator", "timer"):
+            continue
+        points = []
+        for member in block["members"]:
+            body = units[tuple(member)]["body"]
+            points += [body[:2], body[2:]]
+            points += [pin["point"] for pin in units[tuple(member)]["pins"]]
+        margin = 5 * GRID
+        boxes.append(
+            (
+                min(p[0] for p in points) - margin,
+                min(p[1] for p in points) - margin,
+                max(p[0] for p in points) + margin,
+                max(p[1] for p in points) + margin,
+            )
+        )
+    rows = []
+    for item in power_symbols(tree):
+        x, y = item["point"]
+        if not any(b[0] <= x <= b[2] and b[1] <= y <= b[3] for b in boxes):
+            continue
+        tip = transform_library_point(*GLYPH_TIPS[item["lib_id"]], item["angle"])
+        direction = (_sign(tip[0]), _sign(tip[1]))
+        if item["lib_id"] == "power:GND":
+            role, wanted = "return", (0, 1)
+        elif item["net"] in positive:
+            role, wanted = "positive", (0, -1)
+        elif item["net"] in negative:
+            role, wanted = "negative", None
+        else:
+            role, wanted = "other", None
+        rows.append(
+            {
+                "symbol": item["reference"],
+                "net": item["net"],
+                "role": role,
+                "direction": direction,
+                "consistent": wanted is None or direction == wanted,
+            }
+        )
+    return rows
+
+
+def _reaim(text: str, reference: str, direction: tuple[int, int], stub: int = 0) -> str:
+    """Redraw one power symbol at its connection point pointing along `direction`, with
+    its rail name placed beyond the new glyph tip."""
+    from ai_kicad.sexpr import one
+
+    from .power_symbols import _append_forms, _instance, _without_forms
+
+    tree = parse(text)
+    (item,) = [s for s in power_symbols(tree) if s["reference"] == reference]
+    instances = [n for symbol in children(tree, "symbol") for n in children(symbol, "instances")]
+    project_node = one(instances[0], "project")
+    project = (project_node[1], one(project_node, "path")[1])
+    remaining = "".join(
+        _without_forms(
+            text,
+            lambda node: node[0] == "symbol"
+            and any(p[1] == "Reference" and p[2] == reference for p in children(node, "property")),
+        )
+    )
+    angle = _angle_for(item["lib_id"], direction)
+    if not stub:
+        return _append_forms(
+            remaining,
+            [_instance(item["lib_id"], reference, item["net"], item["point"], angle, project)],
+        )
+    # A short horizontal stub from the connection point, with the symbol at its end, for a
+    # pin that faces where the glyph should point.
+    from .power_symbols import _wire_form
+
+    end = (item["point"][0] + stub, item["point"][1])
+    return _append_forms(
+        remaining,
+        [
+            _wire_form(item["point"], end, item["net"]),
+            _instance(item["lib_id"], reference, item["net"], end, angle, project),
+        ],
+    )
+
+
+def _redraw_capacitor(
+    text: str, name: str, pin: str, angle: int, target: tuple[int, int], serves: tuple[int, int]
+) -> str:
+    """Redraw a bypass capacitor: rotated to `angle`, its pin `pin` at `target`, wired
+    straight to the served pin, and a fresh return symbol on its other pin."""
+    import re
+
+    from ai_kicad.m2_geometry import point_on_segment
+    from ai_kicad.sexpr import one
+
+    from .power_symbols import _append_forms, _forms, _instance, _wire_form
+    from .schematic_review_native import (
+        _connect_point_groups,
+        _top_level_forms,
+        _translate_block,
+        _wire_trees,
+    )
+
+    tree = parse(text)
+    units = _units(text)
+    (key,) = [k for k in units if k[0] == name]
+    old_pins = {p["number"]: p["point"] for p in units[key]["pins"]}
+    other = "2" if pin == "1" else "1"
+    symbols = [s for s in power_symbols(tree)]
+    segments, owners, roots = _wire_trees(tree)
+    # The capacitor's own wiring: wire trees touching its pins that reach no other part.
+    others = {p["point"] for k, u in units.items() if k[0] != name for p in u["pins"]}
+    private = set()
+    for point in old_pins.values():
+        for segment, root in zip(segments, roots):
+            if point_on_segment(point, *segment):
+                touched = {
+                    q
+                    for q in others
+                    if any(
+                        point_on_segment(q, *seg) for seg, r in zip(segments, roots) if r == root
+                    )
+                }
+                if touched == {serves} or not touched:
+                    private.add(root)
+    removed = {owner for owner, root in zip(owners, roots) if root in private}
+
+    def on_private(point) -> bool:
+        return any(
+            point_on_segment(point, *seg) for seg, root in zip(segments, roots) if root in private
+        )
+
+    returning = [s for s in symbols if s["point"] == old_pins[other] or on_private(s["point"])]
+    if not returning:
+        raise ValueError(f"{name} has no return symbol to redraw")
+    lib_id, net = returning[0]["lib_id"], returning[0]["net"]
+    rewritten, wire_index = [], -1
+    gone = {s["reference"] for s in returning}
+    for start, end, node in _top_level_forms(text):
+        if node[0] == "wire":
+            wire_index += 1
+            if wire_index in removed:
+                rewritten.append((start, end, ""))
+        elif node[0] == "junction":
+            if on_private(
+                (round(float(one(node, "at")[1]) * 1e6), round(float(one(node, "at")[2]) * 1e6))
+            ):
+                rewritten.append((start, end, ""))
+        elif node[0] == "symbol":
+            refs = [p[2] for p in children(node, "property") if p[1] == "Reference"]
+            if refs and refs[0] in gone:
+                rewritten.append((start, end, ""))
+            elif refs and refs[0] == name:
+                block = re.sub(
+                    r"(\(at\s+[-+0-9.]+\s+[-+0-9.]+\s+)[-+0-9.]+\)",
+                    rf"\g<1>{angle})",
+                    text[start:end],
+                    count=1,
+                )
+                rewritten.append((start, end, block))
+    for start, end, block in reversed(rewritten):
+        text = text[:start] + block + text[end:]
+    placed = next(u for k, u in _units(text).items() if k[0] == name)
+    now = {p["number"]: p["point"] for p in placed["pins"]}
+    dx, dy = target[0] - now[pin][0], target[1] - now[pin][1]
+    for start, end, node in _forms(text):
+        if node[0] == "symbol" and any(
+            p[1] == "Reference" and p[2] == name for p in children(node, "property")
+        ):
+            text = text[:start] + _translate_block(text[start:end], dx / 1e6, dy / 1e6) + text[end:]
+            break
+    return_pin = (now[other][0] + dx, now[other][1] + dy)
+    text = _connect_point_groups(text, sorted({target, serves}), [], "bypass capacitor")
+    instances = [
+        n for symbol in children(parse(text), "symbol") for n in children(symbol, "instances")
+    ]
+    project_node = one(instances[0], "project")
+    project = (project_node[1], one(project_node, "path")[1])
+    # The return symbol points down (ground) or up (supply), on a stub when its pin faces
+    # that way and the glyph would cover the capacitor.
+    direction = (0, 1) if lib_id == "power:GND" else (0, -1)
+    facing = (_sign(return_pin[0] - target[0]), _sign(return_pin[1] - target[1]))
+    reference = sorted(gone)[0]
+    forms = []
+    if facing == direction:
+        at = return_pin
+    else:
+        # Away from the capacitor first: outward along the pin, or sideways when the pin
+        # faces opposite to the glyph.
+        step = (
+            (2 * GRID, 0)
+            if facing == (-direction[0], -direction[1])
+            else (
+                2 * GRID * facing[0],
+                2 * GRID * facing[1],
+            )
+        )
+        at = (return_pin[0] + step[0], return_pin[1] + step[1])
+        forms.append(_wire_form(return_pin, at, net))
+    forms.append(_instance(lib_id, reference, net, at, _angle_for(lib_id, direction), project))
+    return _append_forms(text, forms)
+
+
+def _try_redraw(text, design, row, layout_check, fields_ok, native_ok, skip):
+    """The nearest valid redraw of a bypass capacitor beside its pin, with its label."""
+    units = _units(text)
+    there = _point(units, row["serves"])
+    spots = sorted(
+        {
+            (there[0] + dx * GRID, there[1] + dy * GRID)
+            for dx in range(-8, 9)
+            for dy in range(-8, 9)
+            if MINIMUM_MM * 1e6 <= (abs(dx) + abs(dy)) * GRID <= 12.7e6
+        },
+        key=lambda p: (abs(p[0] - there[0]) + abs(p[1] - there[1]), p),
+    )
+    tried = 0
+    for spot in spots:
+        for angle in (0, 180, 90, 270):
+            label = f"redraw at {spot[0] / 1e6:.2f},{spot[1] / 1e6:.2f} turned {angle}"
+            if f"{row['capacitor']}|{label}" in skip:
+                continue
+            try:
+                candidate = _redraw_capacitor(
+                    text, row["capacitor"], row["pin"], angle, spot, there
+                )
+            except (ValueError, KeyError):
+                continue
+            # Cheap geometry first: the observer, every field check, and power-symbol
+            # clearance; only then a full scratch assessment. The capacitor's own text is
+            # placed again beside its new position.
+            if layout_check(candidate):
+                continue
+            key = next(k for k in _units(candidate) if k[0] == row["capacitor"])
+            candidate = _replace_text(candidate, key, layout_check, fields_ok)
+            if candidate is None:
+                continue
+            if power_symbol_collisions(candidate):
+                continue
+            tried += 1
+            if tried > 30:
+                return None
+            if native_ok and native_ok(candidate):
+                continue
+            check = next(
+                r
+                for r in capacitor_distances(design, candidate)
+                if r["capacitor"] == row["capacitor"]
+            )
+            if check["direct"]:
+                return candidate, label
+    return None
+
+
+def place_supply_blocks_text(
+    text: str,
+    design: dict,
+    inventory: list[dict],
+    layout_check: Callable[[str], str | None],
+    fields_ok: Callable[..., bool],
+    native_ok: Callable[[str], str | None] | None,
+    skip: frozenset[str] = frozenset(),
+) -> tuple[str, list[dict]]:
+    """Move decoupling and bypass capacitors beside their pins, then re-aim power-block
+    symbols. Returns the text and a record of every change and refusal."""
+    nets = {(item["reference"], item["pin"]): item["net"] for item in inventory}
+    moves = []
+    for row in capacitor_distances(design, text):
+        if row["distance_mm"] <= BESIDE_MM and row["direct"]:
+            continue
+        name = row["capacitor"]
+        if name in skip:
+            moves.append(
+                {"connector": name, "block": "supply", "change": None, "kept_because": ["skipped"]}
+            )
+            continue
+        units = _units(text)
+        here = _point(units, f"{name}.{row['pin']}")
+        there = _point(units, row["serves"])
+        # Positions around the served pin, at least MINIMUM_MM from it, nearest first.
+        deltas = set()
+        for dx_steps in range(-10, 11):
+            for dy_steps in range(-10, 11):
+                spot = (there[0] + dx_steps * GRID, there[1] + dy_steps * GRID)
+                reach = abs(spot[0] - there[0]) + abs(spot[1] - there[1])
+                if MINIMUM_MM * 1e6 <= reach <= BESIDE_MM * 1e6:
+                    deltas.add((_snap(spot[0] - here[0]), _snap(spot[1] - here[1])))
+        # Skip spots where the moved capacitor's body would overlap another part's body.
+        own = next(u for k, u in units.items() if k[0] == name)["body"]
+        others = [u["body"] for k, u in units.items() if k[0] != name]
+
+        def clear(delta) -> bool:
+            moved = (own[0] + delta[0], own[1] + delta[1], own[2] + delta[0], own[3] + delta[1])
+            return not any(
+                moved[0] < b[2] + GRID
+                and b[0] - GRID < moved[2]
+                and moved[1] < b[3] + GRID
+                and b[1] - GRID < moved[3]
+                for b in others
+            )
+
+        ordered = sorted(
+            (d for d in deltas if d != (0, 0) and clear(d)),
+            key=lambda d: (
+                abs(there[0] - here[0] - d[0]) + abs(there[1] - here[1] - d[1]),
+                abs(d[0]) + abs(d[1]),
+                d,
+            ),
+        )
+        key = next(k for k in units if k[0] == name)
+        candidate, label, reasons = _try_moves(
+            text, key, ordered, nets, layout_check, fields_ok, skip, native_ok
+        )
+        if candidate is not None and not next(
+            r["direct"] for r in capacitor_distances(design, candidate) if r["capacitor"] == name
+        ):
+            # Moved, but still not joined by a direct wire: try redrawing it instead.
+            reasons.insert(0, f"{label}: moved but its wire to the pin still detours")
+            candidate = None
+        if candidate is not None:
+            text = candidate
+            after = next(
+                r["distance_mm"]
+                for r in capacitor_distances(design, text)
+                if r["capacitor"] == name
+            )
+            moves.append(
+                {
+                    "connector": name,
+                    "block": "supply",
+                    "change": label,
+                    "serves": row["serves"],
+                    "distance_mm": {"before": row["distance_mm"], "after": after},
+                }
+            )
+        else:
+            # Redrawing the capacitor (_try_redraw) found no valid spot on the 555s and cost
+            # about 100 s per drawing (2026-11-16), so it is not run; see P6-011p's note.
+            redrawn = None
+            if redrawn is not None:
+                text, label = redrawn
+                after = next(r for r in capacitor_distances(design, text) if r["capacitor"] == name)
+                moves.append(
+                    {
+                        "connector": name,
+                        "block": "supply",
+                        "change": label,
+                        "serves": row["serves"],
+                        "distance_mm": {
+                            "before": row["distance_mm"],
+                            "after": after["distance_mm"],
+                        },
+                        "direct": after["direct"],
+                    }
+                )
+                continue
+            moves.append(
+                {
+                    "connector": name,
+                    "block": "supply",
+                    "change": None,
+                    "serves": row["serves"],
+                    "kept_because": reasons[:6],
+                }
+            )
+    for row in power_block_directions(design, text):
+        if row["consistent"]:
+            continue
+        wanted = (0, 1) if row["role"] == "return" else (0, -1)
+        name = row["symbol"]
+        # Turn it in place, or draw a short stub to either side with the symbol at its end.
+        reasons, chosen = [], None
+        for stub in (0, 2 * GRID, -2 * GRID, 3 * GRID, -3 * GRID, 4 * GRID, -4 * GRID):
+            label = "re-aim" if not stub else f"re-aim on a {stub / 1e6:+.2f} mm stub"
+            if f"{name}|{label}" in skip:
+                continue
+            try:
+                candidate = _reaim(text, name, wanted, stub)
+            except (ValueError, KeyError) as error:
+                reasons.append(f"{label}: {error}")
+                continue
+            objection = layout_check(candidate)
+            if objection:
+                reasons.append(f"{label}: layout check: {objection[:100]}")
+                continue
+            if not fields_ok(candidate):
+                reasons.append(f"{label}: a field check would report something new")
+                continue
+            failure = native_ok(candidate) if native_ok else None
+            if failure:
+                reasons.append(f"{label}: native check: {failure[:100]}")
+                continue
+            chosen = (candidate, label)
+            break
+        if chosen is None:
+            moves.append(
+                {
+                    "connector": name,
+                    "block": "supply",
+                    "change": None,
+                    "kept_because": [f"re-aim {row['role']} symbol: {r}" for r in reasons[:6]],
+                }
+            )
+            continue
+        text = chosen[0]
+        moves.append({"connector": name, "block": "supply", "change": chosen[1], "net": row["net"]})
+    return text, moves
