@@ -633,6 +633,24 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - **Safety:** the exact netlist, ERC and every check still pass. B01, B02 and B07 are not worse on R2 or R7.3.
 
     **Deps:** P6-011o.
+    **Progress (2026-11-16):** `src/ai_kicad/pivot/supply_blocks.py` runs under v11 after block placement.
+    - **Capacitor moves:** decoupling and bypass capacitors (supply pin, or 555 pin 5, to the return) move toward the pin they serve, as a unit with their return symbol (`move_units` now carries a power symbol standing on a moved pin; `move_symbols` is unchanged for v1–v9). A move is kept only if the capacitor ends within 25.4 mm on a direct wire.
+    - **Symbol directions:** sideways return and positive-supply symbols in power blocks are turned down or up, in place or on a 2–4 grid stub.
+    - **Validation:** every change must pass the observer, the field checks and a full scratch assessment in which no passing check fails.
+    - **Corpus:** `fixtures/pivot/experiments/supply_blocks_v11_2026-11-16_run1` at `21115d24`, with all 15 designs passing every check.
+      - **Met:** op-amp and regulator decoupling capacitors are within 15–24 mm of their pins on direct wires. The sideways REF symbols at C2 were turned down on a stub in dual_buffer, noninverting_gain, rc_to_buffer (B09) and sallen_key (B14). B07 inverting_gain's power block is consistent.
+      - **Pivot suite:** 612 passed, 1 deselected, with the redraw still enabled.
+    **Note (2026-11-16):** Still unchecked. The loop's stuck rule applies: three distinct approaches to the 555 control-pin capacitor failed. Open items:
+    - **555 control-pin capacitor (B05, B10, B15):** still 29.21 mm from pin 5 with a detour. The three approaches were:
+      1. moving it toward the pin
+      2. trying all 219 positions within 25.4 mm
+      3. redrawing it rotated at each spot, with a fresh return symbol on a stub and its text re-placed
+
+      Every candidate either touched U1, the VCC symbols or the text, or broke power-symbol clearance. The redraw (`_try_redraw`) is kept in the code but not run, because it cost about 100 s per 555 drawing without success.
+    - **Sideways VPLUS arrows:** remain in sallen_key (B14), dual_buffer and noninverting_gain. Turning them up collides.
+    - **dual_rail_reference (B12):** its capacitors run between VPLUS/VMINUS and the VREF midpoint, which is not recognised as a return, so they are not treated as decoupling.
+    - **Not yet measured:** B01, B02 and B07 against v10 on R2 and R7.3.
+    - **Needed:** an owner decision, or a different approach, for the 555 control pin, most likely letting the 555 block's own layout (timing ladder and control capacitor) be re-planned as a whole, which is beyond moving one part.
   - [ ] **P6-011q** Apply the R7.5 drawing conventions (spec R7.5). **Acceptance:**
     - **Ground symbols:** IC return symbols point down where a downward position is clear, fixing B10 and B15's sideways symbol under U1.
     - **Labels:** a generated reference midpoint (B12's VREF) gets a local net label near its node, and parked units are labelled unused, with connectivity unchanged.
