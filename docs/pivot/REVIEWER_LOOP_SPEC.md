@@ -1,7 +1,7 @@
 # Reviewer loop: spec for the next round of work
 
 **Status:** decisions recorded 2026-11-14; ready for implementation. Branch `mcp`.
-**Tracks:** `docs/MCP_ARCHITECTURE_TODO.md` P6-011g to P6-011s, under P6-011.
+**Tracks:** `docs/MCP_ARCHITECTURE_TODO.md` P6-011g to P6-011x, under P6-011.
 **Sources:**
 - the independent review `docs/ai_kicad_reviewer_independent_review_for_claude.md`, with recommendation IDs such as P0.3 and P1.4
 - the applied-edit index `docs/pivot/REVIEWER_APPLIED_EDITS.md`
@@ -302,6 +302,54 @@ Each R7 task proves itself on the rated drawings, regenerated under brief v11:
 - **Power blocks:** in B07, B09, B12 and B14, the power unit and decoupling form one readable block, separate from the signal lines, with exact connectivity.
 - **No regressions:** B06 and B13 do not get worse on the R2 and R7.3 measures, and B01, B02 and B07 stay at least as clear.
 - **Re-rating:** a new baseline regenerated under v11 is rated blind the same way as v10 (ChatGPT by owner decision), and the ratings are recorded. Fewer drawings rated defective than in v10 is evidence, not a gate.
+
+### R8 — Layout abilities for the reviewer (owner request, 2026-11-16)
+
+Under v10/v11 the reviewer chooses only from a menu of local edits (R3): label moves, 1–2 grid nudges and rail symbols. Most defects the baseline review found need bigger changes, which only the generator's steps (R7) can make, and the reviewer cannot ask for those. R8 lets it, without allowing unchecked edits.
+
+#### R8.1 — Fix the router failure first
+
+Every attempt to move the LED flasher's LED branch (R3 and D1) beside its driving pin failed with "no obstacle-free native wire route", including positions in visibly open space (P6-011p note). That failure is diagnosed and fixed, or explained, before any move that relies on rerouting is offered. Moves that cannot route cannot be offered.
+
+#### R8.2 — Generator candidates as menu entries
+
+- **Entry classes:** the generator steps' validated candidates become menu entries:
+  - connector re-orientation (mirror or move), R7.1
+  - block moves (parked unit, return connector, indicator), R7.2
+  - bypass-capacitor redraw, R7.4
+  - power-symbol re-aim, with a stub where needed, R7.4
+- **Applying an entry:** an entry means "replace the drawing with this pre-checked variant". Choosing it applies the scratch result, which must match the entry's recorded revision, as `choose_edit` already requires (R3.7). No new free-form edit language is added.
+- **Validation:** every entry passed a full scratch assessment in which no passing check fails.
+- **Do nothing:** the generator may still apply its own best candidate. The reviewer then sees that candidate's alternatives, plus a "keep the current drawing" choice.
+- **Reproducibility:** the new behaviour is behind a new brief (v12) or profile, so v1–v11 replay unchanged.
+
+#### R8.3 — Offer entries when every check passes
+
+After v11, most drawings pass every check but were still rated defective. The report-only measures decide when entries are offered:
+- R7.3 connector U-turns and detours
+- R7.2 return-connector distance from its power interface
+- R7.4 capacitor distance from the pin it serves
+- sideways power-block symbols
+
+Each entry shows the measure it improves, its predicted R2 and R7.3 deltas, and what it costs.
+
+#### R8.4 — New editor abilities
+
+Added only after R8.5 shows the reviewer's choices add value. Each has tests showing the netlist and ERC unchanged:
+- reroute one signal net (remove its wiring, route again)
+- rotate a two-pin part by 90°
+- move a whole functional block (for example a timer with its timing parts)
+
+#### R8.5 — Measure whether the reviewer's choices help
+
+- **Comparison:** on the R6 benchmark, compare three things, each rated blind by A/B: the generator's own best candidate, the reviewer's chosen entry, and "keep".
+- **Prerequisite:** the reviewer's choices only count as an improvement once they beat the generator's own choice. The menu's pre-checks guarantee safety, not quality.
+
+#### R8.6 — Budget
+
+- **Cap:** building the menu's generator entries has a per-round time and validation cap, set in the brief, like R3.4.
+- **Cache:** validations are cached per drawing revision.
+- **Report:** a round that runs out of budget says so (`budget_exhausted`).
 
 ## 4. Acceptance criteria
 

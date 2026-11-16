@@ -702,6 +702,39 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - **No overclaiming:** fewer defective ratings is reported as evidence, not as qualification.
 
     **Deps:** P6-011n, P6-011o, P6-011p, P6-011q, P6-011r; ChatGPT ratings supplied by the owner.
+  - **Note (2026-11-16):** The owner asked for the reviewer to be given the layout abilities it lacks. Tasks P6-011t to P6-011x implement spec R8. Order: t → u → v → w, with x only after w shows value.
+  - [ ] **P6-011t** Diagnose and fix the router failure behind the LED-branch moves (spec R8.1). **Acceptance:**
+    - **Diagnosis:** for at least one visibly open position (the flasher's R3 and D1 just right of U1, below J2), the cause of "no obstacle-free native wire route" is identified and recorded, with the blocking item named.
+    - **Fix:** a fix lets that move route, keeping the netlist and ERC passing. A regression test covers it.
+    - **Or explanation:** if the route is genuinely blocked, the reason is recorded and the move is reported as infeasible.
+
+    **Deps:** P6-011o.
+  - [ ] **P6-011u** Offer the generator steps' validated candidates as menu entries (spec R8.2, R8.6). **Acceptance:**
+    - **Entry classes:** connector re-orientation, block moves, bypass-capacitor redraw and power-symbol re-aim, each a pre-checked variant of the drawing.
+    - **Matching scratch:** a test shows `choose_edit` applies the entry and the result matches its scratch revision.
+    - **Keep:** a "keep the current drawing" choice is offered.
+    - **Brief v12:** the behaviour sits behind brief v12 (or a profile), and v1–v11 replay unchanged.
+    - **Budget:** a per-round time and validation cap is recorded, and `budget_exhausted` is reported.
+
+    **Deps:** P6-011t.
+  - [ ] **P6-011v** Offer those entries when every check passes, driven by the report-only measures (spec R8.3). **Acceptance:**
+    - **Triggers:** entries are offered for R7.3 detours, return-connector distance, capacitor distance and sideways power-block symbols.
+    - **Entry content:** each entry shows the measure it improves and its predicted R2 and R7.3 deltas.
+    - **Corpus test:** on the v11 corpus, entries appear on the drawings ChatGPT rated defective, and none worsens a passing check.
+
+    **Deps:** P6-011u.
+  - [ ] **P6-011w** Measure whether the reviewer's choices help (spec R8.5). **Acceptance:**
+    - **Runs:** on the R6 benchmark, record for each drawing the generator's own best candidate, the reviewer's chosen entry and "keep".
+    - **Ratings:** blind A/B ratings of the three are recorded.
+    - **Result:** the reviewer's choice is reported as adding value only if it beats the generator's own choice by the agreed margin.
+
+    **Deps:** P6-011v, P6-011l1; ratings supplied by the owner.
+  - [ ] **P6-011x** Add new editor abilities: reroute one signal net, rotate a two-pin part, move a whole functional block (spec R8.4). **Acceptance:**
+    - **Tests:** each ability keeps the netlist and ERC passing in tests on at least three corpus designs.
+    - **Menu entries:** each is offered as a pre-checked menu entry.
+    - **Ordering:** started only if P6-011w shows the reviewer's choices add value.
+
+    **Deps:** P6-011w.
 
 ## P7 — Conditional native KiCad extension/fork gate
 
