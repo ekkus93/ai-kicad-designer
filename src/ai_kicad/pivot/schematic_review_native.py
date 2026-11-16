@@ -2163,6 +2163,7 @@ class NativeSchematicEngine:
                 recorded = json.loads((attempt / "presentation.json").read_text())
                 flow = (
                     recorded["connector_flow"]
+                    + recorded.get("connector_flow_after_blocks", [])
                     + recorded.get("indicator_moves", [])
                     + recorded.get("block_moves", [])
                 )
@@ -2203,6 +2204,7 @@ class NativeSchematicEngine:
                 everything = {
                     item["connector"]
                     for item in recorded["connector_flow"]
+                    + recorded.get("connector_flow_after_blocks", [])
                     + recorded.get("indicator_moves", [])
                     + recorded.get("block_moves", [])
                 }
@@ -2288,6 +2290,26 @@ class NativeSchematicEngine:
             )
             schematic.write_text(text)
             presentation["indicator_moves"] = moves
+            if any(item.get("change") for item in moves):
+                # A moved block changes where its connectors belong: orient them again.
+                from .blocks import partition
+                from .connector_flow import orient_connectors_text
+
+                returns = frozenset(
+                    block["members"][0][0]
+                    for block in partition(self.design, parse(text))
+                    if block["role"] == "power_interface" and block.get("returns")
+                )
+                text, again = orient_connectors_text(
+                    text,
+                    self._compiler_inventory,
+                    self._connector_check,
+                    self._fields_ok,
+                    skip,
+                    returns,
+                )
+                schematic.write_text(text)
+                presentation["connector_flow_after_blocks"] = again
             text, moves, blocks = self._place_blocks(schematic, skip)
             schematic.write_text(text)
             presentation["block_moves"] = moves

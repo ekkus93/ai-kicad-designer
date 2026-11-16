@@ -321,6 +321,74 @@ def _clear_of_bodies(text: str, members: list[tuple[str, int]]) -> bool:
     )
 
 
+def _mark_rail_pins(
+    text: str, members: list[tuple[str, int]], nets: dict, rails: frozenset[str]
+) -> str:
+    """Put a power symbol of its rail on each moved rail pin no wire reaches."""
+    from ai_kicad.m2_geometry import point_on_segment
+    from ai_kicad.sexpr import children, one
+
+    from .power_symbols import (
+        _angle_for,
+        _append_forms,
+        _instance,
+        _wire_form,
+        _wire_segments,
+        power_symbols,
+    )
+
+    tree = parse(text)
+    symbols = power_symbols(tree)
+    segments = _wire_segments(tree)
+    units = _units(text)
+    instances = [n for symbol in children(tree, "symbol") for n in children(symbol, "instances")]
+    project_node = one(instances[0], "project")
+    project = (project_node[1], one(project_node, "path")[1])
+    used = {item["reference"] for item in symbols}
+    forms = []
+    for member in members:
+        item = units[member]
+        body = item["body"]
+        for pin in item["pins"]:
+            net = nets.get((member[0], pin["number"]))
+            point = pin["point"]
+            if net not in rails:
+                continue
+            if any(point_on_segment(point, *seg) for seg in segments) or any(
+                s["point"] == point for s in symbols
+            ):
+                continue
+            same = [s for s in symbols if s["net"] == net]
+            if not same:
+                raise ValueError(f"no {net} power symbol to copy")
+            lib_id = same[0]["lib_id"]
+            glyph = (0, 1) if lib_id == "power:GND" else (0, -1)
+            x, y = point
+            outward = (
+                (0, -1)
+                if y < body[1]
+                else (0, 1)
+                if y > body[3]
+                else (-1, 0)
+                if x < body[0]
+                else (1, 0)
+            )
+            number = 1
+            while f"#PWR{number:02d}" in used:
+                number += 1
+            reference = f"#PWR{number:02d}"
+            used.add(reference)
+            at = point
+            if outward != glyph:
+                # Out of the body first, then the glyph points its conventional way.
+                at = (x + outward[0] * 2 * GRID, y + outward[1] * 2 * GRID)
+                if outward == (-glyph[0], -glyph[1]):
+                    at = (x + 2 * GRID, y)
+                forms.append(_wire_form(point, at, net))
+            forms.append(_instance(lib_id, reference, net, at, _angle_for(lib_id, glyph), project))
+    return _append_forms(text, forms) if forms else text
+
+
 def indicator_drive(
     text: str, nets: dict, members: list[tuple[str, int]], rails: frozenset[str]
 ) -> tuple[str, dict, tuple[str, str]] | None:
@@ -437,17 +505,34 @@ def place_indicators_text(
                 continue
             if not _fits_the_page(text, candidate):
                 continue
-            # Its rail pins are re-marked by the rail planner later, so ERC and the
-            # observer cannot judge it yet: geometry here, the finished drawing in full.
             if not _clear_of_bodies(candidate, members):
                 reasons.append(f"{label}: overlaps another part")
-                continue
-            if not fields_ok(candidate):
-                reasons.append(f"{label}: a field check would report something new")
                 continue
             after = cost(candidate)
             if after >= before - 2 * GRID / 1e6:
                 reasons.append(f"{label}: drive distance {after:.2f} mm not shorter")
+                continue
+            # Its rail pins were left unwired: mark each with a local power symbol of
+            # its rail, as the rail planner does, so the drawing is complete again.
+            try:
+                candidate = _mark_rail_pins(candidate, members, nets, rails)
+            except (ValueError, KeyError) as error:
+                reasons.append(f"{label}: {error}")
+                continue
+            objection = layout_check(candidate)
+            if objection and not re.search(r"field overlaps body/label: (R|D)\d", objection):
+                reasons.append(f"{label}: layout check: {objection[:80]}")
+                continue
+            # The moved parts' own text moved with them: place it again where crowded.
+            for member in members:
+                if candidate is not None and not fields_ok(candidate):
+                    candidate = _replace_text(candidate, member, layout_check, fields_ok)
+            if candidate is None or not fields_ok(candidate) or layout_check(candidate):
+                reasons.append(f"{label}: no clear spot for the moved parts' text")
+                continue
+            failure = native_ok(candidate) if native_ok else None
+            if failure:
+                reasons.append(f"{label}: native check: {failure[:80]}")
                 continue
             chosen = (candidate, label, after)
             break
