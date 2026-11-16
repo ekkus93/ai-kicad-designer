@@ -631,8 +631,19 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - **Power blocks:** in B07, B09, B12 and B14 the power unit, its capacitors and its rail symbols form one block with consistent symbol directions, separate from the signal lines.
     - **555 control pin:** the 555 control-pin capacitor is a short local bypass from pin 5 to the return (B05).
     - **Safety:** the exact netlist, ERC and every check still pass. B01, B02 and B07 are not worse on R2 or R7.3.
-    - **Clean orientation (added 2026-11-16 with owner approval, from ChatGPT's flasher review):** among valid placements of a capacitor serving an IC pin, the one whose return symbol needs no stub and that keeps a grid step from other nets' pins and wires is preferred. The flasher's C2 is placed without running alongside pin 8's VCC wire.
+    - **Clean orientation (revised 2026-11-16 with owner approval, per `docs/ai_kicad_generator_open_problems_chatgpt_solution_2026-11-16.md` §C and §H):**
+      - A report-only parallel-exposure measure flags the flasher's C2 run beside U1.8.
+      - A bounded search (12 geometric candidates, 3 native assessments, counts and time recorded) offers route-shape candidates that turn away from the neighbouring pin. One is kept only if it lowers the exposure with every check passing.
+      - Otherwise a documented no-safe-improvement outcome is recorded.
+      - A synthetic neighbouring-pin case shows unavoidable short pin exits are not penalised.
     - **Grouping after the second connector pass (added 2026-11-16 with owner approval):** on the flasher, J3 is grouped with J1 after the second connector pass.
+    - **Rail localization (added 2026-11-16 with owner approval, per the same document §B):**
+      - J3's shared REF branch is detached, the remaining REF terminals (C1 and the others) are kept on REF by local symbols, and J3 is moved beside J1.
+      - The native pin partition is unchanged, ERC passes, and the power flag still marks REF.
+      - The regulator and both timer_astable variants do not regress.
+      - A deliberate short is rejected before it becomes the current drawing.
+    - **dual_rail_reference (per §D):** both supply-to-VREF capacitors are recognised and placed locally, with nets unchanged. One other non-ground-reference example is tested.
+    - **Sideways VPLUS arrows (per §E):** a bounded whole-power-block search improves them where feasible and records a constrained outcome otherwise.
 
     **Deps:** P6-011o.
     **Progress (2026-11-16):** `src/ai_kicad/pivot/supply_blocks.py` runs under v11 after block placement.
