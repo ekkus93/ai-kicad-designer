@@ -76,6 +76,7 @@ from .edit_menu import (
 )
 from .design_flags import design_review_flags
 from .net_detours import pin_pair_detours
+from .parallel_exposure import parallel_exposure
 from .quality_measures import measure_quality
 from .readability_checks import (
     FRAME,
@@ -2830,6 +2831,11 @@ class NativeSchematicEngine:
             report["net_detours"] = pin_pair_detours(parse(text), terminal_inventory)
         except (ValueError, KeyError, IndexError, TypeError) as error:
             report["net_detours"] = {"error": f"net detours failed: {error}"}
+        # R7.4 close parallel runs of different nets: reported only.
+        try:
+            report["parallel_exposure"] = parallel_exposure(parse(text), terminal_inventory)
+        except (ValueError, KeyError, IndexError, TypeError) as error:
+            report["parallel_exposure"] = {"error": f"parallel exposure failed: {error}"}
         write_json(directory / "assessment.json", report)
         return SchematicAssessment(schematic, images, report)
 
