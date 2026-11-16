@@ -73,7 +73,14 @@ def test_return_connector_distance_is_reported():
     assert row["distance_mm"] > 15.24
 
 
-V11 = ["rc_to_buffer", "dual_rail_reference", "sallen_key", "linear_regulator", "timer_astable"]
+V11 = [
+    "rc_to_buffer",
+    "dual_rail_reference",
+    "sallen_key",
+    "linear_regulator",
+    "timer_astable",
+    "reference_555_led_flasher_v8",
+]
 
 
 @pytest.fixture(scope="module")
@@ -135,14 +142,23 @@ def test_parked_unit_sits_next_to_its_active_sibling(v11, name):
     assert any(m.get("block") == "parked" and m.get("change") for m in moves)
 
 
-@pytest.mark.parametrize("name", ["linear_regulator", "timer_astable"])
+@pytest.mark.parametrize(
+    "name", ["linear_regulator", "timer_astable", "reference_555_led_flasher_v8"]
+)
 def test_return_connector_joins_its_power_interface(v11, name):
     """The L7805 regulator and the 555 timer: J3 moves, as one unit with its REF symbol,
-    power flag and private wires, to sit with the supply connector J1."""
+    power flag and private wires, to sit with the supply connector J1.
+
+    The flasher (2026-11-16, R7.2 rail localization): J3 shared a REF wire with C1. Its
+    branch is detached, C1 keeps REF through its own symbol, and J3 gets a local REF
+    symbol beside J1."""
     tree, report, directory = v11[name]
     (row,) = report["return_connector_distances"]
-    assert row["connector"] == "J3" and row["nearest_interface_part"] == "J1"
+    assert row["connector"] == "J3"
     assert row["distance_mm"] <= 17.78
+    units = {(i["reference"], i["unit"]): i for i in _instances(tree)}
+    j1, j3 = units[("J1", 1)]["body"], units[("J3", 1)]["body"]
+    assert abs(j1[0] - j3[0]) + abs(j1[1] - j3[1]) <= 17.78e6, (j1, j3)
     moves = json.loads((directory / "presentation.json").read_text())["block_moves"]
     (move,) = [m for m in moves if m.get("block") == "power_interface"]
     assert move["change"] and move["with"] == "J1"
@@ -150,6 +166,37 @@ def test_return_connector_joins_its_power_interface(v11, name):
     # and the netlist and ERC are unchanged (every check passes, above).
     assert report["checks"]["electrical_equivalence"] == "PASS"
     assert report["checks"]["erc"] == "PASS"
+
+
+def test_a_move_the_native_check_refuses_never_becomes_the_drawing():
+    """R7.2 rail localization: a candidate whose native check fails (a lost or merged
+    connection) is refused, and the drawing is left as it was."""
+    from ai_kicad.pivot.block_moves import _try_moves
+
+    directory = (
+        ROOT
+        / "fixtures/pivot/experiments/supply_blocks_v11_2026-11-16_run3"
+        / "reference_555_led_flasher_v8"
+    )
+    text = Path(glob.glob(str(directory / "project/*.kicad_sch"))[0]).read_text()
+    report = json.loads((directory / "assessment.json").read_text())
+    nets = {(t["reference"], t["pin"]): t["net"] for t in report["terminal_inventory"]}
+    checked = []
+    candidate, label, reasons = _try_moves(
+        text,
+        ("J3", 1),
+        [(-27_940_000, -62_230_000)],
+        nets,
+        lambda _text: None,
+        lambda _text, _tolerate=None: True,
+        frozenset(),
+        lambda candidate: checked.append(candidate) or "electrical_equivalence fail",
+        (),
+        frozenset({"REF"}),
+    )
+    assert candidate is None and label is None
+    assert checked and checked[0] != text, "the localized candidate was built and checked"
+    assert reasons and "native check: electrical_equivalence" in reasons[0], reasons
 
 
 def test_an_indicator_is_driven_by_its_signal_net_never_a_rail():

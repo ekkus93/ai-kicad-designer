@@ -130,11 +130,17 @@ def _try_moves(
     skip: frozenset[str],
     native_ok: Callable[[str], str | None] | None = None,
     neighbours: tuple[tuple[str, int], ...] = (),
+    rails: frozenset[str] = frozenset(),
 ) -> tuple[str | None, str | None, list[str]]:
     """The first delta, in order, whose move validates; with its label and the refusals.
 
     `neighbours` are parts the moved one joins (a supply connector for a return
     connector): their text may be placed again too when the move crowds it.
+
+    `rails` are asserted rail nets the move may localize (R7.2): a moved pin's branch of
+    a shared rail wire is detached instead of rerouted, and every pin of those rails left
+    without a wire or symbol gets a local power symbol of its rail. The full native
+    check still decides, so a lost or merged connection refuses the move.
     """
     from .connector_flow import current_inventory
     from .schematic_review import MoveUnits
@@ -155,7 +161,14 @@ def _try_moves(
             dy_mm=dy / 1e6,
         )
         try:
-            candidate = move_symbols_text(text, action, current_inventory(text, nets))
+            moved = move_symbols_text(text, action, current_inventory(text, nets), drop_nets=rails)
+            candidate = moved
+            if rails:
+                # A local symbol's text can cover the pin number beside it: a longer stub.
+                for stub in (2, 3, 4):
+                    candidate = _mark_rail_pins(moved, list(_units(moved)), nets, rails, stub)
+                    if "visible pin number" not in (layout_check(candidate) or ""):
+                        break
         except (ValueError, KeyError) as error:
             reasons.append(f"{label}: {error}")
             continue
@@ -311,7 +324,16 @@ def place_blocks_text(
             ),
         )
         candidate, label, reasons = _try_moves(
-            text, key, deltas, nets, layout_check, fields_ok, skip, native_ok, (supply,)
+            text,
+            key,
+            deltas,
+            nets,
+            layout_check,
+            fields_ok,
+            skip,
+            native_ok,
+            (supply,),
+            frozenset(block["returns"]),
         )
         if candidate is not None:
             text = candidate
@@ -348,9 +370,14 @@ def _clear_of_bodies(text: str, members: list[tuple[str, int]]) -> bool:
 
 
 def _mark_rail_pins(
-    text: str, members: list[tuple[str, int]], nets: dict, rails: frozenset[str]
+    text: str,
+    members: list[tuple[str, int]],
+    nets: dict,
+    rails: frozenset[str],
+    stub: int = 2,
 ) -> str:
-    """Put a power symbol of its rail on each moved rail pin no wire reaches."""
+    """Put a power symbol of its rail on each moved rail pin no wire reaches; when the
+    glyph cannot point its way straight from the pin, on a stub of `stub` grid steps."""
     from ai_kicad.m2_geometry import point_on_segment
     from ai_kicad.sexpr import children, one
 
@@ -407,9 +434,9 @@ def _mark_rail_pins(
             at = point
             if outward != glyph:
                 # Out of the body first, then the glyph points its conventional way.
-                at = (x + outward[0] * 2 * GRID, y + outward[1] * 2 * GRID)
+                at = (x + outward[0] * stub * GRID, y + outward[1] * stub * GRID)
                 if outward == (-glyph[0], -glyph[1]):
-                    at = (x + 2 * GRID, y)
+                    at = (x + stub * GRID, y)
                 forms.append(_wire_form(point, at, net))
             forms.append(_instance(lib_id, reference, net, at, _angle_for(lib_id, glyph), project))
     return _append_forms(text, forms) if forms else text
