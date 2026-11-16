@@ -631,6 +631,8 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - **Power blocks:** in B07, B09, B12 and B14 the power unit, its capacitors and its rail symbols form one block with consistent symbol directions, separate from the signal lines.
     - **555 control pin:** the 555 control-pin capacitor is a short local bypass from pin 5 to the return (B05).
     - **Safety:** the exact netlist, ERC and every check still pass. B01, B02 and B07 are not worse on R2 or R7.3.
+    - **Clean orientation (added 2026-11-16 with owner approval, from ChatGPT's flasher review):** among valid placements of a capacitor serving an IC pin, the one whose return symbol needs no stub and that keeps a grid step from other nets' pins and wires is preferred. The flasher's C2 is placed without running alongside pin 8's VCC wire.
+    - **Grouping after the second connector pass (added 2026-11-16 with owner approval):** on the flasher, J3 is grouped with J1 after the second connector pass.
 
     **Deps:** P6-011o.
     **Progress (2026-11-16):** `src/ai_kicad/pivot/supply_blocks.py` runs under v11 after block placement.
@@ -702,6 +704,11 @@ These features are **planned**, not prerequisites for P4 except when a specific 
       - a loop result with flags is still accepted, with `DESIGN_REQUIREMENTS_CHECKED` `PENDING`
       - a KiCad assessment of linear_regulator carries its flag, with every check passing and no flag among the checks
     - **Pivot suite:** 566 passed, 1 deselected.
+  - [ ] **P6-011r2** Report an active-low indicator LED as a design-review flag (spec R7.6, added 2026-11-16 with owner approval from ChatGPT's flasher review). **Acceptance:**
+    - **Flag:** `design_review_flags` includes `indicator_active_low` when an LED sits in series between a resistor from a supply and a driving IC pin (the 555 LED flasher), and not otherwise.
+    - **No effect:** it changes no check.
+
+    **Deps:** P6-011r.
   - [ ] **P6-011s** Regenerate and re-rate the baseline under brief v11 (spec R7.7). **Acceptance:**
     - **Baseline:** a new baseline (`review_baseline_v11_<date>_runN`) is built with `tools/pivot/build_review_baseline.py`.
     - **Acceptance tests:** every R7.7 test is run and recorded against it.

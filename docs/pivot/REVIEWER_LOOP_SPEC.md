@@ -265,6 +265,7 @@ ChatGPT rated the v10 baseline (`review_baseline_v10_2026-11-14_run1`): 5 good a
 - **Power interface:** supply, output and return connectors form one power-interface group. The return connector sits with the supply entry, or on the return row, not wherever the nearest pin of its net happens to be. This comes from ChatGPT's review of the v11 regulator (`docs/ai_kicad_connector_flow_v11_linear_regulator_review_for_claude.md`), where J3 stayed stranded at the top left.
 - **Moving as a unit:** a connector or block moves together with its power symbols, power flags, labels and private wires, as one candidate. The candidate is validated as a unit and rolled back as a unit.
 - **Interface measure:** report each return connector's distance from its power-interface block. It is report-only, and tested on more than one circuit family, so the rule is not specific to the L7805.
+- **Grouping after later moves (added 2026-11-16, ChatGPT flasher review):** a return connector is grouped with its supply connector after every step that moves the supply connector, including the second connector pass. When grouping makes the supply connector's text crowded, that text may be placed again too.
 
 #### R7.3 — Per-net structural detour measure (review P1)
 
@@ -277,6 +278,7 @@ ChatGPT rated the v10 baseline (`review_baseline_v10_2026-11-14_run1`): 5 good a
 - **Decoupling:** each decoupling capacitor is placed beside the supply pin it serves, between that pin and its return, with matching local power symbols. The v8/v9 power block for op-amp power units is the first case of this rule.
 - **Power sections:** a power unit, its capacitors and its rail symbols form one compact block with consistent symbol directions. This covers the sideways VPLUS/VMINUS/REF symbols in B09 and B14 and the loop in B12.
 - **555 control pin:** the 555 control-pin capacitor is placed as a local bypass from pin 5 to the return, distinct from supply decoupling, without a long detour (B05).
+- **Clean orientation (added 2026-11-16, ChatGPT flasher review):** among valid placements of a capacitor serving an IC pin, prefer the one whose return symbol points its conventional way without a stub, and that keeps at least a grid step of clearance from other nets' pins and wires. This applies to any IC, not only the 555.
 
 #### R7.5 — Drawing conventions (review P2)
 
@@ -292,6 +294,7 @@ ChatGPT rated the v10 baseline (`review_baseline_v10_2026-11-14_run1`): 5 good a
   - a resistor-divider reference used as a midpoint rail (Thevenin impedance reported; B12)
   - a linear regulator whose datasheet stability, dropout and thermal checks are not recorded (B03)
   - op-amp common-mode and output swing against the defined rails, not verified
+- **Indicator polarity (added 2026-11-16, ChatGPT flasher review):** a flag also reports an indicator LED driven so that it lights when its drive pin goes low (supply → resistor → LED → drive pin), so the intended polarity can be confirmed.
 - **Status:** `DESIGN_REQUIREMENTS_CHECKED` stays `PENDING` (R1).
 
 #### R7.7 — Acceptance tests on the rated baseline (review "acceptance tests")
