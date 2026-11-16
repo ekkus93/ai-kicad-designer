@@ -661,6 +661,13 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - **Sideways VPLUS arrows:** dual_buffer, noninverting_gain and sallen_key (B14).
     - **dual_rail_reference (B12):** its capacitors to the VREF midpoint are not treated as decoupling.
     - **Not yet measured:** B01, B02 and B07 against v10 on R2 and R7.3.
+    **Progress (2026-11-16, after P6-011t):** with the LED branch beside its driver, the B05 LED flasher's C2 is redrawn 6.35 mm straight above CONT (pin 5) on a direct wire, as on B10 and B15. `supply_blocks_v11_2026-11-16_run3` at `60a741d5` has all 15 designs passing every check.
+    **Note:** still unchecked. Open items:
+    - sideways VPLUS arrows on dual_buffer, noninverting_gain and sallen_key (B14)
+    - dual_rail_reference's VREF-midpoint capacitors are not treated as decoupling
+    - B01, B02 and B07 are not yet measured against v10
+
+    New on the flasher: two VCC arrows side by side at J1 and R1, and J3 apart from J1, because return-connector grouping runs before the second connector pass.
   - [ ] **P6-011q** Apply the R7.5 drawing conventions (spec R7.5). **Acceptance:**
     - **Ground symbols:** IC return symbols point down where a downward position is clear, fixing B10 and B15's sideways symbol under U1.
     - **Labels:** a generated reference midpoint (B12's VREF) gets a local net label near its node, and parked units are labelled unused, with connectivity unchanged.
@@ -703,12 +710,22 @@ These features are **planned**, not prerequisites for P4 except when a specific 
 
     **Deps:** P6-011n, P6-011o, P6-011p, P6-011q, P6-011r; ChatGPT ratings supplied by the owner.
   - **Note (2026-11-16):** The owner asked for the reviewer to be given the layout abilities it lacks. Tasks P6-011t to P6-011x implement spec R8. Order: t → u → v → w, with x only after w shows value.
-  - [ ] **P6-011t** Diagnose and fix the router failure behind the LED-branch moves (spec R8.1). **Acceptance:**
+  - [x] **P6-011t** Diagnose and fix the router failure behind the LED-branch moves (spec R8.1). **Acceptance:**
     - **Diagnosis:** for at least one visibly open position (the flasher's R3 and D1 just right of U1, below J2), the cause of "no obstacle-free native wire route" is identified and recorded, with the blocking item named.
     - **Fix:** a fix lets that move route, keeping the netlist and ERC passing. A regression test covers it.
     - **Or explanation:** if the route is genuinely blocked, the reason is recorded and the move is reported as infeasible.
 
     **Deps:** P6-011o.
+    **Evidence (2026-11-16):**
+    - **Diagnosis:** the router was not at fault. `place_indicators_text` chose the LED branch's driving pin by looping over both parts' pins and keeping the last match, which was R3's VCC pin. The candidates were therefore aimed at R1 on the VCC rail, in the crowded space between the timing ladder and J2, where the OUT net really has no route. On the drawing captured at the block step, moves aimed at the real driver, U1 pin 3, routed (+40.6 and +50.8 mm).
+    - **Fix:** `indicator_drive` (`src/ai_kicad/pivot/block_moves.py`) never lets a rail net drive a block. This rule is now in spec R7.2, owner-approved. Two follow-ons were needed:
+      - the moved block's rail pins get a local power symbol (`_mark_rail_pins`), because the step runs after the rail planner
+      - the moved parts' text is placed again
+    - **Second connector pass:** after a block moves, the connector step runs again, so the flasher's J2 moves to the right end of OUT.
+    - **Result:** the LED flasher's R3 and D1 move right of U1, driven from OUT. With every check passing, this freed the space above pin 5 for C2.
+    - **Regression test:** `tests/pivot/test_block_placement.py::test_an_indicator_is_driven_by_its_signal_net_never_a_rail`. It fails on the earlier code and passes now.
+    - **Corpus:** `fixtures/pivot/experiments/supply_blocks_v11_2026-11-16_run3` at `60a741d5`. All 15 designs pass every check.
+    - **Pivot suite:** 613 passed, 1 deselected.
   - [ ] **P6-011u** Offer the generator steps' validated candidates as menu entries (spec R8.2, R8.6). **Acceptance:**
     - **Entry classes:** connector re-orientation, block moves, bypass-capacitor redraw and power-symbol re-aim, each a pre-checked variant of the drawing.
     - **Matching scratch:** a test shows `choose_edit` applies the entry and the result matches its scratch revision.
