@@ -708,7 +708,29 @@ These features are **planned**, not prerequisites for P4 except when a specific 
       - **dual_rail_reference:** C1 (VPLUS, U1.8) and C2 (VMINUS, U1.4) are both recognised with return VREF. They are already local and direct (15.24 and 20.32 mm), so the step keeps them.
       - **Drawing unchanged:** the regenerated drawing matches `rail_localization_v11_2026-11-17_run1` apart from wire UUIDs. The bounded route search tried C2 against the VMINUS/VREF run and recorded no safe improvement (12 geometric, 0 native).
       - **Tests:** `tests/pivot/test_supply_references.py`, 4 passed. It covers B12, a second non-ground example (a VCC/GND mid-rail divider), a pull-up that is not a reference, and rail capacitors staying rail.
-    - **Still open:** the sideways VPLUS arrows (§E); B01, B02 and B07 against v10.
+    - **Sideways VPLUS arrows (§E clause met, 2026-11-17):**
+      - **Code:** `_try_block_reaim` (`src/ai_kicad/pivot/supply_blocks.py`) re-aims a symbol that cannot turn in place together with its block.
+        - The arrow goes out along the glyph's direction, then a short jog.
+        - The text of the unit whose pin it marks is placed again.
+        - Added wire is at most 6.35 mm, with at most 12 geometric candidates and 3 native assessments. The record is in `block_moves[].block_search`.
+        - Re-aims that would collide are now refused before the native assessment. That assessment runs the same `power_symbol_collisions` geometry, so no outcome changes.
+      - **Corpus:** `fixtures/pivot/experiments/supply_blocks_v11_2026-11-17_run1` at `84a5b09a`. All 15 designs pass every check, and no power-block symbol is inconsistent.
+        - dual_buffer, noninverting_gain and sallen_key each turn VPLUS up 3.81 mm out with a −2.54 mm jog. U1C's text moves aside.
+        - Each search took 8 geometric candidates, 1 native assessment, and 4.8–5.7 s.
+      - **Tests:** `tests/pivot/test_block_placement.py::test_a_sideways_supply_arrow_is_re_aimed_with_its_block`. The affected modules ran 55 passed.
+    - **B01, B02 and B07 against v10 (clause NOT met; owner decision needed):**
+      - **R7.3:** recomputed on the v10 drawings, which predate the measure. Detour excess is identical: B01 106.68, B02 73.66, B07 73.66 mm, with no box leaves or U-turns.
+      - **R2, B07 (inverting_gain):** unchanged (wire 214.63 mm, 8 bends, text clearance 1.27 mm).
+      - **R2, B01 (dual_buffer) and B02 (noninverting_gain), worse:**
+        - wire 226.06 → 237.49 and 233.68 → 245.11 mm
+        - bends 10 → 11 and 9 → 10
+        - text clearance 2.8 → 0.5 and 0.42 mm
+      - **Traced across the run directories:**
+        - The text clearance and occupied area changed with the parked-unit move (P6-011n, `block_placement_v11_2026-11-14_run1`).
+        - +5.08 mm wire came with the return-symbol stubs (`supply_blocks_v11_2026-11-16_run1`).
+        - +6.35 mm wire and one bend came with today's VPLUS block re-aim.
+      - **The conflict:** the wire and bend increases are the cost of the conventional glyph directions this same task requires, so "not worse on R2" conflicts with the re-aim clauses.
+      - **Owner decision needed:** accept these R2 increases as the price of conventional glyphs, or keep the sideways glyphs on these designs. The text-clearance loss may be fixable on its own by placing U1B's text again after the parked-unit move.
   - [ ] **P6-011q** Apply the R7.5 drawing conventions (spec R7.5). **Acceptance:**
     - **Ground symbols:** IC return symbols point down where a downward position is clear, fixing B10 and B15's sideways symbol under U1.
     - **Labels:** a generated reference midpoint (B12's VREF) gets a local net label near its node, and parked units are labelled unused, with connectivity unchanged.
