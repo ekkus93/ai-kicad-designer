@@ -9,6 +9,10 @@ from __future__ import annotations
 
 import re
 
+# Parts whose value is a quantity, and such a value followed by other words.
+QUANTITY_ASSETS = {"Device:R", "Device:C", "Device:L", "Device:C_Polarized"}
+QUANTITY_WITH_WORDS = re.compile(r"^\s*[0-9][0-9.,]*\s*[a-zA-Zµμ]{0,3}\s+\S")
+
 # Supply pins by part family: (positive, return or negative).
 TIMER_SUPPLY = ("8", "1")
 OPAMP_SUPPLY = ("8", "4")
@@ -133,6 +137,19 @@ def design_review_flags(design: dict) -> list[dict]:
                     "detail": f"{net['id']} is a resistor divider between {a} and {b}"
                     + (f" with about {thevenin / 1e3:g} kΩ source impedance" if thevenin else "")
                     + "; it is not a stiff reference unless buffered, so its loads need review",
+                }
+            )
+    # A component value mixing the quantity with other words (B04's "12.4k precision"):
+    # a design-data issue to report; the generator never rewrites intended-circuit data.
+    for part in sorted(parts.values(), key=lambda item: item["refdes"]):
+        value = str(part.get("value") or "")
+        if part["asset"] in QUANTITY_ASSETS and QUANTITY_WITH_WORDS.match(value):
+            flags.append(
+                {
+                    "flag": "value_mixes_words",
+                    "parts": [part["refdes"]],
+                    "detail": f"{part['refdes']} value {value!r} mixes the quantity with other "
+                    "words; record the extra words (tolerance, grade) as their own field",
                 }
             )
     return flags

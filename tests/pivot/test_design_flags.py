@@ -21,6 +21,7 @@ EXPECTED = {
     "divider_reference": {"dual_rail_reference"},
     "regulator_datasheet_checks_unrecorded": {"linear_regulator"},
     "indicator_active_low": {"reference_555_led_flasher_v8"},
+    "value_mixes_words": {"led_long_text"},
     "opamp_swing_unverified": {
         "dual_buffer",
         "dual_rail_reference",
