@@ -839,6 +839,21 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - **No overclaiming:** fewer defective ratings is reported as evidence, not as qualification.
 
     **Deps:** P6-011n, P6-011o, P6-011p, P6-011q, P6-011r; ChatGPT ratings supplied by the owner.
+
+    **Evidence so far (2026-11-17, partial: the re-rating is pending):**
+    - **Baseline:** `fixtures/pivot/experiments/review_baseline_v11_2026-11-17_run1`, built by `tools/pivot/build_review_baseline.py --review-brief fixtures/pivot/schematic_review_brief_v11.json` at `71e800b4`. It holds 15 drawings, every check passing, and 60 injected-defect cases with no failures. The blind images, `blind_key.json` and `rating_page.html` are in the run directory.
+    - **Acceptance tests:** `tools/pivot/run_r77_acceptance.py` records `r77_acceptance.json` in the baseline. Codes are mapped through the v10 blind key.
+      - **Pass:**
+        - U-turns: B04, B08 and B11, with no connector U-turn over 2.54 mm.
+        - Regulator flow: B03, with J1 left and J2 right of U1 and the capacitors local and direct.
+        - 555 output: B05, B10 and B15, where OUT reaches J2 without leaving the part box or U-turning.
+        - Power blocks: B07, B09, B12 and B14, with every check passing, no intrusions and local decoupling.
+        - No regressions: B06, B13 and B07.
+      - **Fail:**
+        - B01 (dual_buffer): wire 226.06 → 231.14 mm, the owner-accepted return-symbol stubs.
+        - B02 (noninverting_gain): the same +5.08 mm, plus the R7.3 R1.2–U1.1 box leave, a multi-unit boxing artefact pending an owner decision (see the P6-011p correction).
+      - **Tests:** `tests/pivot/test_r77_acceptance.py` reproduces the recorded results and pins them (2 passed).
+    - **Re-rating:** pending. ChatGPT's blind ratings of `blind/` (format `baseline-ratings.v1`, as `review_baseline_v10_2026-11-14_run1/ratings/chatgpt.json`) are to be supplied by the owner.
   - **Note (2026-11-16):** The owner asked for the reviewer to be given the layout abilities it lacks. Tasks P6-011t to P6-011x implement spec R8. Order: t → u → v → w, with x only after w shows value.
   - [x] **P6-011t** Diagnose and fix the router failure behind the LED-branch moves (spec R8.1). **Acceptance:**
     - **Diagnosis:** for at least one visibly open position (the flasher's R3 and D1 just right of U1, below J2), the cause of "no obstacle-free native wire route" is identified and recorded, with the blocking item named.
