@@ -2358,6 +2358,15 @@ class NativeSchematicEngine:
             )
             schematic.write_text(text)
             presentation["convention_moves"] = labels + notes
+            # R7.5 jogs and junctions: hooks straightened, idle dots removed, collinear
+            # wires merged, each kept only when every native check still passes.
+            from .wire_cleanup import simplify_wires_text
+
+            text, cleanup = simplify_wires_text(
+                text, self._connector_check, self._fields_ok, self._native_checker(schematic)
+            )
+            schematic.write_text(text)
+            presentation["wire_cleanup"] = cleanup
         if getattr(self, "page_balance", False):
             # Last, once every part, wire and field has its final place.
             text, centring = centre_on_page_text(schematic.read_text())
