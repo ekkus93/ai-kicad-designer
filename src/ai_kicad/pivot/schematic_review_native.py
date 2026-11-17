@@ -2340,6 +2340,24 @@ class NativeSchematicEngine:
             )
             schematic.write_text(text)
             presentation["text_clearance_moves"] = moves
+            # R7.5 conventions: a divider midpoint is named by a local label, and a parked
+            # unit is noted as unused (presentation only).
+            from .conventions import label_reference_nets_text, mark_unused_units_text
+
+            nets = {(i["reference"], i["pin"]): i["net"] for i in self._compiler_inventory}
+            text, labels = label_reference_nets_text(
+                schematic.read_text(),
+                self.design,
+                nets,
+                self._connector_check,
+                self._fields_ok,
+                self._native_checker(schematic),
+            )
+            text, notes = mark_unused_units_text(
+                text, self.design, self._connector_check, self._fields_ok
+            )
+            schematic.write_text(text)
+            presentation["convention_moves"] = labels + notes
         if getattr(self, "page_balance", False):
             # Last, once every part, wire and field has its final place.
             text, centring = centre_on_page_text(schematic.read_text())
