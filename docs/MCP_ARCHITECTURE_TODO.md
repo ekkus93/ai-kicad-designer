@@ -757,7 +757,7 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - "Power blocks ... consistent symbol directions" for B14: sallen_key's VPLUS arrow stays sideways.
     - "Sideways VPLUS arrows ... improves them where feasible": an improvement was feasible and was removed.
     - Checking P6-011p needs the owner to revise these clauses (for example, to "sideways supply glyphs kept by owner decision").
-  - [ ] **P6-011q** Apply the R7.5 drawing conventions (spec R7.5). **Acceptance:**
+  - [x] **P6-011q** Apply the R7.5 drawing conventions (spec R7.5). **Acceptance:**
     - **Ground symbols:** IC return symbols point down where a downward position is clear, fixing B10 and B15's sideways symbol under U1.
     - **Labels:** a generated reference midpoint (B12's VREF) gets a local net label near its node, and parked units are labelled unused, with connectivity unchanged.
     - **Values:** values mixing extra words (B04) are reported as a design-data issue, and the design file is unchanged.
@@ -765,6 +765,26 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - **Safety:** every check still passes.
 
     **Deps:** P6-011p.
+
+    **Evidence (2026-11-17):**
+    - **Corpus:** `fixtures/pivot/experiments/conventions_v11_2026-11-17_run2` at `ef4bf0cb`. All 15 designs pass every check, KiCad netlist equivalence and ERC included. Against `text_clearance_v11_2026-11-17_run1`, wire length, bends and text clearance are unchanged on every design except the regulator, which improves: wire 125.73 → 124.46 mm, bends 5 → 4.
+    - **Ground symbols:** B10 and B15 (timer_astable_gnd, timer_astable) have every power-block return symbol pointing down, fixed under P6-011p. Test: `tests/pivot/test_drawing_conventions.py::test_ic_return_symbols_point_down`.
+    - **Labels:** `src/ai_kicad/pivot/conventions.py`.
+      - `label_reference_nets_text` gives each divider midpoint without a label a local label with its intended name, at the wire point nearest the divider node. It uses a budget of 12 geometric candidates and 3 native assessments. B12's VREF is labelled at the R1/R2 junction with one native check.
+      - `mark_unused_units_text` adds an "unused" text note beside each parked unit. The note is clear of bodies, fields, pin lines and wires by two grid steps, and nearer its own unit than any other part. It is on U1 unit 2 in all six op-amp designs.
+      - Tests: `test_a_divider_midpoint_is_labelled_with_connectivity_unchanged` and `test_parked_units_are_noted_unused`.
+    - **Values:** `design_review_flags` reports `value_mixes_words` for a resistor, capacitor or inductor whose value is a quantity followed by words. It fires only on B04's `R123` (`12.4k precision`). Connector and LED names are not flagged, and the design file is unchanged. Tests: `tests/pivot/test_design_flags.py` and `test_a_quantity_value_with_words_is_reported_and_the_design_is_unchanged`.
+    - **Jogs and junctions:** `simplify_wires_text` (`src/ai_kicad/pivot/wire_cleanup.py`).
+      - It straightens short hooks and jogs onto a crossing wire, removes wires lying inside another, removes junction dots where fewer than three directions meet, and merges collinear wires.
+      - Each change is kept only if the observer, field checks and a native assessment (netlist and ERC) pass, and no part text comes closer than 1.27 mm to a wire.
+      - The regulator's U1 pin-2 return now drops straight onto the REF bus, and its idle dot is gone. Test: `test_the_regulator_return_jog_is_straightened_with_connectivity_unchanged`.
+      - Refusals are recorded:
+        - the J1 hump: text would come 0.68 mm from a wire; an earlier run also failed ERC
+        - led_reverse_supply's hooks: 0.42 mm (`test_cleanup_never_brings_text_close_to_a_wire`)
+        - a sallen_key hook: the observer needs its junction
+      - Collinear merges: 2–10 per design.
+    - **Tests:** `tests/pivot/test_drawing_conventions.py` and `tests/pivot/test_design_flags.py` ran 21 passed, 1 skipped (the KiCad test without `AI_KICAD_APPRUN`).
+    - **Superseded run:** `conventions_v11_2026-11-17_run1` lowered led_reverse_supply's text clearance (1.69 → 0.42 mm) before the text guard was added. It is not committed.
   - [x] **P6-011r** Report R7.6 design-review flags (spec R7.6). **Acceptance:**
     - **Flags:** every result carries `design_review_flags` for:
       - 555 supply bypass missing (B05, B10, B15)
