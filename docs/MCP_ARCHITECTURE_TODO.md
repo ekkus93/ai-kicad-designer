@@ -703,7 +703,12 @@ These features are **planned**, not prerequisites for P4 except when a specific 
       - 11 are environment failures: `test_direct_backend.py` (10) and `test_engineering.py::test_real_ngspice_transient_matches_analytical_limit` get `PermissionError` on the desktop-only `/home/phil/Applications/...` kicad-cli and ngspice.
       - `test_field_layout.py::test_compile_gives_labels_room_before_and_after_the_rails` failed while a corpus run shared the machine, and passed when re-run alone.
     - **Earlier run, not used as evidence:** `rail_localization_v11_2026-11-16_run1` also passes on all 15. Its `source_commit` names `8eff90c6`, but it ran the code of `b1ab9320`, because commits were made during the run. It was superseded by the 2026-11-17 run and is not committed.
-    - **Still open:** dual_rail_reference's supply-to-VREF capacitors (§D); the sideways VPLUS arrows (§E); B01, B02 and B07 against v10.
+    - **Supply-to-reference capacitors (§D clause met, 2026-11-17):**
+      - **Code:** `reference_nets` (`src/ai_kicad/pivot/supply_blocks.py`) recognises a divider midpoint from the circuit: a net joined through resistors to two different supply or rail nets. `served_pins` then counts a capacitor from a supply pin's net to it as decoupling, with `return_kind: "reference"`.
+      - **dual_rail_reference:** C1 (VPLUS, U1.8) and C2 (VMINUS, U1.4) are both recognised with return VREF. They are already local and direct (15.24 and 20.32 mm), so the step keeps them.
+      - **Drawing unchanged:** the regenerated drawing matches `rail_localization_v11_2026-11-17_run1` apart from wire UUIDs. The bounded route search tried C2 against the VMINUS/VREF run and recorded no safe improvement (12 geometric, 0 native).
+      - **Tests:** `tests/pivot/test_supply_references.py`, 4 passed. It covers B12, a second non-ground example (a VCC/GND mid-rail divider), a pull-up that is not a reference, and rail capacitors staying rail.
+    - **Still open:** the sideways VPLUS arrows (§E); B01, B02 and B07 against v10.
   - [ ] **P6-011q** Apply the R7.5 drawing conventions (spec R7.5). **Acceptance:**
     - **Ground symbols:** IC return symbols point down where a downward position is clear, fixing B10 and B15's sideways symbol under U1.
     - **Labels:** a generated reference midpoint (B12's VREF) gets a local net label near its node, and parked units are labelled unused, with connectivity unchanged.

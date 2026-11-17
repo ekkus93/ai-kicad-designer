@@ -66,6 +66,7 @@ def served_pins(design: dict, tree: list) -> list[dict]:
     supply_nets = set(supply_pins)
     returns |= rails - supply_nets
     returns.discard(None)
+    references = reference_nets(design, supply_nets | rails)
     found = []
     for (reference, _unit), item in sorted(units.items()):
         if assets.get(reference) != "Device:C":
@@ -73,7 +74,7 @@ def served_pins(design: dict, tree: list) -> list[dict]:
         nets = {pin["number"]: pin_net.get((reference, pin["number"])) for pin in item["pins"]}
         for own, net in nets.items():
             other = nets.get("2" if own == "1" else "1")
-            if net in supply_pins and other in returns:
+            if net in supply_pins and (other in returns or other in references):
                 ic, number, role = supply_pins[net][0]
                 found.append(
                     {
@@ -83,9 +84,35 @@ def served_pins(design: dict, tree: list) -> list[dict]:
                         "role": role,
                         "net": net,
                         "return_net": other,
+                        # A divider midpoint, not a return rail: supply-to-reference.
+                        "return_kind": "reference" if other in references else "rail",
                     }
                 )
                 break
+    return found
+
+
+def reference_nets(design: dict, endpoints: set[str]) -> set[str]:
+    """Divider midpoints: nets joined through resistors to two different supply or rail
+    nets (B12's VREF between VPLUS and VMINUS). Read from the circuit, not net names."""
+    assets = {item["id"]: item["asset"] for item in design["components"]}
+    pins: dict[str, dict[str, str]] = {}
+    for net in design["nets"]:
+        for component, pin in net["members"]:
+            pins.setdefault(component, {})[pin] = net["id"]
+    found = set()
+    for net in design["nets"]:
+        if net["id"] in endpoints:
+            continue
+        reached = set()
+        for component, pin in net["members"]:
+            if assets.get(component) != "Device:R":
+                continue
+            other = pins[component].get("2" if pin == "1" else "1")
+            if other in endpoints:
+                reached.add(other)
+        if len(reached) >= 2:
+            found.add(net["id"])
     return found
 
 
