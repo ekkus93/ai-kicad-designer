@@ -626,7 +626,7 @@ These features are **planned**, not prerequisites for P4 except when a specific 
       - parked units next to their siblings and nearer than in v10
       - J3 moved as a unit to J1, with netlist equivalence and ERC passing
     - **Pivot suite:** 612 passed, 1 deselected.
-  - [ ] **P6-011p** Build supply and return blocks for any circuit (spec R7.4). **Acceptance:**
+  - [x] **P6-011p** Build supply and return blocks for any circuit (spec R7.4). **Acceptance:**
     - **Decoupling:** each decoupling capacitor sits beside the supply pin it serves, with matching local power symbols.
     - **Power blocks:** in B07, B09, B12 and B14 the power unit, its capacitors and its rail symbols form one block with consistent symbol directions, separate from the signal lines. Revised 2026-11-17 by owner decision: a sideways supply glyph kept by owner decision (B14's VPLUS) does not count against this.
     - **555 control pin:** the 555 control-pin capacitor is a short local bypass from pin 5 to the return (B05).
@@ -769,6 +769,7 @@ These features are **planned**, not prerequisites for P4 except when a specific 
       - It is an artefact of multi-unit boxing, not a change in the drawing.
     - **Not changed silently:** `connector_flow` uses `leaves_part_box` to decide connector moves, so switching to per-unit boxes would change generated drawings.
     - **Owner decision needed:** accept the B02 flag as a measure artefact, or switch the measure to per-unit boxes and regenerate.
+    - **Owner decision (2026-11-17):** "Accept it as an artefact". B02's R1.2–U1.1 box leave is accepted as a multi-unit boxing artefact, and the measure is unchanged. With the owner-accepted R2 increases, the Safety clause's "not worse on R2 or R7.3" is met for B01, B02 and B07 as decided, and P6-011p is checked again.
 
   - [x] **P6-011q** Apply the R7.5 drawing conventions (spec R7.5). **Acceptance:**
     - **Ground symbols:** IC return symbols point down where a downward position is clear, fixing B10 and B15's sideways symbol under U1.
