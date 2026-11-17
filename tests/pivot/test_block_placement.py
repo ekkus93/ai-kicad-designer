@@ -221,3 +221,25 @@ def test_an_indicator_is_driven_by_its_signal_net_never_a_rail():
     # R3 alone touches VCC and LED_A: its driver is D1 on LED_A, never the VCC rail.
     net, driver, _own = indicator_drive(text, nets, [("R3", 1)], rails)
     assert net == "LED_A" and driver["reference"] == "D1"
+
+
+def test_a_sideways_supply_arrow_is_re_aimed_with_its_block(v11):
+    """B14 (spec R7.4, reviewed solution §E): sallen_key's VPLUS arrow at U1 pin 8 could not
+    turn up in place (U1C's own text was there). With its block (a short jog, U1C's text
+    placed again) it now points up, within the search budgets, every check passing."""
+    from ai_kicad.pivot.supply_blocks import (
+        BLOCK_REAIM_GEOMETRIC_BUDGET,
+        BLOCK_REAIM_NATIVE_BUDGET,
+        power_block_directions,
+    )
+
+    _tree, report, directory = v11["sallen_key"]
+    assert all(value == "PASS" for value in report["checks"].values()), report["checks"]
+    design = json.loads(FILES["sallen_key"].read_text())
+    text = Path(glob.glob(str(directory / "project/*.kicad_sch"))[0]).read_text()
+    assert [r for r in power_block_directions(design, text) if not r["consistent"]] == []
+    moves = json.loads((directory / "presentation.json").read_text())["block_moves"]
+    (move,) = [m for m in moves if m.get("block_search")]
+    assert move["change"].startswith("re-aim with its block")
+    assert move["block_search"]["geometric"] <= BLOCK_REAIM_GEOMETRIC_BUDGET
+    assert move["block_search"]["native"] <= BLOCK_REAIM_NATIVE_BUDGET
