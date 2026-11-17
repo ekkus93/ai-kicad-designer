@@ -872,7 +872,7 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - **Regression test:** `tests/pivot/test_block_placement.py::test_an_indicator_is_driven_by_its_signal_net_never_a_rail`. It fails on the earlier code and passes now.
     - **Corpus:** `fixtures/pivot/experiments/supply_blocks_v11_2026-11-16_run3` at `60a741d5`. All 15 designs pass every check.
     - **Pivot suite:** 613 passed, 1 deselected.
-  - [ ] **P6-011u** Offer the generator steps' validated candidates as menu entries (spec R8.2, R8.6). **Acceptance:**
+  - [x] **P6-011u** Offer the generator steps' validated candidates as menu entries (spec R8.2, R8.6). **Acceptance:**
     - **Entry classes:** connector re-orientation, block moves, bypass-capacitor redraw and power-symbol re-aim, each a pre-checked variant of the drawing.
     - **Matching scratch:** a test shows `choose_edit` applies the entry and the result matches its scratch revision.
     - **Keep:** a "keep the current drawing" choice is offered.
@@ -880,6 +880,27 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - **Budget:** a per-round time and validation cap is recorded, and `budget_exhausted` is reported.
 
     **Deps:** P6-011t.
+
+    **Evidence (2026-11-17; option (a) by owner decision: runners-up recorded during compile):**
+    - **Code:** brief v12 (`SchematicReviewBriefV12`, `fixtures/pivot/schematic_review_brief_v12.json`) adds `generator_menu` (`variants: 6`, `seconds: 900`).
+      - **Variants:** `NativeSchematicEngine._build_variants` (`src/ai_kicad/pivot/schematic_review_native.py`) runs after the generator chooses its drawing. For each move a layout step chose, it compiles the design again with that move excluded, through the steps' existing `"NAME|label"` skip strings, so the step takes its next-best candidate and later steps run as usual. Classes are taken in turn. A variant is kept only if a full assessment passes every check and it differs from the chosen drawing and the other variants. Variants are written to `generator_variants/` and recorded in `presentation.json` (`generator_variants`: excluded move, refusals, seconds, budget, `budget_exhausted`).
+      - **Entries:** `generator_entries` (`src/ai_kicad/pivot/generator_menu.py`) validates each variant in scratch through the new menu-only action `use_variant`, as `choose_edit` would apply it. It offers each with its scratch revision and predicted R2 delta, plus the `keep-1` entry (`keep_drawing`). Choosing keep ends the round as `KEPT_BY_REVIEWER`.
+      - **Scope:** variants are offered only on the drawing the generator produced, since a variant replaces the whole drawing.
+      - **Unchanged schema:** `use_variant` and `keep_drawing` are outside `SchematicAction`, so review schemas under v1–v11 are unchanged.
+    - **Entry classes:** `fixtures/pivot/experiments/generator_menu_v12_2026-11-17_run1`. All 3 designs pass every check.
+      - **dual_buffer** (87.3 s): `block_move` (parked U1B) and `power_symbol_reaim` (#PWR02).
+      - **linear_regulator** (61.0 s): `block_move` (J3) and two `connector_reorientation` (J1, J2).
+      - **flasher** (879.9 s, within the 900 s budget): two `block_move` (D1+R3, J3), `capacitor_redraw` (C2) and three `connector_reorientation`.
+      - All four classes occur, with no refusals.
+      - The summary's `source_commit` names `5a85f259`; the run's code is `2057155b`, and the commit between only adds a document.
+    - **Matching scratch:** `tests/pivot/test_generator_menu.py::test_v12_offers_the_regulators_runner_up_drawings_and_choosing_one_matches_scratch` passes with KiCad. On the regulator, the variants are within budget, the menu offers them and `keep-1`, applying an entry reproduces its `scratch_revision`, and every check passes on it.
+    - **Keep:** `tests/pivot/test_edit_menu.py::test_choosing_keep_ends_the_round_with_the_drawing_unchanged`.
+    - **Entry checks:** the stub tests in `test_generator_menu.py` cover the entry order, a variant that makes a check fail not being offered, no variants after the drawing changes, and no generator menu before v12.
+    - **v1–v11 unchanged:**
+      - `test_brief_v11.py`'s byte-for-byte v9/v10 replay passes.
+      - Regenerated v11 linear_regulator and dual_rail_reference match `conventions_v11_2026-11-17_run2` apart from wire UUIDs.
+      - Brief, menu and refusal tests: 74 passed (`test_brief_v10`, `test_brief_v11`, `test_edit_menu`, `test_generator_menu`, `test_refusals`, `test_schematic_review_brief`).
+    - **Budget:** the count and time cap come from the brief. Each run records its seconds and `budget_exhausted`, at compile and in the menu record `generator`. Each variant costs one scratch validation in the menu, with results cached per revision.
   - [ ] **P6-011v** Offer those entries when every check passes, driven by the report-only measures (spec R8.3). **Acceptance:**
     - **Triggers:** entries are offered for R7.3 detours, return-connector distance, capacitor distance and sideways power-block symbols.
     - **Entry content:** each entry shows the measure it improves and its predicted R2 and R7.3 deltas.

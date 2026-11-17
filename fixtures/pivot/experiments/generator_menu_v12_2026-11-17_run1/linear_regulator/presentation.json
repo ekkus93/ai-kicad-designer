@@ -1,0 +1,284 @@
+{
+  "connector_flow": [
+    {
+      "connector": "J1",
+      "net": "VIN",
+      "change": "mirror in place",
+      "trigger": "joined only by a label",
+      "net_cost_mm": {
+        "before": 24.13,
+        "after": 0.0
+      }
+    },
+    {
+      "connector": "J2",
+      "net": "VOUT",
+      "change": "move pin to 133.35,41.91 beside 118.11,41.91",
+      "trigger": "joined only by a label",
+      "net_cost_mm": {
+        "before": 87.63,
+        "after": 0.0
+      }
+    },
+    {
+      "connector": "J3",
+      "net": "REF",
+      "change": null,
+      "kept_because": [
+        "mirror in place: layout check: observed required field overlaps body/label: J3 Value, #FLG02"
+      ]
+    }
+  ],
+  "label_moves": [],
+  "rail_plans": [
+    {
+      "order": [
+        "REF",
+        "VIN"
+      ],
+      "replace_existing": true,
+      "valid": true,
+      "power_symbols": 2,
+      "wire_length_mm": 127.0,
+      "unresolved_references": [],
+      "chosen": true
+    },
+    {
+      "order": [
+        "VIN",
+        "REF"
+      ],
+      "replace_existing": true,
+      "valid": true,
+      "power_symbols": 2,
+      "wire_length_mm": 129.54,
+      "unresolved_references": []
+    }
+  ],
+  "label_moves_after_rails": [],
+  "power_flag_turns": [],
+  "indicator_moves": [],
+  "block_moves": [
+    {
+      "connector": "J3",
+      "block": "power_interface",
+      "change": "move by +36.83,+15.24",
+      "with": "J1"
+    }
+  ],
+  "blocks": [
+    {
+      "role": "regulator",
+      "members": [
+        [
+          "C1",
+          1
+        ],
+        [
+          "C2",
+          1
+        ],
+        [
+          "U1",
+          1
+        ]
+      ]
+    },
+    {
+      "role": "power_interface",
+      "members": [
+        [
+          "J1",
+          1
+        ]
+      ],
+      "returns": [],
+      "nets": [
+        "VIN"
+      ]
+    },
+    {
+      "role": "power_interface",
+      "members": [
+        [
+          "J2",
+          1
+        ]
+      ],
+      "returns": [],
+      "nets": [
+        "VOUT"
+      ]
+    },
+    {
+      "role": "power_interface",
+      "members": [
+        [
+          "J3",
+          1
+        ]
+      ],
+      "returns": [
+        "REF"
+      ],
+      "nets": [
+        "REF"
+      ]
+    }
+  ],
+  "vertical_field_moves": [
+    {
+      "reference": "C1",
+      "unit": 1,
+      "kind": "vertical",
+      "from_mm": {
+        "Reference": [
+          107.95,
+          62.23
+        ],
+        "Value": [
+          107.95,
+          64.93
+        ]
+      },
+      "to_mm": {
+        "Reference": [
+          104.14591,
+          62.23
+        ],
+        "Value": [
+          104.14591,
+          64.93
+        ]
+      }
+    },
+    {
+      "reference": "C2",
+      "unit": 1,
+      "kind": "vertical",
+      "from_mm": {
+        "Reference": [
+          133.35,
+          62.23
+        ],
+        "Value": [
+          133.35,
+          64.93
+        ]
+      },
+      "to_mm": {
+        "Reference": [
+          129.54591,
+          62.23
+        ],
+        "Value": [
+          129.54591,
+          64.93
+        ]
+      }
+    },
+    {
+      "reference": "J2",
+      "unit": 1,
+      "kind": "connector",
+      "from_mm": {
+        "Reference": [
+          138.43,
+          31.75
+        ],
+        "Value": [
+          138.43,
+          34.45
+        ]
+      },
+      "to_mm": {
+        "Reference": [
+          138.43,
+          35.82
+        ],
+        "Value": [
+          138.43,
+          38.52
+        ]
+      }
+    }
+  ],
+  "text_clearance_moves": [
+    {
+      "part": "J3 unit 1",
+      "change": null,
+      "gap_mm": 1.14,
+      "kept_because": [
+        "no spot with the gap restored passes every check"
+      ]
+    }
+  ],
+  "convention_moves": [],
+  "wire_cleanup": {
+    "hooks": [
+      "straighten hook 110.49,49.53"
+    ],
+    "junctions_removed": 0,
+    "merged": 1,
+    "native": 2,
+    "refused": [
+      "straighten hook 88.90,41.91: text would be 0.68 mm from a wire",
+      "straighten hook 97.79,41.91: text would be 0.68 mm from a wire"
+    ],
+    "seconds": 1.7
+  },
+  "page_centring": {
+    "before_offset_fraction": [
+      -0.283,
+      -0.664
+    ],
+    "extent_mm": [
+      77.14,
+      30.4,
+      147.32,
+      73.82
+    ],
+    "after_offset_fraction": [
+      -0.006,
+      0.006
+    ],
+    "dx_mm": 35.56,
+    "dy_mm": 53.34
+  },
+  "connector_flow_attempts": [
+    {
+      "skip": [],
+      "problem": null
+    }
+  ],
+  "generator_variants": {
+    "variants": [
+      {
+        "class": "block_move",
+        "excluded": "J3|move by +36.83,+15.24",
+        "description": "block move: the drawing without J3's 'move by +36.83,+15.24', with its next-best choice instead",
+        "id": "v1"
+      },
+      {
+        "class": "connector_reorientation",
+        "excluded": "J1|mirror in place",
+        "description": "connector reorientation: the drawing without J1's 'mirror in place', with its next-best choice instead",
+        "id": "v2"
+      },
+      {
+        "class": "connector_reorientation",
+        "excluded": "J2|move pin to 133.35,41.91 beside 118.11,41.91",
+        "description": "connector reorientation: the drawing without J2's 'move pin to 133.35,41.91 beside 118.11,41.91', with its next-best choice instead",
+        "id": "v3"
+      }
+    ],
+    "refused": [],
+    "considered": 3,
+    "seconds": 61.0,
+    "budget_exhausted": null,
+    "budget": {
+      "variants": 6,
+      "seconds": 900.0
+    }
+  }
+}

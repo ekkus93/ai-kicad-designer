@@ -1,0 +1,520 @@
+{
+  "connector_flow": [
+    {
+      "connector": "J1",
+      "net": "VCC",
+      "change": null,
+      "kept_because": [
+        "mirror in place: layout check: observed wire through source glyph: #FLG01",
+        "move pin to 46.99,38.10 beside 54.61,38.10: layout check: observed required field overlaps body/label: J1 Reference, VCC",
+        "move pin to 62.23,38.10 beside 54.61,38.10: a field check would report something new",
+        "move pin to 44.45,38.10 beside 54.61,38.10: layout check: observed required field overlaps body/label: J1 Reference, VCC",
+        "move pin to 64.77,38.10 beside 54.61,38.10: a field check would report something new",
+        "move pin to 41.91,38.10 beside 54.61,38.10: layout check: observed wire through text"
+      ]
+    },
+    {
+      "connector": "J2",
+      "net": "OUT",
+      "change": "mirror in place",
+      "trigger": "wire detour",
+      "net_cost_mm": {
+        "before": 208.28,
+        "after": 78.74
+      }
+    },
+    {
+      "connector": "J3",
+      "net": "REF",
+      "change": null,
+      "kept_because": [
+        "mirror in place: layout check: observed required field overlaps body/label: J3 Value, REF"
+      ]
+    }
+  ],
+  "label_moves": [],
+  "rail_plans": [
+    {
+      "power_flag_move": {
+        "net": "REF",
+        "flag": "#FLG02",
+        "from_mm": [
+          54.61,
+          85.09
+        ],
+        "to_mm": [
+          69.85,
+          88.9
+        ],
+        "angle": 90,
+        "extension_mm": 0
+      }
+    },
+    {
+      "order": [
+        "REF",
+        "VCC"
+      ],
+      "replace_existing": true,
+      "valid": true,
+      "power_symbols": 7,
+      "wire_length_mm": 358.14,
+      "unresolved_references": [],
+      "chosen": true
+    },
+    {
+      "order": [
+        "VCC",
+        "REF"
+      ],
+      "replace_existing": true,
+      "valid": true,
+      "power_symbols": 7,
+      "wire_length_mm": 360.68,
+      "unresolved_references": []
+    }
+  ],
+  "label_moves_after_rails": [],
+  "power_flag_turns": [],
+  "indicator_moves": [
+    {
+      "connector": "D1",
+      "block": "indicator",
+      "parts": "D1+R3",
+      "change": "move by +76.20,+12.70",
+      "drive_distance_mm": {
+        "before": 157.48,
+        "after": 76.2
+      }
+    }
+  ],
+  "connector_flow_after_blocks": [
+    {
+      "connector": "J1",
+      "net": "VCC",
+      "change": "move pin to 46.99,38.10 beside 54.61,38.10",
+      "trigger": "joined only by a label",
+      "net_cost_mm": {
+        "before": 60.96,
+        "after": 0.0
+      }
+    },
+    {
+      "connector": "J2",
+      "net": "OUT",
+      "change": "move pin to 120.65,81.28 beside 105.41,81.28",
+      "trigger": "wire detour",
+      "net_cost_mm": {
+        "before": 48.26,
+        "after": 0.0
+      }
+    }
+  ],
+  "block_moves": [
+    {
+      "connector": "J3",
+      "block": "power_interface",
+      "change": "move by -27.94,-62.23",
+      "with": "J1"
+    },
+    {
+      "connector": "C2",
+      "block": "supply",
+      "change": "redraw at 88.90,43.18 turned 180, return stub -5.08 mm",
+      "serves": "U1.5",
+      "distance_mm": {
+        "before": 29.21,
+        "after": 6.35
+      },
+      "direct": true
+    },
+    {
+      "connector": "C2",
+      "block": "supply",
+      "change": null,
+      "serves": "U1.5",
+      "parallel_exposure": {
+        "exposure_mm_before": 3.81,
+        "structural": 5,
+        "geometric": 12,
+        "native": 0,
+        "refused": [
+          "route out 2.54 mm, across 3.81 mm, standing: no clear spot for its text or symbols",
+          "route out 3.81 mm, across 2.54 mm, standing: no clear spot for its text or symbols",
+          "route out 2.54 mm, across 5.08 mm, standing: no clear spot for its text or symbols",
+          "route out 3.81 mm, across 3.81 mm, standing: no clear spot for its text or symbols",
+          "route out 5.08 mm, across 2.54 mm, standing: no clear spot for its text or symbols",
+          "route out 2.54 mm, across 6.35 mm, standing: no clear spot for its text or symbols",
+          "route out 3.81 mm, across 5.08 mm, standing: no clear spot for its text or symbols",
+          "route out 5.08 mm, across 3.81 mm, standing: no clear spot for its text or symbols"
+        ],
+        "seconds": 2.5
+      }
+    }
+  ],
+  "blocks": [
+    {
+      "role": "timer",
+      "members": [
+        [
+          "C1",
+          1
+        ],
+        [
+          "C2",
+          1
+        ],
+        [
+          "R1",
+          1
+        ],
+        [
+          "R2",
+          1
+        ],
+        [
+          "U1",
+          1
+        ]
+      ]
+    },
+    {
+      "role": "indicator",
+      "members": [
+        [
+          "D1",
+          1
+        ],
+        [
+          "R3",
+          1
+        ]
+      ]
+    },
+    {
+      "role": "power_interface",
+      "members": [
+        [
+          "J1",
+          1
+        ]
+      ],
+      "returns": [],
+      "nets": [
+        "VCC"
+      ]
+    },
+    {
+      "role": "signal_interface",
+      "members": [
+        [
+          "J2",
+          1
+        ]
+      ],
+      "returns": [],
+      "nets": [
+        "OUT"
+      ]
+    },
+    {
+      "role": "power_interface",
+      "members": [
+        [
+          "J3",
+          1
+        ]
+      ],
+      "returns": [
+        "REF"
+      ],
+      "nets": [
+        "REF"
+      ]
+    }
+  ],
+  "vertical_field_moves": [
+    {
+      "reference": "C1",
+      "unit": 1,
+      "kind": "vertical",
+      "from_mm": {
+        "Reference": [
+          64.77,
+          78.74
+        ],
+        "Value": [
+          64.77,
+          81.44
+        ]
+      },
+      "to_mm": {
+        "Reference": [
+          60.361148,
+          78.74
+        ],
+        "Value": [
+          60.361148,
+          81.44
+        ]
+      }
+    },
+    {
+      "reference": "C2",
+      "unit": 1,
+      "kind": "vertical",
+      "from_mm": {
+        "Reference": [
+          99.06,
+          36.83
+        ],
+        "Value": [
+          99.06,
+          39.53
+        ]
+      },
+      "to_mm": {
+        "Reference": [
+          97.826148,
+          36.83
+        ],
+        "Value": [
+          97.826148,
+          39.53
+        ]
+      }
+    },
+    {
+      "reference": "D1",
+      "unit": 1,
+      "kind": "vertical",
+      "from_mm": {
+        "Reference": [
+          115.57,
+          74.93
+        ],
+        "Value": [
+          115.57,
+          77.63
+        ]
+      },
+      "to_mm": {
+        "Reference": [
+          114.348243,
+          74.93
+        ],
+        "Value": [
+          114.348243,
+          77.63
+        ]
+      }
+    },
+    {
+      "reference": "J2",
+      "unit": 1,
+      "kind": "connector",
+      "from_mm": {
+        "Reference": [
+          125.73,
+          71.12
+        ],
+        "Value": [
+          125.73,
+          73.82
+        ]
+      },
+      "to_mm": {
+        "Reference": [
+          125.73,
+          72.015
+        ],
+        "Value": [
+          125.73,
+          74.715
+        ]
+      }
+    },
+    {
+      "reference": "J3",
+      "unit": 1,
+      "kind": "connector",
+      "from_mm": {
+        "Reference": [
+          62.23,
+          27.94
+        ],
+        "Value": [
+          62.23,
+          30.64
+        ]
+      },
+      "to_mm": {
+        "Reference": [
+          62.169386,
+          29.13
+        ],
+        "Value": [
+          62.169386,
+          31.83
+        ]
+      }
+    },
+    {
+      "reference": "R1",
+      "unit": 1,
+      "kind": "vertical",
+      "from_mm": {
+        "Reference": [
+          64.77,
+          39.37
+        ],
+        "Value": [
+          64.77,
+          42.07
+        ]
+      },
+      "to_mm": {
+        "Reference": [
+          60.554672,
+          39.37
+        ],
+        "Value": [
+          60.554672,
+          42.07
+        ]
+      }
+    },
+    {
+      "reference": "R2",
+      "unit": 1,
+      "kind": "vertical",
+      "from_mm": {
+        "Reference": [
+          64.77,
+          57.15
+        ],
+        "Value": [
+          64.77,
+          59.85
+        ]
+      },
+      "to_mm": {
+        "Reference": [
+          59.284672,
+          57.15
+        ],
+        "Value": [
+          59.284672,
+          59.85
+        ]
+      }
+    },
+    {
+      "reference": "R3",
+      "unit": 1,
+      "kind": "vertical",
+      "from_mm": {
+        "Reference": [
+          115.57,
+          59.69
+        ],
+        "Value": [
+          115.57,
+          62.39
+        ]
+      },
+      "to_mm": {
+        "Reference": [
+          111.505862,
+          59.69
+        ],
+        "Value": [
+          111.505862,
+          62.39
+        ]
+      }
+    }
+  ],
+  "text_clearance_moves": [],
+  "convention_moves": [],
+  "wire_cleanup": {
+    "hooks": [],
+    "junctions_removed": 0,
+    "merged": 0,
+    "native": 0,
+    "refused": [],
+    "seconds": 0.0
+  },
+  "page_centring": {
+    "before_offset_fraction": [
+      -0.533,
+      -0.577
+    ],
+    "extent_mm": [
+      27.94,
+      27.78,
+      132.5,
+      90.33
+    ],
+    "after_offset_fraction": [
+      0.002,
+      -0.003
+    ],
+    "dx_mm": 68.58,
+    "dy_mm": 45.72
+  },
+  "connector_flow_attempts": [
+    {
+      "skip": [],
+      "problem": null
+    }
+  ],
+  "generator_variants": {
+    "variants": [
+      {
+        "class": "block_move",
+        "excluded": "D1|move by +76.20,+12.70",
+        "description": "block move: the drawing without D1's 'move by +76.20,+12.70', with its next-best choice instead",
+        "id": "v1"
+      },
+      {
+        "class": "capacitor_redraw",
+        "excluded": "C2|redraw at 88.90,43.18 turned 180, return stub -5.08 mm",
+        "description": "capacitor redraw: the drawing without C2's 'redraw at 88.90,43.18 turned 180, return stub -5.08 mm', with its next-best choice instead",
+        "id": "v2"
+      },
+      {
+        "class": "connector_reorientation",
+        "excluded": "J2|mirror in place",
+        "description": "connector reorientation: the drawing without J2's 'mirror in place', with its next-best choice instead",
+        "id": "v3"
+      },
+      {
+        "class": "block_move",
+        "excluded": "J3|move by -27.94,-62.23",
+        "description": "block move: the drawing without J3's 'move by -27.94,-62.23', with its next-best choice instead",
+        "id": "v4"
+      },
+      {
+        "class": "connector_reorientation",
+        "excluded": "J1|move pin to 46.99,38.10 beside 54.61,38.10",
+        "description": "connector reorientation: the drawing without J1's 'move pin to 46.99,38.10 beside 54.61,38.10', with its next-best choice instead",
+        "id": "v5"
+      },
+      {
+        "class": "connector_reorientation",
+        "excluded": "J2|move pin to 120.65,81.28 beside 105.41,81.28",
+        "description": "connector reorientation: the drawing without J2's 'move pin to 120.65,81.28 beside 105.41,81.28', with its next-best choice instead",
+        "id": "v6"
+      }
+    ],
+    "refused": [],
+    "considered": 6,
+    "seconds": 879.9,
+    "budget_exhausted": null,
+    "budget": {
+      "variants": 6,
+      "seconds": 900.0
+    }
+  }
+}
