@@ -626,7 +626,7 @@ These features are **planned**, not prerequisites for P4 except when a specific 
       - parked units next to their siblings and nearer than in v10
       - J3 moved as a unit to J1, with netlist equivalence and ERC passing
     - **Pivot suite:** 612 passed, 1 deselected.
-  - [x] **P6-011p** Build supply and return blocks for any circuit (spec R7.4). **Acceptance:**
+  - [ ] **P6-011p** Build supply and return blocks for any circuit (spec R7.4). **Acceptance:**
     - **Decoupling:** each decoupling capacitor sits beside the supply pin it serves, with matching local power symbols.
     - **Power blocks:** in B07, B09, B12 and B14 the power unit, its capacitors and its rail symbols form one block with consistent symbol directions, separate from the signal lines. Revised 2026-11-17 by owner decision: a sideways supply glyph kept by owner decision (B14's VPLUS) does not count against this.
     - **555 control pin:** the 555 control-pin capacitor is a short local bypass from pin 5 to the return (B05).
@@ -757,6 +757,19 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - "Power blocks ... consistent symbol directions" for B14: sallen_key's VPLUS arrow stays sideways.
     - "Sideways VPLUS arrows ... improves them where feasible": an improvement was feasible and was removed.
     - Checking P6-011p needs the owner to revise these clauses (for example, to "sideways supply glyphs kept by owner decision").
+    **Correction (2026-11-17, P6-011p unchecked again):** the R7.3 comparison recorded above was computed with the wrong field names. It read `leaves_box` and `u_turn`; the rows have `leaves_part_box` and `u_turn_at`. So the "no box leaves or U-turns" claim counted nothing.
+    - **Recomputed** (v10 baseline vs `conventions_v11_2026-11-17_run2`):
+      - **Detour excess:** unchanged (B01 106.68, B02 73.66, B07 73.66 mm).
+      - **U-turns:** unchanged on all three.
+      - **Box leaves:** unchanged on B01 and B07. B02 (noninverting_gain) gains one: R1.2–U1.1 now leaves the part box.
+    - **Cause:** the drawn R1.2–U1.1 path is identical in every run (the same shape, translated, excess 7.62 mm). The flag flipped at `block_placement_v11_2026-11-14_run1`, when the parked U1B moved beside U1A.
+      - `pin_pair_detours` boxes all units of a reference together.
+      - In v10, U1B and U1C sat far away and stretched U1's box over this path.
+      - Moving U1B shrank the box.
+      - It is an artefact of multi-unit boxing, not a change in the drawing.
+    - **Not changed silently:** `connector_flow` uses `leaves_part_box` to decide connector moves, so switching to per-unit boxes would change generated drawings.
+    - **Owner decision needed:** accept the B02 flag as a measure artefact, or switch the measure to per-unit boxes and regenerate.
+
   - [x] **P6-011q** Apply the R7.5 drawing conventions (spec R7.5). **Acceptance:**
     - **Ground symbols:** IC return symbols point down where a downward position is clear, fixing B10 and B15's sideways symbol under U1.
     - **Labels:** a generated reference midpoint (B12's VREF) gets a local net label near its node, and parked units are labelled unused, with connectivity unchanged.
