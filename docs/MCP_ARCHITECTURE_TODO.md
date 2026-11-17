@@ -626,9 +626,9 @@ These features are **planned**, not prerequisites for P4 except when a specific 
       - parked units next to their siblings and nearer than in v10
       - J3 moved as a unit to J1, with netlist equivalence and ERC passing
     - **Pivot suite:** 612 passed, 1 deselected.
-  - [ ] **P6-011p** Build supply and return blocks for any circuit (spec R7.4). **Acceptance:**
+  - [x] **P6-011p** Build supply and return blocks for any circuit (spec R7.4). **Acceptance:**
     - **Decoupling:** each decoupling capacitor sits beside the supply pin it serves, with matching local power symbols.
-    - **Power blocks:** in B07, B09, B12 and B14 the power unit, its capacitors and its rail symbols form one block with consistent symbol directions, separate from the signal lines.
+    - **Power blocks:** in B07, B09, B12 and B14 the power unit, its capacitors and its rail symbols form one block with consistent symbol directions, separate from the signal lines. Revised 2026-11-17 by owner decision: a sideways supply glyph kept by owner decision (B14's VPLUS) does not count against this.
     - **555 control pin:** the 555 control-pin capacitor is a short local bypass from pin 5 to the return (B05).
     - **Safety:** the exact netlist, ERC and every check still pass. B01, B02 and B07 are not worse on R2 or R7.3.
     - **Clean orientation (revised 2026-11-16 with owner approval, per `docs/ai_kicad_generator_open_problems_chatgpt_solution_2026-11-16.md` §C and §H):**
@@ -643,7 +643,7 @@ These features are **planned**, not prerequisites for P4 except when a specific 
       - The regulator and both timer_astable variants do not regress.
       - A deliberate short is rejected before it becomes the current drawing.
     - **dual_rail_reference (per §D):** both supply-to-VREF capacitors are recognised and placed locally, with nets unchanged. One other non-ground-reference example is tested.
-    - **Sideways VPLUS arrows (per §E):** a bounded whole-power-block search improves them where feasible and records a constrained outcome otherwise.
+    - **Sideways VPLUS arrows (per §E; revised 2026-11-17 by owner decision):** sideways supply glyphs are kept by owner decision. The whole-power-block re-aim was shown feasible (`84a5b09a`, `supply_blocks_v11_2026-11-17_run1`) and then removed at the owner's request (`fb3fd59f`). Each refused in-place re-aim is still recorded with its reason.
 
     **Deps:** P6-011o.
     **Progress (2026-11-16):** `src/ai_kicad/pivot/supply_blocks.py` runs under v11 after block placement.
@@ -753,7 +753,7 @@ These features are **planned**, not prerequisites for P4 except when a specific 
       - 11 are the known environment failures: `test_direct_backend.py` (10) and the ngspice test, which get `PermissionError` on the desktop-only `/home/phil/Applications/...` tools.
       - The 12th was the strict 1.27 mm version of the new test on the regulator; it passes as relaxed above.
 
-    **Note (2026-11-17): P6-011p stays unchecked.** Every work item is implemented, but two acceptance clauses are not met as written, by owner decision:
+    **Note (2026-11-17, superseded the same day):** the owner revised the two clauses below, and P6-011p is now checked. Earlier text: P6-011p stays unchecked. Every work item is implemented, but two acceptance clauses are not met as written, by owner decision:
     - "Power blocks ... consistent symbol directions" for B14: sallen_key's VPLUS arrow stays sideways.
     - "Sideways VPLUS arrows ... improves them where feasible": an improvement was feasible and was removed.
     - Checking P6-011p needs the owner to revise these clauses (for example, to "sideways supply glyphs kept by owner decision").
