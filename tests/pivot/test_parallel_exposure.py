@@ -70,3 +70,37 @@ def test_designs_without_close_runs_report_none(name):
     tree = parse(Path(glob.glob(str(directory / "project/*.kicad_sch"))[0]).read_text())
     inventory = json.loads((directory / "assessment.json").read_text())["terminal_inventory"]
     assert [r for r in parallel_exposure(tree, inventory) if r["sustained"]] == []
+
+
+def test_the_capacitor_route_search_is_bounded_and_records_its_outcome():
+    """R7.4 bounded search: at most 12 cheap candidates and 3 native assessments, with the
+    counts, time and refusals recorded. Around the 555's top edge every route that turns
+    away from pin 8 meets pin 4's or pin 8's VCC symbol, so the outcome is a documented
+    no-safe-improvement and the drawing is kept."""
+    from ai_kicad.pivot import supply_blocks
+    from tools.pivot.run_review_loop_corpus import CORPUS
+
+    files = {(p.parent.name if p.name == "design.json" else p.stem): p for p in CORPUS}
+    directory = RUN3 / "timer_astable"
+    text = Path(glob.glob(str(directory / "project/*.kicad_sch"))[0]).read_text()
+    inventory = json.loads((directory / "assessment.json").read_text())["terminal_inventory"]
+    nets = {(t["reference"], t["pin"]): t["net"] for t in inventory}
+    design = json.loads(files["timer_astable"].read_text())
+    (row,) = supply_blocks.capacitor_distances(design, text)
+    native_calls = []
+    candidate, label, record = supply_blocks._try_dogleg(
+        text,
+        design,
+        row,
+        nets,
+        lambda _text: None,
+        lambda _text, _tolerate=None: True,
+        lambda c: native_calls.append(c) or None,
+        frozenset(),
+    )
+    assert record["exposure_mm_before"] == pytest.approx(3.81)
+    assert record["geometric"] <= supply_blocks.DOGLEG_GEOMETRIC_BUDGET
+    assert record["native"] <= supply_blocks.DOGLEG_NATIVE_BUDGET
+    assert len(native_calls) == record["native"]
+    assert candidate is None and label is None and record["refused"]
+    assert "seconds" in record and record["structural"] > 0

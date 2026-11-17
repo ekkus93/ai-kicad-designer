@@ -263,9 +263,11 @@ def _redraw_capacitor(
     target: tuple[int, int],
     serves: tuple[int, int],
     sideways: int = 2,
+    route: list[tuple[int, int]] | None = None,
 ) -> str:
     """Redraw a bypass capacitor: rotated to `angle`, its pin `pin` at `target`, wired
-    straight to the served pin, and a fresh return symbol on its other pin."""
+    straight to the served pin (or along `route`, its corners from the served pin to
+    `target`), and a fresh return symbol on its other pin."""
     import re
 
     from ai_kicad.m2_geometry import point_on_segment
@@ -348,7 +350,14 @@ def _redraw_capacitor(
             text = text[:start] + _translate_block(text[start:end], dx / 1e6, dy / 1e6) + text[end:]
             break
     return_pin = (now[other][0] + dx, now[other][1] + dy)
-    text = _connect_point_groups(text, sorted({target, serves}), [], "bypass capacitor")
+    if route is None:
+        text = _connect_point_groups(text, sorted({target, serves}), [], "bypass capacitor")
+    else:
+        path = [serves, *route, target]
+        text = _append_forms(
+            text,
+            [_wire_form(a, b, f"bypass {name}") for a, b in zip(path, path[1:]) if a != b],
+        )
     instances = [
         n for symbol in children(parse(text), "symbol") for n in children(symbol, "instances")
     ]
@@ -450,6 +459,215 @@ def _try_redraw(text, design, row, layout_check, fields_ok, native_ok, skip):
                     continue
                 return candidate, label
     return None
+
+
+# Bounded search for a route that turns away from a neighbouring pin (spec R7.4).
+DOGLEG_GEOMETRIC_BUDGET = 12
+DOGLEG_NATIVE_BUDGET = 3
+
+
+# Close runs this near the served pin are the capacitor's to fix.
+NEAR_MM = 10.16
+
+
+def _served_exposure(text: str, nets: dict, net: str, near: tuple[int, int]) -> float:
+    """Close parallel runs of a net beside other nets within NEAR_MM of a point, in mm,
+    counted only for a net pair with a sustained run there."""
+    from .connector_flow import current_inventory
+    from .parallel_exposure import parallel_exposure
+
+    total = 0.0
+    for r in parallel_exposure(parse(text), current_inventory(text, nets)):
+        if net not in r["nets"]:
+            continue
+        local = []
+        for w in r["witnesses"]:
+            at, (low, high) = w["at_mm"] * 1e6, (v * 1e6 for v in w["from_mm"])
+            x_span, y_span = (
+                ((at, at), (low, high)) if w["along"] == "y" else ((low, high), (at, at))
+            )
+            if (
+                x_span[0] - NEAR_MM * 1e6 <= near[0] <= x_span[1] + NEAR_MM * 1e6
+                and y_span[0] - NEAR_MM * 1e6 <= near[1] <= y_span[1] + NEAR_MM * 1e6
+            ):
+                local.append(w["exposed_mm"])
+        if local and max(local) >= 2.54:
+            total += sum(local)
+    return round(total, 3)
+
+
+def _try_dogleg(text, design, row, nets, layout_check, fields_ok, native_ok, skip):
+    """Re-route a near, direct bypass capacitor whose wire runs beside another net.
+
+    The wire leaves the served pin one to five grid steps, then turns away from the
+    neighbouring pin of the same part; the capacitor hangs back beside the wire (its
+    return symbol then needs no stub) or stands at its end. At most
+    DOGLEG_GEOMETRIC_BUDGET candidates get the cheap checks and DOGLEG_NATIVE_BUDGET the
+    full assessment; one is kept only if it lowers the exposure. Returns the text (or
+    None), its label, and the record of the search.
+    """
+    import time
+
+    started = time.monotonic()
+    units = _units(text)
+    name = row["capacitor"]
+    there = _point(units, row["serves"])
+    out = _outward(units, row["serves"])
+    before = _served_exposure(text, nets, row["net"], there)
+    record = {
+        "exposure_mm_before": before,
+        "structural": 0,
+        "geometric": 0,
+        "native": 0,
+        "refused": [],
+    }
+    own_pins = [p["point"] for k, u in units.items() if k[0] == name for p in u["pins"]]
+    # Stage 1 needs only points: other parts' pins and power symbols with their glyphs.
+    occupied = [p["point"] for k, u in units.items() if k[0] != name for p in u["pins"]] + [
+        point
+        for item in power_symbols(parse(text))
+        for tip in [transform_library_point(*GLYPH_TIPS[item["lib_id"]], item["angle"])]
+        for point in (item["point"], (item["point"][0] + tip[0], item["point"][1] + tip[1]))
+        if item["point"] != there
+        # The capacitor's own return symbol is redrawn with it.
+        and not (
+            item["net"] == row["return_net"]
+            and any(
+                abs(item["point"][0] - q[0]) + abs(item["point"][1] - q[1]) <= 6 * GRID
+                for q in own_pins
+            )
+        )
+    ]
+
+    def crowded(exit_point, corner, facing) -> bool:
+        """Something already stands where the route or the capacitor would go."""
+        far = (corner[0] + facing[0] * 6 * GRID, corner[1] + facing[1] * 6 * GRID)
+        boxes = [
+            (exit_point, corner, GRID),
+            (corner, far, 2 * GRID),
+            ((there[0] + out[0] * GRID, there[1] + out[1] * GRID), exit_point, GRID // 2),
+        ]
+        for a, b, pad in boxes:
+            low = (min(a[0], b[0]) - pad, min(a[1], b[1]) - pad)
+            high = (max(a[0], b[0]) + pad, max(a[1], b[1]) + pad)
+            if any(low[0] <= x <= high[0] and low[1] <= y <= high[1] for x, y in occupied):
+                return True
+        return False
+
+    owner = row["serves"].split(".")[0]
+    pins = {p["point"] for k, u in units.items() if k[0] == owner for p in u["pins"]}
+    sides = [(out[1], out[0]), (-out[1], -out[0])]
+    # Away from a neighbouring pin first.
+    sides.sort(key=lambda d: (there[0] + d[0] * 2 * GRID, there[1] + d[1] * 2 * GRID) in pins)
+    # The part's body, across the pin's direction: a capacitor hanging back must clear it.
+    body = next(u["body"] for k, u in units.items() if k[0] == owner)
+    axis = 0 if out[0] == 0 else 1
+    edge = body[2] if sides[0][axis] > 0 else body[0]
+    if axis == 1:
+        edge = body[3] if sides[0][axis] > 0 else body[1]
+    clear_steps = abs(edge - there[axis]) // GRID + 3
+    plans = []
+    for exit_steps in (1, 2, 3, 4, 5):
+        for across in range(2, clear_steps + 3):
+            for hang in (True, False):
+                # Stage 1, structure only: hanging back over the body is impossible.
+                if hang and across < clear_steps:
+                    continue
+                if not hang and across > 5:
+                    continue
+                exit_point = (
+                    there[0] + out[0] * exit_steps * GRID,
+                    there[1] + out[1] * exit_steps * GRID,
+                )
+                corner = (
+                    exit_point[0] + sides[0][0] * across * GRID,
+                    exit_point[1] + sides[0][1] * across * GRID,
+                )
+                # Hanging back: the capacitor runs from the corner towards the part;
+                # standing: away from it. Its return pin faces that way.
+                facing = (-out[0], -out[1]) if hang else out
+                plans.append((hang, exit_steps, across, exit_point, corner, facing))
+    # Shortest route first; a hanging capacitor (no return stub) before a standing one.
+    plans.sort(key=lambda plan: (plan[1] + plan[2], not plan[0]))
+    chosen = None
+    for hang, exit_steps, across, exit_point, corner, facing in plans:
+        if record["geometric"] >= DOGLEG_GEOMETRIC_BUDGET:
+            record["refused"].append("geometric budget spent")
+            break
+        label = (
+            f"route out {exit_steps * 1.27:.2f} mm, across {across * 1.27:.2f} mm, "
+            f"{'hanging back' if hang else 'standing'}"
+        )
+        if f"{name}|{label}" in skip:
+            continue
+        if crowded(exit_point, corner, facing):
+            record["structural"] += 1
+            continue
+        candidate = None
+        for angle in (0, 90, 180, 270):
+            for sideways in (2,) if hang else (side_sign(sides[0]) * 2, -side_sign(sides[0]) * 2):
+                try:
+                    drawn = _redraw_capacitor(
+                        text,
+                        name,
+                        row["pin"],
+                        angle,
+                        corner,
+                        there,
+                        sideways,
+                        route=[exit_point],
+                    )
+                except (ValueError, KeyError):
+                    continue
+                placed = next(u for k, u in _units(drawn).items() if k[0] == name)
+                other = next(p["point"] for p in placed["pins"] if p["number"] != row["pin"])
+                if (_sign(other[0] - corner[0]), _sign(other[1] - corner[1])) != facing:
+                    break
+                candidate = drawn
+                break
+            if candidate is not None:
+                break
+        if candidate is None:
+            continue
+        record["geometric"] += 1
+        objection = layout_check(candidate)
+        if objection:
+            record["refused"].append(f"{label}: layout check: {objection[:80]}")
+            continue
+        key = next(k for k in _units(candidate) if k[0] == name)
+        candidate = _replace_text(candidate, key, layout_check, fields_ok)
+        if candidate is None or power_symbol_collisions(candidate):
+            record["refused"].append(f"{label}: no clear spot for its text or symbols")
+            continue
+        check = next(r for r in capacitor_distances(design, candidate) if r["capacitor"] == name)
+        if not check["direct"]:
+            record["refused"].append(f"{label}: not joined by a direct wire")
+            continue
+        after = _served_exposure(candidate, nets, row["net"], there)
+        if after >= before:
+            record["refused"].append(f"{label}: exposure {after} mm, not lower")
+            continue
+        if record["native"] >= DOGLEG_NATIVE_BUDGET:
+            record["refused"].append("native budget spent")
+            break
+        record["native"] += 1
+        failure = native_ok(candidate) if native_ok else None
+        if failure:
+            record["refused"].append(f"{label}: native check: {failure[:80]}")
+            continue
+        chosen = (candidate, label)
+        record["exposure_mm_after"] = after
+        break
+    record["seconds"] = round(time.monotonic() - started, 1)
+    record["refused"] = record["refused"][:8]
+    if chosen is None:
+        return None, None, record
+    return chosen[0], chosen[1], record
+
+
+def side_sign(direction: tuple[int, int]) -> int:
+    """-1 for a direction to the left or up, 1 otherwise."""
+    return -1 if direction[0] < 0 or direction[1] < 0 else 1
 
 
 def place_supply_blocks_text(
@@ -561,6 +779,27 @@ def place_supply_blocks_text(
                     "kept_because": reasons[:6],
                 }
             )
+    # A near, direct capacitor whose wire still runs beside another net: route it away.
+    for row in capacitor_distances(design, text):
+        name = row["capacitor"]
+        if not row["direct"] or name in skip:
+            continue
+        if not _served_exposure(text, nets, row["net"], _point(_units(text), row["serves"])):
+            continue
+        candidate, label, record = _try_dogleg(
+            text, design, row, nets, layout_check, fields_ok, native_ok, skip
+        )
+        if candidate is not None:
+            text = candidate
+        moves.append(
+            {
+                "connector": name,
+                "block": "supply",
+                "change": label,
+                "serves": row["serves"],
+                "parallel_exposure": record,
+            }
+        )
     for row in power_block_directions(design, text):
         if row["consistent"]:
             continue
