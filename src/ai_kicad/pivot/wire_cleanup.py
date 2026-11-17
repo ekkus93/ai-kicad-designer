@@ -212,7 +212,15 @@ def simplify_wires_text(
     started = time.monotonic()
     record = {"hooks": [], "junctions_removed": 0, "merged": 0, "native": 0, "refused": []}
 
+    from .text_clearance import MINIMUM, text_wire_clearances
+
     def accept(candidate: str, label: str) -> bool:
+        # Never bring part text closer to a wire than a grid step (or than it already was).
+        before = min(text_wire_clearances(text).values(), default=MINIMUM)
+        after = min(text_wire_clearances(candidate).values(), default=MINIMUM)
+        if after < min(before, MINIMUM):
+            record["refused"].append(f"{label}: text would be {after / 1e6} mm from a wire")
+            return False
         objection = layout_check(candidate)
         if objection:
             record["refused"].append(f"{label}: layout check: {objection[:80]}")
