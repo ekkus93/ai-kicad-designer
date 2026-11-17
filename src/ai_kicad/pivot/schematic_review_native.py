@@ -3212,6 +3212,7 @@ class NativeSchematicEngine:
                 cache,
                 quality_thresholds,
                 getattr(self, "_variant_budget_exhausted", None),
+                self.design,
             )
             menu["entries"] += entries
             menu["record"]["generator"] = record

@@ -607,6 +607,10 @@ def menu_for_reviewer(menu: dict) -> list[dict]:
                 "predicted_quality_worse": sorted(delta["worse"]) if delta else None,
             }
         )
+        if "improves" in entry:
+            # Brief v12 generator entries: the report-only measures they lower (R8.3).
+            shown[-1]["improves"] = entry["improves"]
+            shown[-1]["predicted_r73_delta"] = entry.get("predicted_r73_delta")
     return shown
 
 

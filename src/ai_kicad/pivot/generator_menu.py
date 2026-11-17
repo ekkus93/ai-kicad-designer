@@ -35,6 +35,68 @@ KEEP_ENTRY = {
 }
 
 
+def layout_measures(report: dict, design: dict | None, text: str) -> dict:
+    """The report-only measures that trigger generator entries (spec R8.3), each with
+    whether it flags something on this drawing."""
+    from .block_moves import GROUPED_MM
+    from .supply_blocks import BESIDE_MM, capacitor_distances, power_block_directions
+
+    detours = report.get("net_detours")
+    detours = detours if isinstance(detours, list) else []
+    returns = report.get("return_connector_distances")
+    returns = returns if isinstance(returns, list) else []
+    caps = capacitor_distances(design, text) if design else []
+    sideways = (
+        [r for r in power_block_directions(design, text) if not r["consistent"]] if design else []
+    )
+    measures = {
+        "r73_detours": {
+            "excess_mm": round(sum(r["excess_mm"] for r in detours), 3),
+            "u_turns": sum(1 for r in detours if r["u_turn_at"]),
+            "leaves_part_box": sum(1 for r in detours if r["leaves_part_box"]),
+        },
+        "return_connector_distance": {
+            "far_mm": round(
+                sum(r["distance_mm"] for r in returns if r["distance_mm"] > GROUPED_MM), 3
+            )
+        },
+        "capacitor_distance": {
+            "far_mm": round(
+                sum(
+                    c["distance_mm"]
+                    for c in caps
+                    if c["distance_mm"] > BESIDE_MM or not c["direct"]
+                ),
+                3,
+            ),
+            "not_direct": sum(1 for c in caps if not c["direct"]),
+        },
+        "sideways_power_symbols": {"count": len(sideways)},
+    }
+    flagged = {
+        "r73_detours": bool(
+            measures["r73_detours"]["u_turns"] or measures["r73_detours"]["leaves_part_box"]
+        ),
+        "return_connector_distance": measures["return_connector_distance"]["far_mm"] > 0,
+        "capacitor_distance": measures["capacitor_distance"]["far_mm"] > 0
+        or measures["capacitor_distance"]["not_direct"] > 0,
+        "sideways_power_symbols": measures["sideways_power_symbols"]["count"] > 0,
+    }
+    return {"measures": measures, "flagged": [name for name, on in flagged.items() if on]}
+
+
+def _improves(before: dict, after: dict, flagged: list[str]) -> tuple[list[str], dict]:
+    """Flagged measures the variant lowers (no component rises), and every delta."""
+    deltas, improved = {}, []
+    for name, values in before.items():
+        deltas[name] = {key: round(after[name][key] - value, 3) for key, value in values.items()}
+    for name in flagged:
+        changes = deltas[name].values()
+        if any(change < 0 for change in changes) and not any(change > 0 for change in changes):
+            improved.append(name)
+    return improved, deltas
+
+
 def generator_entries(
     base,
     variants: dict[str, dict],
@@ -43,8 +105,15 @@ def generator_entries(
     cache: ValidationCache,
     quality_thresholds: dict | None = None,
     budget_exhausted: str | None = None,
+    design: dict | None = None,
 ) -> tuple[list[dict], dict]:
-    """Menu entries for the stored variants, then "keep"; with a record of the work."""
+    """Menu entries for the stored variants, then "keep"; with a record of the work.
+
+    Spec R8.3: entries are offered only when every check passes on the drawing and a
+    report-only measure flags something there (R7.3 detours, return-connector distance,
+    capacitor distance, sideways power-block symbols), and only for variants that lower a
+    flagged measure without raising any of its parts. Each entry names the measures it
+    improves, with its predicted R2 and R7.3 deltas."""
     started = time.monotonic()
     record = {
         "variants": len(variants),
@@ -66,6 +135,16 @@ def generator_entries(
         record["seconds"] = round(time.monotonic() - started, 3)
         return [keep], record
     checks = base.report.get("checks", {})
+    if not checks or any(value != "PASS" for value in checks.values()):
+        record["not_offered"] = "a check fails on this drawing; menu fixes come first (R8.3)"
+        record["seconds"] = round(time.monotonic() - started, 3)
+        return [keep], record
+    before = layout_measures(base.report, design, base_text)
+    record["measures"] = before
+    if not before["flagged"]:
+        record["not_offered"] = "no report-only measure flags this drawing (R8.3)"
+        record["seconds"] = round(time.monotonic() - started, 3)
+        return [keep], record
     entries = []
     for vid, variant in variants.items():
         action = {"operation": "use_variant", "variant": vid}
@@ -103,7 +182,23 @@ def generator_entries(
                 elif newly_failing:
                     outcome = {"ok": False, "reason": f"makes {', '.join(newly_failing)} fail"}
                 else:
-                    outcome = {"ok": True, "revision": trial.revision, "predicted_delta": delta}
+                    after = layout_measures(trial.report, design, trial.schematic.read_text())[
+                        "measures"
+                    ]
+                    improved, deltas = _improves(before["measures"], after, before["flagged"])
+                    if not improved:
+                        outcome = {
+                            "ok": False,
+                            "reason": "lowers no flagged measure: " + ", ".join(before["flagged"]),
+                        }
+                    else:
+                        outcome = {
+                            "ok": True,
+                            "revision": trial.revision,
+                            "predicted_delta": delta,
+                            "improves": improved,
+                            "measure_deltas": deltas,
+                        }
             cache.results[key] = outcome
         if not outcome["ok"]:
             record["rejected"].append({"variant": vid, "reason": outcome["reason"]})
@@ -119,6 +214,9 @@ def generator_entries(
                 "optional": True,
                 "fixes": [],
                 "gains": [],
+                "improves": outcome["improves"],
+                "predicted_r73_delta": outcome["measure_deltas"]["r73_detours"],
+                "measure_deltas": outcome["measure_deltas"],
                 "predicted_delta": outcome["predicted_delta"],
                 "action": action,
                 "scratch_revision": outcome["revision"],

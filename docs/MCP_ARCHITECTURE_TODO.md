@@ -907,6 +907,21 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - **Corpus test:** on the v11 corpus, entries appear on the drawings ChatGPT rated defective, and none worsens a passing check.
 
     **Deps:** P6-011u.
+
+    **Evidence so far (2026-11-17, partial: the corpus test waits for the v11 ratings):**
+    - **Triggers:** `layout_measures` and `generator_entries` (`src/ai_kicad/pivot/generator_menu.py`) offer generator entries only when every check passes on the drawing and a report-only measure flags something there:
+      - R7.3 detours: a U-turn or a box leave
+      - a return connector more than `GROUPED_MM` (15.24 mm) from its power interface
+      - a capacitor more than `BESIDE_MM` (25.4 mm) from its pin, or not directly wired
+      - sideways power-block symbols
+
+      Only variants that lower a flagged measure, without raising any part of it, are offered. The rest are recorded as rejected, with the reason.
+    - **Entry content:** each entry carries `improves` (the measures it lowers), `predicted_r73_delta`, `measure_deltas` for every measure, and the R2 `predicted_delta`. `menu_for_reviewer` shows `improves` and `predicted_r73_delta` to the reviewer.
+    - **Tests:** `tests/pivot/test_generator_menu.py` covers the measure-improving entry with its R7.3 delta, a variant lowering no flagged measure, a drawing with no flagged measure, and a failing check. With KiCad on the regulator: 7 tests, 22 passed with the menu tests.
+    - **Probe (v12):**
+      - linear_regulator is flagged for `r73_detours` and `return_connector_distance`. `block_move-1` (R7.3 delta 0) and `connector_reorientation-2` lower the return distance. The second costs one U-turn and 7.62 mm of R7.3 excess, shown in its deltas. v3 is rejected.
+      - dual_buffer is flagged for `r73_detours` and `sideways_power_symbols`. Neither variant lowers them, so only `keep-1` is offered.
+    - **Open:** the corpus test (entries appear on the drawings ChatGPT rates defective in the v11 baseline, and none worsens a passing check) needs the v11 ratings (`docs/ai_kicad_baseline_v11_ratings_for_chatgpt.md`).
   - [ ] **P6-011w** Measure whether the reviewer's choices help (spec R8.5). **Acceptance:**
     - **Runs:** on the R6 benchmark, record for each drawing the generator's own best candidate, the reviewer's chosen entry and "keep".
     - **Ratings:** blind A/B ratings of the three are recorded.

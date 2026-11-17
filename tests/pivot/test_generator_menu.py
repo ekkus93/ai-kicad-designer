@@ -11,10 +11,20 @@ from ai_kicad.pivot.edit_menu import ValidationCache
 from ai_kicad.pivot.generator_menu import generator_entries
 
 ROOT = Path(__file__).resolve().parents[2]
-PASS = {
-    "checks": {"erc": "PASS", "electrical_equivalence": "PASS", "page_balance": "PASS"},
-    "quality": None,
-}
+CHECKS = {"erc": "PASS", "electrical_equivalence": "PASS", "page_balance": "PASS"}
+
+
+def _detour(u_turn: bool) -> dict:
+    return {
+        "excess_mm": 5.08 if u_turn else 0.0,
+        "u_turn_at": ["J2.1"] if u_turn else [],
+        "leaves_part_box": False,
+    }
+
+
+# A drawing whose J2 wire U-turns: the R7.3 measure flags it.
+PASS = {"checks": CHECKS, "quality": None, "net_detours": [_detour(True)]}
+FIXED = {"checks": CHECKS, "quality": None, "net_detours": [_detour(False)]}
 
 
 def _base(tmp_path, text="drawn"):
@@ -36,13 +46,23 @@ def test_each_variant_becomes_a_checked_entry_with_keep_last(tmp_path):
 
     def validate(action):
         tried.append(action)
-        revision = "sha256:" + ("1" if action["variant"] == "v1" else "2") * 64
-        return SimpleNamespace(revision=revision, report=PASS)
+        digit = "1" if action["variant"] == "v1" else "2"
+        trial = tmp_path / f"{digit}.kicad_sch"
+        trial.write_text(digit)
+        return SimpleNamespace(revision="sha256:" + digit * 64, report=FIXED, schematic=trial)
 
     entries, record = generator_entries(base, _variants(), "drawn", validate, ValidationCache())
     assert [e["id"] for e in entries] == ["connector_reorientation-1", "block_move-2", "keep-1"]
     assert entries[0]["action"] == {"operation": "use_variant", "variant": "v1"}
     assert entries[0]["scratch_revision"] == "sha256:" + "1" * 64
+    # R8.3: each entry names the measure it lowers and its predicted R7.3 delta.
+    assert entries[0]["improves"] == ["r73_detours"]
+    assert entries[0]["predicted_r73_delta"] == {
+        "excess_mm": -5.08,
+        "u_turns": -1,
+        "leaves_part_box": 0,
+    }
+    assert record["measures"]["flagged"] == ["r73_detours"]
     assert entries[-1]["action"] == {"operation": "keep_drawing"}
     assert record["native_validations"] == 2 and record["budget_exhausted"] is None
 
@@ -52,12 +72,34 @@ def test_a_variant_that_makes_a_check_fail_is_not_offered(tmp_path):
 
     def validate(action):
         checks = {"erc": "PASS", "electrical_equivalence": "PASS", "page_balance": "FAIL"}
-        report = {"checks": checks, "quality": None}
+        report = {"checks": checks, "quality": None, "net_detours": [_detour(False)]}
         return SimpleNamespace(revision="sha256:" + "3" * 64, report=report)
 
     entries, record = generator_entries(base, _variants(), "drawn", validate, ValidationCache())
     assert [e["id"] for e in entries] == ["keep-1"]
     assert {r["reason"] for r in record["rejected"]} == {"makes page_balance fail"}
+
+
+def test_a_variant_that_lowers_no_flagged_measure_is_not_offered(tmp_path):
+    base = _base(tmp_path)
+
+    def validate(action):
+        trial = tmp_path / "same.kicad_sch"
+        trial.write_text("x")
+        return SimpleNamespace(revision="sha256:" + "4" * 64, report=PASS, schematic=trial)
+
+    entries, record = generator_entries(base, _variants(), "drawn", validate, ValidationCache())
+    assert [e["id"] for e in entries] == ["keep-1"]
+    assert all("lowers no flagged measure" in r["reason"] for r in record["rejected"])
+
+
+def test_nothing_is_offered_when_no_measure_flags_the_drawing(tmp_path):
+    base = _base(tmp_path)
+    base.report = FIXED
+    entries, record = generator_entries(
+        base, _variants(), "drawn", lambda a: pytest.fail("validated"), ValidationCache()
+    )
+    assert [e["id"] for e in entries] == ["keep-1"] and "no report-only" in record["not_offered"]
 
 
 def test_variants_are_not_offered_once_the_drawing_has_changed(tmp_path):
