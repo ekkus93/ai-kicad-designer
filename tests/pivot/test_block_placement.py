@@ -223,23 +223,27 @@ def test_an_indicator_is_driven_by_its_signal_net_never_a_rail():
     assert net == "LED_A" and driver["reference"] == "D1"
 
 
-def test_a_sideways_supply_arrow_is_re_aimed_with_its_block(v11):
-    """B14 (spec R7.4, reviewed solution §E): sallen_key's VPLUS arrow at U1 pin 8 could not
-    turn up in place (U1C's own text was there). With its block (a short jog, U1C's text
-    placed again) it now points up, within the search budgets, every check passing."""
-    from ai_kicad.pivot.supply_blocks import (
-        BLOCK_REAIM_GEOMETRIC_BUDGET,
-        BLOCK_REAIM_NATIVE_BUDGET,
-        power_block_directions,
+def test_part_text_a_move_left_hugging_a_wire_is_placed_again():
+    """2026-11-17: after U1B moved beside U1A on dual_buffer (B01), its text sat 0.5 mm
+    either side of its own output wire (the R2 text clearance fell from v10's 2.8 mm).
+    The text is placed again with the gap restored."""
+    from ai_kicad.pivot.text_clearance import (
+        MINIMUM,
+        clear_text_from_wires_text,
+        text_wire_clearances,
     )
 
-    _tree, report, directory = v11["sallen_key"]
-    assert all(value == "PASS" for value in report["checks"].values()), report["checks"]
-    design = json.loads(FILES["sallen_key"].read_text())
+    directory = (
+        ROOT / "fixtures/pivot/experiments/supply_blocks_v11_2026-11-17_run1" / "dual_buffer"
+    )
     text = Path(glob.glob(str(directory / "project/*.kicad_sch"))[0]).read_text()
-    assert [r for r in power_block_directions(design, text) if not r["consistent"]] == []
-    moves = json.loads((directory / "presentation.json").read_text())["block_moves"]
-    (move,) = [m for m in moves if m.get("block_search")]
-    assert move["change"].startswith("re-aim with its block")
-    assert move["block_search"]["geometric"] <= BLOCK_REAIM_GEOMETRIC_BUDGET
-    assert move["block_search"]["native"] <= BLOCK_REAIM_NATIVE_BUDGET
+    assert text_wire_clearances(text)[("U1", 2)] == 500_000
+    placed, moves = clear_text_from_wires_text(text, lambda _t: None, lambda _t, _o=None: True)
+    assert [m["part"] for m in moves] == ["U1 unit 2"] and moves[0]["change"]
+    assert min(text_wire_clearances(placed).values()) >= MINIMUM
+
+
+@pytest.mark.parametrize("name", V11)
+def test_v11_part_text_keeps_a_grid_step_from_every_wire(v11, name):
+    _tree, report, _directory = v11[name]
+    assert report["quality"]["text_clearance_mm"] >= 1.27, report["quality"]

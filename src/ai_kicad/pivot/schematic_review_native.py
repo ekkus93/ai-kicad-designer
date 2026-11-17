@@ -2329,6 +2329,17 @@ class NativeSchematicEngine:
         )
         schematic.write_text(text)
         presentation["vertical_field_moves"] = moves
+        if (getattr(self, "generator_layout", None) or {}).get("block_placement") and getattr(
+            self, "_connector_check", None
+        ):
+            # Brief v11: part text a moved part left hugging a wire is placed again.
+            from .text_clearance import clear_text_from_wires_text
+
+            text, moves = clear_text_from_wires_text(
+                schematic.read_text(), self._connector_check, self._fields_ok
+            )
+            schematic.write_text(text)
+            presentation["text_clearance_moves"] = moves
         if getattr(self, "page_balance", False):
             # Last, once every part, wire and field has its final place.
             text, centring = centre_on_page_text(schematic.read_text())

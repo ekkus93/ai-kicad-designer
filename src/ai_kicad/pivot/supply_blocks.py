@@ -243,12 +243,9 @@ def power_block_directions(design: dict, text: str) -> list[dict]:
     return rows
 
 
-def _reaim(
-    text: str, reference: str, direction: tuple[int, int], stub: int = 0, rise: int = 0
-) -> str:
+def _reaim(text: str, reference: str, direction: tuple[int, int], stub: int = 0) -> str:
     """Redraw one power symbol at its connection point pointing along `direction`, with
-    its rail name placed beyond the new glyph tip; on a horizontal stub of `stub` nm, or
-    first `rise` nm straight along `direction` and then that stub."""
+    its rail name placed beyond the new glyph tip."""
     from ai_kicad.sexpr import one
 
     from .power_symbols import _append_forms, _instance, _without_forms
@@ -266,22 +263,20 @@ def _reaim(
         )
     )
     angle = _angle_for(item["lib_id"], direction)
-    if not stub and not rise:
+    if not stub:
         return _append_forms(
             remaining,
             [_instance(item["lib_id"], reference, item["net"], item["point"], angle, project)],
         )
-    # A short horizontal stub from the connection point (after a rise along the glyph's
-    # direction, if any), with the symbol at its end.
+    # A short horizontal stub from the connection point, with the symbol at its end, for a
+    # pin that faces where the glyph should point.
     from .power_symbols import _wire_form
 
-    corner = (item["point"][0] + direction[0] * rise, item["point"][1] + direction[1] * rise)
-    end = (corner[0] + stub, corner[1])
-    path = [item["point"], corner, end]
+    end = (item["point"][0] + stub, item["point"][1])
     return _append_forms(
         remaining,
         [
-            *(_wire_form(a, b, item["net"]) for a, b in zip(path, path[1:]) if a != b),
+            _wire_form(item["point"], end, item["net"]),
             _instance(item["lib_id"], reference, item["net"], end, angle, project),
         ],
     )
@@ -866,13 +861,6 @@ def place_supply_blocks_text(
                 continue
             chosen = (candidate, label)
             break
-        search = None
-        if chosen is None:
-            found, label, search = _try_block_reaim(
-                text, name, wanted, layout_check, fields_ok, native_ok, skip
-            )
-            if found is not None:
-                chosen = (found, label)
         if chosen is None:
             moves.append(
                 {
@@ -880,91 +868,9 @@ def place_supply_blocks_text(
                     "block": "supply",
                     "change": None,
                     "kept_because": [f"re-aim {row['role']} symbol: {r}" for r in reasons[:6]],
-                    "block_search": search,
                 }
             )
             continue
         text = chosen[0]
-        move = {"connector": name, "block": "supply", "change": chosen[1], "net": row["net"]}
-        if search is not None:
-            move["block_search"] = search
-        moves.append(move)
+        moves.append({"connector": name, "block": "supply", "change": chosen[1], "net": row["net"]})
     return text, moves
-
-
-# Whole-block re-aim (spec R7.4, reviewed solution §E): bounded, and never more than this
-# much added wire to turn one glyph its conventional way.
-BLOCK_REAIM_MAX_WIRE = 5 * GRID
-BLOCK_REAIM_GEOMETRIC_BUDGET = 12
-BLOCK_REAIM_NATIVE_BUDGET = 3
-
-
-def _try_block_reaim(text, name, wanted, layout_check, fields_ok, native_ok, skip):
-    """Re-aim a power symbol with its power block: out along the glyph's direction, a short
-    jog, and the text of the unit whose pin it marks placed again. Shortest added wire
-    first, within the budgets; returns the text (or None), its label and the record."""
-    import time
-
-    started = time.monotonic()
-    record = {"geometric": 0, "native": 0, "refused": []}
-    (item,) = [s for s in power_symbols(parse(text)) if s["reference"] == name]
-    owner = next(
-        (k for k, u in _units(text).items() if any(p["point"] == item["point"] for p in u["pins"])),
-        None,
-    )
-    shapes = sorted(
-        (
-            (rise, stub)
-            for rise in (2, 3, 4)
-            for stub in (0, -2, 2, -3, 3, -4, 4)
-            if rise + abs(stub) <= BLOCK_REAIM_MAX_WIRE // GRID
-        ),
-        key=lambda shape: (shape[0] + abs(shape[1]), shape),
-    )
-    chosen = None
-    for rise, stub in shapes:
-        if record["geometric"] >= BLOCK_REAIM_GEOMETRIC_BUDGET:
-            record["refused"].append("geometric budget spent")
-            break
-        label = f"re-aim with its block: out {rise * 1.27:.2f} mm, across {stub * 1.27:+.2f} mm"
-        if f"{name}|{label}" in skip:
-            continue
-        try:
-            candidate = _reaim(text, name, wanted, stub * GRID, rise * GRID)
-        except (ValueError, KeyError) as error:
-            record["refused"].append(f"{label}: {error}")
-            continue
-        record["geometric"] += 1
-        if (power_symbol_collisions(candidate) or layout_check(candidate)) and owner:
-            # The unit's own text is in the way: place it again, clear of the glyph.
-            candidate = _replace_text(
-                candidate,
-                owner,
-                lambda c: "power symbol" if power_symbol_collisions(c) else layout_check(c),
-                fields_ok,
-            )
-        if candidate is None or power_symbol_collisions(candidate):
-            record["refused"].append(f"{label}: no clear spot for the glyph and the unit's text")
-            continue
-        objection = layout_check(candidate)
-        if objection:
-            record["refused"].append(f"{label}: layout check: {objection[:80]}")
-            continue
-        if not fields_ok(candidate):
-            record["refused"].append(f"{label}: a field check would report something new")
-            continue
-        if record["native"] >= BLOCK_REAIM_NATIVE_BUDGET:
-            record["refused"].append("native budget spent")
-            break
-        record["native"] += 1
-        failure = native_ok(candidate) if native_ok else None
-        if failure:
-            record["refused"].append(f"{label}: native check: {failure[:80]}")
-            continue
-        chosen = (candidate, label)
-        break
-    record["seconds"] = round(time.monotonic() - started, 1)
-    record["refused"] = record["refused"][:8]
-    if chosen is None:
-        return None, None, record
-    return chosen[0], chosen[1], record
