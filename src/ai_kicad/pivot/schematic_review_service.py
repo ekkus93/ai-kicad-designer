@@ -10,6 +10,7 @@ from .schematic_review import OllamaSchematicReviewer, file_hash, run_schematic_
 from .schematic_review_brief import (
     brief_allows_power_symbol_rails,
     brief_generator_layout,
+    brief_generator_menu,
     brief_requires_field_ownership,
     brief_requires_page_balance,
     brief_requires_level_power_block,
@@ -76,6 +77,8 @@ class NativeSchematicReviewService:
         self.profile = brief_review_profile(review_brief)
         layout = brief_generator_layout(review_brief)
         self.generator_layout = layout.model_dump() if layout is not None else None
+        menu = brief_generator_menu(review_brief)
+        self.generator_menu = menu.model_dump() if menu is not None else None
         self.quality_thresholds = None
         self.edit_mode = "free_form"
         if self.profile is not None:
@@ -123,6 +126,7 @@ class NativeSchematicReviewService:
             quality_thresholds=self.quality_thresholds,
             structured_refusals=self.profile is not None,
             generator_layout=self.generator_layout,
+            generator_menu=self.generator_menu,
         )
 
     def review(self, design: Path, output: Path) -> dict:

@@ -273,6 +273,25 @@ class SchematicReviewBriefV11(SchematicReviewBriefV10):
     generator_layout: GeneratorLayout
 
 
+class GeneratorMenu(StrictModel):
+    """Brief v12: the generator's runner-up drawings offered as menu entries (spec R8.2,
+    R8.6). Each variant recompiles the design with one of the generator's chosen moves
+    excluded; `variants` and `seconds` cap that work per design."""
+
+    variants: int = Field(ge=1, le=16)
+    seconds: float = Field(gt=0, le=3600)
+
+
+class SchematicReviewBriefV12(SchematicReviewBriefV11):
+    """Brief v11, plus generator candidates as menu entries: for each move a layout step
+    chose, the drawing it makes when that move is excluded, validated in full, offered
+    beside a "keep the current drawing" choice (spec R8.2)."""
+
+    schema_version: Literal["schematic-review-brief.v12"]
+    brief_id: Literal["owner-readability.v12"]
+    generator_menu: GeneratorMenu
+
+
 BRIEF_MODELS = {
     "schematic-review-brief.v2": SchematicReviewBriefV2,
     "schematic-review-brief.v3": SchematicReviewBriefV3,
@@ -284,6 +303,7 @@ BRIEF_MODELS = {
     "schematic-review-brief.v9": SchematicReviewBriefV9,
     "schematic-review-brief.v10": SchematicReviewBriefV10,
     "schematic-review-brief.v11": SchematicReviewBriefV11,
+    "schematic-review-brief.v12": SchematicReviewBriefV12,
 }
 ReviewBrief = (
     SchematicReviewBrief
@@ -297,6 +317,7 @@ ReviewBrief = (
     | SchematicReviewBriefV9
     | SchematicReviewBriefV10
     | SchematicReviewBriefV11
+    | SchematicReviewBriefV12
 )
 
 
@@ -430,3 +451,11 @@ def resolve_review_brief(
     ):
         raise ValueError("field-distance override conflicts with the versioned review brief")
     return locality.threshold, format_review_brief(brief)
+
+
+def brief_generator_menu(path: Path | None) -> GeneratorMenu | None:
+    """The v12 generator-menu budget, or None for earlier briefs."""
+    if path is None or path.suffix.lower() != ".json":
+        return None
+    brief = load_review_brief(path)
+    return brief.generator_menu if isinstance(brief, SchematicReviewBriefV12) else None

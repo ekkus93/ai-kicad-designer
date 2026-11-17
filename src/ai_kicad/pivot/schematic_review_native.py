@@ -12,6 +12,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import time
 from uuid import uuid4
 
 
@@ -39,7 +40,9 @@ from .schematic_review import (
     ConnectRail,
     ACTION_ADAPTER,
     MoveSymbols,
+    KeepDrawing,
     MoveUnits,
+    UseVariant,
     RegenerateSchematic,
     SchematicAction,
     SchematicAssessment,
@@ -2059,8 +2062,14 @@ class NativeSchematicEngine:
         quality_thresholds: dict | None = None,
         structured_refusals: bool = False,
         generator_layout: dict | None = None,
+        generator_menu: dict | None = None,
     ):
         self.resolved = assets()
+        # Brief v12: the generator's runner-up drawings as menu entries (spec R8.2); the
+        # variants are built once, when the design is first compiled.
+        self.generator_menu = dict(generator_menu) if generator_menu else None
+        self._variants: dict[str, dict] | None = None
+        self._variant_base_text: str | None = None
         # Brief v11: pivot-side generator layout steps (spec R7); None under v1-v10.
         self.generator_layout = dict(generator_layout) if generator_layout else None
         # Brief v10: editor refusals name their reason class (spec R4).
@@ -2158,6 +2167,7 @@ class NativeSchematicEngine:
             problem = self._finished_problem(schematic, first)
             attempts.append({"skip": [], "problem": problem})
             chosen = (first, schematic) if problem is None else None
+            chosen_skip: frozenset = frozenset()
             attempt, excluded, number = first, set(), 0
             while chosen is None and number < 8:
                 number += 1
@@ -2199,6 +2209,7 @@ class NativeSchematicEngine:
                 attempts.append({"skip": sorted(excluded), "problem": problem})
                 if problem is None:
                     chosen = (attempt, schematic)
+                    chosen_skip = frozenset(excluded)
             if chosen is None:
                 # Nothing worked: every connector and block as the compiler drew it.
                 recorded = json.loads((first / "presentation.json").read_text())
@@ -2219,13 +2230,106 @@ class NativeSchematicEngine:
                     }
                 )
                 chosen = (attempt, schematic)
+                chosen_skip = frozenset(everything)
             source, schematic = chosen
             presentation = json.loads((source / "presentation.json").read_text())
             presentation["connector_flow_attempts"] = attempts
+            if getattr(self, "generator_menu", None) and self._variants is None:
+                presentation["generator_variants"] = self._build_variants(
+                    Path(folder), source, chosen_skip, presentation, schematic.read_text()
+                )
             write_json(source / "presentation.json", presentation)
             for item in source.iterdir():
                 shutil.move(str(item), directory / item.name)
         return directory / schematic.relative_to(source)
+
+    def _build_variants(
+        self, folder: Path, source: Path, base_skip: frozenset, presentation: dict, final: str
+    ) -> dict:
+        """The generator's runner-up drawings (brief v12, spec R8.2): for each move a layout
+        step chose, the design compiled again with that move excluded, so the step takes its
+        next-best candidate and every later step runs as usual. A variant is kept only if
+        every check passes on it and it differs from the chosen drawing and from the
+        others. Classes are taken in turn, within the brief's count and time budget."""
+        import hashlib
+
+        started = time.monotonic()
+        budget = self.generator_menu
+        queues: dict[str, list[dict]] = {}
+        for item in presentation.get("connector_flow", []) + presentation.get(
+            "connector_flow_after_blocks", []
+        ):
+            if item.get("change"):
+                queues.setdefault("connector_reorientation", []).append(item)
+        for item in presentation.get("indicator_moves", []):
+            if item.get("change"):
+                queues.setdefault("block_move", []).append(item)
+        for item in presentation.get("block_moves", []):
+            if not item.get("change"):
+                continue
+            if item.get("block") == "supply":
+                name = (
+                    "power_symbol_reaim"
+                    if item["connector"].startswith("#")
+                    else ("capacitor_redraw")
+                )
+            else:
+                name = "block_move"
+            queues.setdefault(name, []).append(item)
+        order = []
+        while any(queues.values()):
+            for name in sorted(queues):
+                if queues[name]:
+                    order.append((name, queues[name].pop(0)))
+        variants, refused, seen = {}, [], {hashlib.sha256(final.encode()).hexdigest()}
+        exhausted = None
+        for number, (name, item) in enumerate(order, 1):
+            if len(variants) >= budget["variants"]:
+                exhausted = "variant count reached"
+                break
+            if time.monotonic() - started >= budget["seconds"]:
+                exhausted = "variant time budget reached"
+                break
+            excluded = f"{item['connector']}|{item['change']}"
+            attempt = folder / f"variant-{number}"
+            attempt.mkdir()
+            schematic = self._compile_once(attempt, base_skip | {excluded})
+            problem = self._finished_problem(schematic, attempt)
+            text = schematic.read_text()
+            digest = hashlib.sha256(text.encode()).hexdigest()
+            if problem is not None:
+                refused.append({"class": name, "excluded": excluded, "reason": problem[:200]})
+                continue
+            if digest in seen:
+                refused.append({"class": name, "excluded": excluded, "reason": "same drawing"})
+                continue
+            seen.add(digest)
+            vid = f"v{len(variants) + 1}"
+            variants[vid] = {
+                "class": name,
+                "excluded": excluded,
+                "description": (
+                    f"{name.replace('_', ' ')}: the drawing without {item['connector']}'s "
+                    f"'{item['change']}', with its next-best choice instead"
+                ),
+                "text": text,
+            }
+            (source / "generator_variants").mkdir(exist_ok=True)
+            (source / "generator_variants" / f"{vid}.kicad_sch").write_text(text)
+        self._variants = variants
+        self._variant_base_text = final
+        self._variant_budget_exhausted = exhausted
+        return {
+            "variants": [
+                {key: value for key, value in item.items() if key != "text"} | {"id": vid}
+                for vid, item in variants.items()
+            ],
+            "refused": refused,
+            "considered": len(order),
+            "seconds": round(time.monotonic() - started, 1),
+            "budget_exhausted": exhausted,
+            "budget": dict(budget),
+        }
 
     def _finished_problem(self, schematic: Path, directory: Path) -> str | None:
         """What the independent checks report on a finished drawing, or None.
@@ -3086,7 +3190,7 @@ class NativeSchematicEngine:
             source = self.apply(assessment.schematic, step, [adapter.validate_python(action)])
             return self.assess(source, step, render=False)
 
-        return build_menu(
+        menu = build_menu(
             assessment,
             proposals,
             validate,
@@ -3097,6 +3201,21 @@ class NativeSchematicEngine:
             # run_headless issues three kicad-cli commands: netlist export, ERC and SVG.
             kicad_commands_per_validation=3,
         )
+        if getattr(self, "generator_menu", None) is not None:
+            from .generator_menu import generator_entries
+
+            entries, record = generator_entries(
+                assessment,
+                self._variants or {},
+                self._variant_base_text,
+                validate,
+                cache,
+                quality_thresholds,
+                getattr(self, "_variant_budget_exhausted", None),
+            )
+            menu["entries"] += entries
+            menu["record"]["generator"] = record
+        return menu
 
     def _geometric_field_witnesses(self, text: str) -> dict[str, set]:
         """The fields each pure-geometry field check would report for `text`."""
@@ -3188,6 +3307,13 @@ class NativeSchematicEngine:
             )
         if wire_actions and any(isinstance(action, TranslateSheet) for action in actions):
             raise ValueError("wire-path edits and sheet translation must use separate revisions")
+        variants = [action for action in actions if isinstance(action, UseVariant)]
+        if variants and len(actions) != 1:
+            raise ValueError("use_variant replaces the whole drawing and is used alone")
+        if variants and variants[0].variant not in (self._variants or {}):
+            raise ValueError(f"no generator variant {variants[0].variant} for this design")
+        if any(isinstance(action, KeepDrawing) for action in actions):
+            raise ValueError("keep_drawing changes nothing; the loop ends the round instead")
         directory.parent.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=directory.parent, prefix=".review-edit-") as tmp:
             stage = Path(tmp) / "candidate"
@@ -3200,9 +3326,12 @@ class NativeSchematicEngine:
                 project.mkdir()
                 target = project / schematic.name
                 target.write_bytes(schematic.read_bytes())
-            target.write_text(
-                edit_schematic_text(target.read_text(), actions, inventory, rail_context)
-            )
+            if variants:
+                target.write_text(self._variants[variants[0].variant]["text"])
+            else:
+                target.write_text(
+                    edit_schematic_text(target.read_text(), actions, inventory, rail_context)
+                )
             relative = target.relative_to(stage)
             stage.rename(directory)
             return directory / relative

@@ -142,6 +142,20 @@ class MoveUnits(StrictModel):
         return self
 
 
+class UseVariant(StrictModel):
+    """Replace the drawing with one of the generator's validated runner-up drawings
+    (brief v12 menu entries, spec R8.2)."""
+
+    operation: Literal["use_variant"]
+    variant: str = Field(pattern=r"^v[0-9]{1,2}$")
+
+
+class KeepDrawing(StrictModel):
+    """Keep the current drawing (brief v12's "keep" menu entry, spec R8.2)."""
+
+    operation: Literal["keep_drawing"]
+
+
 # ChooseEdit and MoveUnits are not in SchematicAction, so the review schema sent under
 # briefs v1-v9 is unchanged. Menu entries may use either; only menu resolution parses them.
 ACTION_ADAPTER = TypeAdapter(
@@ -153,7 +167,9 @@ ACTION_ADAPTER = TypeAdapter(
         | UsePowerSymbols
         | TranslateSheet
         | RegenerateSchematic
-        | MoveUnits,
+        | MoveUnits
+        | UseVariant
+        | KeepDrawing,
         Field(discriminator="operation"),
     ]
 )
@@ -809,6 +825,11 @@ def run_schematic_review(
                     raise refuse("invalid_request", message, {"offered": sorted(offered)})
                 for number, action in enumerate(actions):
                     chosen[number] = offered[action.id]
+                if any(item["class"] == "keep" for item in chosen.values()):
+                    # Brief v12: the reviewer chose to keep the current drawing.
+                    entry["menu_choices"] = [item["id"] for item in chosen.values()]
+                    status, reason = "KEPT_BY_REVIEWER", review.rationale
+                    break
                 actions = [ACTION_ADAPTER.validate_python(chosen[n]["action"]) for n in chosen]
                 entry["menu_choices"] = [item["id"] for item in chosen.values()]
             directory = output / "candidates" / f"{index + 1:03d}"

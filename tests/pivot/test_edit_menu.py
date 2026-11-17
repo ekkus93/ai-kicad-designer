@@ -501,3 +501,29 @@ def test_model_may_accept_with_an_empty_menu(tmp_path):
     )
     assert reviewer.inputs[0][0]["entries"] == []
     assert result["status"] == "ACCEPTED_FOR_REVIEW"
+
+
+class KeepMenuEngine(MenuEngine):
+    """A v12-style menu: the usual entries plus "keep the current drawing"."""
+
+    def edit_menu(self, assessment, directory, policy, cache, thresholds=None):
+        from ai_kicad.pivot.generator_menu import KEEP_ENTRY
+
+        menu = super().edit_menu(assessment, directory, policy, cache, thresholds)
+        menu["entries"].append(dict(KEEP_ENTRY, scratch_revision=assessment.revision))
+        return menu
+
+
+def test_choosing_keep_ends_the_round_with_the_drawing_unchanged(tmp_path):
+    keep = {
+        "decision": "revise",
+        "issues": ["nothing better on offer"],
+        "actions": [{"operation": "choose_edit", "id": "keep-1"}],
+    }
+    engine, reviewer = KeepMenuEngine(), MenuReviewer([keep])
+    result = run_schematic_review(engine, reviewer, tmp_path / "run", edit_mode="menu_only")
+    assert "keep-1" in [entry["id"] for entry in reviewer.inputs[0][0]["entries"]]
+    assert result["status"] == "KEPT_BY_REVIEWER"
+    assert result["iterations"][0]["menu_choices"] == ["keep-1"]
+    # Only the menu's scratch validations ran the editor; keeping applied nothing.
+    assert len(engine.applied) == 2
