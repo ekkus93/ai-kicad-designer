@@ -833,7 +833,7 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     **Evidence (2026-11-16):**
     - **Code:** `design_review_flags` (`src/ai_kicad/pivot/design_flags.py`) reports `indicator_active_low` when an LED's cathode net carries an IC pin and its anode reaches a supply through a resistor.
     - **Tests:** `tests/pivot/test_design_flags.py::test_each_flag_appears_exactly_on_its_designs[indicator_active_low]` finds it on exactly `reference_555_led_flasher_v8` among the 15 corpus designs (`D1` fed through `R3` from VCC, cathode on `U1` OUT). The existing tests show flags never change a check or `DESIGN_REQUIREMENTS_CHECKED`. 9 passed, 1 skipped (the KiCad test without `AI_KICAD_APPRUN`).
-  - [ ] **P6-011s** Regenerate and re-rate the baseline under brief v11 (spec R7.7). **Acceptance:**
+  - [x] **P6-011s** Regenerate and re-rate the baseline under brief v11 (spec R7.7). **Acceptance:**
     - **Baseline:** a new baseline (`review_baseline_v11_<date>_runN`) is built with `tools/pivot/build_review_baseline.py`.
     - **Acceptance tests:** every R7.7 test is run and recorded against it.
     - **Re-rating:** ChatGPT rates it blind, by owner decision, as for v10. The ratings and the v10 → v11 comparison per drawing are committed.
@@ -854,7 +854,12 @@ These features are **planned**, not prerequisites for P4 except when a specific 
         - B01 (dual_buffer): wire 226.06 → 231.14 mm, the owner-accepted return-symbol stubs.
         - B02 (noninverting_gain): the same +5.08 mm, plus the R7.3 R1.2–U1.1 box leave, a multi-unit boxing artefact pending an owner decision (see the P6-011p correction).
       - **Tests:** `tests/pivot/test_r77_acceptance.py` reproduces the recorded results and pins them (2 passed).
-    - **Re-rating:** pending. ChatGPT's blind ratings of `blind/` (format `baseline-ratings.v1`, as `review_baseline_v10_2026-11-14_run1/ratings/chatgpt.json`) are to be supplied by the owner.
+    - **Re-rating (2026-11-18):** ChatGPT rated the shuffled blind set from `docs/ai_kicad_baseline_v11_ratings_for_chatgpt.md`. Its written review, `docs/ai_kicad_baseline_v11_independent_review_for_claude_2026-11-17.md`, is transcribed to `ratings/chatgpt.json` (one verdict per code; defects taken from each drawing's "Bad" paragraph). `ratings/decision.json` applies the 2026-11-14 owner decision (ChatGPT's ratings, R6.4 two-rater protocol waived) and lists the 4 known-good drawings.
+    - **v10 → v11 per drawing (`ratings/comparison_v10_v11.json`):** good drawings went from 5 to 4.
+      - **Better (defects → good):** led_long_text and led_series.
+      - **Worse (good → defects):** dual_buffer, inverting_gain and noninverting_gain. ChatGPT cites a detached power unit, an isolated parked unit and sideways rail arrows.
+      - **Same:** 10 drawings. rc_lowpass and rc_highpass stay good; the regulator, both timers, the flasher, rc_to_buffer, led_reverse_supply, sallen_key and dual_rail_reference keep defects.
+    - **No overclaiming:** these are unpaired ratings from two sessions. The rater states that the 5 → 4 change is not proof of regression, and recommends a blinded, paired comparison by circuit. This is reported as evidence, not qualification.
   - **Note (2026-11-16):** The owner asked for the reviewer to be given the layout abilities it lacks. Tasks P6-011t to P6-011x implement spec R8. Order: t → u → v → w, with x only after w shows value.
   - [x] **P6-011t** Diagnose and fix the router failure behind the LED-branch moves (spec R8.1). **Acceptance:**
     - **Diagnosis:** for at least one visibly open position (the flasher's R3 and D1 just right of U1, below J2), the cause of "no obstacle-free native wire route" is identified and recorded, with the blocking item named.
