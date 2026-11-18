@@ -940,6 +940,45 @@ These features are **planned**, not prerequisites for P4 except when a specific 
 
     **Deps:** P6-011w.
 
+  - [ ] **P6-012a** Lay out each op-amp power unit as one block (spec R9.1; added 2026-11-18 with owner approval, from ChatGPT's v11 review). **Acceptance:**
+    - **Block:** in dual_buffer, inverting_gain, noninverting_gain, rc_to_buffer, sallen_key and dual_rail_reference, U1C, its decoupling capacitors and their rail symbols form one block beside the amplifier units. Placement and glyph directions are chosen together from a bounded set of arrangements.
+    - **Safety:** nets are unchanged. VREF's capacitors stay supply-to-reference. Every check passes, and v1–v12 replay unchanged.
+    - **Paired rating:** a blind paired rating (R9.6) shows the new drawings preferred, or tied, against v11 on these designs. dual_buffer, inverting_gain and noninverting_gain are not worse than their v10 drawings.
+
+    **Deps:** P6-011v.
+  - [ ] **P6-012b** Place a parked op-amp unit beside its active unit (spec R9.2). **Acceptance:**
+    - **Placement:** in every op-amp design, U1B sits next to U1A, clear of U1A's feedback paths. No new overlaps, and every check passes.
+    - **Joint layout:** it is laid out together with P6-012a's power block, so the two do not compete for the same space.
+
+    **Deps:** P6-012a.
+  - [ ] **P6-012c** Route the 555 control-pin capacitor away from pin 8 (spec R9.3). **Acceptance:**
+    - **Shorter run:** on all three 555 designs, the R7.4 parallel exposure of CONT beside VCC falls below its v11 value (3.81 mm).
+    - **Return glyph:** C2's return glyph points down where possible.
+    - **Safety:** no connection to pin 8 is introduced, and KiCad netlist equivalence and ERC pass.
+    - **Neighbouring symbols:** where needed, a neighbouring power symbol is moved as part of the same bounded candidate. No 555-specific rule is added.
+    - **Fallback:** if no candidate passes, the documented no-safe-improvement outcome stands.
+
+    **Deps:** P6-011v.
+  - [ ] **P6-012d** Place interfaces before routing and read branches in their flow direction (spec R9.4). **Acceptance:**
+    - **rc_to_buffer:** J1's input reaches R1 without its top-edge detour.
+    - **led_reverse_supply:** reads from the reference end to the negative supply, with diode polarity and nets unchanged.
+    - **Regulator:** keeps J1 and J3 as a compact power entry, without the input-side loop.
+    - **Good drawings:** rc_lowpass, rc_highpass, led_long_text and led_series stay at least as readable (paired rating, R9.6).
+
+    **Deps:** P6-011v.
+  - [ ] **P6-012e** Merge redundant power symbols and place power flags at the power entry (spec R9.5). **Acceptance:**
+    - **Flasher:** the flasher's side-by-side VCC arrows at J1 and R1 become one. Its REF flag moves from the branch under C1 to J3's power entry.
+    - **Safety:** ERC and netlist equivalence pass on every design.
+    - **Test:** a test shows a merge with connectivity unchanged.
+
+    **Deps:** P6-011v.
+  - [ ] **P6-012f** Rate changes as blind pairs (spec R9.6). **Acceptance:**
+    - **Tool:** a tool builds a randomized, blind A/B page and request of before/after pairs per circuit, and records preference, tie or defects per pair.
+    - **Results:** results are reported per circuit and overall. The v10 and v11 baselines are compared this way, as the review recommends.
+    - **Gate:** P6-012a–e use the tool as their gate.
+
+    **Deps:** none (owner supplies ratings).
+
 ## P7 — Conditional native KiCad extension/fork gate
 
 - [x] **P7-001** Maintain precise `capability_gap.json` with an observable essential operation, required pre/postconditions, tested API versions, external adapters attempted and resulting failures. **Acceptance:** no “we need deeper control” claims without a reproducible concrete gap. **Deps:** P0-011, P4-010. **Evidence:** `fixtures/pivot/capability_gap.json` now records exact tested API versions, pinned external adapters, measured operation gaps and why no essential v0 operation remains blocked.

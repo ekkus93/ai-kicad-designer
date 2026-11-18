@@ -358,6 +358,51 @@ Added only after R8.5 shows the reviewer's choices add value. Each has tests sho
 - **Cache:** validations are cached per drawing revision.
 - **Report:** a round that runs out of budget says so (`budget_exhausted`).
 
+### R9 — Semantic block layout (ChatGPT's v11 baseline review, owner request 2026-11-18)
+
+Source: `docs/ai_kicad_baseline_v11_independent_review_for_claude_2026-11-17.md`. It rates 4 of the 15 v11 drawings good. Every drawing passes every check, so the remaining defects are relationships between parts, not geometry. Three op-amp designs rated good in v10 were rated defective in v11: dual_buffer, inverting_gain and noninverting_gain.
+
+The rules for all of R9:
+- **No design-specific rules:** roles are inferred from the intended pin and net graph (power entry, return, active unit, parked unit, bypass, signal stage, feedback). There are no coordinates or rules for named designs.
+- **Bounded candidates:** each step produces a small, bounded set of whole-block arrangements, screens them cheaply, and validates each kept edit natively (netlist, ERC, every check).
+- **KEEP is a valid outcome:** when no candidate measurably improves the drawing, it is kept as it is.
+- **Behind a new brief:** the behaviour sits behind a new brief, so v1–v12 replay unchanged.
+
+#### R9.1 — Power-unit block (P1)
+
+- **One block:** an op-amp's power unit, its decoupling capacitors and its rail symbols are placed together as one block. The block is beside the amplifier units it powers, not stranded between a connector and the signal stage or far from it.
+- **Glyphs with the block:** glyph directions are chosen with the block's placement, not by rotating one symbol afterwards. The 2026-11-17 owner decision kept sideways supply glyphs where only a jog could turn them. R9.1 may turn them up only as part of a block arrangement that needs no such jog.
+- **Nets unchanged:** a supply-to-reference capacitor (B12's VREF) stays a reference capacitor.
+
+#### R9.2 — Active and parked units together (P1)
+
+- **Grouping:** a parked op-amp unit is placed next to the active unit of the same package. It is clear of the active unit's feedback paths and reads as part of the same package.
+
+#### R9.3 — 555 control-pin route (P1)
+
+- **Route-shape candidates:** the control-pin capacitor's wire leaves pin 5 away from pin 8, using bounded elbow routes, so the sustained parallel run beside VCC (R7.4 parallel exposure) shrinks.
+- **Conventional return:** the return symbol points down where possible.
+- **Neighbouring symbols:** where the neighbouring pins' symbols block every route (2026-11-17 note under P6-011p), the step may also move a neighbouring power symbol onto its pin or a shorter stub, as part of the same candidate.
+- **No 555-specific rule.**
+
+#### R9.4 — Interfaces and signal flow (P2)
+
+- **Connectors before routing:** related connectors are placed before routing.
+- **Detours penalised:** a signal path that detours from its shortest unobstructed route is penalised (rc_to_buffer's input).
+- **Flow direction:** a two-terminal branch reads from its higher-potential end to its lower one, left to right or top to bottom (led_reverse_supply), with diode polarity and every net unchanged.
+
+#### R9.5 — Redundant power symbols and flags (P2)
+
+- **Merged symbols:** same-net power symbols that stand side by side with nothing between them are merged (the flasher's two VCC arrows at J1 and R1).
+- **Flags at the power entry:** a power flag sits on a short, deliberate branch at its rail's power entry, not on a dangling branch elsewhere. ERC stays clean.
+
+#### R9.6 — Paired evaluation (P2)
+
+- **Paired ratings:** the before and after drawings of each circuit are rated blind as a pair, in random order. The outcome per pair is preference, tie, or defects.
+- **Raters:** at least two raters where possible.
+- **Reporting:** results are reported per circuit and overall. A change in the count of good drawings, or in total wire length, is not evidence of improvement on its own.
+- **Gate:** a step's change is kept only when it does not lower the paired preference on the circuits rated good.
+
 ## 4. Acceptance criteria
 
 - **Safety:** no accepted, kept or current candidate has a connectivity regression. Every edit that breaks connectivity is rolled back. This is met for single edits by `ccf9e5cc`; it is kept under R3 and R4.
