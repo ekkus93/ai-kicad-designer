@@ -1,0 +1,205 @@
+{
+  "entries": [
+    {
+      "id": "block_move-1",
+      "class": "block_move",
+      "target": {
+        "variant": "v1",
+        "excluded": "J3|move by +36.83,+15.24"
+      },
+      "description": "block move: the drawing without J3's 'move by +36.83,+15.24', with its next-best choice instead",
+      "optional": true,
+      "fixes": [],
+      "gains": [],
+      "improves": [
+        "return_connector_distance"
+      ],
+      "predicted_r73_delta": {
+        "excess_mm": 0.0,
+        "u_turns": 0,
+        "leaves_part_box": 0
+      },
+      "measure_deltas": {
+        "r73_detours": {
+          "excess_mm": 0.0,
+          "u_turns": 0,
+          "leaves_part_box": 0
+        },
+        "return_connector_distance": {
+          "far_mm": -0.32
+        },
+        "capacitor_distance": {
+          "far_mm": 0,
+          "not_direct": 0
+        },
+        "sideways_power_symbols": {
+          "count": 0
+        }
+      },
+      "predicted_delta": {
+        "deltas": {
+          "wire_length_mm": 0.0,
+          "rail_detour_mm": 0.0,
+          "bends": 0,
+          "perimeter_length_mm": 0,
+          "text_clearance_mm": 1.27,
+          "field_ownership_mm": 3.94,
+          "page_offset": 0.0,
+          "occupied_area_fraction": 0.0
+        },
+        "worse": {},
+        "not_worse": true
+      },
+      "action": {
+        "operation": "use_variant",
+        "variant": "v1"
+      },
+      "scratch_revision": "sha256:6bb29b1b8c01b7dfb175d3c5e6dc2d5b6a6e4dea3e5d173bd391168ea1e15e3b"
+    },
+    {
+      "id": "connector_reorientation-2",
+      "class": "connector_reorientation",
+      "target": {
+        "variant": "v2",
+        "excluded": "J1|mirror in place"
+      },
+      "description": "connector reorientation: the drawing without J1's 'mirror in place', with its next-best choice instead",
+      "optional": true,
+      "fixes": [],
+      "gains": [],
+      "improves": [
+        "return_connector_distance"
+      ],
+      "predicted_r73_delta": {
+        "excess_mm": 7.62,
+        "u_turns": 1,
+        "leaves_part_box": 0
+      },
+      "measure_deltas": {
+        "r73_detours": {
+          "excess_mm": 7.62,
+          "u_turns": 1,
+          "leaves_part_box": 0
+        },
+        "return_connector_distance": {
+          "far_mm": -1.59
+        },
+        "capacitor_distance": {
+          "far_mm": 0,
+          "not_direct": 0
+        },
+        "sideways_power_symbols": {
+          "count": 0
+        }
+      },
+      "predicted_delta": {
+        "deltas": {
+          "wire_length_mm": -1.27,
+          "rail_detour_mm": 1.27,
+          "bends": 1,
+          "perimeter_length_mm": 0,
+          "text_clearance_mm": 0.5,
+          "field_ownership_mm": 3.787,
+          "page_offset": 0.0,
+          "occupied_area_fraction": -0.0041
+        },
+        "worse": {},
+        "not_worse": true
+      },
+      "action": {
+        "operation": "use_variant",
+        "variant": "v2"
+      },
+      "scratch_revision": "sha256:4df7255b9e458b6eb56f0450da9d8789aae7a095e651b25b8f0ff7df696d3b22"
+    },
+    {
+      "id": "keep-1",
+      "class": "keep",
+      "target": {},
+      "description": "keep the current drawing as it is",
+      "optional": true,
+      "fixes": [],
+      "gains": [],
+      "predicted_delta": null,
+      "action": {
+        "operation": "keep_drawing"
+      },
+      "scratch_revision": "sha256:61b69483e1662d690c110cf5c34ce7e28789ddfebdb50bde30e7f0b425de8232"
+    }
+  ],
+  "record": {
+    "proposals_generated": 2,
+    "proposals_considered": 2,
+    "screened_out": 0,
+    "native_validations": 2,
+    "kicad_invocations": 6,
+    "cache_hits": 0,
+    "seconds": 1.433,
+    "budget_exhausted": null,
+    "rejected": [
+      {
+        "action": {
+          "operation": "use_power_symbols",
+          "net": "REF"
+        },
+        "reason": "editor refused: use_power_symbols made no change; REF already uses power symbols and none of them touches another drawing item"
+      },
+      {
+        "action": {
+          "operation": "connect_rail",
+          "net": "REF",
+          "replace_existing": true
+        },
+        "reason": "optional edit shows no measured quality gain"
+      }
+    ],
+    "policy": {
+      "per_class": 3,
+      "total": 8,
+      "optional_when_passing": 2,
+      "geometric_proposals": 12,
+      "native_validations": 8,
+      "seconds": 20.0
+    },
+    "generator": {
+      "variants": 3,
+      "offered": [
+        "block_move-1",
+        "connector_reorientation-2"
+      ],
+      "rejected": [
+        {
+          "variant": "v3",
+          "reason": "lowers no flagged measure: r73_detours, return_connector_distance"
+        }
+      ],
+      "native_validations": 3,
+      "cache_hits": 0,
+      "budget_exhausted": null,
+      "measures": {
+        "measures": {
+          "r73_detours": {
+            "excess_mm": 5.08,
+            "u_turns": 1,
+            "leaves_part_box": 0
+          },
+          "return_connector_distance": {
+            "far_mm": 17.78
+          },
+          "capacitor_distance": {
+            "far_mm": 0,
+            "not_direct": 0
+          },
+          "sideways_power_symbols": {
+            "count": 0
+          }
+        },
+        "flagged": [
+          "r73_detours",
+          "return_connector_distance"
+        ]
+      },
+      "seconds": 2.159
+    }
+  }
+}

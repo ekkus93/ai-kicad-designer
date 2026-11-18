@@ -926,7 +926,14 @@ These features are **planned**, not prerequisites for P4 except when a specific 
     - **Probe (v12):**
       - linear_regulator is flagged for `r73_detours` and `return_connector_distance`. `block_move-1` (R7.3 delta 0) and `connector_reorientation-2` lower the return distance. The second costs one U-turn and 7.62 mm of R7.3 excess, shown in its deltas. v3 is rejected.
       - dual_buffer is flagged for `r73_detours` and `sideways_power_symbols`. Neither variant lowers them, so only `keep-1` is offered.
-    - **Open:** the corpus test (entries appear on the drawings ChatGPT rates defective in the v11 baseline, and none worsens a passing check) needs the v11 ratings (`docs/ai_kicad_baseline_v11_ratings_for_chatgpt.md`).
+    - **Corpus test (2026-11-18, clause NOT met):** `tools/pivot/run_generator_menu_check.py` → `fixtures/pivot/experiments/generator_menu_corpus_v12_2026-11-18_run1`, against the v11 ratings (`review_baseline_v11_2026-11-17_run1/ratings/chatgpt.json`). Every check passes on all 15 drawings.
+      - **Defective drawings with entries:** generator entries appear on only 1 of the 11 rated defective, linear_regulator (`block_move-1` and `connector_reorientation-2`, both lowering the return-connector distance).
+      - **Defective drawings without entries:**
+        - led_reverse_supply: no report-only measure flags it.
+        - The other 9 are flagged (`r73_detours`, and `sideways_power_symbols` on three op-amp designs), but every runner-up variant was rejected as lowering no flagged measure.
+      - **Good drawings:** none of the 4 gets an entry.
+      - **Safety:** no offered entry makes a passing check fail; offering one is refused by construction.
+    - **Note:** the runner-ups are the generator's own next-best moves, so they rarely beat its first choice on the measures. The defects ChatGPT names (detached power units, isolated parked units, the 555 control-pin route, interface detours) need the new block-level candidates of R9 (P6-012a–e). This clause is expected to be met once those candidates are offered through the same gated menu.
   - [ ] **P6-011w** Measure whether the reviewer's choices help (spec R8.5). **Acceptance:**
     - **Runs:** on the R6 benchmark, record for each drawing the generator's own best candidate, the reviewer's chosen entry and "keep".
     - **Ratings:** blind A/B ratings of the three are recorded.
